@@ -42,6 +42,8 @@ def normalize_date(date_str: str) -> str:
 
 
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str]]:
+    from utils.image_extractor import extract_thumbnail
+    
     if not safe_goto(page, url, timeout=20000):
         return "", None
     
@@ -50,15 +52,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str]]:
     if content_elem:
         content = safe_get_text(content_elem)[:5000]
     
-    thumbnail_url = None
-    img_selectors = ['div.image_viewbox img', 'div.viewbox img', 'div.board_view_cont img']
-    for sel in img_selectors:
-        imgs = page.locator(sel)
-        if imgs.count() > 0:
-            src = safe_get_attr(imgs.first, 'src')
-            if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'qrcode']):
-                thumbnail_url = urljoin(BASE_URL, src)
-                break
+    # 향상된 이미지 추출
+    thumbnail_url = extract_thumbnail(page, BASE_URL, CONTENT_SELECTORS)
     
     return content, thumbnail_url
 

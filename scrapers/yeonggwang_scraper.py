@@ -15,17 +15,11 @@ LIST_SELECTORS = ['a[href*="read"]', 'a[href*="view"]', 'tbody tr td a', '.board
 CONTENT_SELECTORS = ['div.view_content', 'div.board_view', 'article', '.cont_view', '#txt', '.view_cont', 'div[class*="content"]', '.bbs_view']
 
 def fetch_detail(page, url):
+    from utils.image_extractor import extract_thumbnail
     if not safe_goto(page, url, timeout=20000): return "", None
     elem = wait_and_find(page, CONTENT_SELECTORS, timeout=5000)
     content = safe_get_text(elem)[:5000] if elem else ""
-    thumb = None
-    for sel in CONTENT_SELECTORS:
-        imgs = page.locator(f'{sel} img')
-        if imgs.count() > 0:
-            src = safe_get_attr(imgs.first, 'src')
-            if src and 'icon' not in src.lower():
-                thumb = urljoin(BASE_URL, src)
-                break
+    thumb = extract_thumbnail(page, BASE_URL, CONTENT_SELECTORS)
     return content, thumb
 
 def collect_articles(days=3):

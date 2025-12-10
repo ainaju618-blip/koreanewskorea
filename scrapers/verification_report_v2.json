@@ -1,0 +1,418 @@
+{
+  "timestamp": "2025-12-07T12:29:44.521341",
+  "total": 27,
+  "passed": 25,
+  "failed": 0,
+  "warnings": 2,
+  "details": [
+    {
+      "file": "boseong_scraper.py",
+      "path": ".\\boseong_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "damyang_scraper.py",
+      "path": ".\\damyang_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "gangjin_scraper.py",
+      "path": ".\\gangjin_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "goheung_scraper.py",
+      "path": ".\\goheung_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "gokseong_scraper.py",
+      "path": ".\\gokseong_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "gurye_scraper.py",
+      "path": ".\\gurye_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "gwangju_edu_scraper.py",
+      "path": ".\\gwangju_edu_scraper.py",
+      "status": "warning",
+      "issues": [],
+      "warnings": [
+        "⚠️ API 전송 로직 없음"
+      ],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": false
+      }
+    },
+    {
+      "file": "gwangju_scraper.py",
+      "path": ".\\gwangju_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "gwangyang_scraper.py",
+      "path": ".\\gwangyang_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "haenam_scraper.py",
+      "path": ".\\haenam_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "hampyeong_scraper.py",
+      "path": ".\\hampyeong_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "hwasun_scraper.py",
+      "path": ".\\hwasun_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "jangheung_scraper.py",
+      "path": ".\\jangheung_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "jangseong_scraper.py",
+      "path": ".\\jangseong_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "jeonnam_edu_scraper.py",
+      "path": ".\\jeonnam_edu_scraper.py",
+      "status": "warning",
+      "issues": [],
+      "warnings": [
+        "⚠️ API 전송 로직 없음"
+      ],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": false
+      }
+    },
+    {
+      "file": "jeonnam_scraper.py",
+      "path": ".\\jeonnam_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "jindo_scraper.py",
+      "path": ".\\jindo_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "mokpo_scraper.py",
+      "path": ".\\mokpo_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "muan_scraper.py",
+      "path": ".\\muan_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "naju_scraper.py",
+      "path": ".\\naju_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "shinan_scraper.py",
+      "path": ".\\shinan_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "suncheon_scraper.py",
+      "path": ".\\suncheon_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "universal_scraper.py",
+      "path": ".\\universal_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "wando_scraper.py",
+      "path": ".\\wando_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "yeongam_scraper.py",
+      "path": ".\\yeongam_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "yeonggwang_scraper.py",
+      "path": ".\\yeonggwang_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    },
+    {
+      "file": "yeosu_scraper.py",
+      "path": ".\\yeosu_scraper.py",
+      "status": "passed",
+      "issues": [],
+      "warnings": [],
+      "quality": {
+        "has_timeout": true,
+        "has_headers": true,
+        "has_error_handling": true,
+        "has_rate_limit": true,
+        "has_date_filter": true,
+        "has_api_send": true
+      }
+    }
+  ]
+}

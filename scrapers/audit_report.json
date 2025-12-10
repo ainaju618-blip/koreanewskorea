@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-12-09T06:25:48.070409",
+  "scrapers": {
+    "jeonnam_edu_scraper.py": {
+      "status": "failed",
+      "duration": 33.13,
+      "articles_found": 0,
+      "images_found": 0,
+      "issues": [
+        "No articles found"
+      ],
+      "sample": []
+    }
+  }
+}
