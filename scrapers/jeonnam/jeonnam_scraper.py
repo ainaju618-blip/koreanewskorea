@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""전라남도청 보도자료 스크래퍼 v3.0 (Stability & Verification)
+"""전라남도청 보도자료 스크래퍼 v3.1 (Cloudinary Integration)
 - Collect & Visit 패턴 적용
 - Strict Verification 로직 추가
+- Cloudinary 이미지 업로드 통합
 - 최종수정: 2025-12-11
 """
 
@@ -18,6 +19,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.cloudinary_uploader import download_and_upload_image
 
 REGION_CODE = 'jeonnam'
 REGION_NAME = '전라남도'
@@ -83,6 +85,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     
     # 2. 이미지 추출 - 첨부파일 다운로드 링크에서
     thumbnail_url = None
+    original_image_url = None
     try:
         download_links = page.locator('a[href*="boardDown.do"]')
         for i in range(download_links.count()):
@@ -91,25 +94,41 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
             href = safe_get_attr(link, 'href') or ""
             
             if any(ext in title.lower() for ext in ['.jpg', '.png', '.gif', '.jpeg']):
-                thumbnail_url = urljoin(BASE_URL, href)
+                original_image_url = urljoin(BASE_URL, href)
+                print(f"      📎 첨부파일 이미지 발견: {title}")
                 break
     except Exception as e:
         print(f"   ⚠️ 첨부파일 이미지 추출 에러: {str(e)}")
     
     # 본문 내 이미지 fallback
-    if not thumbnail_url:
+    if not original_image_url:
         try:
             for sel in CONTENT_SELECTORS:
                 imgs = page.locator(f'{sel} img')
                 if imgs.count() > 0:
                     src = safe_get_attr(imgs.first, 'src')
                     if src and 'icon' not in src.lower() and 'button' not in src.lower():
-                        thumbnail_url = urljoin(BASE_URL, src)
+                        original_image_url = urljoin(BASE_URL, src)
+                        print(f"      🖼️ 본문 이미지 fallback: {src[:50]}...")
                         break
         except Exception as e:
             print(f"   ⚠️ 본문 이미지 추출 에러: {str(e)}")
 
-    # 3. 날짜 추출
+    # 3. Cloudinary 업로드 (이미지가 있으면)
+    if original_image_url:
+        try:
+            cloudinary_url = download_and_upload_image(original_image_url, BASE_URL, folder="jeonnam")
+            if cloudinary_url and cloudinary_url.startswith('https://res.cloudinary.com'):
+                thumbnail_url = cloudinary_url
+                print(f"      ☁️ Cloudinary 업로드 완료")
+            else:
+                thumbnail_url = original_image_url  # Fallback to original
+                print(f"      ⚠️ Cloudinary 업로드 실패, 원본 URL 사용")
+        except Exception as e:
+            thumbnail_url = original_image_url  # Fallback to original
+            print(f"      ⚠️ Cloudinary 업로드 에러: {str(e)[:50]}")
+
+    # 4. 날짜 추출
     pub_date = None
     try:
         date_elem = page.locator('span:has-text("등록일"), li:has-text("등록일"), td.date')

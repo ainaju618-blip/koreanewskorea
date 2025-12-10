@@ -186,29 +186,23 @@ def upload_local_image(local_path: str, folder: str = "news", resize: bool = Tru
 
 def resize_image(img: Image.Image, target_width: int, target_height: int) -> Image.Image:
     """
-    이미지를 지정 크기로 리사이즈 (비율 유지, 중앙 크롭)
+    이미지를 지정 너비(800px) 기준으로 리사이즈 (비율 유지, 크롭 없음)
+    - target_width: 목표 너비 (기본 800px)
+    - target_height: 사용하지 않음 (비율 유지)
     """
     original_width, original_height = img.size
     
-    # 비율 계산
-    width_ratio = target_width / original_width
-    height_ratio = target_height / original_height
+    # 이미 목표 너비보다 작으면 그대로 반환
+    if original_width <= target_width:
+        return img
     
-    # 더 큰 비율로 리사이즈 (크롭용)
-    ratio = max(width_ratio, height_ratio)
-    new_width = int(original_width * ratio)
+    # 비율 유지 리사이즈
+    ratio = target_width / original_width
+    new_width = target_width
     new_height = int(original_height * ratio)
     
-    # 리사이즈
+    # 리사이즈 (비율 유지)
     img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-    
-    # 중앙 크롭
-    left = (new_width - target_width) // 2
-    top = (new_height - target_height) // 2
-    right = left + target_width
-    bottom = top + target_height
-    
-    img = img.crop((left, top, right, bottom))
     
     return img
 
