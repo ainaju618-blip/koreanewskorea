@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
 
