@@ -68,6 +68,24 @@ We collaborate in the following way:
 
 ---
 
+> [!CAUTION]
+> ## ⚠️ SCOPE LIMITATION (Very Important!)
+> 
+> **Do NOT analyze all data!** Only check the following scope:
+> 
+> | Item | Scope |
+> |------|-------|
+> | List page | **Page 1 only** (first screen) |
+> | Sample articles | **Latest 5 only** |
+> | Detail pages | Visit **only 1-2** to understand structure |
+> | Total count | Just note the number (e.g., "Total: 1,234") |
+> | Pagination | Only check page 2 URL pattern |
+> 
+> **Reason:** All articles have identical structure, so 5 samples are sufficient for scraper development.
+> Analyzing 1000+ articles is a waste of time!
+
+---
+
 ### 1. Project Overview
 
 **"Korea News"** - Regional News Aggregation Platform
