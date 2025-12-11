@@ -62,45 +62,41 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
         if not title:
             title = page.title().split('-')[0].strip()
 
-        # 2. 본문 추출 (텍스트 기반 추출로 변경)
-        # HTML 텍스트를 가져와서 정제하는 것이 더 안전할 수 있음
-        body_text = page.locator('body').text_content() or ""
+        # 2. 본문 추출 (div.board_press 셀렉터 사용 - 정확한 기사 본문 영역)
+        content = ""
         
-        # 시작/끝 패턴 찾기
-        start_patterns = ['광주시교육청', '교육감', '보도자료']
-        end_patterns = ['저작권', 'COPYRIGHT', '만족도', '목록']
+        # 우선순위: div.board_press > div.board_view > body 전체
+        content_selectors = ['div.board_press', 'div.board_view', 'div#contents']
         
-        start_idx = -1
-        # 제목 이후부터 찾기
-        if title in body_text:
-            start_idx = body_text.find(title) + len(title)
-        
-        if start_idx == -1:
-            for pat in start_patterns:
-                idx = body_text.find(pat)
-                if idx != -1:
-                    start_idx = idx
+        for sel in content_selectors:
+            if page.locator(sel).count() > 0:
+                raw_content = page.locator(sel).first.text_content() or ""
+                if len(raw_content) > 100:  # 충분한 본문이 있는 경우만
+                    content = raw_content.strip()
+                    print(f"      📄 본문 추출: {sel} ({len(content)}자)")
                     break
         
-        # 끝 패턴
-        end_idx = len(body_text)
-        for pat in end_patterns:
-            idx = body_text.find(pat, start_idx)
-            if idx != -1:
-                end_idx = idx
-                break
-                
-        if start_idx != -1:
-            content = body_text[start_idx:end_idx].strip()
-        else:
-            # Fallback: div.board_view 전체
-            if page.locator('div.board_view').count() > 0:
-                content = page.locator('div.board_view').text_content().strip()
+        # 본문 정제: 불필요한 텍스트 제거
+        if content:
+            # 메뉴/네비게이션 텍스트 제거
+            noise_patterns = [
+                r'HOME\s*',
+                r'보도/해명자료\s*',
+                r'오늘의 보도/해명자료란에 오신 것을 환영합니다\.?\s*',
+                r'보도자료\s*(?=[^\w]|$)',
+                r'만족도\s*조사.*',
+                r'저작권.*',
+                r'COPYRIGHT.*',
+                r'목록\s*이전글\s*다음글.*',
+            ]
+            for pattern in noise_patterns:
+                content = re.sub(pattern, '', content, flags=re.IGNORECASE)
             
-        # 정제
-        content = re.sub(r'\n{3,}', '\n\n', content)
-        content = re.sub(r' {2,}', ' ', content)
-        content = content[:5000]
+            # 연속 공백/줄바꿈 정리
+            content = re.sub(r'\n{3,}', '\n\n', content)
+            content = re.sub(r' {2,}', ' ', content)
+            content = content.strip()
+            content = content[:5000]
 
         # 3. 이미지 추출 (첨부파일 방식 - JavaScript evaluate 사용)
         # 이 사이트는 이미지를 <img> 태그가 아닌 첨부파일 다운로드 링크로 제공
