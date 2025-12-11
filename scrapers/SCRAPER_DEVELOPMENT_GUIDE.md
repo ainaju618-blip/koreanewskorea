@@ -1,7 +1,8 @@
 # Scraper Development Guide
-> **Location:** `D:\cbt\koreanews\scrapers\`  
-> **Version:** v2.0  
+> **Location:** `D:\cbt\koreanews\scrapers\`
+> **Version:** v3.0
 > **Last Updated:** 2025-12-12
+> **Purpose:** Foundation data collection workflow with external collaborators
 
 ---
 
@@ -140,7 +141,7 @@ A system that **automatically collects** press releases from Jeollanam-do, Gwang
 
 | Component | Technology |
 |-----------|------------|
-| Frontend/Backend | Next.js 16 (App Router) |
+| Frontend/Backend | Next.js 15 (App Router) |
 | Database | Supabase (PostgreSQL) |
 | Scraper | Python (Playwright) |
 | Image Storage | Cloudinary |

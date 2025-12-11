@@ -1,94 +1,82 @@
-# 🛡️ Korea NEWS 스크래퍼 개발 가이드라인
+# Korea NEWS 스크래퍼 개발 가이드
 
-> **최종 수정**: 2025-12-10  
-> **버전**: v1.0  
-> **목적**: 여러 AI/개발자가 작업해도 일관성 있는 스크래퍼 코드 유지
-
----
-
-## 📋 AI 작업 전 필수 체크리스트
-
-> [!IMPORTANT]
-> **스크래퍼 수정 전 반드시 확인하세요!**
-
-- [ ] 이 가이드라인을 읽었는가?
-- [ ] `backup_scraper.py`로 현재 버전 백업했는가?
-- [ ] 템플릿 구조(`templates/base_scraper_template.py`)를 따르고 있는가?
-- [ ] 셀렉터 변경 시 `--days 1` 옵션으로 테스트 완료했는가?
-- [ ] `SCRAPER_CHANGELOG.md`에 변경 내용 기록했는가?
+> **버전:** v3.0
+> **최종수정:** 2025-12-12
+> **관리자:** AI Agent
 
 ---
 
-## 📂 폴더 구조
+## 1. 프로젝트 개요
+
+전남/광주 지역 27개 기관의 보도자료를 자동 수집하여 Supabase DB에 저장하는 시스템.
+
+**데이터 흐름:**
+```
+[스크래퍼] → POST /api/bot/ingest → [Supabase] → [웹사이트]
+```
+
+---
+
+## 2. 폴더 구조
 
 ```
 scrapers/
-├── SCRAPER_GUIDE.md          # ⭐ 이 파일 (필독!)
-├── SCRAPER_CHANGELOG.md      # 변경 이력
-├── backup_scraper.py         # 백업 유틸리티
+├── [지역명]/                      # 지역별 스크래퍼 (27개)
+│   ├── [지역명]_scraper.py        # 메인 스크래퍼 코드
+│   └── ALGORITHM.md               # 알고리즘 문서 (필수)
 │
-├── core/                     # ⭐ 실서비스 스크래퍼 (29개)
-│   ├── gwangju_scraper.py
-│   ├── naju_scraper.py
+├── utils/                         # 공통 유틸리티
+│   ├── api_client.py              # API 통신 (send_article_to_server)
+│   ├── scraper_utils.py           # Playwright 헬퍼 함수
+│   ├── cloudinary_uploader.py     # 이미지 업로드
 │   └── ...
 │
-├── templates/                # 스크래퍼 템플릿
+├── templates/                     # 스크래퍼 템플릿
 │   └── base_scraper_template.py
 │
-├── utils/                    # 공통 유틸리티
-│   ├── api_client.py
-│   └── scraper_utils.py
+├── backup/                        # 버전 백업 (날짜별)
+│   └── YYYY-MM-DD/
 │
-├── backup/                   # 자동 백업 (날짜별)
-│   └── 2025-12-10/
+├── debug/                         # 디버그/테스트 파일
 │
-└── debug/                    # 디버그/테스트 파일
+├── configs/                       # 설정 파일
+│   └── regional_configs.py
+│
+├── SCRAPER_GUIDE.md               # 이 문서 (AI용 개발 가이드)
+├── SCRAPER_DEVELOPMENT_GUIDE.md   # 외부 협업용 가이드 (영문)
+├── 스크래퍼_개발_지침.md            # 외부 협업용 가이드 (한글)
+└── SCRAPER_CHANGELOG.md           # 변경 이력
 ```
 
 ---
 
-## 🔧 코딩 컨벤션
+## 3. 스크래퍼 개발 규칙
 
-### 1. 파일 헤더 (필수)
+### 3.1 파일 헤더 (필수)
 
 ```python
 """
 {지역명} 보도자료 스크래퍼
-- 버전: v2.0
-- 최종수정: 2025-12-10
+- 버전: v{X.0}
+- 최종수정: YYYY-MM-DD
 - 담당: AI Agent
+
+변경점 (v{X.0}):
+- {변경 내용}
 """
 ```
 
-### 2. 상수 정의 (파일 상단, 필수)
+### 3.2 상수 정의 (필수)
 
 ```python
-REGION_CODE = 'gwangju'                    # 영문 코드 (DB region 컬럼)
-REGION_NAME = '광주광역시'                   # 한글명 (source 컬럼)
-CATEGORY_NAME = '광주'                      # 카테고리명
-BASE_URL = 'https://www.gwangju.go.kr'     # 기본 URL
-LIST_URL = 'https://www.gwangju.go.kr/...' # 목록 페이지 URL
+REGION_CODE = 'suncheon'           # 영문 코드 (DB region 컬럼)
+REGION_NAME = '순천시'              # 한글명 (source 컬럼)
+CATEGORY_NAME = '전남'              # 카테고리 (전남/광주)
+BASE_URL = 'http://www.suncheon.go.kr'
+LIST_URL = 'http://www.suncheon.go.kr/kr/news/0006/0001/'
 ```
 
-### 3. 셀렉터 정의 (필수)
-
-```python
-# 목록 페이지 셀렉터 (우선순위 순)
-LIST_SELECTORS = [
-    'tbody tr',
-    '.board_list tr',
-    'ul.list li',
-]
-
-# 본문 페이지 셀렉터 (우선순위 순)
-CONTENT_SELECTORS = [
-    'div.view_content',
-    'div.board_view',
-    'div.bbs_view',
-]
-```
-
-### 4. Import 순서 (표준화)
+### 3.3 Import 순서
 
 ```python
 # 1. 표준 라이브러리
@@ -104,123 +92,182 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
 # 3. 로컬 모듈
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.cloudinary_uploader import download_and_upload_image
+```
+
+### 3.4 필수 함수
+
+| 함수 | 역할 | 반환값 |
+|------|------|--------|
+| `normalize_date(date_str)` | 날짜 정규화 | `str` (YYYY-MM-DD) |
+| `fetch_detail(page, url)` | 상세 페이지 추출 | `Tuple[str, Optional[str], str, Optional[str]]` |
+| `collect_articles(days, max_articles)` | 메인 수집 | `List[Dict]` |
+| `main()` | CLI 진입점 | - |
+
+**fetch_detail 반환값:**
+```python
+(본문, 썸네일URL, 날짜, 담당부서)
 ```
 
 ---
 
-## 📝 필수 함수 구조
+## 4. 이미지 처리 (필수)
 
-| 함수명 | 역할 | 반환값 |
-|--------|------|--------|
-| `normalize_date(date_str)` | 날짜 문자열을 `YYYY-MM-DD`로 정규화 | `str` |
-| `fetch_detail(page, url)` | 상세 페이지에서 본문/이미지 추출 | `Tuple[str, Optional[str]]` |
-| `collect_articles(days)` | 메인 수집 함수 | `List[Dict]` |
-| `main()` | CLI 진입점 (argparse 사용) | - |
+### 4.1 핫링크 방지 대응
 
-### fetch_detail 표준 구현
+대부분의 관공서는 외부 이미지 접근 차단 → **Cloudinary 업로드 필수**
 
 ```python
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str]]:
-    """상세 페이지 수집"""
-    if not safe_goto(page, url, timeout=20000):
-        return "", None
-    
-    # 1. 본문 추출
-    content = ""
-    for sel in CONTENT_SELECTORS:
-        elem = page.locator(sel)
-        if elem.count() > 0:
-            text = safe_get_text(elem)
-            if text and len(text) > 50:
-                content = text[:5000]
-                break
-    
-    # 2. 이미지 추출
-    thumbnail_url = None
-    # 첨부파일 우선
-    for link in page.locator('a[href*="download"], a[href*="fileDown"]').all():
-        title = link.get_attribute('title') or ""
-        if any(ext in title.lower() for ext in ['.jpg', '.png']):
-            thumbnail_url = urljoin(BASE_URL, link.get_attribute('href'))
-            break
-    
-    # 본문 내 이미지 fallback
-    if not thumbnail_url:
-        for sel in CONTENT_SELECTORS:
-            imgs = page.locator(f'{sel} img')
-            if imgs.count() > 0:
-                src = imgs.first.get_attribute('src')
-                if src and 'icon' not in src.lower():
-                    thumbnail_url = urljoin(BASE_URL, src)
-                    break
-    
-    return content, thumbnail_url
+from utils.cloudinary_uploader import download_and_upload_image
+
+# 이미지 URL 추출 후
+if thumbnail_url:
+    cloudinary_url = download_and_upload_image(
+        thumbnail_url,
+        BASE_URL,           # Referer 헤더용
+        folder=REGION_CODE  # Cloudinary 폴더
+    )
+    if cloudinary_url:
+        thumbnail_url = cloudinary_url
+```
+
+### 4.2 JavaScript 다운로드 대응 (순천시 등)
+
+```python
+# 방법 1: Playwright expect_download()
+with page.expect_download(timeout=15000) as download_info:
+    link_locator.click()
+download = download_info.value
+download.save_as(temp_path)
+
+# 방법 2: POST 요청 (방법 1 실패 시)
+# goDownLoad() 파라미터 파싱 후 requests.post()
 ```
 
 ---
 
-## 🔄 백업 규칙
+## 5. API 전송 필드
 
-### 수정 전 백업 필수!
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|:----:|------|
+| `title` | string | ✅ | 기사 제목 |
+| `original_link` | string | ✅ | 상세 URL (중복 체크 키) |
+| `content` | string | ⭕ | 본문 (최대 5000자) |
+| `source` | string | ⭕ | 기관명 (REGION_NAME) |
+| `category` | string | ⭕ | 카테고리 (CATEGORY_NAME) |
+| `region` | string | ⭕ | 지역 코드 (REGION_CODE) |
+| `published_at` | string | ⭕ | ISO 8601 형식 |
+| `thumbnail_url` | string | ⭕ | Cloudinary URL |
+
+---
+
+## 6. 실행 및 제한
+
+### 6.1 CLI 옵션
 
 ```bash
-# 백업 명령어
-python backup_scraper.py core/gwangju_scraper.py
-
-# 결과: backup/2025-12-10/gwangju_scraper_1430.py 생성
+python [지역]_scraper.py                    # 기본 (3일, 10개)
+python [지역]_scraper.py --days 7           # 최근 7일
+python [지역]_scraper.py --max-articles 5   # 최대 5개
+python [지역]_scraper.py --dry-run          # 테스트 (DB 저장 안함)
 ```
 
-### 백업 파일 명명 규칙
+### 6.2 제한 사항
 
-```
-backup/{YYYY-MM-DD}/{scraper_name}_{HHMM}.py
-```
-
----
-
-## ⚠️ 주의사항
-
-### 절대 하지 말 것
-- ❌ `utils/` 폴더의 공통 함수 임의 수정
-- ❌ 다른 스크래퍼 참조 없이 새로운 패턴 도입
-- ❌ 백업 없이 `core/` 파일 직접 수정
-- ❌ 하드코딩된 URL/셀렉터 (상수로 정의할 것)
-
-### 반드시 할 것
-- ✅ 수정 전 백업
-- ✅ 테스트 후 커밋
-- ✅ CHANGELOG 업데이트
-- ✅ 기존 스크래퍼 스타일 따르기
+| 항목 | 값 | 이유 |
+|------|-----|------|
+| 1회 최대 수집 | 10개 | 서버 부하 방지 |
+| 기사 간 대기 | 0.5~1초 | Rate Limiting |
+| 페이지 간 대기 | 1초 | 안정성 |
+| 본문 최대 길이 | 5000자 | DB 제한 |
 
 ---
 
-## 📊 지역별 스크래퍼 현황
+## 7. 작업 절차
 
-| 지역 | 파일명 | 상태 | 비고 |
-|------|--------|------|------|
-| 광주광역시 | gwangju_scraper.py | ✅ 정상 | |
-| 나주시 | naju_scraper.py | ✅ 정상 | |
-| 전라남도 | jeonnam_scraper.py | ✅ 정상 | HWP iframe 대응 |
-| 목포시 | mokpo_scraper.py | ✅ 정상 | 카드형 UI |
-| ... | ... | ... | ... |
+### 7.1 새 스크래퍼 개발
+
+1. **기초 데이터 확보** (외부 협업)
+   - `스크래퍼_개발_지침.md` 참조
+   - 목록 URL, 상세 URL 패턴, 셀렉터, 샘플 5개
+
+2. **스크래퍼 작성**
+   - `templates/base_scraper_template.py` 복사
+   - 상수 및 셀렉터 수정
+   - 테스트: `--days 1 --max-articles 3`
+
+3. **문서화**
+   - `ALGORITHM.md` 작성 (필수)
+   - `SCRAPER_CHANGELOG.md` 업데이트
+
+### 7.2 기존 스크래퍼 수정
+
+1. **백업 생성**
+   ```bash
+   python backup_scraper.py [지역]/[지역]_scraper.py
+   ```
+
+2. **수정 및 테스트**
+   ```bash
+   python [지역]_scraper.py --days 1 --max-articles 3
+   ```
+
+3. **문서 업데이트**
+   - 파일 헤더 버전/날짜 수정
+   - ALGORITHM.md 업데이트
+   - CHANGELOG 기록
 
 ---
 
-## 🆘 문제 해결
+## 8. 금지 사항
 
-### 본문이 추출되지 않을 때
-1. F12 개발자 도구로 실제 DOM 구조 확인
-2. `CONTENT_SELECTORS`에 새 셀렉터 추가
-3. HWP/iframe 여부 확인
-
-### 이미지가 추출되지 않을 때
-1. 첨부파일 영역 확인 (`a[href*="download"]`)
-2. Hot-link 방지 여부 확인
-3. 필요 시 다운로드 URL 직접 사용
+| ❌ 금지 | ✅ 대신 |
+|--------|--------|
+| utils/ 공통 함수 임의 수정 | 새 함수 추가 또는 논의 |
+| 백업 없이 스크래퍼 수정 | backup_scraper.py 실행 |
+| 하드코딩 URL/셀렉터 | 상수로 정의 |
+| 새 패턴 무단 도입 | 기존 스크래퍼 참조 |
+| Cloudinary 업로드 생략 | 항상 업로드 시도 |
 
 ---
 
-*이 가이드라인은 모든 AI/개발자가 스크래퍼 작업 시 참조해야 합니다.*
+## 9. 참조 스크래퍼
+
+| 지역 | 특이사항 | ALGORITHM.md |
+|------|----------|:------------:|
+| 광주광역시 | 핫링크 방지, 표준 구조 | ✅ |
+| 전라남도 | HWP iframe, 첨부파일 이미지 | ✅ |
+| 순천시 | JS 다운로드 (expect_download) | ✅ |
+| 나주시 | img 다음 div 본문 | ✅ |
+| 목포시 | 카드형 UI | ✅ |
+| 광주교육청 | JS evaluate, 특수 URL | ✅ |
+| 영광군 | 표준 구조 | ✅ |
+
+---
+
+## 10. 대상 기관 목록 (27개)
+
+### 광역/도 (2)
+- 광주광역시, 전라남도
+
+### 시 (5)
+- 목포시, 여수시, 순천시, 나주시, 광양시
+
+### 군 (17)
+- 담양군, 곡성군, 구례군, 고흥군, 보성군
+- 화순군, 장흥군, 강진군, 해남군, 영암군
+- 무안군, 함평군, 영광군, 장성군, 완도군
+- 진도군, 신안군
+
+### 교육청 (2)
+- 광주교육청, 전남교육청
+
+### 지역 언론 (1)
+- 광남일보 (kwnews)
+
+---
+
+*이 문서는 AI Agent가 스크래퍼 개발/유지보수 시 참조하는 핵심 가이드입니다.*

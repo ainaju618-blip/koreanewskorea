@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /b \"d:\\cbt\\koreanews\")",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(done)",
+      "Bash(git add:*)"
+    ]
+  }
+}

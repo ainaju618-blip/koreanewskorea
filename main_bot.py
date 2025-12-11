@@ -20,7 +20,7 @@ load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
 
 # 각 모듈 임포트
 try:
-    from scrapers.naju_scraper import main as run_naju_scraper
+    from scrapers.naju.naju_scraper import main as run_naju_scraper
     from scrapers.rss_collector import FullTextRSSCollector
     from processors.ai_rewriter import AIRewriter
     from processors.telegram_bot import TelegramNotifier, send_telegram_report
@@ -99,7 +99,7 @@ class KoreaNewsPipeline:
             end_date = datetime.now().strftime('%Y-%m-%d')
             start_date = (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d')
             
-            from scrapers.naju_scraper import collect_articles, send_to_api
+            from scrapers.naju.naju_scraper import collect_articles, send_to_api
             articles = collect_articles(start_date=start_date, end_date=end_date)
             
             if articles:

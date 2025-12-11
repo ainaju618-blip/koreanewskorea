@@ -226,7 +226,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
     
-    time.sleep(1)  # 페이지 안정화
+    time.sleep(3)  # 페이지 및 스크립트 로딩 충분히 대기
+    print(f"      👀 상세 페이지 진입 성공", flush=True)
     
     # 순천시 상세 페이지 구조:
     # - 첫 번째 행: 담당부서(2열), 등록일(4열)
@@ -305,21 +306,44 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     # Playwright expect_download()로 클릭 다운로드 후 Cloudinary 업로드
     try:
         # 첨부파일 영역에서 이미지 파일 찾기
-        attach_links = page.locator('a[href*="goDownLoad"], a[onclick*="goDownLoad"]')
-        for i in range(min(attach_links.count(), 5)):
-            link = attach_links.nth(i)
-            link_text = safe_get_text(link) or ''
+        # 대기 시간 추가
+        try:
+            page.wait_for_selector('a[href*="goDownLoad"]', timeout=3000)
+        except:
+            pass
             
-            # 이미지 파일인지 확인
-            if any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                print(f"      📎 이미지 첨부파일 발견: {link_text[:30]}...")
-                # JavaScript 다운로드 클릭으로 이미지 다운로드 후 업로드
-                cloudinary_url = download_attachment_image(page, link)
-                if cloudinary_url:
-                    thumbnail_url = cloudinary_url
-                break
+        attach_links = page.locator('a[href*="goDownLoad"], a[onclick*="goDownLoad"]')
+        attach_count = attach_links.count()
+        print(f"      🔍 첨부파일 링크 개수: {attach_count}", flush=True)
+        
+        if attach_count > 0:
+            for i in range(min(attach_count, 5)):
+                link = attach_links.nth(i)
+                # safe_get_text 대신 text_content() 사용 (전체 텍스트 확보)
+                try:
+                    link_text = link.text_content() or ''
+                    link_text = link_text.strip()
+                except:
+                    link_text = safe_get_text(link) or ''
+                
+                onclick = link.get_attribute('href') or link.get_attribute('onclick') or ''
+                print(f"      📄 첨부파일 #{i+1}: {link_text} | Link: {onclick[:30]}...", flush=True)
+                
+                # 이미지 파일인지 확인 (텍스트 기반)
+                is_image = any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif'])
+                
+                if is_image:
+                    print(f"      📎 이미지 첨부파일 발견: {link_text}", flush=True)
+                    # JavaScript 다운로드 클릭으로 이미지 다운로드 후 업로드
+                    cloudinary_url = download_attachment_image(page, link)
+                    if cloudinary_url:
+                        thumbnail_url = cloudinary_url
+                    break
+        else:
+             print(f"      ⚠️ 첨부파일 링크를 찾을 수 없음 (selector: a[href*='goDownLoad'])", flush=True)
+             
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 처리 실패: {e}")
+        print(f"      ⚠️ 첨부파일 처리 실패: {e}", flush=True)
     
     # 본문 내 이미지가 있는지도 확인
     try:
