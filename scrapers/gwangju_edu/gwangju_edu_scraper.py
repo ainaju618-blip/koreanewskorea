@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-"""광주교육청 보도자료 스크래퍼 v3.0 (Collect & Visit + Strict Verification)"""
+"""광주교육청 보도자료 스크래퍼 v3.1 (Robust Fallback)"""
 
 import sys, os, time, re
 from datetime import datetime, timedelta
@@ -9,23 +9,17 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, safe_get_attr
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ===== 상수 정의 =====
-REGION_CODE = 'gwangju_edu'
+REGION_CODE = 'kedu' 
 REGION_NAME = '광주시교육청'
-CATEGORY_NAME = '교육'
+CATEGORY_NAME = '광주교육청'
 BASE_URL = 'https://enews.gen.go.kr'
 LIST_URL = 'https://enews.gen.go.kr/v5/?sid=25'
 
-# 셀렉터 (여러 개 시도)
-LIST_SELECTORS = ['ul.list li', 'div.bbs_list li', 'tbody tr', 'article']
-LINK_SELECTORS = ['a', 'a.title', 'td.title a']
-CONTENT_SELECTORS = ['div.view_content', 'div.board_view', 'div.bbs_view', 'article', 'div.content', 'body']
-
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열 정규화"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     date_str = date_str.strip().replace('.', '-').replace('/', '-')
@@ -38,7 +32,6 @@ def normalize_date(date_str: str) -> str:
     return datetime.now().strftime('%Y-%m-%d')
 
 def validate_article(article_data: Dict) -> Tuple[bool, str]:
-    """엄격한 데이터 검증"""
     if not article_data.get('title') or len(article_data['title']) < 5:
         return False, "❌ 제목 너무 짧음"
     content = article_data.get('content', '')
@@ -46,107 +39,167 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
         return False, f"❌ 본문 부족 ({len(content)}자)"
     return True, "✅ 검증 통과"
 
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str]]:
-    """상세 페이지에서 본문과 이미지 추출"""
-    if not safe_goto(page, url, timeout=20000):
-        return "", None
+def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
+    """상세 페이지에서 제목, 본문, 이미지 추출 (Robust)"""
+    # 타임아웃 30초
+    if not safe_goto(page, url, timeout=30000):
+        return "", "", None
     
-    time.sleep(1)  # 페이지 렌더링 대기
+    time.sleep(2)  # 렌더링 대기
     
-    # 본문 추출
+    title = ""
     content = ""
-    for sel in CONTENT_SELECTORS:
-        elem = page.locator(sel)
-        if elem.count() > 0:
-            text = safe_get_text(elem)
-            if text and len(text) > 30:
-                content = text[:5000]
-                break
-    
-    # 이미지 추출
     thumbnail_url = None
-    try:
-        imgs = page.locator('div.view_content img, div.board_view img, article img, .bbs_view img')
-        if imgs.count() > 0:
-            for i in range(min(imgs.count(), 5)):
-                src = safe_get_attr(imgs.nth(i), 'src')
-                if src and 'icon' not in src.lower() and 'logo' not in src.lower():
-                    original_url = urljoin(BASE_URL, src)
-                    # Cloudinary 업로드
-                    cloud_url = download_and_upload_image(original_url, BASE_URL, folder="gwangju_edu")
-                    if cloud_url and 'cloudinary' in cloud_url:
-                        thumbnail_url = cloud_url
-                    else:
-                        thumbnail_url = original_url
-                    break
-    except Exception as e:
-        print(f"   ⚠️ 이미지 추출 에러: {str(e)[:50]}")
     
-    return content, thumbnail_url
+    try:
+        # 1. 제목 추출
+        # 여러 셀렉터 시도
+        title_selectors = ['div.board_view h3', 'div.view_title', 'h3']
+        for sel in title_selectors:
+            if page.locator(sel).count() > 0:
+                title = page.locator(sel).first.text_content().strip()
+                break
+        if not title:
+            title = page.title().split('-')[0].strip()
+
+        # 2. 본문 추출 (텍스트 기반 추출로 변경)
+        # HTML 텍스트를 가져와서 정제하는 것이 더 안전할 수 있음
+        body_text = page.locator('body').text_content() or ""
+        
+        # 시작/끝 패턴 찾기
+        start_patterns = ['광주시교육청', '교육감', '보도자료']
+        end_patterns = ['저작권', 'COPYRIGHT', '만족도', '목록']
+        
+        start_idx = -1
+        # 제목 이후부터 찾기
+        if title in body_text:
+            start_idx = body_text.find(title) + len(title)
+        
+        if start_idx == -1:
+            for pat in start_patterns:
+                idx = body_text.find(pat)
+                if idx != -1:
+                    start_idx = idx
+                    break
+        
+        # 끝 패턴
+        end_idx = len(body_text)
+        for pat in end_patterns:
+            idx = body_text.find(pat, start_idx)
+            if idx != -1:
+                end_idx = idx
+                break
+                
+        if start_idx != -1:
+            content = body_text[start_idx:end_idx].strip()
+        else:
+            # Fallback: div.board_view 전체
+            if page.locator('div.board_view').count() > 0:
+                content = page.locator('div.board_view').text_content().strip()
+            
+        # 정제
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        content = re.sub(r' {2,}', ' ', content)
+        content = content[:5000]
+
+        # 3. 이미지 추출 (첨부파일 방식 - JavaScript evaluate 사용)
+        # 이 사이트는 이미지를 <img> 태그가 아닌 첨부파일 다운로드 링크로 제공
+        # 예: <a href="javascript:file_download('274975');">[사진] 청렴골든벨.jpg</a>
+        DOWNLOAD_BASE = 'https://enews.gen.go.kr/v5/decoboard/download.php?uid='
+        
+        # Playwright locator가 특정 속성 선택자에서 제대로 동작하지 않아 JS evaluate 사용
+        try:
+            js_result = page.evaluate("""() => {
+                const links = Array.from(document.querySelectorAll('a'));
+                for (const a of links) {
+                    const href = a.getAttribute('href') || '';
+                    const text = (a.textContent || '').toLowerCase();
+                    if (href.includes('file_download') && (text.includes('.jpg') || text.includes('.jpeg') || text.includes('.png'))) {
+                        const match = href.match(/file_download\\(['\"]?(\\d+)['\"]?\\)/);
+                        if (match) {
+                            return { uid: match[1], text: a.textContent.trim() };
+                        }
+                    }
+                }
+                return null;
+            }""")
+            
+            if js_result and js_result.get('uid'):
+                file_uid = js_result['uid']
+                download_url = DOWNLOAD_BASE + file_uid
+                print(f"      📷 이미지 발견: {js_result['text'][:30]}...")
+                # Cloudinary에 업로드
+                cloud_url = download_and_upload_image(download_url, BASE_URL, folder="gwangju_edu")
+                if cloud_url and 'cloudinary' in cloud_url:
+                    thumbnail_url = cloud_url
+                    print(f"      ✅ 이미지 업로드 완료: {thumbnail_url[:50]}...")
+                else:
+                    thumbnail_url = download_url
+        except Exception as img_err:
+            print(f"      ⚠️ 이미지 추출 에러: {str(img_err)[:30]}")
+        
+    except Exception as e:
+        print(f"   ⚠️ 상세 파싱 에러: {str(e)[:50]}")
+    
+    return title, content, thumbnail_url
 
 def collect_articles(days: int = 3) -> List[Dict]:
-    """Collect & Visit 패턴으로 기사 수집"""
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (Strict Verification Mode)")
-    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
+    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작")
     
     collected_links = []
-    cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            viewport={'width': 1280, 'height': 1024}
+             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+             viewport={'width': 1280, 'height': 1024}
         )
         page = context.new_page()
         
-        # Phase 1: 링크 수집
         print(f"   📄 목록 페이지 스캔 중...")
         if not safe_goto(page, LIST_URL):
             print("   ❌ 목록 페이지 접속 실패")
             browser.close()
             return []
         
-        time.sleep(2)  # 페이지 렌더링 대기
+        time.sleep(2)
         
-        # 링크 찾기 (query_selector_all 사용)
         try:
-            links = page.query_selector_all('a')
-            print(f"   🔗 전체 링크 수: {len(links)}")
+            links = page.locator("a[href*='wbb=md:view;uid:']")
+            count = links.count()
+            print(f"   🔗 발견된 링크 수: {count}")
             
-            for link in links:
+            for i in range(count):
                 try:
-                    href = link.get_attribute('href') or ""
+                    link = links.nth(i)
+                    href = safe_get_attr(link, 'href')
                     text = link.text_content() or ""
                     text = text.strip()
-                    
-                    # 보도자료 링크 필터링 (wbb=md:view;uid: 패턴)
-                    if 'wbb=md:view' in href and 'uid:' in href and len(text) > 10:
+                    if href and 'uid:' in href:
                         full_url = BASE_URL + '/v5/' + href if href.startswith('?') else urljoin(BASE_URL, href)
                         if full_url not in [x['url'] for x in collected_links]:
                             collected_links.append({'title': text, 'url': full_url})
-                            print(f"      ✅ 발견: {text[:40]}...")
                 except:
                     continue
         except Exception as e:
             print(f"   ❌ 링크 수집 에러: {str(e)}")
-        
+            
         print(f"✅ 총 {len(collected_links)}개의 수집 대상 링크 확보")
         
-        # Phase 2: 상세 방문
         success_count = 0
-        for idx, item in enumerate(collected_links[:10]):  # 최대 10개
+        for idx, item in enumerate(collected_links[:12]):
             url = item['url']
-            title = item['title']
+            print(f"   🔍 [{idx+1}] 분석 중: {item['title'][:20]}...")
             
-            print(f"   🔍 [{idx+1}] 분석 중: {title[:30]}...")
+            real_title, content, thumbnail_url = fetch_detail(page, url)
+            final_title = real_title if real_title else item['title']
             
-            content, thumbnail_url = fetch_detail(page, url)
+            published_at = f"{datetime.now().strftime('%Y-%m-%d')}T09:00:00+09:00"
             
             article_data = {
-                'title': title,
+                'title': final_title,
                 'content': content,
-                'published_at': f"{datetime.now().strftime('%Y-%m-%d')}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': url,
                 'source': REGION_NAME,
                 'category': CATEGORY_NAME,
@@ -154,7 +207,6 @@ def collect_articles(days: int = 3) -> List[Dict]:
                 'thumbnail_url': thumbnail_url,
             }
             
-            # Phase 3: 검증
             is_valid, msg = validate_article(article_data)
             print(f"      {msg}")
             
@@ -167,21 +219,11 @@ def collect_articles(days: int = 3) -> List[Dict]:
                     print(f"      ⚠️ [DB 결과] {result.get('status', 'unknown') if result else 'no response'}")
             
             time.sleep(1)
-        
+            
         browser.close()
-    
-    final_msg = f"작업 종료: 총 {len(collected_links[:10])}건 처리 / {success_count}건 저장 성공"
-    print(f"🎉 {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+
+    print(f"🎉 작업 종료: {success_count}건 저장 성공")
     return []
 
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--days', type=int, default=3)
-    parser.add_argument('--dry-run', action='store_true')
-    args = parser.parse_args()
-    collect_articles(days=args.days)
-
 if __name__ == "__main__":
-    main()
+    collect_articles()
