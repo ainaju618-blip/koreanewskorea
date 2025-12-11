@@ -44,6 +44,48 @@ Deliver the following full content to the external partner.
 
 ---
 
+> [!IMPORTANT]
+> ## ✅ Required Information Checklist
+> 
+> All items below **MUST be included** for scraper development.
+> **If any item is missing, we will need to request again!**
+> 
+> | # | Item | Required | Description |
+> |---|------|:--------:|-------------|
+> | 1 | List URL | ✅ | Press release list page URL |
+> | 2 | Detail URL Pattern | ✅ | ?idx={ID} or ?seq={ID} format |
+> | 3 | Pagination | ✅ | ?page={N} format |
+> | 4 | Title Link Selector | ✅ | CSS selector or location description |
+> | 5 | Content Area | ✅ | CSS selector or structure description |
+> | 6 | Date Location/Format | ✅ | YYYY-MM-DD etc. |
+> | 7 | **🖼️ Image Access Method** | ✅ | **Most Important!** One of below required |
+> |   | └ Direct Access URL | ⭐ | Hotlink-able image URL pattern |
+> |   | └ Download Method | ⭐ | If JavaScript, provide workaround |
+> |   | └ POST Parameters | ⭐ | Required params for download server |
+> | 8 | Sample Data (5 articles) | ✅ | All fields below **MUST be included**! |
+
+> [!CAUTION]
+> ## 📋 Required Fields in Sample Data
+> 
+> Each of the 5 sample articles **MUST include ALL** of these fields:
+> 
+> ```json
+> {
+>   "id": "12345",              // ✅ Article ID
+>   "title": "Article Title",   // ✅ Article title
+>   "date": "2025-12-12",       // ✅ Publish date
+>   "url": "https://...",       // ✅ Detail page URL
+>   "department": "Dept Name",  // ⭕ Department (if available)
+>   "content": "Body text...",  // ✅ Content text (min 100 chars)
+>   "image_url": "https://..."  // ✅ Image URL (direct access URL!)
+> }
+> ```
+> 
+> **⚠️ Missing any field = scraper will save without that info!**
+> **⚠️ If image uses JavaScript download, find a direct access URL!**
+
+---
+
 ### 0. Collaboration Process
 
 We collaborate in the following way:
@@ -238,6 +280,25 @@ If there are any special situations not mentioned above, please include:
 - Data fetched via **AJAX/API calls**
 - **CAPTCHA** or access restrictions
 - Other **unusual structures**
+
+> [!WARNING]
+> ## 🚨 Special Case Example (MUST provide workaround!)
+> 
+> **❌ Problem Example (Suncheon City):**
+> ```
+> - Images use javascript:goDownLoad('encrypted_param') method
+> - No direct access image URL available
+> - Result: Scraper cannot collect images!
+> ```
+> 
+> **✅ Must provide solution:**
+> ```
+> - Direct request URL pattern to download server
+> - POST parameter structure
+> - Or alternative path to access images
+> ```
+> 
+> **If such special cases exist, MUST provide workaround!**
 
 ---
 

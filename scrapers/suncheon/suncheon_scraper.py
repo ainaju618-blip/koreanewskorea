@@ -83,6 +83,57 @@ def extract_article_id(href: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def download_attachment_image(page: Page, link_locator) -> Optional[str]:
+    """
+    JavaScript 다운로드 링크를 클릭하여 이미지를 다운로드하고 Cloudinary에 업로드
+    
+    Args:
+        page: Playwright Page 객체
+        link_locator: 다운로드 링크 Locator
+        
+    Returns:
+        Cloudinary URL 또는 None
+    """
+    import tempfile
+    
+    try:
+        # 다운로드 이벤트 대기하면서 링크 클릭
+        with page.expect_download(timeout=10000) as download_info:
+            link_locator.click()
+        
+        download = download_info.value
+        
+        # 임시 파일로 저장
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, download.suggested_filename)
+        download.save_as(temp_path)
+        
+        print(f"      📥 다운로드 완료: {download.suggested_filename}")
+        
+        # 이미지 파일인지 확인
+        if any(temp_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+            # Cloudinary에 업로드
+            from utils.cloudinary_uploader import upload_local_image
+            cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
+            
+            # 임시 파일 정리
+            try:
+                os.remove(temp_path)
+                os.rmdir(temp_dir)
+            except:
+                pass
+            
+            if cloudinary_url:
+                print(f"      ☁️ Cloudinary 업로드 완료")
+                return cloudinary_url
+        
+        return None
+        
+    except Exception as e:
+        print(f"      ⚠️ 다운로드 실패: {e}")
+        return None
+
+
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
@@ -171,9 +222,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         except:
             pass
     
-    # 2. 이미지 추출 (첨부파일에서)
-    # 순천시는 핫링크 불가, JavaScript 다운로드 방식
-    # 첨부파일 링크에서 이미지 파일명 확인 후 처리
+    # 2. 이미지 추출 (첨부파일에서 - JavaScript 다운로드 방식)
+    # Playwright expect_download()로 클릭 다운로드 후 Cloudinary 업로드
     try:
         # 첨부파일 영역에서 이미지 파일 찾기
         attach_links = page.locator('a[href*="goDownLoad"], a[onclick*="goDownLoad"]')
@@ -183,12 +233,14 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             
             # 이미지 파일인지 확인
             if any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                # JavaScript 다운로드 함수 사용 - Playwright로 처리 어려움
-                # 대신 첨부파일 정보만 기록
-                print(f"      📎 첨부파일 발견: {link_text[:30]}...")
+                print(f"      📎 이미지 첨부파일 발견: {link_text[:30]}...")
+                # JavaScript 다운로드 클릭으로 이미지 다운로드 후 업로드
+                cloudinary_url = download_attachment_image(page, link)
+                if cloudinary_url:
+                    thumbnail_url = cloudinary_url
                 break
-    except:
-        pass
+    except Exception as e:
+        print(f"      ⚠️ 첨부파일 처리 실패: {e}")
     
     # 본문 내 이미지가 있는지도 확인
     try:
