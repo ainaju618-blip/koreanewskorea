@@ -87,6 +87,10 @@ def download_attachment_image(page: Page, link_locator) -> Optional[str]:
     """
     JavaScript 다운로드 링크를 클릭하여 이미지를 다운로드하고 Cloudinary에 업로드
     
+    순천시 특수 처리:
+    - goDownLoad() 함수 사용 → Playwright expect_download()로 캡처
+    - 또는 POST 요청으로 직접 다운로드
+    
     Args:
         page: Playwright Page 객체
         link_locator: 다운로드 링크 Locator
@@ -95,42 +99,117 @@ def download_attachment_image(page: Page, link_locator) -> Optional[str]:
         Cloudinary URL 또는 None
     """
     import tempfile
+    import requests
     
     try:
-        # 다운로드 이벤트 대기하면서 링크 클릭
-        with page.expect_download(timeout=10000) as download_info:
-            link_locator.click()
-        
-        download = download_info.value
-        
-        # 임시 파일로 저장
-        temp_dir = tempfile.mkdtemp()
-        temp_path = os.path.join(temp_dir, download.suggested_filename)
-        download.save_as(temp_path)
-        
-        print(f"      📥 다운로드 완료: {download.suggested_filename}")
-        
-        # 이미지 파일인지 확인
-        if any(temp_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-            # Cloudinary에 업로드
-            from utils.cloudinary_uploader import upload_local_image
-            cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
+        # 방법 1: Playwright expect_download()로 클릭 다운로드 시도
+        try:
+            with page.expect_download(timeout=15000) as download_info:
+                link_locator.click()
             
-            # 임시 파일 정리
-            try:
-                os.remove(temp_path)
-                os.rmdir(temp_dir)
-            except:
-                pass
+            download = download_info.value
             
-            if cloudinary_url:
-                print(f"      ☁️ Cloudinary 업로드 완료")
-                return cloudinary_url
+            # 임시 파일로 저장
+            temp_dir = tempfile.mkdtemp()
+            temp_path = os.path.join(temp_dir, download.suggested_filename)
+            download.save_as(temp_path)
+            
+            print(f"      📥 다운로드 완료: {download.suggested_filename}")
+            
+            # 이미지 파일인지 확인
+            if any(temp_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
+                # Cloudinary에 업로드
+                from utils.cloudinary_uploader import upload_local_image
+                cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
+                
+                # 임시 파일 정리
+                try:
+                    os.remove(temp_path)
+                    os.rmdir(temp_dir)
+                except:
+                    pass
+                
+                if cloudinary_url:
+                    print(f"      ☁️ Cloudinary 업로드 완료")
+                    return cloudinary_url
+            
+            return None
+            
+        except Exception as e:
+            print(f"      ⚠️ 클릭 다운로드 실패, POST 방식 시도: {e}")
+        
+        # 방법 2: goDownLoad() 파라미터 파싱 후 POST 요청
+        try:
+            # onclick 또는 href에서 goDownLoad 파라미터 추출
+            onclick = link_locator.get_attribute('href') or link_locator.get_attribute('onclick') or ''
+            
+            # goDownLoad('param1', 'param2', 'param3') 패턴 파싱
+            match = re.search(r"goDownLoad\s*\(\s*'([^']*)'\s*,\s*'([^']*)'\s*,\s*'([^']*)'\s*\)", onclick)
+            if match:
+                param1, param2, param3 = match.groups()
+                
+                # POST 요청으로 이미지 다운로드
+                download_url = 'http://eminwon.suncheon.go.kr/emwp/jsp/ofr/FileDownNew.jsp'
+                
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Referer': 'http://www.suncheon.go.kr/kr/news/0006/0001/',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+                
+                # 쿠키 가져오기
+                cookies = {}
+                for cookie in page.context.cookies():
+                    cookies[cookie['name']] = cookie['value']
+                
+                # POST 데이터 (파라미터 구조에 따라 조정 필요)
+                data = {
+                    'param1': param1,
+                    'param2': param2,
+                    'param3': param3,
+                }
+                
+                response = requests.post(
+                    download_url, 
+                    headers=headers, 
+                    data=data, 
+                    cookies=cookies,
+                    timeout=30,
+                    verify=False
+                )
+                
+                if response.status_code == 200 and len(response.content) > 1000:
+                    # 임시 파일로 저장
+                    temp_dir = tempfile.mkdtemp()
+                    temp_path = os.path.join(temp_dir, 'downloaded_image.jpg')
+                    
+                    with open(temp_path, 'wb') as f:
+                        f.write(response.content)
+                    
+                    print(f"      📥 POST 다운로드 완료: {len(response.content)} bytes")
+                    
+                    # Cloudinary에 업로드
+                    from utils.cloudinary_uploader import upload_local_image
+                    cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
+                    
+                    # 임시 파일 정리
+                    try:
+                        os.remove(temp_path)
+                        os.rmdir(temp_dir)
+                    except:
+                        pass
+                    
+                    if cloudinary_url:
+                        print(f"      ☁️ Cloudinary 업로드 완료")
+                        return cloudinary_url
+                        
+        except Exception as e:
+            print(f"      ⚠️ POST 다운로드 실패: {e}")
         
         return None
         
     except Exception as e:
-        print(f"      ⚠️ 다운로드 실패: {e}")
+        print(f"      ⚠️ 이미지 다운로드 실패: {e}")
         return None
 
 

@@ -1,6 +1,6 @@
 # 순천시 보도자료 스크래퍼 알고리즘
 
-> **버전:** v3.0  
+> **버전:** v4.0  
 > **최종수정:** 2025-12-12  
 > **Region Code:** `suncheon`  
 > **Category:** `전남`
@@ -14,6 +14,7 @@
 - **목록 URL:** `http://www.suncheon.go.kr/kr/news/0006/0001/`
 - **상세 페이지 패턴:** `?mode=view&seq={ID}`
 - **페이지네이션:** `?x=1&pageIndex={N}` (10개씩 표시)
+- **총 기사 수:** 약 32,831건
 
 ---
 
@@ -30,16 +31,15 @@
 ┌─────────────────────────────────────────────────────────┐
 │  Phase 2: 상세 페이지 방문                                │
 │  - 테이블 구조 파싱                                        │
-│  - 첫 번째 행: 담당부서(2열), 등록일(4열)                   │
-│  - 두 번째 행: 제목                                        │
-│  - 세 번째 행: 본문 (순수 텍스트)                          │
+│  - 담당부서(1행 2열), 등록일(1행 4열)                       │
+│  - 제목(2행), 본문(3행)                                    │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│  Phase 3: 이미지 처리                                     │
-│  - 핫링크 불가 (JavaScript 다운로드 방식)                  │
-│  - 본문 내 img 태그 없음, 첨부파일 형태                    │
-│  - Cloudinary 업로드 시도 (실패 시 skip)                   │
+│  Phase 3: 이미지 처리 (JavaScript 다운로드 우회)           │
+│  - 방법 1: Playwright expect_download()로 클릭 다운로드   │
+│  - 방법 2: goDownLoad() 파라미터 파싱 → POST 요청          │
+│  - Cloudinary 업로드                                       │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -75,17 +75,36 @@
 
 ---
 
-## 🖼️ 이미지 처리
+## 🖼️ 이미지 처리 (v4.0 핵심 변경)
 
 ### 핫링크: ❌ 불가
-- JavaScript 다운로드 함수 사용: `javascript:goDownLoad(암호화파라미터)`
+- JavaScript 다운로드 함수 사용: `javascript:goDownLoad('param1', 'param2', 'param3')`
 - 다운로드 서버: `http://eminwon.suncheon.go.kr/emwp/jsp/ofr/FileDownNew.jsp` (POST)
 
-### 처리 방식
-1. 본문 내 `<img>` 태그 없음 (모두 첨부파일 형태)
-2. 첨부파일 영역에서 이미지 파일명 확인
-3. Playwright 다운로드 이벤트로 처리 시도
-4. 실패 시 이미지 없이 저장
+### 처리 방식 (2단계 시도)
+
+**방법 1: Playwright 클릭 다운로드**
+```python
+with page.expect_download(timeout=15000) as download_info:
+    link_locator.click()
+download = download_info.value
+download.save_as(temp_path)
+```
+
+**방법 2: POST 요청 (방법 1 실패 시)**
+```python
+# goDownLoad() 파라미터 파싱
+match = re.search(r"goDownLoad\('([^']*)','([^']*)','([^']*)'\)", onclick)
+param1, param2, param3 = match.groups()
+
+# POST 요청
+response = requests.post(
+    'http://eminwon.suncheon.go.kr/emwp/jsp/ofr/FileDownNew.jsp',
+    headers={'Referer': 'http://www.suncheon.go.kr/kr/news/0006/0001/'},
+    data={'param1': param1, 'param2': param2, 'param3': param3},
+    cookies=cookies_from_page
+)
+```
 
 ---
 
@@ -118,11 +137,13 @@ python suncheon_scraper.py --days 7
 
 ## ⚠️ 특수 사항
 
-- **로그인/인증:** 필요 없음
-- **JavaScript 동적 로딩:** 없음 (서버 렌더링)
-- **본문 형식:** HTML 마크업 없이 순수 텍스트
-- **이미지:** 본문 내 img 없음, 모두 첨부파일
-- **첨부파일 다운로드:** JavaScript 함수 호출 필요
+| 항목 | 상태 |
+|------|------|
+| 로그인/인증 | ❌ 불필요 |
+| JavaScript 동적 로딩 | ❌ 서버사이드 렌더링 |
+| 본문 형식 | 순수 텍스트 (HTML 마크업 없음) |
+| 이미지 | 첨부파일로만 제공 (본문 내 img 없음) |
+| 첨부파일 다운로드 | JavaScript 함수 → Playwright 클릭 or POST |
 
 ---
 
@@ -137,4 +158,4 @@ python suncheon_scraper.py --days 7
 | `category` | `"전남"` (고정) |
 | `region` | `"suncheon"` (고정) |
 | `published_at` | 테이블 1행 4열 (ISO 8601) |
-| `thumbnail_url` | 첨부파일 (실패 시 null) |
+| `thumbnail_url` | 첨부파일 Playwright 다운로드 → Cloudinary |
