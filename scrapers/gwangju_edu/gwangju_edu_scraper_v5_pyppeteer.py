@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-광주교육청 보도자료 스크래퍼 v4.0 (Hybrid)
-- JS/Puppeteer 코드의 CLI 유연성
-- Python/Playwright 코드의 시스템 통합
+광주교육청 보도자료 스크래퍼 v5.0 (Pyppeteer)
+- Python용 Puppeteer 포트 사용
+- 원본 JS 코드와 유사한 API
 """
 
-import sys, os, time, re, argparse, json
+import sys, os, time, re, argparse, asyncio, json
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
-from urllib.parse import urljoin
-from playwright.sync_api import sync_playwright, Page
+
+# Pyppeteer import
+from pyppeteer import launch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, safe_get_attr
+from utils.api_client import send_article_to_server
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ===== 상수 정의 =====
@@ -25,16 +25,15 @@ LIST_URL = 'https://enews.gen.go.kr/v5/?sid=25'
 
 
 def parse_args():
-    """CLI 옵션 파서 (JS 코드에서 가져옴)"""
+    """CLI 옵션 파서"""
     parser = argparse.ArgumentParser(
-        description='광주광역시교육청 보도자료 스크래퍼 v4.0',
+        description='광주광역시교육청 보도자료 스크래퍼 v5.0 (Pyppeteer)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 사용 예시:
-  python gwangju_edu_scraper_v4.py                           # 기본 실행 (3페이지, 12개)
-  python gwangju_edu_scraper_v4.py --exact-date 2025-12-11   # 특정 날짜만
-  python gwangju_edu_scraper_v4.py --start-date 2025-12-01 --end-date 2025-12-11
-  python gwangju_edu_scraper_v4.py --max-pages 5 --max-articles 30
+  python gwangju_edu_scraper_v5_pyppeteer.py
+  python gwangju_edu_scraper_v5_pyppeteer.py --exact-date 2025-12-11
+  python gwangju_edu_scraper_v5_pyppeteer.py --max-articles 3 --dry-run
         """
     )
     parser.add_argument('--start-date', help='시작 날짜 (YYYY-MM-DD)')
@@ -49,35 +48,19 @@ def parse_args():
 
 def is_date_in_range(date_str: str, start_date: str = None, 
                      end_date: str = None, exact_date: str = None) -> bool:
-    """날짜가 지정된 범위 내에 있는지 확인 (JS 코드에서 가져옴)"""
+    """날짜가 지정된 범위 내에 있는지 확인"""
     if not date_str:
-        return True  # 날짜 없으면 일단 포함
+        return True
     
-    # 특정 날짜만
     if exact_date:
         return date_str == exact_date
     
-    # 범위 체크
     if start_date and date_str < start_date:
         return False
     if end_date and date_str > end_date:
         return False
     
     return True
-
-
-def normalize_date(date_str: str) -> str:
-    """날짜 문자열 정규화"""
-    if not date_str:
-        return datetime.now().strftime('%Y-%m-%d')
-    date_str = date_str.strip().replace('.', '-').replace('/', '-')
-    try:
-        match = re.search(r'(\d{4}-\d{1,2}-\d{1,2})', date_str)
-        if match:
-            return match.group(1)
-    except:
-        pass
-    return datetime.now().strftime('%Y-%m-%d')
 
 
 def validate_article(article_data: Dict) -> Tuple[bool, str]:
@@ -90,10 +73,10 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
     return True, "✅ 검증 통과"
 
 
-def collect_list_with_metadata(page: Page) -> List[Dict]:
-    """목록에서 날짜/조회수도 함께 추출 (실제 사이트 구조에 맞게 수정)"""
+async def collect_list_with_metadata(page) -> List[Dict]:
+    """목록에서 날짜/조회수도 함께 추출 (Pyppeteer - 실제 사이트 구조에 맞게 수정)"""
     try:
-        items = page.evaluate("""() => {
+        items = await page.evaluate('''() => {
             const results = [];
             // 실제 사이트 구조: a 태그가 직접 기사 링크 (ul/li 구조 아님)
             const links = document.querySelectorAll("a[href*='wbb=md:view;uid:']");
@@ -104,9 +87,7 @@ def collect_list_with_metadata(page: Page) -> List[Dict]:
                 if (!uidMatch) return;
                 
                 // 제목 추출 (링크 내부 텍스트에서)
-                const titleEl = link.querySelector('div') || link;
                 let title = '';
-                // 첫 번째 div 안의 텍스트가 제목
                 const divs = link.querySelectorAll('div');
                 if (divs.length > 0) {
                     title = divs[0].textContent?.trim() || '';
@@ -127,7 +108,7 @@ def collect_list_with_metadata(page: Page) -> List[Dict]:
                 if (!results.some(r => r.uid === uidMatch[1])) {
                     results.push({
                         uid: uidMatch[1],
-                        title: title.substring(0, 100),  // 제목 길이 제한
+                        title: title.substring(0, 100),
                         date: date,
                         views: views,
                         href: href
@@ -136,19 +117,22 @@ def collect_list_with_metadata(page: Page) -> List[Dict]:
             });
             
             return results;
-        }""")
+        }''')
         return items if items else []
     except Exception as e:
         print(f"   ⚠️ 목록 추출 에러: {e}")
         return []
 
 
-def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
-    """상세 페이지에서 제목, 본문, 이미지 추출 (기존 Python 로직 유지)"""
-    if not safe_goto(page, url, timeout=30000):
+async def fetch_detail(page, url: str) -> Tuple[str, str, Optional[str]]:
+    """상세 페이지에서 제목, 본문, 이미지 추출 (Pyppeteer)"""
+    try:
+        await page.goto(url, {'waitUntil': 'networkidle2', 'timeout': 30000})
+    except Exception as e:
+        print(f"   ⚠️ 페이지 이동 실패: {str(e)[:30]}")
         return "", "", None
     
-    time.sleep(2)
+    await asyncio.sleep(2)
     
     title = ""
     content = ""
@@ -157,7 +141,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
     try:
         # 1. 제목 추출
         try:
-            title = page.evaluate("""() => {
+            title = await page.evaluate('''() => {
                 const viewTop = document.querySelector('div.view_top');
                 if (!viewTop) return '';
                 
@@ -176,13 +160,13 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
                     }
                 }
                 return lines[0] || '';
-            }""")
+            }''')
         except:
             title = ""
 
         # 2. 본문 추출
         try:
-            content = page.evaluate("""() => {
+            content = await page.evaluate('''() => {
                 const boardPress = document.querySelector('div.board_press');
                 if (!boardPress) return '';
                 
@@ -199,18 +183,9 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
                 });
                 
                 return clone.textContent?.trim() || '';
-            }""")
+            }''')
         except:
             content = ""
-        
-        # Fallback
-        if not content or len(content) < 100:
-            for sel in ['div.board_press', 'div.board_view', 'div#contents']:
-                if page.locator(sel).count() > 0:
-                    raw = page.locator(sel).first.text_content() or ""
-                    if len(raw) > 100:
-                        content = raw.strip()
-                        break
         
         # 본문 정제
         if content:
@@ -232,7 +207,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
         DOWNLOAD_BASE = 'https://enews.gen.go.kr/v5/decoboard/download.php?uid='
         
         try:
-            js_result = page.evaluate("""() => {
+            js_result = await page.evaluate('''() => {
                 const links = Array.from(document.querySelectorAll('a'));
                 for (const a of links) {
                     const href = a.getAttribute('href') || '';
@@ -246,7 +221,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
                     }
                 }
                 return null;
-            }""")
+            }''')
             
             if js_result and js_result.get('uid'):
                 download_url = DOWNLOAD_BASE + js_result['uid']
@@ -266,11 +241,11 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
     return title, content, thumbnail_url
 
 
-def collect_articles(args) -> List[Dict]:
-    """메인 수집 함수"""
+async def collect_articles(args):
+    """메인 수집 함수 (async)"""
     start_time = time.time()
     
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (v4.0 Hybrid/Playwright)")
+    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (v5.0 Pyppeteer)")
     print(f"   설정: 최대 {args.max_pages}페이지, 최대 {args.max_articles}개")
     
     if args.exact_date:
@@ -286,28 +261,31 @@ def collect_articles(args) -> List[Dict]:
     
     all_items = []
     consecutive_empty = 0
-    results = []  # 결과 저장용
+    results = []
     
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            viewport={'width': 1280, 'height': 1024}
-        )
-        page = context.new_page()
-        
+    # Pyppeteer 브라우저 시작
+    browser = await launch(
+        headless=True,
+        args=['--no-sandbox', '--disable-setuid-sandbox']
+    )
+    page = await browser.newPage()
+    await page.setViewport({'width': 1280, 'height': 1024})
+    
+    try:
         # 1단계: 목록 수집 (페이지네이션)
         for page_num in range(1, args.max_pages + 1):
             page_url = f"{LIST_URL}&wbb=md%3Alist%3B&page={page_num}"
             print(f"\n📄 페이지 {page_num} 스캔 중...")
             
-            if not safe_goto(page, page_url):
-                print(f"   ❌ 페이지 접속 실패")
+            try:
+                await page.goto(page_url, {'waitUntil': 'networkidle2', 'timeout': 30000})
+            except Exception as e:
+                print(f"   ❌ 페이지 접속 실패: {str(e)[:30]}")
                 break
             
-            time.sleep(2)
+            await asyncio.sleep(2)
             
-            items = collect_list_with_metadata(page)
+            items = await collect_list_with_metadata(page)
             print(f"   🔗 발견: {len(items)}개")
             
             # 날짜 필터 적용
@@ -317,7 +295,6 @@ def collect_articles(args) -> List[Dict]:
                 consecutive_empty += 1
                 print(f"   ⚠️ 필터 통과 항목 없음 (연속 {consecutive_empty}회)")
                 
-                # 조기 종료 최적화 (JS 코드에서 가져옴)
                 if consecutive_empty >= 3 and (args.start_date or args.end_date or args.exact_date):
                     print("   📌 날짜 범위 초과로 판단, 수집 중단")
                     break
@@ -326,12 +303,11 @@ def collect_articles(args) -> List[Dict]:
                 all_items.extend(filtered)
                 print(f"   ✅ {len(filtered)}개 필터 통과 (누적: {len(all_items)}개)")
             
-            # 최대 기사 수 도달 시 중단
             if len(all_items) >= args.max_articles:
                 print(f"   📌 최대 기사 수({args.max_articles}) 도달, 수집 중단")
                 break
             
-            time.sleep(0.5)
+            await asyncio.sleep(0.5)
         
         # 2단계: 상세 페이지 수집
         print(f"\n📰 상세 페이지 수집 시작 (총 {min(len(all_items), args.max_articles)}개)")
@@ -339,23 +315,19 @@ def collect_articles(args) -> List[Dict]:
         success_count = 0
         
         for idx, item in enumerate(all_items[:args.max_articles]):
-            url = BASE_URL + '/v5/' + item['href'] if item['href'].startswith('?') else urljoin(BASE_URL, item['href'])
+            url = BASE_URL + '/v5/' + item['href'] if item['href'].startswith('?') else item['href']
+            if not url.startswith('http'):
+                url = BASE_URL + '/v5/' + url
+            
             print(f"\n   🔍 [{idx+1}] {item['title'][:25]}... ({item['date']})")
             
-            real_title, content, thumbnail_url = fetch_detail(page, url)
+            real_title, content, thumbnail_url = await fetch_detail(page, url)
             
-            # 제목 결정 (개선된 로직)
-            # 1순위: 상세 페이지에서 추출한 제목 (5자 이상, 사이트명 제외)
-            # 2순위: 목록에서 가져온 제목
-            if real_title and len(real_title) >= 5 and '광주광역시교육청홍보관' not in real_title:
-                final_title = real_title.strip()
-            elif item['title'] and len(item['title']) >= 5:
-                final_title = item['title'].strip()
+            # 제목 결정
+            if real_title and len(real_title) > 10 and '홍보관' not in real_title:
+                final_title = real_title
             else:
-                # 둘 다 없으면 기본 제목
-                final_title = f"광주교육청 보도자료 {item.get('uid', '')}"
-            
-            print(f"      📌 제목: {final_title[:40]}...")
+                final_title = item['title']
             
             published_at = f"{item['date'] or datetime.now().strftime('%Y-%m-%d')}T09:00:00+09:00"
             
@@ -374,7 +346,7 @@ def collect_articles(args) -> List[Dict]:
             print(f"      {msg}")
             
             if is_valid:
-                results.append(article_data)  # 결과 저장
+                results.append(article_data)
                 
                 if args.dry_run:
                     print(f"      🧪 [DRY-RUN] DB 저장 스킵")
@@ -388,19 +360,20 @@ def collect_articles(args) -> List[Dict]:
                         status = result.get('status', 'unknown') if result else 'no response'
                         print(f"      ⚠️ [DB 결과] {status}")
             
-            time.sleep(1)
+            await asyncio.sleep(1)
         
-        browser.close()
+    finally:
+        await browser.close()
     
     elapsed_time = time.time() - start_time
     
-    print(f"\n🎉 작업 완료: {success_count}건 저장 성공")
+    print(f"\n🎉 작업 완료: {success_count}건 성공")
     print(f"⏱️ 소요 시간: {elapsed_time:.2f}초")
     
     # 결과 JSON 저장
     if args.output:
         output_data = {
-            'scraper_version': 'v4.0_playwright',
+            'scraper_version': 'v5.0_pyppeteer',
             'scraped_at': datetime.now().isoformat(),
             'elapsed_seconds': round(elapsed_time, 2),
             'total_count': len(results),
@@ -414,7 +387,11 @@ def collect_articles(args) -> List[Dict]:
     return results
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
-    collect_articles(args)
+    # Python 3.10+ 호환
+    asyncio.run(collect_articles(args))
 
+
+if __name__ == "__main__":
+    main()
