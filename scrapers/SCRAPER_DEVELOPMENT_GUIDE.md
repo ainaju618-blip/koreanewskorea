@@ -1,8 +1,38 @@
 # Scraper Development Guide
 > **Location:** `D:\cbt\koreanews\scrapers\`
-> **Version:** v3.0
+> **Version:** v3.1
 > **Last Updated:** 2025-12-12
 > **Purpose:** Foundation data collection workflow with external collaborators
+
+---
+
+> [!CAUTION]
+> ## 🚨 CURRENT STATUS (READ BEFORE WORKING!)
+> 
+> ### ⚠️ Cloudinary is DISABLED
+> **Status:** `CLOUDINARY_ENABLED = False` (disabled due to API key issue)
+> 
+> **Current Behavior:**
+> - Images are downloaded → saved to `scrapers/images/{region}/` folder **locally**
+> - Scraper returns local path
+> - Local path is stored in DB
+> 
+> **How to Re-enable Cloudinary:**
+> 1. Open `scrapers/utils/cloudinary_uploader.py`
+> 2. Change `CLOUDINARY_ENABLED = True`
+> 3. Set correct API keys in environment variables
+> 
+> ---
+> 
+> ### 📊 Implementation Status
+> → See `STATUS.md`
+> 
+> ---
+> 
+> ### 📁 Image Storage Location
+> ```
+> scrapers/images/{region}/
+> ```
 
 ---
 

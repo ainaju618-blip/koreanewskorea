@@ -1,292 +1,385 @@
-# -*- coding: utf-8 -*-
 """
-광주교육청 보도자료 스크래퍼 v4.0 (Hybrid)
-- JS/Puppeteer 코드의 CLI 유연성
-- Python/Playwright 코드의 시스템 통합
+광주광역시교육청 보도자료 스크래퍼
+- 버전: v4.0
+- 최종수정: 2025-12-12
+- 담당: AI Agent
+
+사이트 특징:
+- URL 경로에 /v5/와 /v4/가 혼용됨 (이미지는 v4 경로)
+- 이미지 핫링크 허용 (직접 접근 가능)
+- 본문이 여러 개의 generic 요소로 분리되어 있음
+- bo_table=0201 = 보도자료 게시판 식별자
 """
 
-import sys, os, time, re, argparse, json
-from datetime import datetime
+# ============================================================
+# 1. 표준 라이브러리
+# ============================================================
+import sys
+import os
+import time
+import re
+from datetime import datetime, timedelta
 from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin
+
+# ============================================================
+# 2. 외부 라이브러리
+# ============================================================
 from playwright.sync_api import sync_playwright, Page
 
+# ============================================================
+# 3. 로컬 모듈
+# ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
 from utils.cloudinary_uploader import download_and_upload_image
 
-# ===== 상수 정의 =====
-REGION_CODE = 'kedu'
-REGION_NAME = '광주시교육청'
-CATEGORY_NAME = '광주교육청'
+# ============================================================
+# 4. 상수 정의
+# ============================================================
+REGION_CODE = 'gwangju_edu'
+REGION_NAME = '광주광역시교육청'
+CATEGORY_NAME = '광주'
 BASE_URL = 'https://enews.gen.go.kr'
 LIST_URL = 'https://enews.gen.go.kr/v5/?sid=25'
 
+# 상세 페이지 URL 패턴: https://enews.gen.go.kr/v5/?sid=25&wbb=md:view;uid:{ID};
+# 페이지네이션: &page={N}
+# 이미지 직접 접근 URL: https://enews.gen.go.kr/v4/decoboard/data/file/0201/{파일명}
 
-def parse_args():
-    """CLI 옵션 파서 (JS 코드에서 가져옴)"""
-    parser = argparse.ArgumentParser(
-        description='광주광역시교육청 보도자료 스크래퍼 v4.0',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-사용 예시:
-  python gwangju_edu_scraper_v4.py                           # 기본 실행 (3페이지, 12개)
-  python gwangju_edu_scraper_v4.py --exact-date 2025-12-11   # 특정 날짜만
-  python gwangju_edu_scraper_v4.py --start-date 2025-12-01 --end-date 2025-12-11
-  python gwangju_edu_scraper_v4.py --max-pages 5 --max-articles 30
-        """
-    )
-    parser.add_argument('--start-date', help='시작 날짜 (YYYY-MM-DD)')
-    parser.add_argument('--end-date', help='종료 날짜 (YYYY-MM-DD)')
-    parser.add_argument('--exact-date', help='특정 날짜만 수집 (YYYY-MM-DD)')
-    parser.add_argument('--max-pages', type=int, default=3, help='최대 페이지 수 (기본: 3)')
-    parser.add_argument('--max-articles', type=int, default=12, help='최대 기사 수 (기본: 12)')
-    parser.add_argument('--dry-run', action='store_true', help='DB 저장 없이 테스트만')
-    parser.add_argument('--output', help='결과 JSON 파일 경로')
-    return parser.parse_args()
+# 목록 페이지 셀렉터
+LIST_ROW_SELECTORS = [
+    'form ul li',
+    'ul > li',
+]
 
-
-def is_date_in_range(date_str: str, start_date: str = None, 
-                     end_date: str = None, exact_date: str = None) -> bool:
-    """날짜가 지정된 범위 내에 있는지 확인 (JS 코드에서 가져옴)"""
-    if not date_str:
-        return True  # 날짜 없으면 일단 포함
-    
-    # 특정 날짜만
-    if exact_date:
-        return date_str == exact_date
-    
-    # 범위 체크
-    if start_date and date_str < start_date:
-        return False
-    if end_date and date_str > end_date:
-        return False
-    
-    return True
-
-
+# ============================================================
+# 5. 유틸리티 함수
+# ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열 정규화"""
+    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
+    
     date_str = date_str.strip().replace('.', '-').replace('/', '-')
     try:
-        match = re.search(r'(\d{4}-\d{1,2}-\d{1,2})', date_str)
+        match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_str)
         if match:
-            return match.group(1)
+            y, m, d = match.groups()
+            return f"{y}-{int(m):02d}-{int(d):02d}"
     except:
         pass
     return datetime.now().strftime('%Y-%m-%d')
 
 
-def validate_article(article_data: Dict) -> Tuple[bool, str]:
-    """기사 데이터 검증"""
-    if not article_data.get('title') or len(article_data['title']) < 5:
-        return False, "❌ 제목 너무 짧음"
-    content = article_data.get('content', '')
-    if not content or len(content) < 30:
-        return False, f"❌ 본문 부족 ({len(content)}자)"
-    return True, "✅ 검증 통과"
+def extract_id_from_href(href: str) -> Optional[str]:
+    """href에서 uid 추출: uid:(\\d+);"""
+    if not href:
+        return None
+    match = re.search(r'uid[=:](\d+)', href)
+    if match:
+        return match.group(1)
+    return None
 
 
-def collect_list_with_metadata(page: Page) -> List[Dict]:
-    """목록에서 날짜/조회수도 함께 추출 (실제 사이트 구조에 맞게 수정)"""
-    try:
-        items = page.evaluate("""() => {
-            const results = [];
-            // 실제 사이트 구조: a 태그가 직접 기사 링크 (ul/li 구조 아님)
-            const links = document.querySelectorAll("a[href*='wbb=md:view;uid:']");
-            
-            links.forEach(link => {
-                const href = link.getAttribute('href') || '';
-                const uidMatch = href.match(/uid:(\\d+)/);
-                if (!uidMatch) return;
-                
-                // 제목 추출 (링크 내부 텍스트에서)
-                const titleEl = link.querySelector('div') || link;
-                let title = '';
-                // 첫 번째 div 안의 텍스트가 제목
-                const divs = link.querySelectorAll('div');
-                if (divs.length > 0) {
-                    title = divs[0].textContent?.trim() || '';
-                } else {
-                    title = link.textContent?.trim() || '';
-                }
-                
-                // 링크 전체 텍스트에서 날짜 추출
-                const allText = link.textContent || '';
-                const dateMatch = allText.match(/(\\d{4}-\\d{2}-\\d{2})/);
-                const date = dateMatch ? dateMatch[1] : '';
-                
-                // 조회수 추출
-                const viewsMatch = allText.match(/조회\\s*(\\d+)/);
-                const views = viewsMatch ? viewsMatch[1] : '';
-                
-                // 중복 제거 (같은 uid 있으면 스킵)
-                if (!results.some(r => r.uid === uidMatch[1])) {
-                    results.push({
-                        uid: uidMatch[1],
-                        title: title.substring(0, 100),  // 제목 길이 제한
-                        date: date,
-                        views: views,
-                        href: href
-                    });
-                }
-            });
-            
-            return results;
-        }""")
-        return items if items else []
-    except Exception as e:
-        print(f"   ⚠️ 목록 추출 에러: {e}")
-        return []
-
-
-def fetch_detail(page: Page, url: str) -> Tuple[str, str, Optional[str]]:
-    """상세 페이지에서 제목, 본문, 이미지 추출 (기존 Python 로직 유지)"""
-    if not safe_goto(page, url, timeout=30000):
-        return "", "", None
+def convert_image_url(view_url: str) -> Optional[str]:
+    """
+    이미지 뷰어 URL을 직접 접근 URL로 변환
+    view_image.php?fn={파일명}&bo_table=0201 
+    → https://enews.gen.go.kr/v4/decoboard/data/file/0201/{파일명}
+    """
+    if not view_url:
+        return None
     
-    time.sleep(2)
+    # fn 파라미터 추출
+    match = re.search(r'fn=([^&]+)', view_url)
+    if match:
+        filename = match.group(1)
+        return f"https://enews.gen.go.kr/v4/decoboard/data/file/0201/{filename}"
     
-    title = ""
+    return None
+
+
+# ============================================================
+# 6. 상세 페이지 수집 함수
+# ============================================================
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
+    """
+    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    
+    Returns:
+        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+    """
+    if not safe_goto(page, url, timeout=20000):
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None
+    
+    time.sleep(1)  # 페이지 로딩 대기
+    
     content = ""
     thumbnail_url = None
+    pub_date = datetime.now().strftime('%Y-%m-%d')
+    department = None
     
+    # 1. 메타 정보 추출 (.view-info 활용)
     try:
-        # 1. 제목 추출
-        try:
-            title = page.evaluate("""() => {
-                const viewTop = document.querySelector('div.view_top');
-                if (!viewTop) return '';
-                
-                const text = viewTop.textContent || '';
-                const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 5);
-                
-                for (const line of lines) {
-                    if (!line.includes('작성일:') && 
-                        !line.includes('작성자:') && 
-                        !line.includes('기관명') &&
-                        !line.includes('자료문의') &&
-                        !line.includes('조회수') &&
-                        !line.includes('추천수') &&
-                        !line.includes('등록일')) {
-                        return line;
+        # 날짜 추출 (본문 텍스트 패턴 또는 메타 영역)
+        page_text = page.content()
+        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', page_text)
+        if date_match:
+            pub_date = date_match.group(1)
+        
+        # 기관명 (담당부서) 추출
+        # 텍스트 "기관명 :" 찾기
+        dept_match = re.search(r'기관명\s*[:]\s*([^\s<]+)', page.inner_text('body'))
+        if dept_match:
+            department = dept_match.group(1).strip()
+        else:
+            # fallback: .view-info 첫 번째 항목
+            info_item = page.locator('ul.view-info li').first
+            if info_item.count() > 0:
+                department = safe_get_text(info_item)
+
+    except Exception as e:
+        print(f"      ⚠️ 메타 정보 추출 실패: {e}")
+    
+    # 2. 본문 추출 (.view-contents 클래스 활용)
+    try:
+        # .view-contents가 존재하는지 확인
+        content_elem = page.locator('.view-contents')
+        if content_elem.count() > 0:
+            # 텍스트 추출 (innerText 사용)
+            content = safe_get_text(content_elem)
+        else:
+            # Fallback: 첨부파일 영역(.file-list) 이후의 모든 p, div 태그 텍스트
+            js_code = """
+            () => {
+                const fileSection = document.querySelector('.file-list') || document.querySelector('[class*="file"]');
+                let text = '';
+                if (fileSection) {
+                    let next = fileSection.nextElementSibling;
+                    while(next) {
+                        if (next.tagName === 'P' || next.tagName === 'DIV' || next.tagName === 'SPAN') {
+                            text += (next.innerText || '') + '\\n';
+                        }
+                        next = next.nextElementSibling;
                     }
                 }
-                return lines[0] || '';
-            }""")
-        except:
-            title = ""
-
-        # 2. 본문 추출
-        try:
-            content = page.evaluate("""() => {
-                const boardPress = document.querySelector('div.board_press');
-                if (!boardPress) return '';
                 
-                const clone = boardPress.cloneNode(true);
-                
-                const excludeSelectors = [
-                    'div.view_top', 'div.inquiry', 'div.writer',
-                    'div.file_list', 'div.view_bottom', '.btn_wrap',
-                ];
-                
-                excludeSelectors.forEach(sel => {
-                    const els = clone.querySelectorAll(sel);
-                    els.forEach(el => el.remove());
-                });
-                
-                return clone.textContent?.trim() || '';
-            }""")
-        except:
-            content = ""
-        
-        # Fallback
-        if not content or len(content) < 100:
-            for sel in ['div.board_press', 'div.board_view', 'div#contents']:
-                if page.locator(sel).count() > 0:
-                    raw = page.locator(sel).first.text_content() or ""
-                    if len(raw) > 100:
-                        content = raw.strip()
-                        break
-        
-        # 본문 정제
-        if content:
-            noise_patterns = [
-                r'HOME\s*', r'보도/해명자료\s*', r'만족도\s*조사.*',
-                r'저작권.*', r'COPYRIGHT.*', r'목록\s*이전글\s*다음글.*',
-            ]
-            for pattern in noise_patterns:
-                content = re.sub(pattern, '', content, flags=re.IGNORECASE)
-            
-            if title and content.startswith(title):
-                content = content[len(title):].strip()
-            
-            content = re.sub(r'\n{3,}', '\n\n', content)
-            content = re.sub(r' {2,}', ' ', content)
-            content = content.strip()[:5000]
-
-        # 3. 이미지 추출
-        DOWNLOAD_BASE = 'https://enews.gen.go.kr/v5/decoboard/download.php?uid='
-        
-        try:
-            js_result = page.evaluate("""() => {
-                const links = Array.from(document.querySelectorAll('a'));
-                for (const a of links) {
-                    const href = a.getAttribute('href') || '';
-                    const text = (a.textContent || '').toLowerCase();
-                    if (href.includes('file_download') && 
-                        (text.includes('.jpg') || text.includes('.jpeg') || text.includes('.png'))) {
-                        const match = href.match(/file_download\\(['"]?(\\d+)['"]?\\)/);
-                        if (match) {
-                            return { uid: match[1], text: a.textContent.trim() };
+                // 만약 위 방법으로 실패하면, '기관명 :' 이후 텍스트 추출 시도
+                if (text.length < 50) {
+                    const bodyText = document.body.innerText;
+                    const startIdx = bodyText.indexOf('기관명 :');
+                    if (startIdx > -1) {
+                        const contentArea = bodyText.substring(startIdx);
+                        const endIdx = contentArea.indexOf('개인정보처리방침');
+                        if (endIdx > -1) {
+                            text = contentArea.substring(0, endIdx);
                         }
                     }
                 }
-                return null;
-            }""")
+                return text;
+            }
+            """
+            content = page.evaluate(js_code)
             
-            if js_result and js_result.get('uid'):
-                download_url = DOWNLOAD_BASE + js_result['uid']
-                print(f"      📷 이미지 발견: {js_result['text'][:30]}...")
-                cloud_url = download_and_upload_image(download_url, BASE_URL, folder="gwangju_edu")
-                if cloud_url and 'cloudinary' in cloud_url:
-                    thumbnail_url = cloud_url
-                    print(f"      ✅ 이미지 업로드 완료")
-                else:
-                    thumbnail_url = download_url
-        except Exception as img_err:
-            print(f"      ⚠️ 이미지 에러: {str(img_err)[:30]}")
-        
+        if content:
+            content = content[:5000].strip()
+            
     except Exception as e:
-        print(f"   ⚠️ 상세 파싱 에러: {str(e)[:50]}")
+        print(f"      ⚠️ 본문 추출 실패: {e}")
+
+    # 3. 이미지 추출 (개선된 로직)
+    try:
+        # 방법 A: .view-contents img
+        imgs = page.locator('.view-contents img')
+        for i in range(imgs.count()):
+            src = safe_get_attr(imgs.nth(i), 'src')
+            if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo']):
+                img_url = urljoin(BASE_URL, src)
+                # v5 -> v5/ 경로 문제 해결 (필요시)
+                if '/v5/../' in img_url:
+                    img_url = img_url.replace('/v5/../', '/')
+                
+                cloudinary_url = download_and_upload_image(img_url, BASE_URL, folder=REGION_CODE)
+                if cloudinary_url:
+                    thumbnail_url = cloudinary_url
+                    break
+        
+        # 방법 B: view_image.php 링크 (이미지 뷰어)
+        if not thumbnail_url:
+            view_links = page.locator('a[href*="view_image.php"]')
+            for i in range(view_links.count()):
+                href = safe_get_attr(view_links.nth(i), 'href')
+                direct_url = convert_image_url(href)
+                if direct_url:
+                    cloudinary_url = download_and_upload_image(direct_url, BASE_URL, folder=REGION_CODE)
+                    if cloudinary_url:
+                        thumbnail_url = cloudinary_url
+                        break
+                        
+        # 방법 C: 첨부파일에서 이미지 찾기 (마지막 수단)
+        if not thumbnail_url:
+            attach_links = page.locator('a[href*="javascript:file_download"]')
+            for i in range(min(attach_links.count(), 5)):
+                link = attach_links.nth(i)
+                title_text = safe_get_text(link) or ''
+                if any(ext in title_text.lower() for ext in ['.jpg', '.png', '.jpeg']):
+                    onclick = safe_get_attr(link, 'href') or ''
+                    match = re.search(r"file_download\(['\"]?(\d+)['\"]?\)", onclick)
+                    if match:
+                        file_uid = match.group(1)
+                        # v5 경로 사용
+                        download_url = f"https://enews.gen.go.kr/v5/decoboard/download.php?uid={file_uid}"
+                        cloudinary_url = download_and_upload_image(download_url, BASE_URL, folder=REGION_CODE)
+                        if cloudinary_url:
+                            thumbnail_url = cloudinary_url
+                            break
+                            
+    except Exception as e:
+        print(f"      ⚠️ 이미지 추출 실패: {e}")
     
-    return title, content, thumbnail_url
+    return content, thumbnail_url, pub_date, department
 
 
-def collect_articles(args) -> List[Dict]:
-    """메인 수집 함수"""
-    start_time = time.time()
+# ============================================================
+# 7. 목록 페이지 파싱 함수
+# ============================================================
+def parse_list_page(page: Page) -> List[Dict]:
+    """
+    목록 페이지에서 기사 정보 추출
     
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (v4.0 Hybrid/Playwright)")
-    print(f"   설정: 최대 {args.max_pages}페이지, 최대 {args.max_articles}개")
+    Returns:
+        [{'title': ..., 'url': ..., 'date': ..., 'id': ...}, ...]
+    """
+    articles = []
     
-    if args.exact_date:
-        print(f"   📅 필터: {args.exact_date} 날짜만")
-    elif args.start_date or args.end_date:
-        print(f"   📅 필터: {args.start_date or '시작'} ~ {args.end_date or '종료'}")
+    try:
+        # JavaScript로 목록 파싱 (특수한 DOM 구조 대응)
+        js_code = """
+        () => {
+            const items = [];
+            // li > a 구조에서 추출 (uid:{ID}; 패턴)
+            const links = document.querySelectorAll('a[href*="wbb=md:view;uid:"]');
+            
+            for (const link of links) {
+                const href = link.getAttribute('href') || '';
+                const uidMatch = href.match(/uid[=:](\\d+)/);
+                if (!uidMatch) continue;
+                
+                const uid = uidMatch[1];
+                
+                // 부모 li 또는 링크 자체에서 텍스트 추출
+                const li = link.closest('li');
+                let title = '';
+                let date = '';
+                
+                // generic 요소들에서 정보 추출
+                const generics = li ? li.querySelectorAll('.generic, span, div') : link.querySelectorAll('*');
+                for (const g of generics) {
+                    const text = (g.textContent || '').trim();
+                    
+                    // 날짜 패턴
+                    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(text)) {
+                        date = text;
+                        continue;
+                    }
+                    
+                    // 조회수 패턴 스킵
+                    if (text.includes('조회수')) continue;
+                    
+                    // 제목 (가장 긴 텍스트)
+                    if (text.length > title.length && text.length < 200 && !text.includes('조회수')) {
+                        title = text;
+                    }
+                }
+                
+                // 제목이 없으면 링크 텍스트 사용
+                if (!title) {
+                    title = link.textContent?.trim() || '';
+                }
+                
+                if (title && uid) {
+                    items.push({
+                        id: uid,
+                        title: title.substring(0, 200),
+                        date: date || '',
+                        href: href
+                    });
+                }
+            }
+            
+            return items;
+        }
+        """
+        raw_items = page.evaluate(js_code)
+        
+        for item in raw_items:
+            full_url = urljoin(BASE_URL, f"/v5/?sid=25&wbb=md:view;uid:{item['id']};")
+            articles.append({
+                'id': item['id'],
+                'title': item['title'],
+                'date': item['date'],
+                'url': full_url
+            })
+            
+    except Exception as e:
+        print(f"      ⚠️ 목록 파싱 실패: {e}")
     
-    date_filter = {
-        'start_date': args.start_date,
-        'end_date': args.end_date,
-        'exact_date': args.exact_date
-    }
+    return articles
+
+
+# ============================================================
+# 8. 검증 함수
+# ============================================================
+def validate_article(article_data: Dict) -> bool:
+    """
+    기사 데이터 검증
     
-    all_items = []
-    consecutive_empty = 0
-    results = []  # 결과 저장용
+    Returns:
+        True if valid, False otherwise
+    """
+    title = article_data.get('title', '')
+    content = article_data.get('content', '')
+    
+    # 제목 검증
+    if len(title) < 5:
+        print(f"         ⚠️ 검증 실패: 제목 너무 짧음 ({len(title)}자)")
+        return False
+    
+    # 본문 검증
+    if len(content) < 50:
+        print(f"         ⚠️ 검증 실패: 본문 너무 짧음 ({len(content)}자)")
+        return False
+    
+    # 에러 메시지 포함 여부
+    if "본문 내용을 가져올 수 없습니다" in content:
+        print(f"         ⚠️ 검증 실패: 본문 추출 실패")
+        return False
+    
+    return True
+
+
+# ============================================================
+# 9. 메인 수집 함수
+# ============================================================
+def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
+    """
+    보도자료를 수집하고 서버로 전송
+    
+    Args:
+        days: 수집할 기간 (일)
+        max_articles: 최대 수집 기사 수
+    """
+    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
+    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v4.0 시작', 'info')
+    
+    end_date = datetime.now().strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    
+    collected_count = 0
+    success_count = 0
+    image_count = 0
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -296,125 +389,124 @@ def collect_articles(args) -> List[Dict]:
         )
         page = context.new_page()
         
-        # 1단계: 목록 수집 (페이지네이션)
-        for page_num in range(1, args.max_pages + 1):
-            page_url = f"{LIST_URL}&wbb=md%3Alist%3B&page={page_num}"
-            print(f"\n📄 페이지 {page_num} 스캔 중...")
+        page_num = 1
+        stop = False
+        all_links = []
+        
+        # Phase 1: Collect - 목록에서 링크 수집
+        while page_num <= 3 and not stop and len(all_links) < max_articles:
+            # 페이지네이션: &page={N}
+            if page_num == 1:
+                list_url = LIST_URL
+            else:
+                list_url = f'{LIST_URL}&wbb=md%3Alist%3B&page={page_num}'
             
-            if not safe_goto(page, page_url):
-                print(f"   ❌ 페이지 접속 실패")
-                break
+            print(f"   📄 페이지 {page_num} 수집 중...")
+            log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
-            time.sleep(2)
+            if not safe_goto(page, list_url):
+                page_num += 1
+                continue
             
-            items = collect_list_with_metadata(page)
-            print(f"   🔗 발견: {len(items)}개")
+            time.sleep(1.5)  # 페이지 로딩 대기
             
-            # 날짜 필터 적용
-            filtered = [i for i in items if is_date_in_range(i['date'], **date_filter)]
+            articles = parse_list_page(page)
+            print(f"      📰 {len(articles)}개 기사 발견")
             
-            if not filtered:
-                consecutive_empty += 1
-                print(f"   ⚠️ 필터 통과 항목 없음 (연속 {consecutive_empty}회)")
-                
-                # 조기 종료 최적화 (JS 코드에서 가져옴)
-                if consecutive_empty >= 3 and (args.start_date or args.end_date or args.exact_date):
-                    print("   📌 날짜 범위 초과로 판단, 수집 중단")
+            for article in articles:
+                if len(all_links) >= max_articles:
                     break
-            else:
-                consecutive_empty = 0
-                all_items.extend(filtered)
-                print(f"   ✅ {len(filtered)}개 필터 통과 (누적: {len(all_items)}개)")
+                
+                n_date = article['date']
+                if n_date:
+                    if n_date < start_date:
+                        stop = True
+                        break
+                    if n_date > end_date:
+                        continue
+                
+                all_links.append(article)
             
-            # 최대 기사 수 도달 시 중단
-            if len(all_items) >= args.max_articles:
-                print(f"   📌 최대 기사 수({args.max_articles}) 도달, 수집 중단")
+            page_num += 1
+            if stop:
+                print("      🛑 수집 기간 초과, 수집 종료")
                 break
             
-            time.sleep(0.5)
+            time.sleep(1)
         
-        # 2단계: 상세 페이지 수집
-        print(f"\n📰 상세 페이지 수집 시작 (총 {min(len(all_items), args.max_articles)}개)")
+        print(f"   📋 총 {len(all_links)}개 기사 링크 수집 완료")
         
-        success_count = 0
-        
-        for idx, item in enumerate(all_items[:args.max_articles]):
-            url = BASE_URL + '/v5/' + item['href'] if item['href'].startswith('?') else urljoin(BASE_URL, item['href'])
-            print(f"\n   🔍 [{idx+1}] {item['title'][:25]}... ({item['date']})")
+        # Phase 2: Visit - 상세 페이지 방문 및 전송
+        for item in all_links[:max_articles]:
+            title = item['title']
+            full_url = item['url']
+            n_date = item['date'] or datetime.now().strftime('%Y-%m-%d')
             
-            real_title, content, thumbnail_url = fetch_detail(page, url)
+            print(f"      📰 {title[:35]}... ({n_date})")
+            log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
             
-            # 제목 결정 (개선된 로직)
-            # 1순위: 상세 페이지에서 추출한 제목 (5자 이상, 사이트명 제외)
-            # 2순위: 목록에서 가져온 제목
-            if real_title and len(real_title) >= 5 and '광주광역시교육청홍보관' not in real_title:
-                final_title = real_title.strip()
-            elif item['title'] and len(item['title']) >= 5:
-                final_title = item['title'].strip()
-            else:
-                # 둘 다 없으면 기본 제목
-                final_title = f"광주교육청 보도자료 {item.get('uid', '')}"
+            content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
             
-            print(f"      📌 제목: {final_title[:40]}...")
+            # 상세 페이지에서 추출한 날짜가 있으면 사용
+            if detail_date != datetime.now().strftime('%Y-%m-%d'):
+                n_date = detail_date
             
-            published_at = f"{item['date'] or datetime.now().strftime('%Y-%m-%d')}T09:00:00+09:00"
+            if not content:
+                content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
             
             article_data = {
-                'title': final_title,
+                'title': title,
                 'content': content,
-                'published_at': published_at,
-                'original_link': url,
-                'source': REGION_NAME,
+                'published_at': f"{n_date}T09:00:00+09:00",
+                'original_link': full_url,
+                'source': department or REGION_NAME,
                 'category': CATEGORY_NAME,
                 'region': REGION_CODE,
                 'thumbnail_url': thumbnail_url,
             }
             
-            is_valid, msg = validate_article(article_data)
-            print(f"      {msg}")
+            # 검증
+            if not validate_article(article_data):
+                continue
             
-            if is_valid:
-                results.append(article_data)  # 결과 저장
-                
-                if args.dry_run:
-                    print(f"      🧪 [DRY-RUN] DB 저장 스킵")
-                    success_count += 1
-                else:
-                    result = send_article_to_server(article_data)
-                    if result and result.get('status') == 'created':
-                        print(f"      ✅ [DB 저장 완료]")
-                        success_count += 1
-                    else:
-                        status = result.get('status', 'unknown') if result else 'no response'
-                        print(f"      ⚠️ [DB 결과] {status}")
+            # 서버로 전송
+            result = send_article_to_server(article_data)
+            collected_count += 1
             
-            time.sleep(1)
+            if result.get('status') == 'created':
+                success_count += 1
+                if thumbnail_url:
+                    image_count += 1
+                img_status = "✓이미지" if thumbnail_url else "✗이미지"
+                print(f"         ✅ 저장 완료 ({img_status})")
+                log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
+            elif result.get('status') == 'exists':
+                print(f"         ⏩ 이미 존재")
+            
+            time.sleep(0.5)  # Rate limiting
         
         browser.close()
     
-    elapsed_time = time.time() - start_time
+    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개, 이미지 {image_count}개)"
+    print(f"✅ {final_msg}")
+    log_to_server(REGION_CODE, '성공', final_msg, 'success')
     
-    print(f"\n🎉 작업 완료: {success_count}건 저장 성공")
-    print(f"⏱️ 소요 시간: {elapsed_time:.2f}초")
+    return []
+
+
+# ============================================================
+# 10. CLI 진입점
+# ============================================================
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v4.0')
+    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
+    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
+    parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
+    args = parser.parse_args()
     
-    # 결과 JSON 저장
-    if args.output:
-        output_data = {
-            'scraper_version': 'v4.0_playwright',
-            'scraped_at': datetime.now().isoformat(),
-            'elapsed_seconds': round(elapsed_time, 2),
-            'total_count': len(results),
-            'success_count': success_count,
-            'articles': results
-        }
-        with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(output_data, f, ensure_ascii=False, indent=2)
-        print(f"📁 결과 저장: {args.output}")
-    
-    return results
+    collect_articles(args.days, args.max_articles)
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    collect_articles(args)
-
+    main()

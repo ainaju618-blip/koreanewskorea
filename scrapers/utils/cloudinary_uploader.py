@@ -2,8 +2,13 @@
 Cloudinary 이미지 업로드 유틸리티
 - 원본 이미지 다운로드
 - 800x600으로 리사이즈
-- Cloudinary에 업로드
+- Cloudinary에 업로드 (활성화 시)
+- 로컬 저장 (기본)
 - URL 반환
+
+설정:
+- CLOUDINARY_ENABLED = False: 로컬 저장만 (기본값)
+- CLOUDINARY_ENABLED = True: Cloudinary 업로드 시도
 """
 
 import os
@@ -15,23 +20,37 @@ from urllib.parse import urlparse, urljoin
 from typing import Optional
 import hashlib
 
+# ============================================================
 # Cloudinary 설정
+# CLOUDINARY_ENABLED = False로 설정하면 로컬 저장만 수행
+# 나중에 True로 변경하고 올바른 API 키를 설정하면 Cloudinary 업로드 활성화
+# ============================================================
+CLOUDINARY_ENABLED = False  # TODO: Cloudinary 연결 시 True로 변경
+
 try:
     import cloudinary
     import cloudinary.uploader
     
-    # 하드코딩된 설정 사용 (환경변수 무시)
-    cloudinary.config(
-        cloud_name='dkz9qbznb',
-        api_key='216441234234522',
-        api_secret='Lg1_TDec7ecBHbW8b4cLTV9Dxuo',
-        secure=True
-    )
-    CLOUDINARY_CONFIGURED = True
+    # Cloudinary 자격증명 (환경변수 또는 하드코딩)
+    # TODO: 올바른 자격증명으로 교체 필요
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dkz9qbznb')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
+    
+    if CLOUDINARY_ENABLED and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+        cloudinary.config(
+            cloud_name=CLOUDINARY_CLOUD_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET,
+            secure=True
+        )
+        CLOUDINARY_CONFIGURED = True
+        print("☁️ Cloudinary 설정 완료")
+    else:
+        CLOUDINARY_CONFIGURED = False
 except ImportError:
     CLOUDINARY_CONFIGURED = False
-    print("⚠️ cloudinary 패키지가 설치되지 않았습니다. pip install cloudinary 실행 필요")
-
+    print("⚠️ cloudinary 패키지가 설치되지 않았습니다.")
 
 # 이미지 리사이즈 설정
 TARGET_WIDTH = 800
@@ -44,20 +63,18 @@ HEADERS = {
 
 def download_and_upload_image(image_url: str, base_url: str = None, folder: str = "news") -> Optional[str]:
     """
-    이미지를 다운로드하고 Cloudinary에 업로드
+    이미지를 다운로드하고 로컬에 저장한 후 Cloudinary에 업로드 (활성화 시)
     
     Args:
         image_url: 원본 이미지 URL (상대경로 가능)
         base_url: 상대경로일 경우 기준 URL
-        folder: Cloudinary 폴더 이름
+        folder: 저장 폴더 이름
         
     Returns:
-        Cloudinary 이미지 URL 또는 None (실패 시)
+        - CLOUDINARY_CONFIGURED=True: Cloudinary 이미지 URL
+        - CLOUDINARY_CONFIGURED=False: 로컬 저장 경로 (상대경로)
+        - 실패 시: None
     """
-    if not CLOUDINARY_CONFIGURED:
-        print(f"⚠️ Cloudinary 미설정, 원본 URL 반환: {image_url[:50]}...")
-        return image_url
-    
     if not image_url:
         return None
     
@@ -74,7 +91,7 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         download_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-            'Referer': base_url if base_url else image_url,  # 원본 사이트를 Referer로 설정
+            'Referer': base_url if base_url else image_url,
         }
         response = requests.get(image_url, headers=download_headers, timeout=15, verify=False)
         response.raise_for_status()
@@ -86,36 +103,42 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
         
-        # 3. 800x600으로 리사이즈 (비율 유지, 크롭 또는 패딩)
+        # 3. 800px 너비로 리사이즈 (비율 유지)
         img = resize_image(img, TARGET_WIDTH, TARGET_HEIGHT)
         
-        # 4. 로컬 폴더에 저장 (삭제하지 않음)
-        # 파일명을 URL 해시로 생성 (중복 방지)
+        # 4. 로컬 폴더에 저장 (web/public/images/{folder}/)
         file_hash = hashlib.md5(image_url.encode()).hexdigest()
-        
-        # 로컬 저장 폴더 생성
-        local_folder = os.path.join(os.path.dirname(__file__), '..', 'images', folder)
+
+        # 프로젝트 루트 경로 계산: scrapers/utils/ → koreanews/
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        local_folder = os.path.join(project_root, 'web', 'public', 'images', folder)
         os.makedirs(local_folder, exist_ok=True)
-        
+
         local_path = os.path.join(local_folder, f"{file_hash}.jpg")
         img.save(local_path, 'JPEG', quality=85, optimize=True)
-        print(f"💾 로컬 저장: {local_path}")
+        print(f"[IMG] 저장: {local_path}")
         
-        # 5. Cloudinary 업로드
-        public_id = f"{folder}/{file_hash}"
+        # 5. Cloudinary 업로드 (활성화된 경우에만)
+        if CLOUDINARY_CONFIGURED:
+            try:
+                public_id = f"{folder}/{file_hash}"
+                result = cloudinary.uploader.upload(
+                    local_path,
+                    public_id=public_id,
+                    overwrite=False,
+                    resource_type="image"
+                )
+                cloudinary_url = result.get('secure_url')
+                print(f"☁️ Cloudinary 업로드 완료: {cloudinary_url[:60]}...")
+                return cloudinary_url
+            except Exception as e:
+                print(f"⚠️ Cloudinary 업로드 실패, 로컬 경로 사용: {str(e)[:50]}")
         
-        result = cloudinary.uploader.upload(
-            local_path,
-            public_id=public_id,
-            overwrite=False,  # 이미 있으면 기존 URL 반환
-            resource_type="image"
-        )
-        
-        # 6. 로컬 파일은 삭제하지 않음 (백업용 보관)
-        
-        cloudinary_url = result.get('secure_url')
-        print(f"✅ Cloudinary 업로드 완료: {cloudinary_url[:60]}...")
-        return cloudinary_url
+        # Cloudinary 비활성화 또는 실패 시 웹 접근 경로 반환
+        # /images/{folder}/{hash}.jpg 형태로 Next.js public 폴더에서 접근 가능
+        web_path = f"/images/{folder}/{file_hash}.jpg"
+        print(f"[IMG] 웹 경로: {web_path}")
+        return web_path
         
     except requests.exceptions.RequestException as e:
         print(f"❌ 이미지 다운로드 실패: {str(e)[:50]}")

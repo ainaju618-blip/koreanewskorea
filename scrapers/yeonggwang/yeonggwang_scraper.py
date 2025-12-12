@@ -1,4 +1,4 @@
-﻿"""
+"""
 영광군 보도자료 스크래퍼
 - 버전: v3.0
 - 최종수정: 2025-12-12
@@ -198,7 +198,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
                         if (text && text.length > 200 && 
                             !text.includes('작성자') &&
                             !text.includes('조회수') &&
-                            !text.includes('파일첨부')) {
+                            !text.includes('파일첨부') &&
+                            !text.includes('공공누리')) {
                             return text;
                         }
                     }
@@ -239,52 +240,81 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
             except:
                 continue
     
-    # 3. 이미지 추출
+    # 3. 이미지 추출 (Playwright 다운로드 방식 적용)
     thumbnail_url = None
     
-    # 전략 1: 첨부파일에서 이미지 찾기 (영광군청 특화)
-    # 첨부파일 링크: type=download 포함
+    # 전략 1: 첨부파일 직접 다운로드 (세션 쿠키 필요하므로 브라우저 동작)
     try:
         attach_links = page.locator('a[href*="type=download"]')
-        for i in range(min(attach_links.count(), 5)):
+        for i in range(min(attach_links.count(), 3)): # 상위 3개만 시도
             link = attach_links.nth(i)
             link_text = safe_get_text(link) or ''
-            href = safe_get_attr(link, 'href') or ''
             
             # 이미지 파일 확장자 확인
             if any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                thumbnail_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
-                break
+                print(f"      📥 첨부파일 다운로드 시도: {link_text}")
+                
+                try:
+                    # 다운로드 리스너 설정
+                    with page.expect_download(timeout=10000) as download_info:
+                        # JS로 클릭 강제 (가려짐 방지)
+                        link.evaluate("el => el.click()")
+                    
+                    download = download_info.value
+                    
+                    # 임시 파일 저장
+                    import tempfile
+                    from utils.cloudinary_uploader import upload_local_image
+                    
+                    temp_dir = tempfile.gettempdir()
+                    # 파일명 안전하게 변환
+                    safe_name = f"yeonggwang_{int(time.time())}_{i}.jpg"
+                    temp_path = os.path.join(temp_dir, safe_name)
+                    
+                    download.save_as(temp_path)
+                    print(f"      💾 임시 저장: {temp_path}")
+                    
+                    # Cloudinary 업로드
+                    print(f"      ☁️ Cloudinary 업로드 중...")
+                    c_url = upload_local_image(temp_path, folder="yeonggwang")
+                    
+                    if c_url:
+                        thumbnail_url = c_url
+                        # 임시 파일 삭제
+                        try:
+                            os.remove(temp_path)
+                        except:
+                            pass
+                        break
+                        
+                except Exception as e:
+                    print(f"      ⚠️ 다운로드/업로드 실패: {e}")
+                    continue
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 이미지 추출 실패: {e}")
+        print(f"      ⚠️ 첨부파일 처리 중 오류: {e}")
     
-    # 전략 2: 본문 영역 내 이미지
+    # 전략 2: 본문 영역 내 이미지 (다운로드 실패 시 Fallback)
     if not thumbnail_url:
         try:
             thumbnail_url = extract_thumbnail(page, BASE_URL, CONTENT_SELECTORS)
         except:
             pass
     
-    # 전략 3: 일반 img 태그
+    # 전략 3: 일반 img 태그 fallback
     if not thumbnail_url:
         try:
             imgs = page.locator('img[src*=".jpg"], img[src*=".png"], img[src*=".jpeg"]')
             for i in range(min(imgs.count(), 5)):
                 src = safe_get_attr(imgs.nth(i), 'src')
                 if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'arrow', 'bullet']):
-                    thumbnail_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                    break
+                    # 여기서도 download_and_upload_image를 쓰지만, 본문 이미지는 보통 공개되어 있어 requests로 가능
+                    # 만약 실패하면 여기도 수정 필요할 수 있음
+                    download_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
+                    thumbnail_url = download_and_upload_image(download_url, BASE_URL, folder="yeonggwang")
+                    if thumbnail_url:
+                        break
         except:
             pass
-    
-    # 4. Cloudinary 업로드 (핫링크 방지 대응)
-    if thumbnail_url:
-        print(f"      ☁️ Cloudinary 업로드 중...")
-        cloudinary_url = download_and_upload_image(thumbnail_url, BASE_URL, folder="yeonggwang")
-        if cloudinary_url:
-            thumbnail_url = cloudinary_url
-        else:
-            print(f"      ⚠️ Cloudinary 업로드 실패, 원본 URL 사용")
     
     return content, thumbnail_url, pub_date
 
@@ -322,6 +352,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
         })
+        
+        # User-Agent 설정 (명시적)
+        USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        
         page = context.new_page()
         
         page_num = 0  # offset 기반 (0, 10, 20, ...)

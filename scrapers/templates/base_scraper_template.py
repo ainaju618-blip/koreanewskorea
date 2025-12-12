@@ -78,6 +78,34 @@ def normalize_date(date_str: str) -> str:
     return datetime.now().strftime('%Y-%m-%d')
 
 
+def clean_content(content: str) -> str:
+    """본문에서 불필요한 메타 정보 제거"""
+    if not content:
+        return content
+
+    # 제거할 패턴들
+    patterns_to_remove = [
+        r'작성자\s*:\s*[^\n]+',
+        r'작성일\s*:\s*[^\n]+',
+        r'조회수\s*:\s*\d+',
+        r'담당부서\s*전화번호\s*:\s*[^\n]+',
+        r'담당부서\s*:\s*[^\n]+',
+        r'전화번호\s*:\s*[^\n]+',
+        r'등록일\s*:\s*[^\n]+',
+        r'수정일\s*:\s*[^\n]+',
+        r'첨부파일\s*:\s*[^\n]*',
+    ]
+
+    for pattern in patterns_to_remove:
+        content = re.sub(pattern, '', content)
+
+    # 연속된 공백/줄바꿈 정리
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    content = re.sub(r'^\s+', '', content)
+
+    return content.strip()
+
+
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
@@ -175,6 +203,9 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     else:
                         thumbnail_url = img_url  # fallback: 원본 URL
                     break
+
+    # 5. 본문 정리 (메타정보 제거)
+    content = clean_content(content)
 
     return content, thumbnail_url, pub_date, department
 

@@ -63,40 +63,40 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         
         if resp.status_code == 201:
             # 새로 생성됨
-            print(f'   ✅ [SUCCESS] 전송 완료: {article_data.get("title", "제목없음")[:40]}')
+            print(f'   [OK] 전송 완료: {article_data.get("title", "제목없음")[:40]}')
             return {'success': True, 'status': 'created', 'message': '기사 저장 완료'}
-        
+
         elif resp.status_code == 200:
             # 이미 존재함 (중복)
-            print(f'   ⏩ [SKIP] 이미 존재: {article_data.get("title", "제목없음")[:40]}')
+            print(f'   [SKIP] 이미 존재: {article_data.get("title", "제목없음")[:40]}')
             return {'success': True, 'status': 'exists', 'message': '이미 존재하는 기사'}
-        
+
         elif resp.status_code == 401:
             # 인증 실패
-            print(f'   🔒 [AUTH] 인증 실패 - BOT_API_KEY 확인 필요')
+            print(f'   [AUTH] 인증 실패 - BOT_API_KEY 확인 필요')
             return {'success': False, 'status': 'error', 'message': '인증 실패'}
-        
+
         elif resp.status_code == 400:
             # 필수 필드 누락
             error_msg = resp.json().get('error', '필수 필드 누락')
-            print(f'   ⚠️ [FAIL] 요청 오류: {error_msg}')
+            print(f'   [FAIL] 요청 오류: {error_msg}')
             return {'success': False, 'status': 'error', 'message': error_msg}
-        
+
         else:
             # 기타 서버 오류
-            print(f'   ⚠️ [FAIL] 서버 오류 ({resp.status_code}): {resp.text[:100]}')
+            print(f'   [FAIL] 서버 오류 ({resp.status_code}): {resp.text[:100]}')
             return {'success': False, 'status': 'error', 'message': f'서버 오류: {resp.status_code}'}
-    
+
     except requests.exceptions.Timeout:
-        print(f'   ❌ [TIMEOUT] 요청 시간 초과')
+        print(f'   [TIMEOUT] 요청 시간 초과')
         return {'success': False, 'status': 'error', 'message': '요청 시간 초과'}
-    
+
     except requests.exceptions.ConnectionError:
-        print(f'   ❌ [ERROR] 서버 연결 실패 - Next.js 서버 실행 여부 확인')
+        print(f'   [ERROR] 서버 연결 실패 - Next.js 서버 실행 여부 확인')
         return {'success': False, 'status': 'error', 'message': '서버 연결 실패'}
-    
+
     except Exception as e:
-        print(f'   ❌ [ERROR] 예외 발생: {str(e)}')
+        print(f'   [ERROR] 예외 발생: {str(e)}')
         return {'success': False, 'status': 'error', 'message': str(e)}
 
 

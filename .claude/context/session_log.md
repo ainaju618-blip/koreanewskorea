@@ -5,6 +5,142 @@
 
 ---
 
+## [2025-12-12 20:38] 세션 #5
+
+### 주인님 의도
+- 강진군 보도자료 스크래퍼 개발
+- SCRAPER_GUIDE.md 2번 정독 후 진행 (지침 준수)
+
+### 수행 작업
+1. **스크래퍼 개발**
+   - `scrapers/gangjin/gangjin_scraper.py` 생성
+   - 목록 셀렉터: `a[href*="idx="][href*="mode=view"]`
+   - 본문 셀렉터: `div.text_viewbox`
+   - 날짜: `div.view_titlebox dd`
+   - 담당부서: `#page_info dd`
+   - 이미지: `div.image_viewbox img`
+
+2. **디버깅 및 품질 검증**
+   - 셀렉터 미스매치 해결 (debug 스크립트 활용)
+   - clean_content() 적용 - 메타정보 깨끗이 제거
+   - 이미지 로컬 저장 확인
+
+3. **api_client.py 이모지 수정**
+   - Windows cp949 인코딩 에러 해결
+   - 이모지 → 플레인 텍스트 변경 (`[OK]`, `[SKIP]` 등)
+
+4. **문서화**
+   - `scrapers/gangjin/ALGORITHM.md` 작성
+
+### 테스트 결과
+```
+[완료] 수집 완료 (총 3개, 신규 2개, 이미지 2개, 스킵 0개)
+본문 품질: 깨끗함 (메타정보 없음)
+```
+
+### 주요 변경 파일
+```
+scrapers/gangjin/gangjin_scraper.py (신규)
+scrapers/gangjin/ALGORITHM.md (신규)
+scrapers/utils/api_client.py (이모지 제거)
+```
+
+---
+
+## [2025-12-12] 세션 #4
+
+### 주인님 의도
+- 기자등록 관리 개선 (지역 기자 제도 도입)
+- 직위는 예우용, 권한은 모두 동일
+- 사이트 로그인용 계정만 필요 (Supabase Auth)
+
+### 수행 작업
+1. **Phase 1: DB 스키마 확장**
+   - reporters 테이블에 position, phone, email, bio 컬럼 추가
+   - 주인님이 Supabase에서 직접 SQL 실행
+
+2. **Phase 2: API 수정**
+   - `GET /api/users/reporters` - position/region/type 필터 추가
+   - `POST /api/users/reporters` - 새 필드 저장
+   - `PUT /api/users/reporters/[id]` - 새 필드 수정
+
+3. **Phase 3: UI 전면 개선**
+   - 직위 데이터 상수 정의 (13개 직위)
+   - 지역 데이터 상수 정의 (25개 지역)
+   - 필터 기능 확장 (유형/직위/지역)
+   - 기자 추가/수정 폼 확장
+   - 상세 정보 슬라이드 패널 추가
+   - 카드에 직위/연락처 표시
+
+4. **Phase 4: 빌드 검증**
+   - Next.js 빌드 성공 확인
+
+### 주요 변경 파일
+```
+web/src/app/api/users/reporters/route.ts
+web/src/app/api/users/reporters/[id]/route.ts
+web/src/app/admin/users/reporters/page.tsx
+```
+
+### 직위 체계
+```
+주필 > 지사장 > 편집국장 > 취재부장 > 수석기자 > 기자 > 수습기자
++ 오피니언, 고문, 자문위원, 홍보대사, 서울특파원, 해외특파원
+```
+
+---
+
+## [2025-12-12] 세션 #3
+
+### 주인님 의도
+- 스크래퍼 관리 페이지 개선
+- 2단 레이아웃: 왼쪽(스크래퍼 실행) + 오른쪽(DB 관리)
+- DB 기사 삭제 기능으로 중복 문제 해결
+
+### 수행 작업
+1. **Phase 1: API 구현**
+   - `GET /api/posts/stats/by-region` - 지역별 기사 통계
+   - `DELETE /api/posts/bulk-delete` - 지역별 기사 일괄 삭제
+   - `POST /api/posts/bulk-delete` - 삭제 전 미리보기
+
+2. **Phase 2-3: 컴포넌트 분리**
+   - `components/regionData.ts` - 지역 데이터 공통화
+   - `components/RegionCheckboxGroup.tsx` - 재사용 가능한 체크박스 그룹
+   - `components/ScraperPanel.tsx` - 스크래퍼 실행 패널
+   - `components/DbManagerPanel.tsx` - DB 관리 패널 (삭제 기능)
+
+3. **Phase 4: 2단 레이아웃 통합**
+   - `page.tsx` 완전 재구성 (524줄 → 108줄)
+   - 반응형 그리드 레이아웃 (lg:grid-cols-2)
+
+4. **Phase 5: 빌드 검증**
+   - Next.js 빌드 성공 확인
+   - 모든 API 라우트 정상 등록
+
+### 생성 파일
+```
+web/src/app/api/posts/
+├── stats/by-region/route.ts   # 통계 API
+└── bulk-delete/route.ts       # 삭제 API
+
+web/src/app/admin/bot/run/
+├── page.tsx                   # 메인 페이지 (2단 레이아웃)
+└── components/
+    ├── index.ts
+    ├── regionData.ts
+    ├── RegionCheckboxGroup.tsx
+    ├── ScraperPanel.tsx
+    └── DbManagerPanel.tsx
+```
+
+### 주요 기능
+- 지역별 기사 수 표시 (DB 통계)
+- 지역 선택 후 일괄 삭제
+- 삭제 전 미리보기 확인
+- 기간 필터 옵션 (선택적)
+
+---
+
 ## [2025-12-12] 세션 #2
 
 ### 주인님 의도

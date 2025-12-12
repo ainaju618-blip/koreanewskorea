@@ -126,6 +126,69 @@
 
 ---
 
+## 0.9 SEO 및 E-E-A-T 개발 지침
+
+웹 개발 시 **검색 엔진 최적화(SEO)**와 **E-E-A-T(Experience, Expertise, Authoritativeness, Trustworthiness)**를 항상 고려한다.
+
+### SEO 필수 체크리스트
+| 항목 | 적용 방법 |
+|------|----------|
+| **메타 태그** | 모든 페이지에 title, description, og:image 필수 |
+| **구조화 데이터** | Schema.org (Article, Person, Organization) 적용 |
+| **시맨틱 HTML** | h1~h6 계층 구조, article, section, nav 등 |
+| **URL 구조** | 의미 있는 slug 사용 (`/news/[id]` → `/news/[slug]`) |
+| **이미지 최적화** | alt 태그, next/image, WebP 포맷 |
+| **모바일 최적화** | 반응형 디자인, Core Web Vitals 준수 |
+
+### E-E-A-T 강화 요소
+```
+┌─────────────────────────────────────────────────────────────┐
+│  뉴스 사이트 신뢰도 = E-E-A-T 점수                          │
+│                                                              │
+│  ✅ Experience (경험)                                        │
+│     - 기자 프로필 페이지 (취재 경력, 담당 분야)              │
+│     - 기자별 작성 기사 목록                                  │
+│                                                              │
+│  ✅ Expertise (전문성)                                       │
+│     - 기자 소개 (학력, 전문 분야, 수상 경력)                 │
+│     - 카테고리별 전문 기자 배치                              │
+│                                                              │
+│  ✅ Authoritativeness (권위)                                 │
+│     - 회사 소개 페이지 (등록번호, 발행인, 주소)              │
+│     - 언론사 등록 정보 표시                                  │
+│     - 윤리 강령 준수 명시                                    │
+│                                                              │
+│  ✅ Trustworthiness (신뢰)                                   │
+│     - 기사 작성자(byline) 명시                               │
+│     - 기사 작성일/수정일 표시                                │
+│     - 출처 및 원문 링크 제공                                 │
+│     - 개인정보처리방침, 이용약관 페이지                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 기사 페이지 필수 요소
+```html
+<!-- 구조화 데이터 예시 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": "기사 제목",
+  "author": { "@type": "Person", "name": "기자명", "url": "/author/id" },
+  "publisher": { "@type": "Organization", "name": "코리아NEWS" },
+  "datePublished": "2025-01-01",
+  "dateModified": "2025-01-02"
+}
+</script>
+```
+
+### 개발 시 우선순위
+1. **기자 프로필 페이지** `/author/[id]` - 기자 정보 + 작성 기사 목록
+2. **회사 소개 페이지** `/about` - 등록 정보, 보도 원칙
+3. **기사 상세 페이지** - byline, 구조화 데이터, 관련 기사
+
+---
+
 ## 1. 프로젝트 개요
 
 전남/광주 지역 27개 기관의 보도자료 + 해외 AI 뉴스를 자동 수집하여 통합 게시하는 시스템.
