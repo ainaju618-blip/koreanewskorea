@@ -22,6 +22,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘",
   description: "광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.",
+  // Deployed: 2025-12-13
 };
 
 export default function RootLayout({
