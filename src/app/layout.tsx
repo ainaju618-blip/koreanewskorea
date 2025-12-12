@@ -1,21 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["100", "300", "400", "500", "700", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const playfair = Playfair_Display({
   subsets: ["latin"],
+  variable: "--font-serif",
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
+
+
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Korea News",
-  description: "AI 한국 뉴스 - 신뢰할 수 있는 뉴스 플랫폼",
+  title: "코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘",
+  description: "광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.",
 };
 
 export default function RootLayout({
@@ -24,14 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
-      >
-        <Header />
-        <main>{children}</main>
+    <html lang="ko" suppressHydrationWarning>
+      <body className={`${notoSansKr.variable} ${playfair.variable} min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white`} suppressHydrationWarning>
+        {children}
       </body>
     </html>
   );
 }
-
