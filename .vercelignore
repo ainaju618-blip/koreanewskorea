@@ -1,0 +1,17 @@
+# Ignore backend and scraper folders
+backend/
+old/
+scrapers/
+venv/
+logs/
+*.py
+*.pyc
+__pycache__/
+*.log
+*.sql
+*.xlsx
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!vercel.json
