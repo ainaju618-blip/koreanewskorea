@@ -32,7 +32,8 @@
       "Bash(curl:*)",
       "Bash(set:*)",
       "Bash(cd:*)",
-      "Bash(chcp 65001)"
+      "Bash(chcp 65001)",
+      "Bash(git remote remove:*)"
     ]
   }
 }
