@@ -33,7 +33,9 @@
       "Bash(set:*)",
       "Bash(cd:*)",
       "Bash(chcp 65001)",
-      "Bash(git remote remove:*)"
+      "Bash(git remote remove:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel:*)"
     ]
   }
 }
