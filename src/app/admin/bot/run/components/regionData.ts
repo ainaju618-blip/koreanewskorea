@@ -68,3 +68,29 @@ export function getRegionLabel(id: string): string {
 export function getRegionId(label: string): string | undefined {
     return regionLabelToId[label];
 }
+
+/**
+ * 스크래퍼가 실제로 구현된 지역 ID 목록
+ * (scrapers/{region}/{region}_scraper.py가 존재하는 지역)
+ */
+export const availableScraperIds: string[] = [
+    "damyang",
+    "gangjin",
+    "gokseong",
+    "gwangju",
+    "gwangju_edu",
+    "jeonnam",
+    "jeonnam_edu",
+    "mokpo",
+    "naju",
+    "suncheon",
+    "yeonggwang",
+    "yeosu",
+];
+
+/**
+ * 스크래퍼가 있는 지역인지 확인
+ */
+export function hasScraperAvailable(id: string): boolean {
+    return availableScraperIds.includes(id);
+}

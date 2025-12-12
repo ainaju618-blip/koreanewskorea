@@ -430,6 +430,12 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
                     except:
                         pass
                     
+                    # ★ 목록 단계에서 바로 날짜 필터링 (오래된 기사면 스킵)
+                    if start_date and list_date and list_date < start_date:
+                        print(f"      ⏩ 목록에서 날짜 필터: {list_date} < {start_date}")
+                        # 목록이 최신순이면 이 이후는 더 오래된 기사이므로 중지
+                        continue
+                    
                     link_data.append({
                         'title': title,
                         'url': full_url,
@@ -440,9 +446,17 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
                 except Exception as e:
                     continue
             
+            # ★ 이 페이지에서 유효한 기사가 없으면 더 이상 탐색하지 않음
+            if len(link_data) == 0:
+                print("      ⏹️ 이 페이지에 유효한 기사가 없음, 탐색 중지")
+                break
+            
             # 상세 페이지 수집 및 전송
+            consecutive_old = 0  # 연속 오래된 기사 카운터
+            stop_scraping = False
+            
             for item in link_data:
-                if collected_count >= max_articles:
+                if collected_count >= max_articles or stop_scraping:
                     break
                     
                 title = item['title']
@@ -456,10 +470,20 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
                 # 날짜 결정 (상세 > 목록 > 현재)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 
-                # 날짜 필터 (활성화된 경우만)
+                # 날짜 필터 (활성화된 경우만) + 조기 종료 로직
                 if start_date and final_date < start_date:
-                    print(f"         ⏩ 날짜 필터로 스킵: {final_date}")
-                    continue  # skip, don't stop!
+                    consecutive_old += 1
+                    print(f"         ⏩ 날짜 필터로 스킵: {final_date} (연속 {consecutive_old}개)")
+                    
+                    # 연속 3개 오래된 기사면 페이지 탐색 중지
+                    if consecutive_old >= 3:
+                        print("         ⏹️ 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
+                        stop_scraping = True
+                        break
+                    continue
+                
+                # 유효한 기사 발견 시 카운터 리셋
+                consecutive_old = 0
                 
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
@@ -491,6 +515,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
                 
                 time.sleep(1)  # Rate limiting
             
+            # 조기 종료 시 루프 탈출
+            if stop_scraping:
+                break
+                
             page_num += 1
             time.sleep(1)
         

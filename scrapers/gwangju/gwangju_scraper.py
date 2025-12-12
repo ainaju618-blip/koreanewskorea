@@ -93,9 +93,14 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
     return content, thumbnail_url, pub_date
 
-def collect_articles(days: int = 3) -> List[Dict]:
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
-    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 고도화 시작', 'info')
+def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {days}일, 최대: {max_articles}개)")
+    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
+    
+    # 날짜 필터 계산
+    from datetime import timedelta
+    end_date = datetime.now().strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     collected_links = []
     
@@ -152,7 +157,7 @@ def collect_articles(days: int = 3) -> List[Dict]:
         target_links = collected_links # 전체 다 순회하려면 이거 사용
 
         for item in target_links:
-            if processed_count >= 10: # 안전을 위해 1회차엔 10개만 제한
+            if processed_count >= max_articles:
                 break
                 
             url = item['url']
@@ -203,10 +208,11 @@ def collect_articles(days: int = 3) -> List[Dict]:
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--days', type=int, default=3)
-    parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
+    parser.add_argument('--max-articles', type=int, default=30, help='최대 수집 기사 수')
+    parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
     args = parser.parse_args()
-    collect_articles(days=args.days)
+    collect_articles(days=args.days, max_articles=args.max_articles)
 
 if __name__ == "__main__":
     main()

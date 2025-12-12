@@ -40,8 +40,19 @@ export async function createBotLog(region: string, days: number, dryRun: boolean
 
 /**
  * 실제 Python 스크래퍼를 실행하고 로그를 업데이트합니다.
+ * @param logId - 로그 ID (Python 환경변수로 전달)
+ * @param region - 지역 코드
+ * @param startDate - 수집 시작 날짜 (YYYY-MM-DD)
+ * @param endDate - 수집 종료 날짜 (YYYY-MM-DD)
+ * @param dryRun - 테스트 모드 여부
  */
-export async function executeScraper(logId: number, region: string, days: number, dryRun: boolean) {
+export async function executeScraper(
+    logId: number,
+    region: string,
+    startDate: string,
+    endDate: string,
+    dryRun: boolean
+) {
     const scrapersDir = path.join(process.cwd(), 'scrapers');
     const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
 
@@ -68,11 +79,21 @@ export async function executeScraper(logId: number, region: string, days: number
         console.log(`[${region}] 공용 스크래퍼 사용: ${scraperFile}`);
     }
 
+    // 날짜 차이 계산 (기존 --days 인자 호환성)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
     const args = [scraperFile];
     if (useRegionArg) {
         args.push('--region', region);
     }
-    args.push('--days', String(days));
+    // Phase 2: startDate/endDate 직접 전달 (스크래퍼가 지원하면 사용)
+    args.push('--start-date', startDate);
+    args.push('--end-date', endDate);
+    // 기존 --days 인자도 호환성을 위해 유지
+    args.push('--days', String(diffDays));
+    args.push('--max-articles', '30');  // 최대 수집 기사 수 제한
     if (dryRun) args.push('--dry-run');
 
     console.log(`[${region}] 실행 명령: ${pythonCommand} ${args.join(' ')}`);
@@ -83,17 +104,21 @@ export async function executeScraper(logId: number, region: string, days: number
             .from('bot_logs')
             .update({
                 log_message: '스크랩 시작',
-                metadata: { started_at: new Date().toISOString() }
+                metadata: { started_at: new Date().toISOString(), startDate, endDate }
             })
             .eq('id', logId);
     } catch (e) {
         console.error(`[${region}] 시작 상태 업데이트 실패:`, e);
     }
 
-    // 인코딩 문제 해결을 위해 PYTHONIOENCODING 설정 추가 및 cwd 설정
+    // Phase 3: logId를 환경변수로 전달하여 Python에서 사용 가능
     const child = spawn(pythonCommand, args, {
         cwd: scrapersDir,
-        env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+        env: {
+            ...process.env,
+            PYTHONIOENCODING: 'utf-8',
+            BOT_LOG_ID: String(logId)  // Python에서 os.getenv('BOT_LOG_ID')로 접근 가능
+        }
     });
 
     let stdoutData = '';

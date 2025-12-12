@@ -45,7 +45,27 @@ export async function POST(request: Request) {
                     thumbnail_url
                 }, { status: 200 });
             }
-            return NextResponse.json({ message: 'Already exists', id: existing.id }, { status: 200 });
+            return NextResponse.json({ message: 'Already exists', id: existing.id, status: 'exists' }, { status: 200 });
+        }
+
+        // 3-1. 추가 중복 방지: title + published_at(날짜만) 조합 체크
+        if (published_at) {
+            const publishedDate = published_at.split('T')[0]; // YYYY-MM-DD만 추출
+            const { data: duplicateByTitleDate } = await supabaseAdmin
+                .from('posts')
+                .select('id')
+                .eq('title', title)
+                .gte('published_at', `${publishedDate}T00:00:00`)
+                .lt('published_at', `${publishedDate}T23:59:59`)
+                .single();
+
+            if (duplicateByTitleDate) {
+                return NextResponse.json({
+                    message: 'Duplicate by title+date',
+                    id: duplicateByTitleDate.id,
+                    status: 'exists'
+                }, { status: 200 });
+            }
         }
 
         // 4. category_slug → category_id 변환 (CMS v2.0)

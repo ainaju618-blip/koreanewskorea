@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         // 클라이언트에게는 jobIds만 먼저 반환하고, 실제 작업은 백그라운드에서 순차 수행
         (async () => {
             for (const job of jobs) {
-                await executeScraper(job.id, job.region, diffDays, dryRun);
+                await executeScraper(job.id, job.region, startDate, endDate, dryRun);
             }
         })();
 

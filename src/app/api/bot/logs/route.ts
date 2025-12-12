@@ -47,12 +47,46 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { region, status, message, type } = body;
+        const { log_id, region, status, message, type } = body;
 
         if (!region || !status) {
             return NextResponse.json({ message: 'Missing fields' }, { status: 400 });
         }
 
+        // Phase 3: log_id가 있으면 직접 해당 로그 업데이트 (경쟁 조건 방지)
+        if (log_id) {
+            const timeStr = new Date().toLocaleTimeString('ko-KR');
+            const isFinished = status === '성공' || status === '실패';
+
+            const { data: existingLog } = await supabaseAdmin
+                .from('bot_logs')
+                .select('log_message')
+                .eq('id', log_id)
+                .single();
+
+            const newLogLine = `[${timeStr}] ${message}`;
+            const updatedMessage = existingLog?.log_message
+                ? existingLog.log_message + '\n' + newLogLine
+                : newLogLine;
+
+            const updates: any = {
+                status: status === '실패' ? 'failed' : (status === '성공' ? 'success' : 'running'),
+                log_message: updatedMessage,
+            };
+
+            if (isFinished) {
+                updates.ended_at = new Date().toISOString();
+            }
+
+            await supabaseAdmin
+                .from('bot_logs')
+                .update(updates)
+                .eq('id', log_id);
+
+            return NextResponse.json({ success: true, matched_by: 'log_id' });
+        }
+
+        // 기존 방식: region으로 최신 running 로그 찾기 (fallback)
         // 1. 해당 지역의 'running' 상태인 최신 로그 찾기
         const { data: activeLogs } = await supabaseAdmin
             .from('bot_logs')

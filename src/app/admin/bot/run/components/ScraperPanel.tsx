@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock } from "lucide-react";
+import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
 
@@ -11,6 +11,12 @@ interface JobResult {
     status: string;
     log_message?: string;
     articles_count?: number;
+}
+
+interface RegionStat {
+    source: string;
+    count: number;
+    latestDate: string | null;
 }
 
 export function ScraperPanel() {
@@ -29,8 +35,31 @@ export function ScraperPanel() {
     const [progress, setProgress] = useState({ total: 0, completed: 0 });
     const [currentJobs, setCurrentJobs] = useState<JobResult[]>([]);
 
-    // 페이지 로드 시 진행 중인 작업 복원
+    // 지역별 통계 (기사 수 표시용)
+    const [regionStats, setRegionStats] = useState<RegionStat[]>([]);
+
+    // 지역별 통계 정보 매핑
+    const regionInfo = React.useMemo(() => {
+        const info: Record<string, { count: number; latestDate: string | null }> = {};
+        regionStats.forEach(stat => {
+            info[stat.source] = { count: stat.count, latestDate: stat.latestDate };
+        });
+        return info;
+    }, [regionStats]);
+
+    // 페이지 로드 시 통계 및 진행 중인 작업 로드
     useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const res = await fetch('/api/posts/stats/by-region');
+                const data = await res.json();
+                setRegionStats(data.stats || []);
+            } catch (e) {
+                console.error('Failed to fetch region stats:', e);
+            }
+        };
+        fetchStats();
+
         const checkRunningJobs = async () => {
             try {
                 const res = await fetch('/api/bot/logs?limit=30');
@@ -133,6 +162,29 @@ export function ScraperPanel() {
         }
     };
 
+    // 중지 버튼 핸들러
+    const handleStop = async () => {
+        if (!confirm('모든 스크래퍼를 중지하시겠습니까?')) return;
+
+        try {
+            setStatusMessage('스크래퍼 중지 중...');
+            const res = await fetch('/api/bot/stop', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                setIsRunning(false);
+                setActiveJobIds([]);
+                setCurrentJobs([]);
+                setProgress({ total: 0, completed: 0 });
+                setStatusMessage('모든 스크래퍼가 중지되었습니다.');
+            } else {
+                setStatusMessage(`중지 실패: ${data.message}`);
+            }
+        } catch (error: any) {
+            setStatusMessage(`중지 오류: ${error.message}`);
+        }
+    };
+
     const toggleRegion = (id: string) => {
         setSelectedRegions(prev =>
             prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
@@ -187,10 +239,17 @@ export function ScraperPanel() {
                         <div className="bg-blue-600 p-2 rounded-full">
                             <Activity className="w-5 h-5 text-white animate-spin" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <h3 className="font-bold text-blue-900">봇이 열심히 일하고 있습니다!</h3>
                             <p className="text-sm text-blue-700 font-mono">{statusMessage}</p>
                         </div>
+                        <button
+                            onClick={handleStop}
+                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                        >
+                            <StopCircle className="w-4 h-4" />
+                            중지
+                        </button>
                     </div>
 
                     {/* 진행률 바 */}
@@ -318,11 +377,10 @@ export function ScraperPanel() {
                                 <button
                                     key={preset.label}
                                     onClick={() => setDatePreset(preset.days)}
-                                    className={`text-xs px-2 py-1 rounded border transition ${
-                                        activePreset === preset.days
-                                            ? 'bg-blue-600 text-white border-blue-600 font-bold'
-                                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                                    }`}
+                                    className={`text-xs px-2 py-1 rounded border transition ${activePreset === preset.days
+                                        ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                                        : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                        }`}
                                 >
                                     {preset.label}
                                 </button>
@@ -349,11 +407,12 @@ export function ScraperPanel() {
                             onToggle={toggleRegion}
                             selectionKey="id"
                             accentColor="blue"
-                            maxHeight="80px"
+                            showScraperStatus
+                            regionInfo={regionInfo}
                         />
 
                         {/* 지자체 */}
-                        <div className="mt-3">
+                        <div className="mt-2">
                             <RegionCheckboxGroup
                                 title="지자체"
                                 regions={localRegions}
@@ -361,7 +420,8 @@ export function ScraperPanel() {
                                 onToggle={toggleRegion}
                                 selectionKey="id"
                                 accentColor="blue"
-                                maxHeight="160px"
+                                showScraperStatus
+                                regionInfo={regionInfo}
                             />
                         </div>
 

@@ -308,7 +308,6 @@ export function DbManagerPanel() {
                             selectionKey="label"
                             regionInfo={regionInfo}
                             accentColor="red"
-                            maxHeight="100px"
                             compact
                         />
 
@@ -321,7 +320,6 @@ export function DbManagerPanel() {
                             selectionKey="label"
                             regionInfo={regionInfo}
                             accentColor="red"
-                            maxHeight="200px"
                             compact
                         />
 
