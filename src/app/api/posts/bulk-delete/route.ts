@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  * Request Body:
  * {
  *   sources: ["여수시", "순천시"],  // 한글 지역명 (DB의 source 컬럼 값)
+ *   deleteAll?: true,              // true이면 모든 기사 삭제 (sources 무시)
  *   dateRange?: {
  *     startDate: "2025-12-01",
  *     endDate: "2025-12-12"
@@ -24,8 +25,39 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function DELETE(req: NextRequest) {
     try {
         const body = await req.json();
-        const { sources, dateRange } = body;
+        const { sources, deleteAll, dateRange } = body;
 
+        // deleteAll 모드: 모든 기사 삭제
+        if (deleteAll === true) {
+            let query = supabaseAdmin.from('posts').delete();
+
+            // 기간 필터 적용 (선택적)
+            if (dateRange?.startDate) {
+                query = query.gte('published_at', dateRange.startDate);
+            }
+            if (dateRange?.endDate) {
+                query = query.lte('published_at', `${dateRange.endDate}T23:59:59`);
+            }
+
+            // 모든 레코드 삭제를 위해 조건 추가 (Supabase는 조건 없는 delete 거부)
+            const { data, error } = await query.not('id', 'is', null).select('id');
+
+            if (error) {
+                console.error('Delete all error:', error);
+                return NextResponse.json({ message: error.message }, { status: 500 });
+            }
+
+            const totalDeleted = data?.length || 0;
+            console.log(`Delete ALL completed: ${totalDeleted} posts deleted`);
+
+            return NextResponse.json({
+                success: true,
+                deleted: { '전체': totalDeleted },
+                totalDeleted
+            });
+        }
+
+        // 기존 로직: sources 기반 삭제
         if (!sources || !Array.isArray(sources) || sources.length === 0) {
             return NextResponse.json(
                 { message: '삭제할 지역(sources)을 지정해주세요.' },

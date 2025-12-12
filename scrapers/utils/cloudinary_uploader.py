@@ -106,12 +106,13 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         # 3. 800px 너비로 리사이즈 (비율 유지)
         img = resize_image(img, TARGET_WIDTH, TARGET_HEIGHT)
         
-        # 4. 로컬 폴더에 저장 (web/public/images/{folder}/)
+        # 4. 로컬 폴더에 저장 (public/images/{folder}/)
         file_hash = hashlib.md5(image_url.encode()).hexdigest()
 
         # 프로젝트 루트 경로 계산: scrapers/utils/ → koreanews/
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        local_folder = os.path.join(project_root, 'web', 'public', 'images', folder)
+        # Next.js는 루트의 public 폴더를 사용함 (web/public이 아님)
+        local_folder = os.path.join(project_root, 'public', 'images', folder)
         os.makedirs(local_folder, exist_ok=True)
 
         local_path = os.path.join(local_folder, f"{file_hash}.jpg")

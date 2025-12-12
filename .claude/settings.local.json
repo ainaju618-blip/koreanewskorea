@@ -36,7 +36,9 @@
       "Bash(git remote remove:*)",
       "Bash(npm install:*)",
       "Bash(vercel:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 2 /nobreak)"
     ]
   }
 }

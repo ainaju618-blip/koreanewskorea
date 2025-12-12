@@ -33,26 +33,26 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
     """엄격한 데이터 검증 로직"""
     # 1. 제목 검증
     if not article_data.get('title') or len(article_data['title']) < 5:
-        return False, "❌ [검증 실패] 제목이 너무 짧거나 없습니다."
-    
+        return False, "[검증 실패] 제목이 너무 짧거나 없습니다."
+
     # 2. 본문 검증
     content = article_data.get('content', '')
     if not content or len(content) < 50:
-        return False, f"❌ [검증 실패] 본문 내용이 부족합니다. (길이: {len(content)})"
+        return False, f"[검증 실패] 본문 내용이 부족합니다. (길이: {len(content)})"
     if "본문 내용을 가져올 수 없습니다" in content:
-        return False, "❌ [검증 실패] 본문 스크래핑 오류 메시지가 감지되었습니다."
+        return False, "[검증 실패] 본문 스크래핑 오류 메시지가 감지되었습니다."
 
     # 3. 이미지 URL 검증 (선택적이지만, 있으면 유효해야 함)
     img_url = article_data.get('thumbnail_url')
     if img_url and not img_url.startswith('http'):
-        return False, f"❌ [검증 실패] 이미지 URL이 유효하지 않습니다: {img_url}"
-    
-    return True, "✅ [검증 통과]"
+        return False, f"[검증 실패] 이미지 URL이 유효하지 않습니다: {img_url}"
+
+    return True, "[검증 통과]"
 
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str]]:
     """본문 및 이미지, 작성일시 추출"""
     if not safe_goto(page, url, timeout=20000):
-        print(f"   ⚠️ 페이지 접속 실패: {url}")
+        print(f"   [WARN] 페이지 접속 실패: {url}")
         return "", None, None
 
     # 본문 추출
@@ -62,7 +62,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
         if content_elem:
             content = safe_get_text(content_elem)
     except Exception as e:
-        print(f"   ⚠️ 본문 추출 에러: {str(e)}")
+        print(f"   [WARN] 본문 추출 에러: {str(e)}")
 
     # 이미지 추출
     thumbnail_url = None
@@ -79,7 +79,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
                         thumbnail_url = src
                     break 
     except Exception as e:
-        print(f"   ⚠️ 이미지 추출 에러: {str(e)}")
+        print(f"   [WARN] 이미지 추출 에러: {str(e)}")
     
     # 날짜 추출 (상세 페이지 내)
     pub_date = None
@@ -94,7 +94,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date
 
 def collect_articles(days: int = 3) -> List[Dict]:
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (Strict Verification Mode)")
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 고도화 시작', 'info')
     
     collected_links = []
@@ -111,19 +111,19 @@ def collect_articles(days: int = 3) -> List[Dict]:
         # 1페이지~3페이지 순회
         for page_num in range(1, 4):
             list_url = f'{LIST_URL}&page={page_num}'
-            print(f"   📄 목록 페이지 {page_num} 스캔 중...")
+            print(f"   [PAGE] 목록 페이지 {page_num} 스캔 중...")
             
             if not safe_goto(page, list_url):
-                print(f"   ⚠️ 페이지 {page_num} 접속 실패, 건너뜀")
+                print(f"   [WARN] 페이지 {page_num} 접속 실패, 건너뜀")
                 continue
-            
+
             links = wait_and_find(page, GWANGJU_LIST_SELECTORS, timeout=5000)
             if not links:
-                print("   ⚠️ 기사 목록을 발견하지 못했습니다.")
+                print("   [WARN] 기사 목록을 발견하지 못했습니다.")
                 continue
                 
             count = links.count()
-            print(f"      🔗 {count}개 링크 발견")
+            print(f"      [LINK] {count}개 링크 발견")
             
             for i in range(count):
                 try:
@@ -135,12 +135,12 @@ def collect_articles(days: int = 3) -> List[Dict]:
                         full_url = urljoin(BASE_URL, href)
                         collected_links.append({'title': title, 'url': full_url})
                 except Exception as e:
-                    print(f"      ⚠️ 링크 파싱 에러: {str(e)}")
+                    print(f"      [WARN] 링크 파싱 에러: {str(e)}")
             
             # 테스트 모드에서는 1페이지만 보고 중단할 수도 있음 (선택사항)
             time.sleep(1)
 
-        print(f"✅ 총 {len(collected_links)}개의 수집 대상 링크 확보 완료.")
+        print(f"[OK] 총 {len(collected_links)}개의 수집 대상 링크 확보 완료.")
         
         # 2. 상세 방문 단계 (Visit Phase)
         success_count = 0
@@ -157,7 +157,7 @@ def collect_articles(days: int = 3) -> List[Dict]:
                 
             url = item['url']
             title = item['title']
-            print(f"   🔍 [{processed_count+1}] 분석 중: {title[:30]}...")
+            print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
             
             content, thumbnail_url, pub_date = fetch_detail(page, url)
             
@@ -184,11 +184,11 @@ def collect_articles(days: int = 3) -> List[Dict]:
                 # 4. DB 적재 (Ingestion)
                 result = send_article_to_server(article_data)
                 if result and result.get('status') == 'created':
-                    print(f"      ✅ [DB 저장 완료] ID: {result.get('id', 'Unknown')}")
+                    print(f"      [OK] DB 저장 완료 ID: {result.get('id', 'Unknown')}")
                     success_count += 1
                     log_to_server(REGION_CODE, '실행중', f"성공: {title[:10]}...", 'success')
                 else:
-                    print(f"      ⚠️ [DB 저장 실패] API 응답: {result}")
+                    print(f"      [WARN] DB 저장 실패 API 응답: {result}")
             
             processed_count += 1
             time.sleep(1) # 부하 조절
@@ -196,7 +196,7 @@ def collect_articles(days: int = 3) -> List[Dict]:
         browser.close()
         
     final_msg = f"작업 종료: 총 {processed_count}건 처리 / {success_count}건 저장 성공"
-    print(f"🎉 {final_msg}")
+    print(f"[완료] {final_msg}")
     log_to_server(REGION_CODE, '성공', final_msg, 'success')
     return []
 

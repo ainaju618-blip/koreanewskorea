@@ -25,14 +25,26 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // 3. Avoid Duplicates
+        // 3. Avoid Duplicates - 기존 기사가 있으면 thumbnail_url만 업데이트
         const { data: existing } = await supabaseAdmin
             .from('posts')
-            .select('id')
+            .select('id, thumbnail_url')
             .eq('original_link', original_link)
             .single();
 
         if (existing) {
+            // 기존 기사에 thumbnail_url이 없고, 새 요청에 thumbnail_url이 있으면 업데이트
+            if (!existing.thumbnail_url && thumbnail_url) {
+                await supabaseAdmin
+                    .from('posts')
+                    .update({ thumbnail_url })
+                    .eq('id', existing.id);
+                return NextResponse.json({
+                    message: 'Thumbnail updated',
+                    id: existing.id,
+                    thumbnail_url
+                }, { status: 200 });
+            }
             return NextResponse.json({ message: 'Already exists', id: existing.id }, { status: 200 });
         }
 

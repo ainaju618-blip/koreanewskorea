@@ -304,7 +304,7 @@ cloudinary_url = download_and_upload_image(img_url, BASE_URL, folder=REGION_CODE
 
 ---
 
-## 6. 대상 기관 (27개)
+## 6. 대상 기관 (26개)
 
 ### 광역/도 (2)
 - 광주광역시, 전라남도
@@ -320,9 +320,6 @@ cloudinary_url = download_and_upload_image(img_url, BASE_URL, folder=REGION_CODE
 
 ### 교육청 (2)
 - 광주교육청, 전남교육청
-
-### 지역 언론 (1)
-- 광남일보
 
 ---
 

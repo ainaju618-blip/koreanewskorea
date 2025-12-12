@@ -42,7 +42,7 @@ export async function createBotLog(region: string, days: number, dryRun: boolean
  * 실제 Python 스크래퍼를 실행하고 로그를 업데이트합니다.
  */
 export async function executeScraper(logId: number, region: string, days: number, dryRun: boolean) {
-    const scrapersDir = path.join(process.cwd(), '../scrapers');
+    const scrapersDir = path.join(process.cwd(), 'scrapers');
     const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
 
     // cwd가 scrapers 디렉토리이므로 상대 경로 사용

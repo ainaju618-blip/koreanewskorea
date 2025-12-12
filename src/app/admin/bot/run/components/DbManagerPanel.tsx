@@ -36,6 +36,9 @@ export function DbManagerPanel() {
         preview: DeletePreview | null;
     }>({ isOpen: false, preview: null });
 
+    // 전체 삭제 모달
+    const [deleteAllModal, setDeleteAllModal] = useState(false);
+
     // 통계 로드
     const fetchStats = useCallback(async () => {
         setLoading(true);
@@ -146,6 +149,38 @@ export function DbManagerPanel() {
             }
         } catch (error) {
             console.error('Delete error:', error);
+            alert('삭제 요청 중 오류가 발생했습니다.');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    // 전체 삭제 실행 (모든 source)
+    const confirmDeleteAll = async () => {
+        setDeleteAllModal(false);
+        setDeleting(true);
+
+        try {
+            const res = await fetch('/api/posts/bulk-delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deleteAll: true })
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                setDeleteResult({
+                    total: result.totalDeleted,
+                    sources: ['전체']
+                });
+                setSelectedSources([]);
+                await fetchStats();
+            } else {
+                alert('삭제 중 오류가 발생했습니다: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Delete all error:', error);
             alert('삭제 요청 중 오류가 발생했습니다.');
         } finally {
             setDeleting(false);
@@ -302,7 +337,7 @@ export function DbManagerPanel() {
             </div>
 
             {/* Footer - 삭제 버튼 */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-2">
                 {selectedSources.length > 0 && (
                     <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-xs text-red-700 flex items-center gap-1">
@@ -323,6 +358,15 @@ export function DbManagerPanel() {
                     )}
                     {deleting ? '삭제 중...' : '선택 지역 기사 삭제'}
                 </button>
+                {/* 전체 삭제 버튼 */}
+                <button
+                    onClick={() => setDeleteAllModal(true)}
+                    disabled={deleting || totalArticles === 0}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                    <Trash2 className="w-4 h-4" />
+                    전체 삭제 ({totalArticles.toLocaleString()}건)
+                </button>
             </div>
 
             {/* 삭제 확인 모달 */}
@@ -331,11 +375,10 @@ export function DbManagerPanel() {
                 title="기사 삭제 확인"
                 message={
                     deleteModal.preview
-                        ? `다음 지역의 기사를 삭제합니다:\n\n${
-                            Object.entries(deleteModal.preview.preview)
-                                .filter(([, count]) => count > 0)
-                                .map(([source, count]) => `• ${source}: ${count}건`)
-                                .join('\n')
+                        ? `다음 지역의 기사를 삭제합니다:\n\n${Object.entries(deleteModal.preview.preview)
+                            .filter(([, count]) => count > 0)
+                            .map(([source, count]) => `• ${source}: ${count}건`)
+                            .join('\n')
                         }\n\n총 ${deleteModal.preview.totalCount}건이 영구 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.`
                         : ''
                 }
@@ -343,6 +386,17 @@ export function DbManagerPanel() {
                 variant="danger"
                 onConfirm={confirmDelete}
                 onCancel={() => setDeleteModal({ isOpen: false, preview: null })}
+            />
+
+            {/* 전체 삭제 확인 모달 */}
+            <ConfirmModal
+                isOpen={deleteAllModal}
+                title="⚠️ 전체 삭제 확인"
+                message={`모든 기사 ${totalArticles.toLocaleString()}건을 삭제합니다.\n\n이 작업은 되돌릴 수 없습니다.\n정말 삭제하시겠습니까?`}
+                confirmLabel="전체 삭제"
+                variant="danger"
+                onConfirm={confirmDeleteAll}
+                onCancel={() => setDeleteAllModal(false)}
             />
         </div>
     );
