@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, FileEdit, Trash2, Save, Loader2, Plus, Copy, Check } from "lucide-react";
 import NewsEditor from "@/components/admin/NewsEditor";
+import { useToast } from '@/components/ui/Toast';
 
 interface Draft {
     id: string;
@@ -28,6 +29,7 @@ export default function ReporterDraftsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const { showSuccess, showError, showWarning } = useToast();
 
     // 확인 모달 상태
     const [confirmModal, setConfirmModal] = useState<{
@@ -101,7 +103,7 @@ export default function ReporterDraftsPage() {
     // 저장 (생성 또는 수정) - 저장 후 바로 목록으로 이동
     const handleSave = async () => {
         if (!editTitle.trim()) {
-            alert("제목을 입력해주세요.");
+            showWarning("제목을 입력해주세요.");
             return;
         }
         setIsSaving(true);
@@ -131,7 +133,7 @@ export default function ReporterDraftsPage() {
             }
         } catch (err) {
             console.error("Failed to save:", err);
-            alert("저장에 실패했습니다.");
+            showError("저장에 실패했습니다.");
         } finally {
             setIsSaving(false);
         }
@@ -150,7 +152,7 @@ export default function ReporterDraftsPage() {
     // 벌크 삭제 모달 열기
     const openBulkDeleteModal = () => {
         if (selectedIds.size === 0) {
-            alert('선택된 초안이 없습니다.');
+            showWarning('선택된 초안이 없습니다.');
             return;
         }
         setConfirmModal({
@@ -180,11 +182,11 @@ export default function ReporterDraftsPage() {
             if (res.ok) {
                 setDrafts(drafts.filter((d) => d.id !== selectedDraft.id));
                 closePanel();
-                alert("삭제되었습니다.");
+                showSuccess("삭제되었습니다.");
             }
         } catch (err) {
             console.error("Failed to delete:", err);
-            alert("삭제에 실패했습니다.");
+            showError("삭제에 실패했습니다.");
         }
     };
 
@@ -204,15 +206,15 @@ export default function ReporterDraftsPage() {
             const failed = results.filter(r => r.status === 'rejected').length;
 
             if (failed > 0) {
-                alert(`${succeeded}개 삭제 완료, ${failed}개 실패`);
+                showWarning(`${succeeded}개 삭제 완료, ${failed}개 실패`);
             } else {
-                alert(`${succeeded}개 초안이 삭제되었습니다.`);
+                showSuccess(`${succeeded}개 초안이 삭제되었습니다.`);
             }
             setSelectedIds(new Set());
             fetchDrafts();
         } catch (error) {
             console.error('삭제 처리 오류:', error);
-            alert('삭제 처리 중 오류가 발생했습니다.');
+            showError('삭제 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }

@@ -19,7 +19,8 @@ from urllib.parse import urlparse
 # 프로젝트 루트 경로 설정
 SCRAPERS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(SCRAPERS_DIR)
-WEB_PUBLIC_DIR = os.path.join(PROJECT_ROOT, 'web', 'public', 'images')
+# 프로젝트 구조: koreanews/public/images (web 폴더 없음)
+WEB_PUBLIC_DIR = os.path.join(PROJECT_ROOT, 'public', 'images')
 
 
 def ensure_directory(region_code: str) -> str:

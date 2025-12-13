@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 // 공통 컴포넌트 import
 import {
@@ -38,6 +39,7 @@ function AdminNewsListPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const urlStatus = searchParams.get('status') || 'all';
+    const { showSuccess, showError, showWarning } = useToast();
 
     const [articles, setArticles] = useState<any[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -65,7 +67,7 @@ function AdminNewsListPage() {
     // 확인 모달 상태 (window.confirm 대체)
     const [confirmModal, setConfirmModal] = useState<{
         isOpen: boolean;
-        type: 'bulk-approve' | 'bulk-delete' | 'bulk-restore' | 'single-approve' | 'single-delete' | 'single-restore' | null;
+        type: 'bulk-approve' | 'bulk-delete' | 'bulk-restore' | 'bulk-all-approve' | 'bulk-all-delete' | 'single-approve' | 'single-delete' | 'single-restore' | null;
         message: string;
     }>({ isOpen: false, type: null, message: '' });
 
@@ -159,7 +161,7 @@ function AdminNewsListPage() {
     // 확인 모달 열기 (벌크)
     const openBulkConfirmModal = (type: 'bulk-approve' | 'bulk-delete' | 'bulk-restore') => {
         if (selectedIds.size === 0) {
-            alert('선택된 기사가 없습니다.');
+            showWarning('선택된 기사가 없습니다.');
             return;
         }
         let message = '';
@@ -169,6 +171,19 @@ function AdminNewsListPage() {
             message = filterStatus === 'trash'
                 ? `${selectedIds.size}개 기사를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`
                 : `${selectedIds.size}개 기사를 삭제하시겠습니까? (휴지통으로 이동)`;
+        }
+        setConfirmModal({ isOpen: true, type, message });
+    };
+
+    // 일괄 처리 모달 열기 (전체 대상)
+    const openBulkAllConfirmModal = (type: 'bulk-all-approve' | 'bulk-all-delete') => {
+        let message = '';
+        if (type === 'bulk-all-approve') {
+            message = `현재 탭의 모든 기사를 일괄 승인하시겠습니까?\n⚠️ 이 작업은 현재 필터에 해당하는 모든 기사에 적용됩니다.`;
+        } else if (type === 'bulk-all-delete') {
+            message = filterStatus === 'trash'
+                ? `현재 탭의 모든 기사를 영구 삭제하시겠습니까?\n⚠️ 이 작업은 되돌릴 수 없습니다!`
+                : `현재 탭의 모든 기사를 삭제하시겠습니까?\n⚠️ 이 작업은 현재 필터에 해당하는 모든 기사를 휴지통으로 이동합니다.`;
         }
         setConfirmModal({ isOpen: true, type, message });
     };
@@ -204,6 +219,10 @@ function AdminNewsListPage() {
             await executeBulkRestore();
         } else if (actionType === 'single-restore') {
             await executeSingleRestore();
+        } else if (actionType === 'bulk-all-approve') {
+            await executeBulkAllApprove();
+        } else if (actionType === 'bulk-all-delete') {
+            await executeBulkAllDelete();
         }
     };
 
@@ -249,15 +268,15 @@ function AdminNewsListPage() {
             });
 
             if (failed > 0) {
-                alert(`${succeeded}개 승인 완료, ${failed}개 실패`);
+                showWarning(`${succeeded}개 승인 완료, ${failed}개 실패`);
             } else {
-                alert(`${succeeded}개 기사가 승인되었습니다.`);
+                showSuccess(`${succeeded}개 기사가 승인되었습니다.`);
             }
             setSelectedIds(new Set());
             fetchArticles();
         } catch (error) {
             console.error('승인 처리 오류:', error);
-            alert('승인 처리 중 오류가 발생했습니다.');
+            showError('승인 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }
@@ -281,15 +300,15 @@ function AdminNewsListPage() {
             const failed = results.filter(r => r.status === 'rejected').length;
 
             if (failed > 0) {
-                alert(`${succeeded}개 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${failed}개 실패`);
+                showWarning(`${succeeded}개 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${failed}개 실패`);
             } else {
-                alert(`${succeeded}개 기사가 ${isTrash ? '영구 삭제' : '휴지통으로 이동'}되었습니다.`);
+                showSuccess(`${succeeded}개 기사가 ${isTrash ? '영구 삭제' : '휴지통으로 이동'}되었습니다.`);
             }
             setSelectedIds(new Set());
             fetchArticles();
         } catch (error) {
             console.error('삭제 처리 오류:', error);
-            alert('삭제 처리 중 오류가 발생했습니다.');
+            showError('삭제 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }
@@ -315,15 +334,110 @@ function AdminNewsListPage() {
             const failed = results.filter(r => r.status === 'rejected').length;
 
             if (failed > 0) {
-                alert(`${succeeded}개 복구 완료, ${failed}개 실패`);
+                showWarning(`${succeeded}개 복구 완료, ${failed}개 실패`);
             } else {
-                alert(`${succeeded}개 기사가 복구되었습니다 (승인 대기 상태).`);
+                showSuccess(`${succeeded}개 기사가 복구되었습니다 (승인 대기 상태).`);
             }
             setSelectedIds(new Set());
             fetchArticles();
         } catch (error) {
             console.error('복구 처리 오류:', error);
-            alert('복구 처리 중 오류가 발생했습니다.');
+            showError('복구 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
+    // 일괄 승인 실행 (현재 필터의 모든 기사)
+    const executeBulkAllApprove = async () => {
+        setIsBulkProcessing(true);
+        try {
+            // 현재 필터 상태로 모든 기사 가져오기 (페이지네이션 없이)
+            const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
+            const res = await fetch(`/api/posts?limit=1000${statusParam}`);
+            if (!res.ok) throw new Error('기사 목록 조회 실패');
+            const data = await res.json();
+            const allIds = (data.posts || []).map((p: any) => p.id);
+
+            if (allIds.length === 0) {
+                showWarning('승인할 기사가 없습니다.');
+                setIsBulkProcessing(false);
+                return;
+            }
+
+            const results = await Promise.allSettled(
+                allIds.map(async (id: string) => {
+                    const res = await fetch(`/api/posts/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            status: 'published',
+                            published_at: new Date().toISOString()
+                        })
+                    });
+                    if (!res.ok) throw new Error(`ID ${id} 승인 실패`);
+                    return id;
+                })
+            );
+
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+
+            if (failed > 0) {
+                showWarning(`${succeeded}개 일괄 승인 완료, ${failed}개 실패`);
+            } else {
+                showSuccess(`${succeeded}개 기사가 일괄 승인되었습니다.`);
+            }
+            setSelectedIds(new Set());
+            fetchArticles();
+        } catch (error) {
+            console.error('일괄 승인 처리 오류:', error);
+            showError('일괄 승인 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
+    // 일괄 삭제 실행 (현재 필터의 모든 기사)
+    const executeBulkAllDelete = async () => {
+        setIsBulkProcessing(true);
+        const isTrash = filterStatus === 'trash';
+        try {
+            // 현재 필터 상태로 모든 기사 가져오기 (페이지네이션 없이)
+            const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
+            const res = await fetch(`/api/posts?limit=1000${statusParam}`);
+            if (!res.ok) throw new Error('기사 목록 조회 실패');
+            const data = await res.json();
+            const allIds = (data.posts || []).map((p: any) => p.id);
+
+            if (allIds.length === 0) {
+                showWarning('삭제할 기사가 없습니다.');
+                setIsBulkProcessing(false);
+                return;
+            }
+
+            const results = await Promise.allSettled(
+                allIds.map(async (id: string) => {
+                    const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
+                    const res = await fetch(url, { method: 'DELETE' });
+                    if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
+                    return id;
+                })
+            );
+
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+
+            if (failed > 0) {
+                showWarning(`${succeeded}개 일괄 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${failed}개 실패`);
+            } else {
+                showSuccess(`${succeeded}개 기사가 ${isTrash ? '영구 삭제' : '휴지통으로 이동'}되었습니다.`);
+            }
+            setSelectedIds(new Set());
+            fetchArticles();
+        } catch (error) {
+            console.error('일괄 삭제 처리 오류:', error);
+            showError('일괄 삭제 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }
@@ -352,12 +466,12 @@ function AdminNewsListPage() {
                         ? { ...a, title: editTitle, subtitle: editSubtitle, is_focus: editIsFocus, content: editContent }
                         : a
                 ));
-                alert("저장되었습니다.");
+                showSuccess("저장되었습니다.");
             } else {
                 throw new Error("저장 실패");
             }
         } catch (err) {
-            alert("저장에 실패했습니다. (DB 연결 확인 필요)");
+            showError("저장에 실패했습니다. (DB 연결 확인 필요)");
             console.error(err);
         } finally {
             setIsSaving(false);
@@ -422,14 +536,14 @@ function AdminNewsListPage() {
                         ? { ...a, status: 'published', published_at: new Date().toISOString(), thumbnail_url: finalThumbnailUrl }
                         : a
                 ));
-                alert("기사가 메인 페이지에 발행되었습니다!");
+                showSuccess("기사가 메인 페이지에 발행되었습니다!");
                 closePreview();
                 fetchArticles();
             } else {
                 throw new Error("승인 실패");
             }
         } catch (err) {
-            alert("승인에 실패했습니다. (DB 연결 확인 필요)");
+            showError("승인에 실패했습니다. (DB 연결 확인 필요)");
             console.error(err);
         } finally {
             setIsApproving(false);
@@ -456,7 +570,7 @@ function AdminNewsListPage() {
                 setArticles(articles.map(a =>
                     a.id === previewArticle.id ? { ...a, status: 'draft' } : a
                 ));
-                alert("기사가 복구되었습니다.");
+                showSuccess("기사가 복구되었습니다.");
                 closePreview();
                 // 목록에서 제거하려면 여기 필터링 추가하면 됨 (선택사항)
                 fetchArticles();
@@ -464,7 +578,7 @@ function AdminNewsListPage() {
                 throw new Error("복구 실패");
             }
         } catch (err) {
-            alert("복구 실패");
+            showError("복구 실패");
             console.error(err);
         } finally {
             setIsApproving(false);
@@ -486,12 +600,12 @@ function AdminNewsListPage() {
             if (res.ok) {
                 setArticles(articles.filter(a => a.id !== previewArticle.id));
                 closePreview();
-                alert(isTrash ? "영구 삭제되었습니다." : "휴지통으로 이동되었습니다.");
+                showSuccess(isTrash ? "영구 삭제되었습니다." : "휴지통으로 이동되었습니다.");
             } else {
                 throw new Error("삭제 실패");
             }
         } catch (err) {
-            alert("삭제 실패");
+            showError("삭제 실패");
         }
     };
 
@@ -523,40 +637,78 @@ function AdminNewsListPage() {
                 icon={FileEdit}
                 iconBgColor="bg-blue-600"
                 actions={
-                    selectedIds.size > 0 && (
-                        <div className="flex gap-2">
-                            {filterStatus === 'trash' ? (
-                                <button
-                                    onClick={() => openBulkConfirmModal('bulk-restore')}
-                                    disabled={isBulkProcessing}
-                                    className="px-5 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    <RotateCcw className="w-4 h-4" />
-                                    선택 복구 ({selectedIds.size}개)
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => openBulkConfirmModal('bulk-approve')}
-                                    disabled={isBulkProcessing}
-                                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    선택 승인 ({selectedIds.size}개)
-                                </button>
-                            )}
-
+                    <div className="flex gap-2 flex-wrap">
+                        {/* 선택 승인/복구 버튼 - 항상 표시, 선택 없으면 비활성화 */}
+                        {filterStatus === 'trash' ? (
                             <button
-                                onClick={() => openBulkConfirmModal('bulk-delete')}
-                                disabled={isBulkProcessing}
-                                className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                                onClick={() => openBulkConfirmModal('bulk-restore')}
+                                disabled={isBulkProcessing || selectedIds.size === 0}
+                                className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {filterStatus === 'trash' ? <AlertTriangle className="w-4 h-4" /> : null}
-                                {filterStatus === 'trash' ? `선택 영구 삭제 (${selectedIds.size}개)` : `선택 삭제 (${selectedIds.size}개)`}
+                                <RotateCcw className="w-4 h-4" />
+                                선택 복구 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
                             </button>
-                        </div>
-                    )
+                        ) : (
+                            <button
+                                onClick={() => openBulkConfirmModal('bulk-approve')}
+                                disabled={isBulkProcessing || selectedIds.size === 0}
+                                className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                <CheckCircle className="w-4 h-4" />
+                                선택 승인 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
+                            </button>
+                        )}
+
+                        {/* 선택 삭제 버튼 - 항상 표시, 선택 없으면 비활성화 */}
+                        <button
+                            onClick={() => openBulkConfirmModal('bulk-delete')}
+                            disabled={isBulkProcessing || selectedIds.size === 0}
+                            className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
+                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
+                        >
+                            {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {filterStatus === 'trash' && selectedIds.size > 0 && <AlertTriangle className="w-4 h-4" />}
+                            <Trash2 className="w-4 h-4" />
+                            {filterStatus === 'trash' ? '선택 영구삭제' : '선택 삭제'} {selectedIds.size > 0 && `(${selectedIds.size}개)`}
+                        </button>
+
+                        {/* 구분선 */}
+                        <div className="w-px h-8 bg-gray-300 mx-1" />
+
+                        {/* 일괄 승인 버튼 (휴지통 제외) */}
+                        {filterStatus !== 'trash' && filterStatus !== 'published' && (
+                            <button
+                                onClick={() => openBulkAllConfirmModal('bulk-all-approve')}
+                                disabled={isBulkProcessing}
+                                className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                <CheckCircle className="w-4 h-4" />
+                                일괄 승인
+                            </button>
+                        )}
+
+                        {/* 일괄 삭제 버튼 */}
+                        <button
+                            onClick={() => openBulkAllConfirmModal('bulk-all-delete')}
+                            disabled={isBulkProcessing}
+                            className="px-4 py-2 bg-rose-700 text-white font-medium rounded-lg hover:bg-rose-800 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                            <AlertTriangle className="w-4 h-4" />
+                            {filterStatus === 'trash' ? '일괄 영구삭제' : '일괄 삭제'}
+                        </button>
+                    </div>
                 }
             />
 
@@ -597,6 +749,11 @@ function AdminNewsListPage() {
                     ]}
                     activeTab={filterStatus}
                     onChange={(key) => {
+                        // 같은 탭을 다시 클릭하면 데이터만 새로고침
+                        if (key === filterStatus) {
+                            fetchArticles();
+                            return;
+                        }
                         setFilterStatus(key);
                         const url = key === 'all' ? '/admin/news' : `/admin/news?status=${key}`;
                         router.push(url, { scroll: false });

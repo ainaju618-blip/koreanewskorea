@@ -5,6 +5,7 @@ import { Trash2, RefreshCw, Loader2, AlertTriangle, Database, Calendar } from "l
 import { ConfirmModal } from "@/components/admin/shared";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { localRegions, agencyRegions, allRegions, getRegionId } from "./regionData";
+import { useToast } from '@/components/ui/Toast';
 
 interface RegionStat {
     source: string;
@@ -38,6 +39,7 @@ export function DbManagerPanel() {
 
     // 전체 삭제 모달
     const [deleteAllModal, setDeleteAllModal] = useState(false);
+    const { showSuccess, showError, showWarning } = useToast();
 
     // 통계 로드
     const fetchStats = useCallback(async () => {
@@ -87,7 +89,7 @@ export function DbManagerPanel() {
     // 삭제 미리보기 요청
     const handleDeleteClick = async () => {
         if (selectedSources.length === 0) {
-            alert('삭제할 지역을 선택해주세요.');
+            showWarning('삭제할 지역을 선택해주세요.');
             return;
         }
 
@@ -106,14 +108,14 @@ export function DbManagerPanel() {
             const preview = await res.json();
 
             if (preview.totalCount === 0) {
-                alert('삭제할 기사가 없습니다.');
+                showWarning('삭제할 기사가 없습니다.');
                 return;
             }
 
             setDeleteModal({ isOpen: true, preview });
         } catch (error) {
             console.error('Preview error:', error);
-            alert('미리보기 요청 중 오류가 발생했습니다.');
+            showError('미리보기 요청 중 오류가 발생했습니다.');
         }
     };
 
@@ -145,11 +147,11 @@ export function DbManagerPanel() {
                 // 통계 새로고침
                 await fetchStats();
             } else {
-                alert('삭제 중 오류가 발생했습니다: ' + result.message);
+                showError('삭제 중 오류가 발생했습니다: ' + result.message);
             }
         } catch (error) {
             console.error('Delete error:', error);
-            alert('삭제 요청 중 오류가 발생했습니다.');
+            showError('삭제 요청 중 오류가 발생했습니다.');
         } finally {
             setDeleting(false);
         }
@@ -177,11 +179,11 @@ export function DbManagerPanel() {
                 setSelectedSources([]);
                 await fetchStats();
             } else {
-                alert('삭제 중 오류가 발생했습니다: ' + result.message);
+                showError('삭제 중 오류가 발생했습니다: ' + result.message);
             }
         } catch (error) {
             console.error('Delete all error:', error);
-            alert('삭제 요청 중 오류가 발생했습니다.');
+            showError('삭제 요청 중 오류가 발생했습니다.');
         } finally {
             setDeleting(false);
         }

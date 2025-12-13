@@ -111,6 +111,9 @@ def log_to_server(region: str, status: str, message: str, type: str = 'info') ->
         type: 로그 타입 (info, error, warning, success)
     """
     try:
+        # Phase 3: BOT_LOG_ID 환경변수가 있으면 사용 (정확한 로그 매칭)
+        log_id = os.getenv('BOT_LOG_ID')
+        
         data = {
             'region': region,
             'status': status,
@@ -118,6 +121,10 @@ def log_to_server(region: str, status: str, message: str, type: str = 'info') ->
             'type': type,
             'timestamp': str(time.time())
         }
+        
+        # log_id가 있으면 추가 (API에서 우선 매칭에 사용)
+        if log_id:
+            data['log_id'] = int(log_id)
         
         headers = {
             'Content-Type': 'application/json',

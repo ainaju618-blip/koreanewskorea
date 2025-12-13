@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Activity, CheckCircle, AlertTriangle, XCircle, Search, Filter, Download, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Activity, CheckCircle, AlertTriangle, XCircle, Search, Filter, Download, RotateCcw, ExternalLink } from "lucide-react";
 
 export default function BotLogsPage() {
+    const router = useRouter();
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [logs, setLogs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [autoRefresh, setAutoRefresh] = useState(true);
-    const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
     const fetchLogs = async () => {
         // 자동 갱신이 아니거나 로딩 중이 아닐 때만 로딩 표시 (깜빡임 방지)
@@ -64,8 +65,8 @@ export default function BotLogsPage() {
         a.click();
     };
 
-    const toggleExpand = (id: number) => {
-        setExpandedLogId(expandedLogId === id ? null : id);
+    const goToDetail = (id: number) => {
+        router.push(`/admin/bot/logs/${id}`);
     };
 
     const stats = {
@@ -164,56 +165,55 @@ export default function BotLogsPage() {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wider">
-                            <th className="px-5 py-3 font-medium w-10"></th>
+                            <th className="px-5 py-3 font-medium">ID</th>
                             <th className="px-5 py-3 font-medium">시각</th>
                             <th className="px-5 py-3 font-medium">지역</th>
                             <th className="px-5 py-3 font-medium">상태</th>
                             <th className="px-5 py-3 font-medium">메시지</th>
                             <th className="px-5 py-3 font-medium text-center">수집</th>
                             <th className="px-5 py-3 font-medium text-center">소요시간</th>
+                            <th className="px-5 py-3 font-medium text-center">상세</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {logs.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="p-12 text-center text-gray-400">데이터가 없습니다.</td>
+                                <td colSpan={8} className="p-12 text-center text-gray-400">데이터가 없습니다.</td>
                             </tr>
                         ) : logs.map((log) => (
-                            <React.Fragment key={log.id}>
-                                <tr
-                                    className={`hover:bg-gray-50 transition cursor-pointer ${expandedLogId === log.id ? 'bg-blue-50/50' : ''}`}
-                                    onClick={() => toggleExpand(log.id)}
-                                >
-                                    <td className="px-5 py-3 text-gray-400">
-                                        {expandedLogId === log.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                    </td>
-                                    <td className="px-5 py-3 text-xs font-mono text-gray-600">
-                                        {new Date(log.started_at).toLocaleString('ko-KR', { hour12: false })}
-                                    </td>
-                                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{log.region}</td>
-                                    <td className="px-5 py-3">
-                                        <LogStatusBadge status={log.status} />
-                                    </td>
-                                    <td className="px-5 py-3 text-sm text-gray-700 max-w-md truncate">
-                                        {log.log_message}
-                                    </td>
-                                    <td className="px-5 py-3 text-center text-sm font-medium text-gray-900">
-                                        {log.articles_count}건
-                                    </td>
-                                    <td className="px-5 py-3 text-center text-xs font-mono text-gray-500">
-                                        {getDuration(log.started_at, log.ended_at)}
-                                    </td>
-                                </tr>
-                                {expandedLogId === log.id && (
-                                    <tr className="bg-gray-50 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <td colSpan={7} className="px-10 py-4 border-b border-gray-100">
-                                            <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-xs whitespace-pre-wrap max-h-96 overflow-y-auto shadow-inner">
-                                                {log.metadata?.full_log || log.metadata?.error || "상세 로그가 없습니다."}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </React.Fragment>
+                            <tr
+                                key={log.id}
+                                className="hover:bg-gray-50 transition"
+                            >
+                                <td className="px-5 py-3 text-xs font-mono text-gray-500">
+                                    #{log.id}
+                                </td>
+                                <td className="px-5 py-3 text-xs font-mono text-gray-600">
+                                    {new Date(log.started_at).toLocaleString('ko-KR', { hour12: false })}
+                                </td>
+                                <td className="px-5 py-3 text-sm font-medium text-gray-900">{log.region}</td>
+                                <td className="px-5 py-3">
+                                    <LogStatusBadge status={log.status} />
+                                </td>
+                                <td className="px-5 py-3 text-sm text-gray-700 max-w-xs truncate" title={log.log_message}>
+                                    {log.log_message?.split('\n')[0] || '-'}
+                                </td>
+                                <td className="px-5 py-3 text-center text-sm font-medium text-gray-900">
+                                    {log.articles_count}건
+                                </td>
+                                <td className="px-5 py-3 text-center text-xs font-mono text-gray-500">
+                                    {getDuration(log.started_at, log.ended_at)}
+                                </td>
+                                <td className="px-5 py-3 text-center">
+                                    <button
+                                        onClick={() => goToDetail(log.id)}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        상세
+                                    </button>
+                                </td>
+                            </tr>
                         ))}
                     </tbody>
                 </table>
@@ -246,8 +246,10 @@ function LogStatusBadge({ status }: { status: string }) {
         success: { bg: "bg-green-100", text: "text-green-800", border: "border-green-200", icon: CheckCircle, label: "성공" },
         warning: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-200", icon: AlertTriangle, label: "경고" },
         failed: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200", icon: XCircle, label: "실패" },
+        failure: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200", icon: XCircle, label: "실패" },
         error: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200", icon: XCircle, label: "에러" },
         running: { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200", icon: Activity, label: "실행중" },
+        stopped: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-200", icon: AlertTriangle, label: "중지됨" },
     };
 
     const config = styles[status] || styles['warning'];

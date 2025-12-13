@@ -322,20 +322,26 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
 # ============================================================
 # 7. 메인 수집 함수
 # ============================================================
-def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List[Dict]:
+def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
     보도자료를 수집하고 서버로 전송 (개수 기반)
-    
+
     Args:
         max_articles: 최대 수집 기사 수 (기본 10개)
         days: 선택적 날짜 필터 (None이면 비활성화)
+        start_date: 수집 시작일 (YYYY-MM-DD)
+        end_date: 수집 종료일 (YYYY-MM-DD)
     """
-    if days:
-        print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최대 {max_articles}개, 최근 {days}일)")
+    if not start_date and days:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+
+    if start_date:
+        print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최대 {max_articles}개, {start_date} ~ {end_date})")
     else:
         print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최대 {max_articles}개, 날짜 필터 없음)")
-        start_date = None
     
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v3.1 시작', 'info')
     
@@ -384,6 +390,8 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
             
             # 링크 정보 수집
             link_data = []
+            seen_urls = set()  # ★ 중복 URL 체크용
+
             for i in range(row_count):
                 if collected_count + len(link_data) >= max_articles:
                     break
@@ -435,7 +443,12 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None) -> List
                         print(f"      ⏩ 목록에서 날짜 필터: {list_date} < {start_date}")
                         # 목록이 최신순이면 이 이후는 더 오래된 기사이므로 중지
                         continue
-                    
+
+                    # ★ 중복 URL 체크
+                    if full_url in seen_urls:
+                        continue
+                    seen_urls.add(full_url)
+
                     link_data.append({
                         'title': title,
                         'url': full_url,
@@ -540,9 +553,17 @@ def main():
     parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수 (기본 10)')
     parser.add_argument('--days', type=int, default=None, help='선택적 날짜 필터 (일). 지정하지 않으면 날짜 필터 없음')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
-    
-    collect_articles(args.max_articles, args.days)
+
+    collect_articles(
+        max_articles=args.max_articles,
+        days=args.days,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

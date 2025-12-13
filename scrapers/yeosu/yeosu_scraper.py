@@ -281,21 +281,25 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
 # ============================================================
 # 7. 메인 수집 함수
 # ============================================================
-def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = False) -> List[Dict]:
+def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = False, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
     보도자료를 수집하고 서버로 전송
-    
+
     Args:
         days: 수집할 기간 (일)
         max_articles: 최대 수집 기사 수
         dry_run: 테스트 모드 (서버 전송 안함)
+        start_date: 수집 시작일 (YYYY-MM-DD)
+        end_date: 수집 종료일 (YYYY-MM-DD)
     """
     print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일)")
     if not dry_run:
         log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
-    
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     collected_count = 0
     success_count = 0
@@ -335,38 +339,45 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
             
             # 링크 정보 수집
             link_data = []
+            seen_urls = set()  # ★ 중복 URL 체크용
+
             for i in range(link_count):
                 if collected_count + len(link_data) >= max_articles:
                     break
-                    
+
                 try:
                     link = links.nth(i)
-                    
+
                     title = safe_get_text(link)
                     title = title.strip() if title else ""
                     # "새로운글" 제거
                     title = title.replace('새로운글', '').strip()
-                    
+
                     href = safe_get_attr(link, 'href')
-                    
+
                     if not title or not href:
                         continue
-                    
+
                     # idx= 파라미터 확인
                     if 'idx=' not in href:
                         continue
-                    
+
                     # 상세 페이지 URL 구성
                     if href.startswith('http'):
                         full_url = href
                     else:
                         full_url = urljoin(BASE_URL, href)
-                    
+
+                    # ★ 중복 URL 체크
+                    if full_url in seen_urls:
+                        continue
+                    seen_urls.add(full_url)
+
                     link_data.append({
                         'title': title,
                         'url': full_url,
                     })
-                    
+
                 except Exception as e:
                     continue
             
@@ -450,9 +461,18 @@ def main():
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
     parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
-    
-    collect_articles(args.days, args.max_articles, args.dry_run)
+
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        dry_run=args.dry_run,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

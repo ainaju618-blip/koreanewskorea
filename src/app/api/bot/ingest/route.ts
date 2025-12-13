@@ -26,10 +26,12 @@ export async function POST(request: Request) {
         }
 
         // 3. Avoid Duplicates - 기존 기사가 있으면 thumbnail_url만 업데이트
+        // 단, trash 상태 기사는 제외 (삭제 후 재수집 가능하도록)
         const { data: existing } = await supabaseAdmin
             .from('posts')
             .select('id, thumbnail_url')
             .eq('original_link', original_link)
+            .neq('status', 'trash')  // 휴지통 제외
             .single();
 
         if (existing) {
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
                 .from('posts')
                 .select('id')
                 .eq('title', title)
+                .neq('status', 'trash')  // 휴지통 제외
                 .gte('published_at', `${publishedDate}T00:00:00`)
                 .lt('published_at', `${publishedDate}T23:59:59`)
                 .single();
@@ -132,6 +135,24 @@ export async function POST(request: Request) {
             finalRegion = SOURCE_TO_REGION[source] || null;
         }
 
+        // 수집된 기사 상태 결정:
+        // - 모든 수집 기사 → 'pending' (승인대기)
+        // - 관리자 승인 후 → 'published' (발행)
+        // - 이미지/본문 품질에 따라 quality_score 저장 (추후 필터링용)
+        const hasTitle = title && title.trim().length > 0;
+        const hasContent = content && content.trim().length > 50;
+        const hasImage = thumbnail_url && thumbnail_url.trim().length > 0;
+
+        // 품질 점수 계산 (관리자 승인 시 참고용)
+        let qualityScore = 0;
+        if (hasTitle) qualityScore += 1;
+        if (hasContent) qualityScore += 1;
+        if (hasImage) qualityScore += 1;
+
+        // ★ 핵심 변경: 모든 수집 기사는 'draft' 상태로 저장
+        // 관리자가 승인해야 'published'로 변경됨
+        // (DB 제약조건: draft | review | published | rejected | archived | trash)
+        const articleStatus = 'draft';
 
         // 5. Insert
         const { data, error } = await supabaseAdmin
@@ -147,7 +168,7 @@ export async function POST(request: Request) {
                 published_at: published_at || new Date().toISOString(),
                 thumbnail_url,
                 ai_summary: ai_summary || '',
-                status: 'draft', // 승인대기 상태로 저장 → 관리자 승인 후 published
+                status: articleStatus, // 조건에 따른 상태
             })
             .select()
             .single();

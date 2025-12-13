@@ -413,6 +413,57 @@ python [organization]_scraper.py --days 30
 
 ---
 
+## ⚠️ bot-service.ts Compatible Arguments (REQUIRED!)
+
+> [!CAUTION]
+> ## 🚨 CRITICAL: Web UI Compatibility
+>
+> When scrapers are executed from the **Web Admin UI** ("수동수집실행" menu),
+> `bot-service.ts` automatically passes these arguments:
+>
+> ```
+> ┌─────────────────────────────────────────────────────────────┐
+> │  Arguments passed by bot-service.ts:                        │
+> │                                                              │
+> │  --start-date  YYYY-MM-DD  (Collection start date)         │
+> │  --end-date    YYYY-MM-DD  (Collection end date)           │
+> │  --days        N           (Collection period)             │
+> │  --max-articles N          (Max articles to collect)       │
+> │                                                              │
+> │  ALL 4 arguments MUST be defined in every scraper!          │
+> └─────────────────────────────────────────────────────────────┘
+> ```
+>
+> **If these arguments are NOT defined in argparse → Exit Code 2 error!**
+
+### Required argparse Template
+
+```python
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} Press Release Scraper')
+
+    # Basic arguments
+    parser.add_argument('--days', type=int, default=3, help='Collection period (days)')
+    parser.add_argument('--max-articles', type=int, default=10, help='Max articles to collect')
+    parser.add_argument('--dry-run', action='store_true', help='Test mode')
+
+    # ⚠️ bot-service.ts compatible arguments (REQUIRED!)
+    # These are passed when executed from Web UI - missing = Exit Code 2 error
+    parser.add_argument('--start-date', type=str, default=None, help='Start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='End date (YYYY-MM-DD)')
+
+    args = parser.parse_args()
+    collect_articles(args.days, args.max_articles)
+```
+
+### Notes
+- `--start-date` and `--end-date` only need to be **defined** (not used in logic)
+- But if NOT defined → "unrecognized arguments" error (Exit Code 2)
+- Can be used later for date-range based collection logic
+
+---
+
 ## 📊 Existing Scraper Reference
 
 | Organization | Folder | Special Notes |

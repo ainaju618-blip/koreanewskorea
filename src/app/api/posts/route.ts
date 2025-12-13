@@ -24,12 +24,22 @@ export async function GET(req: NextRequest) {
             .order(sortField, { ascending: false })
             .range(start, end);
 
-        // 상태 필터 (옵션)
-        if (status && status !== 'all') {
+        // 상태 필터
+        // - 'published': 메인 노출 가능 (이미지+본문+제목)
+        // - 'draft': 게시판만 노출 (본문+제목)
+        // - 'hidden': 어디에도 안 나옴 (제목만)
+        // - 'visible': published + draft (게시판에서 사용)
+        if (status === 'visible') {
+            // 게시판용: published 또는 draft 상태의 기사
+            query = query.in('status', ['published', 'draft']);
+        } else if (status && status !== 'all') {
             query = query.eq('status', status);
+        } else {
+            // 기본값: hidden 제외 (published + draft)
+            query = query.neq('status', 'hidden');
         }
 
-        // ★ 이미지 필수 필터 (메인 페이지용)
+        // ★ 이미지 필수 필터 (메인 페이지용 - status=published 일 때 자동 적용)
         if (requireImage) {
             query = query.not('thumbnail_url', 'is', null);
         }

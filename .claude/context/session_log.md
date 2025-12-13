@@ -5,6 +5,57 @@
 
 ---
 
+## [2025-12-14] 세션 #6
+
+### 주인님 의도
+1. SEO 관점에서 신문사 홈페이지 개선 기획
+2. 홈페이지 개인화 시스템 기획
+   - 부스트 시스템: 특정 지역/기사를 예약 시간에 상단 노출 (영업용)
+   - 위치 기반: IP 감지하여 접속 지역 기사 우선 노출
+   - 행동 기반: 자주 본 지역/카테고리 학습
+   - 상시 가중치: 특정 지역 기본 노출 비율 조정
+3. 관리자가 개인화 방식 선택 가능하도록
+4. **로그인/비로그인 사용자 모두 지원**
+5. 작업지시서 문서화
+
+### 수행 작업
+
+1. **SEO Phase 1 구현** (이전 세션에서 완료)
+   - `src/app/(site)/news/[id]/page.tsx` - generateMetadata, JSON-LD 구조화 데이터
+   - `src/app/layout.tsx` - 전역 메타데이터 (OG, Twitter, robots)
+   - 빌드 오류 수정 (idea/collect/route.ts, idea/raw/page.tsx)
+
+2. **개인화 시스템 기획 문서 작성**
+   - `docs/features/PERSONALIZATION_SYSTEM.md` v1.1 완성
+   - 로그인/비로그인 사용자 지원 섹션 추가
+   - DB 스키마: 5개 테이블 설계
+     - personalization_settings (전역 설정)
+     - boost_schedules (부스트 예약)
+     - region_weights (지역 가중치)
+     - user_behavior_logs (행동 로그, 세션ID/유저ID 통합)
+     - user_personalization_profiles (로그인 사용자 프로필)
+   - 점수 계산 알고리즘 (로그인/비로그인 통합)
+   - API 13개 엔드포인트 설계
+   - 관리자 UI 와이어프레임
+
+3. **작업지시서 작성**
+   - Phase 1: 기반 구축 (DB + API) - 4개 작업
+   - Phase 2: 위치 기반 + 쿠키 - 4개 작업
+   - Phase 3: 로그인 동기화 + 관리자 UI - 4개 작업
+   - Phase 4: 고도화 (선택)
+
+### 주요 변경 파일
+```
+docs/features/PERSONALIZATION_SYSTEM.md (신규, 1070줄)
+src/app/(site)/news/[id]/page.tsx (SEO 강화)
+src/app/layout.tsx (메타데이터 추가)
+```
+
+### 다음 작업
+- 주인님 지시에 따라 Phase 1 구현 시작 (또는 Gemini에게 위임)
+
+---
+
 ## [2025-12-12 20:38] 세션 #5
 
 ### 주인님 의도

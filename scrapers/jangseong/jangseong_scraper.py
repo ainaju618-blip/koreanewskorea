@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""장성군청 보도자료 스크래퍼 v1.0
+"""장성군청 보도자료 스크래퍼 v2.0
 - 사이트: https://www.jangseong.go.kr/
 - 대상: 보도자료 게시판 (/home/www/news/jangseong/bodo)
 - 최종수정: 2025-12-13
+- 변경사항: local_image_saver로 마이그레이션
 """
 
 import sys
@@ -17,7 +18,7 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.cloudinary_uploader import download_and_upload_image
+from utils.local_image_saver import download_and_save_locally
 
 # ============================================
 # 상수 정의
@@ -74,6 +75,62 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
     return True, "[검증 통과]"
 
 
+def clean_content(content: str) -> str:
+    """본문에서 메타 정보 및 불필요한 텍스트 제거"""
+    if not content:
+        return ""
+    
+    lines = content.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        line_stripped = line.strip()
+        
+        # 빈 줄은 유지
+        if not line_stripped:
+            cleaned_lines.append(line)
+            continue
+        
+        # 제거할 패턴들
+        skip_patterns = [
+            # 날짜 및 담당부서 패턴 (예: "2025-12-11   |   기획실")
+            re.match(r'^\d{4}-\d{2}-\d{2}\s*\|\s*\S+', line_stripped),
+            # 조회수 패턴 (예: "조회수 : 78")
+            re.match(r'^조회수\s*[:\s]\s*\d+', line_stripped),
+            # 저작권/공공누리 문구
+            '공공누리' in line_stripped,
+            '출처표시' in line_stripped and '이용할 수 있습니다' in line_stripped,
+            '저작물은' in line_stripped and '조건에 따라' in line_stripped,
+            # 담당자 정보 패턴
+            re.match(r'^담당자\s*[:\s]', line_stripped),
+            re.match(r'^연락처\s*[:\s]', line_stripped),
+            re.match(r'^전화번호\s*[:\s]', line_stripped),
+            # 첨부파일 안내
+            line_stripped.startswith('첨부파일'),
+            # 날짜만 있는 줄
+            re.match(r'^\d{4}[-./]\d{2}[-./]\d{2}$', line_stripped),
+        ]
+        
+        # 패턴 중 하나라도 매칭되면 제거
+        should_skip = False
+        for pattern in skip_patterns:
+            if pattern:  # bool 또는 Match 객체
+                should_skip = True
+                break
+        
+        if not should_skip:
+            cleaned_lines.append(line)
+    
+    # 정리된 본문 합치기
+    result = '\n'.join(cleaned_lines).strip()
+    
+    # 연속된 빈 줄 정리 (3개 이상 → 2개)
+    while '\n\n\n' in result:
+        result = result.replace('\n\n\n', '\n\n')
+    
+    return result
+
+
 def safe_get_text(locator) -> str:
     """안전하게 텍스트 추출"""
     try:
@@ -114,6 +171,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
                 if len(content) > 50:
                     break
 
+        # 메타 정보 제거 (날짜, 조회수, 저작권 문구 등)
+        content = clean_content(content)
         content = content[:5000]  # 최대 5000자
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")
@@ -138,13 +197,13 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except Exception as e:
         print(f"   [WARN] 이미지 추출 에러: {str(e)}")
 
-    # 3. Cloudinary 업로드 (이미지가 있으면)
+    # 3. 로컬 이미지 저장 (이미지가 있으면)
     if original_image_url:
         try:
-            cloudinary_url = download_and_upload_image(original_image_url, BASE_URL, folder="jangseong")
-            if cloudinary_url and (cloudinary_url.startswith('https://res.cloudinary.com') or cloudinary_url.startswith('/images/')):
-                thumbnail_url = cloudinary_url
-                print(f"      [CLOUD] 이미지 저장 완료")
+            local_path = download_and_save_locally(original_image_url, BASE_URL, REGION_CODE)
+            if local_path and local_path.startswith('/images/'):
+                thumbnail_url = local_path
+                print(f"      [LOCAL] 이미지 저장 완료: {local_path}")
             else:
                 thumbnail_url = original_image_url
         except Exception as e:
@@ -176,13 +235,19 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date, department
 
 
-def collect_articles(days: int = 7, max_articles: int = 10) -> List[Dict]:
+def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
     """기사 수집 메인 함수"""
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     collected_links = []
-    cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    if not start_date:
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    else:
+        cutoff_date = start_date
+
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
 
     # ============================================
     # Phase 1: 링크 수집
@@ -323,11 +388,19 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='장성군청 보도자료 스크래퍼')
     parser.add_argument('--days', type=int, default=7, help='수집 기간 (일)')
-    parser.add_argument('--max', type=int, default=10, help='최대 수집 개수')
+    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 개수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
 
-    collect_articles(days=args.days, max_articles=args.max)
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

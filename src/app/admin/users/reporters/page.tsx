@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { UserPlus, Users, Bot, CheckCircle, Edit2, Trash2, Loader2, X, RefreshCcw, Phone, Mail, Briefcase, Crown, User } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 // 직위 데이터
 const POSITIONS = [
@@ -90,6 +91,7 @@ export default function ReportersPage() {
 
     // 삭제 확인 모달
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; reporter: Reporter | null }>({ isOpen: false, reporter: null });
+    const { showSuccess, showError, showWarning } = useToast();
 
     // 기자 목록 조회
     const fetchReporters = async () => {
@@ -151,11 +153,17 @@ export default function ReportersPage() {
 
     // 기자 추가
     const handleAddReporter = async () => {
-        if (!formName) return alert("이름을 입력해주세요.");
+        if (!formName) {
+            showWarning("이름을 입력해주세요.");
+            return;
+        }
 
         // 이메일 입력 시 비밀번호 검증
         if (formEmail) {
-            if (formPassword && formPassword.length < 6) return alert("비밀번호는 6자 이상이어야 합니다.");
+            if (formPassword && formPassword.length < 6) {
+                showWarning("비밀번호는 6자 이상이어야 합니다.");
+                return;
+            }
         }
 
         setIsSubmitting(true);
@@ -182,14 +190,14 @@ export default function ReportersPage() {
                     const msg = formPassword
                         ? "기자 계정이 생성되었습니다. 이메일과 비밀번호로 로그인할 수 있습니다."
                         : "기자 계정이 생성되었습니다. 초기 비밀번호: a1234567!";
-                    alert(msg);
+                    showSuccess(msg);
                 }
             } else {
                 const err = await res.json();
-                alert(err.message || "등록 실패");
+                showError(err.message || "등록 실패");
             }
         } catch (err) {
-            alert("서버 오류가 발생했습니다.");
+            showError("서버 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
         }
@@ -198,11 +206,15 @@ export default function ReportersPage() {
     // 기자 수정
     const handleUpdateReporter = async () => {
         if (!selectedReporter) return;
-        if (!formName) return alert("이름을 입력해주세요.");
+        if (!formName) {
+            showWarning("이름을 입력해주세요.");
+            return;
+        }
 
         // 비밀번호 변경 시 길이 검증
         if (formPassword && formPassword.length < 6) {
-            return alert("비밀번호는 6자 이상이어야 합니다.");
+            showWarning("비밀번호는 6자 이상이어야 합니다.");
+            return;
         }
 
         setIsSubmitting(true);
@@ -228,10 +240,10 @@ export default function ReportersPage() {
                 resetForm();
             } else {
                 const err = await res.json();
-                alert(err.message || "수정 실패");
+                showError(err.message || "수정 실패");
             }
         } catch (err) {
-            alert("서버 오류가 발생했습니다.");
+            showError("서버 오류가 발생했습니다.");
         } finally {
             setIsSubmitting(false);
         }
@@ -257,10 +269,10 @@ export default function ReportersPage() {
                 await fetchReporters();
             } else {
                 const err = await res.json();
-                alert(err.message || "삭제 실패");
+                showError(err.message || "삭제 실패");
             }
         } catch (err) {
-            alert("서버 오류가 발생했습니다.");
+            showError("서버 오류가 발생했습니다.");
         }
     };
 
@@ -727,11 +739,10 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
 
     return (
         <div
-            className={`border-2 rounded-lg p-4 transition-all bg-white cursor-pointer ${
-                isActive
+            className={`border-2 rounded-lg p-4 transition-all bg-white cursor-pointer ${isActive
                     ? 'border-gray-100 hover:border-blue-400 hover:shadow-md'
                     : 'border-gray-100 opacity-60'
-            }`}
+                }`}
             onClick={onView}
         >
             <div className="flex items-start gap-3 mb-3">

@@ -244,15 +244,17 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
 # ============================================================
 # 7. 메인 수집 함수
 # ============================================================
-def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
+def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
     보도자료를 수집하고 서버로 전송합니다.
     """
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     collected_count = 0
     success_count = 0
@@ -293,6 +295,8 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
 
             # 링크 정보 수집
             link_data = []
+            seen_urls = set()  # ★ 중복 URL 체크용
+
             for i in range(count):
                 if collected_count + len(link_data) >= max_articles:
                     break
@@ -355,6 +359,11 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
                         break
                     if n_date > end_date:
                         continue
+
+                    # ★ 중복 URL 체크
+                    if full_url in seen_urls:
+                        continue
+                    seen_urls.add(full_url)
 
                     if title and full_url:
                         link_data.append({'title': title.strip(), 'url': full_url, 'date': n_date})
@@ -441,9 +450,17 @@ def main():
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
     parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
 
-    collect_articles(args.days, args.max_articles)
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

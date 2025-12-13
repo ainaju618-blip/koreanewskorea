@@ -79,15 +79,17 @@ async function runBot() {
         console.log(`[Scheduler] Starting batch job for ${ALL_REGIONS.length} regions...`);
 
         // 직접 서비스 함수 호출 (API 오버헤드 없이 바로 실행)
-        // 1일치, DryRun=false
-        const days = 1;
+        // 오늘 날짜 기준 수집
         const dryRun = false;
+        const today = new Date();
+        const startDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+        const endDate = startDate; // 같은 날짜 (1일치)
 
         for (const region of ALL_REGIONS) {
-            const id = await createBotLog(region, days, dryRun);
+            const id = await createBotLog(region, 1, dryRun);
             if (id) {
                 // await를 사용하여 순차 실행 (서버 부하 조절)
-                await executeScraper(id, region, days, dryRun);
+                await executeScraper(id, region, startDate, endDate, dryRun);
             }
         }
 

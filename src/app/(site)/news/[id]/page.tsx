@@ -1,9 +1,71 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Clock, ExternalLink, Share2, Facebook, Twitter } from 'lucide-react';
+import { ArrowLeft, Clock } from 'lucide-react';
+import ShareButton from '@/components/news/ShareButton';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+// SEO: 동적 메타데이터 생성
+export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
+    const { id } = await params;
+    const news = await getNewsById(id);
+
+    if (!news) {
+        return {
+            title: '기사를 찾을 수 없습니다 | 코리아NEWS',
+        };
+    }
+
+    // 본문에서 160자 추출 (메타 설명용)
+    const description = news.ai_summary
+        || news.content?.replace(/\[이미지[^\]]*\]:[^\n]+/g, '').slice(0, 160).trim() + '...'
+        || '코리아NEWS에서 전하는 광주·전남 지역 소식';
+
+    const publishedTime = news.published_at || news.created_at;
+    const modifiedTime = news.updated_at || news.published_at || news.created_at;
+
+    return {
+        title: `${news.title} | 코리아NEWS`,
+        description,
+        keywords: [news.category, '광주', '전남', '지역뉴스', '코리아NEWS', news.source].filter(Boolean),
+        authors: news.author_name ? [{ name: news.author_name }] : undefined,
+        openGraph: {
+            title: news.title,
+            description,
+            type: 'article',
+            publishedTime,
+            modifiedTime,
+            authors: news.author_name ? [news.author_name] : undefined,
+            section: news.category,
+            tags: [news.category, '광주', '전남'],
+            images: news.thumbnail_url ? [
+                {
+                    url: news.thumbnail_url,
+                    width: 1200,
+                    height: 630,
+                    alt: `${news.title} - 코리아NEWS`,
+                }
+            ] : [],
+            siteName: '코리아NEWS',
+            locale: 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: news.title,
+            description,
+            images: news.thumbnail_url ? [news.thumbnail_url] : [],
+        },
+        alternates: {
+            canonical: `https://koreanews.com/news/${id}`,
+        },
+        robots: {
+            index: news.status === 'published',
+            follow: true,
+        },
+    };
+}
 
 interface NewsDetailProps {
     params: Promise<{ id: string }>;
@@ -74,22 +136,24 @@ function getCategoryColor(category: string) {
 }
 
 // 본문에서 이미지 URL을 실제 img 태그로 변환
-function renderContent(content: string) {
+// SEO: title 매개변수 추가하여 이미지 alt 텍스트 최적화
+function renderContent(content: string, title: string) {
     if (!content) return null;
 
     // 이미지 패턴: [이미지: URL] 또는 [이미지 N]: URL
     const imagePattern = /\[이미지[^\]]*\]:\s*(https?:\/\/[^\s\n]+)/g;
-    const parts: (string | { type: 'image'; url: string })[] = [];
+    const parts: (string | { type: 'image'; url: string; index: number })[] = [];
     let lastIndex = 0;
     let match;
+    let imageIndex = 1;
 
     while ((match = imagePattern.exec(content)) !== null) {
         // 이미지 앞의 텍스트
         if (match.index > lastIndex) {
             parts.push(content.slice(lastIndex, match.index));
         }
-        // 이미지 URL
-        parts.push({ type: 'image', url: match[1] });
+        // 이미지 URL (인덱스 포함)
+        parts.push({ type: 'image', url: match[1], index: imageIndex++ });
         lastIndex = match.index + match[0].length;
     }
 
@@ -110,12 +174,15 @@ function renderContent(content: string) {
                         </div>
                     ) : null;
                 } else {
+                    // SEO: 의미 있는 alt 텍스트 생성
+                    const altText = `${title} 관련 이미지 ${part.index} - 코리아NEWS`;
                     return (
                         <div key={i} className="my-6">
                             <img
                                 src={part.url}
-                                alt="기사 이미지"
+                                alt={altText}
                                 className="max-w-full h-auto rounded-lg shadow-md"
+                                loading="lazy"
                             />
                         </div>
                     );
@@ -134,13 +201,59 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         notFound();
     }
 
+    // 1. 기자 정보 조회 (Fetch Reporter Info)
+    let reporter = null;
+    if (news.author_id) {
+        const { data } = await supabaseAdmin
+            .from('reporters')
+            .select('id, name, slug, department, region') // 필요한 필드만 조회
+            .eq('id', news.author_id)
+            .single();
+        reporter = data;
+    }
+
     const relatedNews = await getRelatedNews(news.category, news.id);
 
     // 조회수 증가 (Phase 3)
     // await incrementViewCount(id);
 
+    // SEO: NewsArticle 구조화 데이터 (JSON-LD)
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: news.title,
+        description: news.ai_summary || news.content?.slice(0, 160),
+        image: news.thumbnail_url ? [news.thumbnail_url] : [],
+        datePublished: news.published_at || news.created_at,
+        dateModified: news.updated_at || news.published_at || news.created_at,
+        author: {
+            '@type': 'Person',
+            name: reporter?.name || news.author_name || '코리아NEWS 취재팀',
+            url: reporter ? `https://koreanews.com/author/${reporter.slug || reporter.id}` : undefined,
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: '코리아NEWS',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://koreanews.com/logo.png',
+            },
+        },
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://koreanews.com/news/${id}`,
+        },
+        articleSection: news.category,
+        keywords: [news.category, '광주', '전남', '지역뉴스'].join(', '),
+    };
+
     return (
         <div className="min-h-screen bg-white">
+            {/* SEO: 구조화 데이터 */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             {/* 상단 네비게이션 */}
             <div className="bg-slate-50 border-b border-slate-200">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -149,10 +262,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                         <span className="text-sm font-medium">홈으로</span>
                     </Link>
                     <div className="flex items-center gap-3">
-                        {/* 공유 버튼 (Phase 3) */}
-                        <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors" title="공유하기">
-                            <Share2 className="w-5 h-5" />
-                        </button>
+                        {/* 공유 버튼 */}
+                        <ShareButton title={news.title} />
                     </div>
                 </div>
             </div>
@@ -170,8 +281,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </span>
                 </div>
 
-                {/* 제목 */}
-                <h1 className="text-3xl md:text-[40px] font-bold text-gray-900 leading-tight mb-4 tracking-tight">
+                {/* 제목 - 조선일보명조 적용 */}
+                <h1 className="text-3xl md:text-[40px] font-serif font-bold text-gray-900 leading-tight mb-4 tracking-tight">
                     {news.title}
                 </h1>
 
@@ -187,12 +298,26 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                 {/* 기자 및 메타 정보 (강원일보 스타일) */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between py-4 border-t border-b border-gray-200 mb-8 bg-gray-50/50 px-4 rounded-lg">
                     <div className="flex items-center gap-2 mb-2 md:mb-0">
-                        {/* 기자 정보 (Mock or Real) - Author logic will be improved later */}
-                        <div className="font-bold text-gray-800 text-[15px]">
-                            {/* Assuming reporter info might come from author_id relation later, using static for now or news.author_name if available */}
-                            취재기자
-                        </div>
-                        <span className="text-gray-300">|</span>
+                        {/* 기자 정보 (Linked to Profile) */}
+                        {reporter ? (
+                            <Link
+                                href={`/author/${reporter.slug || reporter.id}`}
+                                rel="author"
+                                className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline flex items-center gap-2"
+                            >
+                                {reporter.name} 기자
+                                {reporter.department && (
+                                    <span className="text-gray-500 font-normal text-xs no-underline">
+                                        | {reporter.department}
+                                    </span>
+                                )}
+                            </Link>
+                        ) : (
+                            <div className="font-bold text-gray-800 text-[15px]">
+                                {news.author_name || "취재기자"}
+                            </div>
+                        )}
+                        <span className="text-gray-300 mx-1">|</span>
                         <a href={`mailto:news@koreanews.com`} className="text-gray-500 hover:text-blue-600 text-[14px]">
                             news@koreanews.com
                         </a>
@@ -206,30 +331,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                             )}
                         </div>
 
-                        {/* 공유 버튼 (작게 배치) */}
-                        <div className="flex items-center gap-1">
-                            <a
-                                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 text-gray-400 hover:text-[#1877F2] transition-colors"
-                                title="페이스북 공유"
-                            >
-                                <Facebook className="w-4 h-4" />
-                            </a>
-                            <a
-                                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(news.title)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 text-gray-400 hover:text-[#1DA1F2] transition-colors"
-                                title="X(트위터) 공유"
-                            >
-                                <Twitter className="w-4 h-4" />
-                            </a>
-                            <button className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors" title="URL 복사">
-                                <Share2 className="w-4 h-4" />
-                            </button>
-                        </div>
+                        {/* 공유 버튼 */}
+                        <ShareButton title={news.title} size="sm" className="p-1.5" />
                     </div>
                 </div>
 
@@ -243,24 +346,24 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
                 )}
 
-                {/* 썸네일 이미지 */}
+                {/* 썸네일 이미지 - SEO 최적화 */}
                 {news.thumbnail_url && (
-                    <div className="mb-10 text-center">
+                    <figure className="mb-10 text-center">
                         <img
                             src={news.thumbnail_url}
-                            alt={news.title}
+                            alt={`${news.title} - ${news.category} 뉴스 | 코리아NEWS`}
                             className="max-w-full h-auto mx-auto rounded-lg shadow-sm"
+                            loading="eager"
                         />
-                        <p className="mt-2 text-sm text-gray-500">
-                            {/* 캡션 기능이 추가되면 여기에 표시 */}
-                            {news.title} 관련 이미지
-                        </p>
-                    </div>
+                        <figcaption className="mt-2 text-sm text-gray-500">
+                            {news.title} 관련 이미지 ⓒ 코리아NEWS
+                        </figcaption>
+                    </figure>
                 )}
 
                 {/* 본문 */}
                 <div id="article-body" className="prose prose-lg max-w-none mb-12 text-gray-800 leading-[1.8] tracking-wide break-keep">
-                    {renderContent(news.content)}
+                    {renderContent(news.content, news.title)}
                 </div>
 
                 {/* 관련 기사 */}

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 interface JobResult {
     id: number;
@@ -11,6 +12,7 @@ interface JobResult {
     status: string;
     log_message?: string;
     articles_count?: number;
+    created_at?: string;
 }
 
 interface RegionStat {
@@ -38,6 +40,10 @@ export function ScraperPanel() {
     // 지역별 통계 (기사 수 표시용)
     const [regionStats, setRegionStats] = useState<RegionStat[]>([]);
 
+    // 스크래퍼 활성 상태 (동적 조회)
+    const [activeScraperIds, setActiveScraperIds] = useState<string[]>([]);
+    const { confirm } = useConfirm();
+
     // 지역별 통계 정보 매핑
     const regionInfo = React.useMemo(() => {
         const info: Record<string, { count: number; latestDate: string | null }> = {};
@@ -47,7 +53,7 @@ export function ScraperPanel() {
         return info;
     }, [regionStats]);
 
-    // 페이지 로드 시 통계 및 진행 중인 작업 로드
+    // 페이지 로드 시 DB에서 진행 중인 작업 확인 (Supabase 기반)
     useEffect(() => {
         const fetchStats = async () => {
             try {
@@ -60,21 +66,45 @@ export function ScraperPanel() {
         };
         fetchStats();
 
+        // 스크래퍼 활성 상태 조회 (폴더 내 파일 3개 이상)
+        const fetchScraperStatus = async () => {
+            try {
+                const res = await fetch('/api/bot/scraper-status');
+                const data = await res.json();
+                setActiveScraperIds(data.activeRegions || []);
+                console.log('[ScraperPanel] Active scrapers:', data.activeRegions?.length || 0);
+            } catch (e) {
+                console.error('Failed to fetch scraper status:', e);
+            }
+        };
+        fetchScraperStatus();
+
+        // DB에서 실행 중인 작업 확인 (Supabase bot_logs 테이블)
         const checkRunningJobs = async () => {
             try {
-                const res = await fetch('/api/bot/logs?limit=30');
+                // running 상태인 작업만 직접 조회
+                const res = await fetch('/api/bot/logs?status=running&limit=50');
                 const data = await res.json();
-                if (!data.logs) return;
 
-                const runningJobs = data.logs.filter((log: any) => log.status === 'running');
-                if (runningJobs.length > 0) {
-                    const jobIds = runningJobs.map((j: any) => j.id);
-                    setActiveJobIds(jobIds);
-                    setIsRunning(true);
-                    setStatusMessage(`진행 중인 작업 ${runningJobs.length}개 복원됨`);
-                    setProgress({ total: jobIds.length, completed: 0 });
-                    setCurrentJobs(runningJobs);
+                console.log('[ScraperPanel] Running jobs from DB:', data.logs?.length || 0);
+
+                if (!data.logs || data.logs.length === 0) {
+                    console.log('[ScraperPanel] No running jobs found');
+                    return;
                 }
+
+                // running 상태인 작업들이 있으면 복원
+                const runningJobs: JobResult[] = data.logs;
+                const jobIds = runningJobs.map((j) => j.id);
+
+                console.log('[ScraperPanel] Restoring job IDs:', jobIds);
+
+                setActiveJobIds(jobIds);
+                setIsRunning(true);
+                setStatusMessage(`진행 중인 작업 ${runningJobs.length}개 복원됨`);
+                setProgress({ total: runningJobs.length, completed: 0 });
+                setCurrentJobs(runningJobs);
+
             } catch (e) {
                 console.error('Failed to check running jobs:', e);
             }
@@ -82,7 +112,7 @@ export function ScraperPanel() {
         checkRunningJobs();
     }, []);
 
-    // 다중 작업 폴링 로직
+    // 다중 작업 폴링 로직 (DB 기반)
     useEffect(() => {
         let interval: NodeJS.Timeout;
 
@@ -94,9 +124,9 @@ export function ScraperPanel() {
 
                     if (!data.logs) return;
 
-                    const jobs = data.logs.filter((log: any) => activeJobIds.includes(log.id));
-                    const completed = jobs.filter((job: any) =>
-                        ['success', 'failed', 'warning', 'error'].includes(job.status)
+                    const jobs = data.logs.filter((log: JobResult) => activeJobIds.includes(log.id));
+                    const completed = jobs.filter((job: JobResult) =>
+                        ['success', 'failed', 'failure', 'warning', 'error', 'stopped'].includes(job.status)
                     );
 
                     setProgress({
@@ -106,10 +136,11 @@ export function ScraperPanel() {
 
                     setCurrentJobs(jobs);
 
-                    const running = jobs.find((job: any) => job.status === 'running');
+                    const running = jobs.find((job: JobResult) => job.status === 'running');
                     if (running) {
                         setStatusMessage(`현재 실행 중... [${getRegionLabel(running.region)}] ${running.log_message || ''} (${completed.length}/${activeJobIds.length} 완료)`);
                     } else if (completed.length === activeJobIds.length) {
+                        // 모든 작업 완료
                         setIsRunning(false);
                         setJobResults(jobs);
                         setStatusMessage("모든 작업이 완료되었습니다.");
@@ -162,9 +193,16 @@ export function ScraperPanel() {
         }
     };
 
-    // 중지 버튼 핸들러
+    // 전체 중지 버튼 핸들러
     const handleStop = async () => {
-        if (!confirm('모든 스크래퍼를 중지하시겠습니까?')) return;
+        const confirmed = await confirm({
+            title: '스크래퍼 중지',
+            message: '모든 스크래퍼를 중지하시겠습니까?',
+            type: 'warning',
+            confirmText: '중지',
+            cancelText: '취소'
+        });
+        if (!confirmed) return;
 
         try {
             setStatusMessage('스크래퍼 중지 중...');
@@ -177,6 +215,49 @@ export function ScraperPanel() {
                 setCurrentJobs([]);
                 setProgress({ total: 0, completed: 0 });
                 setStatusMessage('모든 스크래퍼가 중지되었습니다.');
+            } else {
+                setStatusMessage(`중지 실패: ${data.message}`);
+            }
+        } catch (error: any) {
+            setStatusMessage(`중지 오류: ${error.message}`);
+        }
+    };
+
+    // 개별 지역 중지 핸들러
+    const handleStopSingle = async (jobId: number, region: string) => {
+        const regionLabel = getRegionLabel(region);
+        const confirmed = await confirm({
+            title: '스크래퍼 중지',
+            message: `${regionLabel} 스크래퍼를 중지하시겠습니까?`,
+            type: 'warning',
+            confirmText: '중지',
+            cancelText: '취소'
+        });
+        if (!confirmed) return;
+
+        try {
+            setStatusMessage(`${regionLabel} 중지 중...`);
+            const res = await fetch('/api/bot/stop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ region, jobId })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // 해당 작업을 목록에서 제거하거나 상태 업데이트
+                setActiveJobIds(prev => prev.filter(id => id !== jobId));
+                setCurrentJobs(prev => prev.filter(job => job.id !== jobId));
+                setProgress(prev => ({
+                    total: prev.total - 1,
+                    completed: prev.completed
+                }));
+                setStatusMessage(`${regionLabel} 스크래퍼가 중지되었습니다.`);
+
+                // 모든 작업이 완료/중지되면 running 상태 해제
+                if (activeJobIds.length <= 1) {
+                    setIsRunning(false);
+                }
             } else {
                 setStatusMessage(`중지 실패: ${data.message}`);
             }
@@ -239,9 +320,11 @@ export function ScraperPanel() {
                         <div className="bg-blue-600 p-2 rounded-full">
                             <Activity className="w-5 h-5 text-white animate-spin" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 overflow-hidden">
                             <h3 className="font-bold text-blue-900">봇이 열심히 일하고 있습니다!</h3>
-                            <p className="text-sm text-blue-700 font-mono">{statusMessage}</p>
+                            <div className="max-h-[4.5rem] overflow-y-auto">
+                                <p className="text-sm text-blue-700 font-mono whitespace-pre-wrap">{statusMessage}</p>
+                            </div>
                         </div>
                         <button
                             onClick={handleStop}
@@ -269,7 +352,7 @@ export function ScraperPanel() {
                     )}
 
                     {/* 각 지역별 진행 상태 */}
-                    <div className="p-4 max-h-48 overflow-y-auto">
+                    <div className="p-4 max-h-32 overflow-y-auto">
                         <div className="space-y-2">
                             {currentJobs.map((job) => {
                                 const regionLabel = getRegionLabel(job.region);
@@ -287,6 +370,10 @@ export function ScraperPanel() {
                                     statusIcon = <XCircle className="w-4 h-4" />;
                                     statusColor = 'text-red-600 bg-red-50 border-red-200';
                                     statusText = job.log_message || '실패';
+                                } else if (job.status === 'stopped') {
+                                    statusIcon = <StopCircle className="w-4 h-4" />;
+                                    statusColor = 'text-orange-600 bg-orange-50 border-orange-200';
+                                    statusText = '중지됨';
                                 } else {
                                     statusIcon = <Clock className="w-4 h-4" />;
                                     statusColor = 'text-gray-500 bg-gray-50 border-gray-200';
@@ -299,7 +386,22 @@ export function ScraperPanel() {
                                             {statusIcon}
                                             <span className="font-medium text-sm">{regionLabel}</span>
                                         </div>
-                                        <span className="text-xs truncate max-w-[200px]">{statusText}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs truncate max-w-[150px]">{statusText}</span>
+                                            {job.status === 'running' && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStopSingle(job.id, job.region);
+                                                    }}
+                                                    className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded flex items-center gap-1 transition-colors"
+                                                    title={`${regionLabel} 중지`}
+                                                >
+                                                    <StopCircle className="w-3 h-3" />
+                                                    중지
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -409,6 +511,7 @@ export function ScraperPanel() {
                             accentColor="blue"
                             showScraperStatus
                             regionInfo={regionInfo}
+                            activeScraperIds={activeScraperIds}
                         />
 
                         {/* 지자체 */}
@@ -422,6 +525,7 @@ export function ScraperPanel() {
                                 accentColor="blue"
                                 showScraperStatus
                                 regionInfo={regionInfo}
+                                activeScraperIds={activeScraperIds}
                             />
                         </div>
 

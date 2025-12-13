@@ -374,6 +374,9 @@ def main():
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
     parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
 
     collect_articles(args.days, args.max_articles)

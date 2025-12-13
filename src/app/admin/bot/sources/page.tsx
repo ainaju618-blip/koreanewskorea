@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Database, Plus, Edit2, Trash2, Check, X, Loader2, ExternalLink, RefreshCw, Globe, Rss } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 interface Source {
     id: string;
@@ -22,6 +24,8 @@ export default function SourcesPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingSource, setEditingSource] = useState<Source | null>(null);
     const [saving, setSaving] = useState(false);
+    const { showSuccess, showError, showWarning } = useToast();
+    const { confirmDelete } = useConfirm();
 
     // 폼 상태
     const [formData, setFormData] = useState({
@@ -100,7 +104,7 @@ export default function SourcesPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.name || !formData.url) {
-            alert('소스명과 URL은 필수입니다.');
+            showWarning('소스명과 URL은 필수입니다.');
             return;
         }
 
@@ -117,7 +121,7 @@ export default function SourcesPage() {
             });
 
             if (res.ok) {
-                alert(editingSource ? '수정되었습니다.' : '추가되었습니다.');
+                showSuccess(editingSource ? '수정되었습니다.' : '추가되었습니다.');
                 setShowModal(false);
                 fetchSources();
             } else {
@@ -125,7 +129,7 @@ export default function SourcesPage() {
                 throw new Error(err.message);
             }
         } catch (error: any) {
-            alert('저장 실패: ' + error.message);
+            showError('저장 실패: ' + error.message);
         } finally {
             setSaving(false);
         }
@@ -133,7 +137,8 @@ export default function SourcesPage() {
 
     // 삭제
     const handleDelete = async (source: Source) => {
-        if (!confirm(`"${source.name}" 소스를 삭제하시겠습니까?`)) return;
+        const confirmed = await confirmDelete(`"${source.name}" 소스를 삭제하시겠습니까?`);
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/bot/sources/${source.id}`, {
@@ -141,13 +146,13 @@ export default function SourcesPage() {
             });
 
             if (res.ok) {
-                alert('삭제되었습니다.');
+                showSuccess('삭제되었습니다.');
                 fetchSources();
             } else {
                 throw new Error('삭제 실패');
             }
         } catch (error) {
-            alert('삭제에 실패했습니다.');
+            showError('삭제에 실패했습니다.');
         }
     };
 
@@ -161,7 +166,7 @@ export default function SourcesPage() {
             });
             fetchSources();
         } catch (error) {
-            alert('상태 변경 실패');
+            showError('상태 변경 실패');
         }
     };
 
@@ -255,8 +260,8 @@ export default function SourcesPage() {
                                     </td>
                                     <td className="p-4">
                                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${source.type === 'rss'
-                                                ? 'bg-orange-100 text-orange-700'
-                                                : 'bg-purple-100 text-purple-700'
+                                            ? 'bg-orange-100 text-orange-700'
+                                            : 'bg-purple-100 text-purple-700'
                                             }`}>
                                             {source.type === 'rss' ? <Rss className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
                                             {source.type.toUpperCase()}

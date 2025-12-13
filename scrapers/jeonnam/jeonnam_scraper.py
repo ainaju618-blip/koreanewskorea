@@ -141,7 +141,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date
 
 
-def collect_articles(days: int = 3) -> List[Dict]:
+def collect_articles(days: int = 3, start_date: str = None, end_date: str = None) -> List[Dict]:
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v3.0 시작', 'info')
 
@@ -158,8 +158,10 @@ def collect_articles(days: int = 3) -> List[Dict]:
         )
         page = context.new_page()
 
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        if not end_date:
+            end_date = datetime.now().strftime('%Y-%m-%d')
+        if not start_date:
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
         # 1~3페이지 순회하며 링크 수집
         for page_num in range(1, 4):
@@ -276,10 +278,18 @@ def collect_articles(days: int = 3) -> List[Dict]:
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--days', type=int, default=3)
-    parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
+    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
+    parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
-    collect_articles(days=args.days)
+    collect_articles(
+        days=args.days,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

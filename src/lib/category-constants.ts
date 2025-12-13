@@ -111,6 +111,7 @@ export const JEONNAM_REGION_MAP: Record<string, string> = {
     '무안': 'muan',
     '함평': 'hampyeong',
     '영광': 'yeonggwang',
+    '장성': 'jangseong',  // 누락되었던 매핑 추가
     '완도': 'wando',
     '진도': 'jindo',
     '신안': 'sinan',
@@ -120,7 +121,7 @@ export const JEONNAM_REGION_CODES = [
     'mokpo', 'yeosu', 'suncheon', 'gwangyang', 'naju',
     'damyang', 'gokseong', 'gurye', 'goheung', 'boseong',
     'hwasun', 'jangheung', 'gangjin', 'haenam', 'yeongam',
-    'muan', 'hampyeong', 'yeonggwang', 'wando', 'jindo', 'sinan'
+    'muan', 'hampyeong', 'yeonggwang', 'jangseong', 'wando', 'jindo', 'sinan'
 ];
 
 export const JEONNAM_ZONES = [

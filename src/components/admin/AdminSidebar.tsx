@@ -22,11 +22,11 @@ import {
     Database,
     UserPlus,
     Building2,
-    Phone,
-    ExternalLink,
     StickyNote,
     UserCircle,
-    LucideIcon
+    LucideIcon,
+    Lightbulb,
+    ExternalLink
 } from 'lucide-react';
 
 // --- 메뉴 아이템 타입 정의 ---
@@ -55,7 +55,8 @@ const MENU_ITEMS: MenuGroup[] = [
         category: "메인",
         items: [
             { label: "통합 대시보드", icon: LayoutDashboard, href: "/admin" },
-            { label: "기사 초안", icon: StickyNote, href: "/admin/drafts" }
+            { label: "기사 초안", icon: StickyNote, href: "/admin/drafts" },
+            { label: "수집처 관리", icon: Building2, href: "/admin/sources" }
         ]
     },
     {
@@ -85,16 +86,6 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
                 ]
             },
-            {
-                label: "기관 관리",
-                icon: Building2,
-                href: "/admin/agencies",
-                subItems: [
-                    { label: "기관 디렉토리", href: "/admin/agencies", icon: Building2 },
-                    { label: "보도자료 바로가기", href: "/admin/agencies/links", icon: ExternalLink },
-                    { label: "담당자 연락처", href: "/admin/agencies/contacts", icon: Phone },
-                ]
-            }
         ]
     },
     {
@@ -145,14 +136,24 @@ export default function AdminSidebarLayout({ children }: { children: React.React
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50 text-gray-800 font-sans">
+        <div className="admin-layout flex min-h-screen bg-gray-50 text-gray-800 font-sans">
 
             {/* --- Sidebar --- */}
             <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-10 shadow-lg">
-                {/* Logo Area */}
-                <div className="h-16 flex items-center px-6 border-b border-slate-100 bg-white">
-                    <div className="w-8 h-8 bg-[#A6121D] rounded flex items-center justify-center text-white font-black mr-3 text-lg">K</div>
-                    <span className="text-lg font-black text-slate-800 tracking-tight">Korea CMS</span>
+                {/* Logo Area - 반분할 */}
+                <div className="h-16 flex items-stretch border-b border-slate-100 bg-white">
+                    {/* Korea CMS */}
+                    <Link href="/admin" className="flex-1 flex items-center px-4 hover:bg-slate-50 transition-colors border-r border-slate-100">
+                        <div className="w-7 h-7 bg-[#A6121D] rounded flex items-center justify-center text-white font-black mr-2 text-sm">K</div>
+                        <span className="text-sm font-black text-slate-800 tracking-tight">Korea CMS</span>
+                    </Link>
+                    {/* AI 아이디어 */}
+                    <Link href="/idea" className="flex-1 flex items-center px-4 hover:bg-amber-50 transition-colors group">
+                        <div className="w-7 h-7 bg-amber-500 rounded flex items-center justify-center text-white mr-2">
+                            <Lightbulb className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-bold text-amber-700 group-hover:text-amber-800">AI 아이디어</span>
+                    </Link>
                 </div>
 
                 {/* Navigation - 스크롤 가능 영역 */}

@@ -193,13 +193,19 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date, department
 
 
-def collect_articles(days: int = 7, max_articles: int = 10) -> List[Dict]:
+def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
     """기사 수집 메인 함수"""
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     collected_links = []
-    cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    if not start_date:
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    else:
+        cutoff_date = start_date
+
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
 
     # ============================================
     # Phase 1: 링크 수집
@@ -345,11 +351,19 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='전남교육청(전남교육통) 보도자료 스크래퍼')
     parser.add_argument('--days', type=int, default=7, help='수집 기간 (일)')
-    parser.add_argument('--max', type=int, default=10, help='최대 수집 개수')
+    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 개수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
+    # bot-service.ts 호환 인자 (필수)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
 
-    collect_articles(days=args.days, max_articles=args.max)
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 
 if __name__ == "__main__":

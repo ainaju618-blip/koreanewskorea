@@ -1,7 +1,7 @@
 # Korea NEWS 스크래퍼 개발 가이드
 
-> **버전:** v3.1
-> **최종수정:** 2025-12-12
+> **버전:** v3.2
+> **최종수정:** 2025-12-13
 > **관리자:** AI Agent
 
 ---
@@ -334,7 +334,7 @@ download.save_as(temp_path)
 
 ## 7. 실행 및 제한
 
-### 6.1 CLI 옵션
+### 7.1 CLI 옵션
 
 ```bash
 python [지역]_scraper.py                    # 기본 (3일, 10개)
@@ -343,7 +343,115 @@ python [지역]_scraper.py --max-articles 5   # 최대 5개
 python [지역]_scraper.py --dry-run          # 테스트 (DB 저장 안함)
 ```
 
-### 6.2 제한 사항
+### 7.2 ⚠️ bot-service.ts 호환 인자 (필수!)
+
+> **중요**: 웹 UI의 "수동수집실행" 메뉴에서 스크래퍼를 호출할 때,
+> `bot-service.ts`는 아래 인자들을 자동으로 전달합니다.
+>
+> **이 인자들이 argparse에 정의되어 있지 않으면 Exit Code 2 에러가 발생합니다!**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  bot-service.ts가 전달하는 인자:                             │
+│                                                              │
+│  --start-date  YYYY-MM-DD  (수집 시작일)                    │
+│  --end-date    YYYY-MM-DD  (수집 종료일)                    │
+│  --days        N           (수집 기간)                      │
+│  --max-articles N          (최대 수집 개수)                 │
+│                                                              │
+│  이 4개 인자는 모든 스크래퍼에 반드시 정의해야 합니다!       │
+│                                                              │
+│  ★ v3.1 업데이트 (2025-12-13):                              │
+│     - start-date, end-date 인자가 실제로 날짜 필터링에      │
+│       사용됩니다. collect_articles()에 반드시 전달!         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**argparse 및 collect_articles 호출 예시 (필수!):**
+
+```python
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼')
+
+    # 기본 인자
+    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
+    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
+    parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
+
+    # ⚠️ bot-service.ts 호환 인자 (필수!)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
+
+    args = parser.parse_args()
+
+    # ★ 중요: start_date, end_date를 반드시 collect_articles에 전달!
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
+```
+
+**collect_articles 함수 시그니처 (필수!):**
+
+```python
+def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
+    """
+    보도자료를 수집하고 서버로 전송 (날짜 필터링 지원)
+
+    Args:
+        days: 수집할 기간 (일) - start_date/end_date가 없을 때 사용
+        max_articles: 최대 수집 기사 수
+        start_date: 수집 시작일 (YYYY-MM-DD) - 이 날짜 이후 기사만 수집
+        end_date: 수집 종료일 (YYYY-MM-DD) - 이 날짜 이전 기사만 수집
+    """
+    # 날짜 필터 계산 (start_date, end_date가 전달되면 우선 사용)
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {start_date} ~ {end_date})")
+    # ...
+```
+
+### 7.3 날짜 필터링 로직 (필수!)
+
+> **중요 (v3.1)**: 기사 수집 루프에서 날짜 필터링을 반드시 적용해야 합니다.
+> 이 로직이 없으면 "오늘"을 선택해도 과거 기사까지 모두 수집됩니다!
+
+```python
+# 기사 수집 루프 내에서:
+for item in articles:
+    # ... 상세 페이지 방문 및 날짜 추출 ...
+    content, thumbnail_url, pub_date = fetch_detail(page, url)
+
+    if not pub_date:
+        pub_date = datetime.now().strftime('%Y-%m-%d')
+
+    # ★★★ 핵심: 날짜 필터링 ★★★
+    # 기사 날짜가 시작일 이전이면 수집 중단 (목록이 최신순이라 가정)
+    if pub_date < start_date:
+        print(f"[SKIP] 기사 날짜({pub_date})가 시작일({start_date}) 이전 - 수집 중단")
+        break
+
+    # 기사 날짜가 종료일 이후면 건너뛰기 (미래 날짜)
+    if pub_date > end_date:
+        print(f"[SKIP] 기사 날짜({pub_date})가 종료일({end_date}) 이후 - 건너뜀")
+        continue
+
+    # 날짜 범위 내의 기사만 저장
+    # ... 나머지 처리 ...
+```
+
+**주의사항:**
+- `start_date`, `end_date`는 YYYY-MM-DD 형식의 문자열
+- 문자열 비교 (`<`, `>`)로 날짜 범위 체크 가능 (YYYY-MM-DD는 사전순=시간순)
+- 목록이 최신순 정렬인 경우 `start_date` 이전 기사가 나오면 `break`로 조기 종료
+
+### 7.4 제한 사항
 
 | 항목 | 값 | 이유 |
 |------|-----|------|

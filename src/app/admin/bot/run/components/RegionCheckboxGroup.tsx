@@ -20,6 +20,8 @@ interface RegionCheckboxGroupProps {
     compact?: boolean;
     /** 스크래퍼 존재 여부 표시 (좌측 스크래퍼 패널용) */
     showScraperStatus?: boolean;
+    /** 활성 스크래퍼 ID 목록 (동적 조회된 값) */
+    activeScraperIds?: string[];
 }
 
 export function RegionCheckboxGroup({
@@ -32,7 +34,8 @@ export function RegionCheckboxGroup({
     accentColor = 'blue',
     maxHeight,
     compact = false,
-    showScraperStatus = false
+    showScraperStatus = false,
+    activeScraperIds = []
 }: RegionCheckboxGroupProps) {
     const colors = {
         blue: {
@@ -54,10 +57,19 @@ export function RegionCheckboxGroup({
     const getValue = (region: Region) => selectionKey === 'id' ? region.id : region.label;
     const isSelected = (region: Region) => selectedRegions.includes(getValue(region));
 
+    // 스크래퍼 존재 여부 확인 (동적 조회된 목록 우선, 없으면 기존 하드코딩 목록 사용)
+    const checkScraperAvailable = (regionId: string) => {
+        if (activeScraperIds.length > 0) {
+            return activeScraperIds.includes(regionId);
+        }
+        // 폴백: 기존 하드코딩된 목록
+        return hasScraperAvailable(regionId);
+    };
+
     // 스크래퍼 존재 시 녹색 표시, 없으면 회색
     const getScraperStatusClass = (region: Region) => {
         if (!showScraperStatus) return '';
-        return hasScraperAvailable(region.id)
+        return checkScraperAvailable(region.id)
             ? 'text-emerald-700 font-semibold'
             : 'text-gray-400';
     };
@@ -74,14 +86,14 @@ export function RegionCheckboxGroup({
                 )}
             </p>
             <div
-                className={`grid ${compact ? 'grid-cols-4' : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6'} gap-1.5 bg-gray-50 p-2 rounded-lg border border-gray-100 ${maxHeight ? 'overflow-y-auto' : ''}`}
+                className={`grid ${compact ? 'grid-cols-4' : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-5'} gap-1.5 bg-gray-50 p-2 rounded-lg border border-gray-100 ${maxHeight ? 'overflow-y-auto' : ''}`}
                 style={maxHeight ? { maxHeight } : undefined}
             >
                 {regions.map((region) => {
                     // regionInfo는 label 키 또는 id 키로 검색  (API가 source=label로 반환)
                     const info = regionInfo?.[region.label] || regionInfo?.[region.id];
                     const selected = isSelected(region);
-                    const hasScraper = hasScraperAvailable(region.id);
+                    const hasScraper = checkScraperAvailable(region.id);
                     const scraperClass = getScraperStatusClass(region);
 
                     return (
