@@ -219,15 +219,15 @@ def download_attachment_image(page: Page, link_locator) -> Optional[str]:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    상세 페이지에서 본문, 이미지, 날짜, 담당부서, 제목을 추출
     
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (본문 텍스트, 썸네일 URL, 날짜, 담당부서, 제목)
     """
     if not safe_goto(page, url, timeout=20000):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
     
     time.sleep(3)  # 페이지 및 스크립트 로딩 충분히 대기
     print(f"      👀 상세 페이지 진입 성공", flush=True)
@@ -241,6 +241,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     department = None
     content = ""
     thumbnail_url = None
+    detail_title = None  # 상세 페이지에서 추출한 제목
     
     # 1. 테이블 기반 정보 추출 (JavaScript)
     try:
@@ -292,6 +293,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             department = data['department']
         if data.get('content'):
             content = data['content'][:5000]
+        if data.get('title'):
+            detail_title = data['title']
     except Exception as e:
         print(f"      ⚠️ JS 추출 실패: {e}")
     
@@ -366,7 +369,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 imgs = page.locator(sel)
                 for i in range(min(imgs.count(), 3)):
                     src = safe_get_attr(imgs.nth(i), 'src')
-                    if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet', 'blank', 'spacer']):
+                    # 공공누리(opentype/kor_type) 이미지 및 기타 비콘텐츠 이미지 제외
+                    exclude_patterns = [
+                        'icon', 'btn', 'logo', 'banner', 'bg', 'bullet', 'blank', 'spacer',
+                        'opentype', 'copyright', 'license', 'footer', 'kor_', 'type0', 'type1', 'type2', 'type3', 'type4'
+                    ]
+                    if src and not any(x in src.lower() for x in exclude_patterns):
                         full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
                         
                         # 로컬 저장 우선 시도
@@ -388,7 +396,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         except Exception as e:
             print(f"      [WARN] 본문 이미지 추출 실패: {e}")
     
-    return content, thumbnail_url, pub_date, department
+    return content, thumbnail_url, pub_date, department, detail_title
 
 
 # ============================================================
@@ -501,7 +509,11 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 print(f"      📰 {title[:35]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
-                content, thumbnail_url, pub_date, department = fetch_detail(page, full_url)
+                content, thumbnail_url, pub_date, department, detail_title = fetch_detail(page, full_url)
+                
+                # 상세 페이지 제목이 있으면 사용 (목록에서 잘린 제목 대체)
+                if detail_title and len(detail_title) > len(title):
+                    title = detail_title
                 
                 # 날짜 필터링
                 if pub_date < start_date:

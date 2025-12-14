@@ -1,11 +1,12 @@
 """
 광주광역시교육청 보도자료 스크래퍼
-- 버전: v4.1
+- 버전: v4.2
 - 최종수정: 2025-12-14
 - 담당: AI Agent
 
-변경점 (v4.1):
-- 조회수/날짜/담당자 메타정보 제거 패턴 추가 (Claude 작업 지시)
+변경점 (v4.2):
+- 메타데이터 제거 패턴 대폭 강화 (추천수, 첨부파일, 작성자, 사진 캡션 등)
+- 줄바꿈 정리 개선 (2줄 이상 → 1줄, 연속 공백 정리)
 
 사이트 특징:
 - URL 경로에 /v5/와 /v4/가 혼용됨 (이미지는 v4 경로)
@@ -187,23 +188,33 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = page.evaluate(js_code)
             
         if content:
-            # 메타정보 제거 (v4.1: 조회수/날짜 패턴 추가 - Claude 작업 지시)
+            # 메타정보 제거 (v4.2: 패턴 대폭 강화)
             patterns_to_remove = [
+                # 기본 메타데이터
                 r'조회수?\s*[:：]?\s*\d+',
                 r'조회\s*[:：]\s*\d+',
+                r'추천수?\s*[:：]?\s*\d+',
                 r'작성일\s*[:：]?\s*[\d\-\.]+',
                 r'등록일\s*[:：]?\s*[\d\-\.]+',
+                r'작성자\s*[:：]?\s*[^\s\n]+',
                 r'\d{4}-\d{2}-\d{2}',  # 날짜 형식
+                # 기관/담당자 정보
                 r'기관명\s*[:：]\s*[^\n]+',
                 r'기관주소\s*[:：]\s*[^\n]+',
                 r'담당자\s*[:：]\s*[^\n]+',
                 r'전화번호\s*[:：]?\s*[\d\-]+',
+                # 첨부파일 관련
+                r'첨부파일\s*\(?\d*\)?',
+                r'▲\s*\d+\.\s*\[[^\]]*\][^\n]*',  # ▲ 1.[사진1] 형태
+                r'\[\s*사진\d*\s*\][^\n]*',  # [사진1] 형태
+                # 기타
                 r'개인정보처리방침.*',
             ]
             for pattern in patterns_to_remove:
-                content = re.sub(pattern, '', content)
-            # 연속 공백/줄바꿈 정리
-            content = re.sub(r'\n{3,}', '\n\n', content)
+                content = re.sub(pattern, '', content, flags=re.IGNORECASE)
+            # 연속 공백/줄바꿈 정리 (2줄 이상을 1줄로)
+            content = re.sub(r'\n{2,}', '\n', content)
+            content = re.sub(r'[ \t]+', ' ', content)  # 연속 공백도 정리
             content = content.strip()[:5000]
             
     except Exception as e:

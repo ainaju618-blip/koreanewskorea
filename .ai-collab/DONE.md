@@ -4,6 +4,42 @@
 
 ---
 
+## 완료: [URGENT] 카테고리 페이지 레이아웃 통일
+
+**완료자**: Antigravity
+**완료일**: 2025-12-15
+
+### 수행 내용
+
+Claude 작업 지시에 따라 카테고리 서브페이지를 강원일보 스타일(9:3 그리드)로 통일함.
+
+### 변경된 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/components/category/CategoryPageTemplate.tsx` | 클라이언트→서버 컴포넌트 전환, 9:3 그리드, 사이드바 추가 |
+| `src/app/(site)/category/ai/page.tsx` | searchParams 전달 추가 |
+| `src/app/(site)/category/education/page.tsx` | searchParams 전달 추가 |
+| `src/app/(site)/category/opinion/page.tsx` | searchParams 전달 추가 |
+| `src/app/(site)/category/politics-economy/page.tsx` | searchParams 전달 추가 |
+| `src/app/(site)/category/jeonnam-region/page.tsx` | 9:3 그리드, 사이드바 추가 (시군 탭 유지) |
+
+### 테스트 결과
+
+- ✅ `npm run build` 성공 (Exit code: 0)
+- ✅ AI 카테고리 페이지: 9:3 그리드 + 사이드바 정상
+- ✅ 전남지역 페이지: 시군 탭 + 9:3 그리드 + 사이드바 정상
+
+### 스크린샷
+
+브라우저 테스트 녹화 및 스크린샷: Antigravity 아티팩트에서 확인 가능
+
+### 후속 작업 필요
+
+- [ ] Git push & Vercel 배포 (Claude 담당)
+
+---
+
 ## 완료: [URGENT] 스크래퍼 데이터 품질 검증
 
 **완료자**: Antigravity
