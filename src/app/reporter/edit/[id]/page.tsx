@@ -15,6 +15,7 @@ import {
     FileText,
     XCircle,
     Eye,
+    UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -53,6 +54,11 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
     const [status, setStatus] = useState("");
     const [error, setError] = useState("");
 
+    // 기자 지정 관련 (access_level >= 2 인 경우에만 사용)
+    const [reporters, setReporters] = useState<{ id: string; name: string; position: string; region: string }[]>([]);
+    const [selectedAuthorId, setSelectedAuthorId] = useState<string>("");
+    const [isAssigningReporter, setIsAssigningReporter] = useState(false);
+
     useEffect(() => {
         const fetchArticle = async () => {
             try {
@@ -69,6 +75,12 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                     setCategory(data.article.category);
                     setThumbnailUrl(data.article.thumbnail_url || "");
                     setStatus(data.article.status);
+                    setSelectedAuthorId(data.article.author_id || "");
+
+                    // 편집국장/지사장 (access_level >= 2)이면 기자 목록 로딩
+                    if (data.reporter.access_level >= 2) {
+                        fetchReporters();
+                    }
                 } else {
                     const data = await res.json();
                     setError(data.message || "기사를 불러올 수 없습니다.");
@@ -82,6 +94,52 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
         };
         fetchArticle();
     }, [id]);
+
+    // 기자 목록 로딩
+    const fetchReporters = async () => {
+        try {
+            const res = await fetch('/api/users/reporters?simple=true');
+            if (res.ok) {
+                const data = await res.json();
+                setReporters(data || []);
+            }
+        } catch (err) {
+            console.error('기자 목록 로딩 실패:', err);
+        }
+    };
+
+    // 기자 지정 함수
+    const handleAssignReporter = async () => {
+        if (!selectedAuthorId) {
+            setError('기자를 선택해주세요.');
+            return;
+        }
+
+        setIsAssigningReporter(true);
+        setError('');
+
+        try {
+            const res = await fetch(`/api/reporter/articles/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    author_id: selectedAuthorId
+                })
+            });
+
+            if (res.ok) {
+                const selectedReporter = reporters.find(r => r.id === selectedAuthorId);
+                alert(`기자가 ${selectedReporter?.name}으로 지정되었습니다.`);
+            } else {
+                const data = await res.json();
+                setError(data.message || '기자 지정에 실패했습니다.');
+            }
+        } catch (err) {
+            setError('서버 연결에 실패했습니다.');
+        } finally {
+            setIsAssigningReporter(false);
+        }
+    };
 
     const handleSave = async (newStatus?: string) => {
         if (!title.trim()) {
@@ -307,6 +365,53 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                         </select>
                     </div>
                 </div>
+
+                {/* 기자 지정/재지정 - 편집국장/지사장 (access_level >= 2)만 표시 */}
+                {reporter && reporter.access_level >= 2 && (
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                                <UserPlus className="w-4 h-4" />
+                                기자 {article?.author_id ? '재지정' : '지정'} (편집국장/지사장 전용)
+                            </label>
+                            {article?.author_id && (
+                                <span className="text-xs text-blue-600">
+                                    현재: {reporters.find(r => r.id === article.author_id)?.name || '알 수 없음'}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                value={selectedAuthorId}
+                                onChange={(e) => setSelectedAuthorId(e.target.value)}
+                                className="flex-1 px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                                disabled={isAssigningReporter}
+                            >
+                                <option value="">기자 선택...</option>
+                                {reporters.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {r.name} ({r.position === 'branch_manager' ? '지사장' : r.position === 'editor_chief' ? '편집국장' : '기자'} - {r.region})
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleAssignReporter}
+                                disabled={isAssigningReporter || !selectedAuthorId}
+                                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                            >
+                                {isAssigningReporter ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <UserPlus className="w-4 h-4" />
+                                )}
+                                {article?.author_id ? '변경' : '지정'}
+                            </button>
+                        </div>
+                        <p className="text-xs text-blue-600 mt-2">
+                            * 기자를 {article?.author_id ? '변경' : '지정'}하면 해당 기자의 이름으로 기사가 발행됩니다.
+                        </p>
+                    </div>
+                )}
 
                 {/* Thumbnail URL */}
                 <div>

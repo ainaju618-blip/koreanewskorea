@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
 import { motion } from 'framer-motion';
+import { cleanContentPreview } from '@/lib/contentUtils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -153,7 +154,7 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
                             <p className="text-base text-slate-600 line-clamp-2 font-light leading-relaxed">
                                 {(!mainPost.content || mainPost.content.includes('본문 내용을 가져올 수 없습니다'))
                                     ? (mainPost.summary || '')
-                                    : mainPost.content.substring(0, 120)}...
+                                    : cleanContentPreview(mainPost.content, 120)}...
                             </p>
                             <span className="text-xs text-slate-400 font-sans block pt-2">
                                 {new Date(mainPost.created_at).toLocaleDateString('ko-KR')}
@@ -200,7 +201,7 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
                                     <p className="text-sm text-slate-500 line-clamp-1 mb-2 font-light">
                                         {(!post.content || post.content.includes('본문 내용을 가져올 수 없습니다'))
                                             ? (post.summary || '')
-                                            : post.content.substring(0, 50)}...
+                                            : cleanContentPreview(post.content, 50)}...
                                     </p>
                                     <span className="text-xs text-slate-400 flex items-center gap-1">
                                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>

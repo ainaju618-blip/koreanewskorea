@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
             images: news.thumbnail_url ? [news.thumbnail_url] : [],
         },
         alternates: {
-            canonical: `https://koreanews.com/news/${id}`,
+            canonical: `https://koreanewsone.com/news/${id}`,
         },
         robots: {
             index: news.status === 'published',
@@ -229,19 +229,19 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         author: {
             '@type': 'Person',
             name: reporter?.name || news.author_name || '코리아NEWS 취재팀',
-            url: reporter ? `https://koreanews.com/author/${reporter.slug || reporter.id}` : undefined,
+            url: reporter ? `https://koreanewsone.com/author/${reporter.slug || reporter.id}` : undefined,
         },
         publisher: {
             '@type': 'Organization',
             name: '코리아NEWS',
             logo: {
                 '@type': 'ImageObject',
-                url: 'https://koreanews.com/logo.png',
+                url: 'https://koreanewsone.com/logo.png',
             },
         },
         mainEntityOfPage: {
             '@type': 'WebPage',
-            '@id': `https://koreanews.com/news/${id}`,
+            '@id': `https://koreanewsone.com/news/${id}`,
         },
         articleSection: news.category,
         keywords: [news.category, '광주', '전남', '지역뉴스'].join(', '),
@@ -318,8 +318,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                             </div>
                         )}
                         <span className="text-gray-300 mx-1">|</span>
-                        <a href={`mailto:news@koreanews.com`} className="text-gray-500 hover:text-blue-600 text-[14px]">
-                            news@koreanews.com
+                        <a href={`mailto:news@koreanewsone.com`} className="text-gray-500 hover:text-blue-600 text-[14px]">
+                            news@koreanewsone.com
                         </a>
                     </div>
 

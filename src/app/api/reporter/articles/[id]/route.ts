@@ -152,7 +152,7 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const { title, content, category, thumbnail_url, status } = body;
+        const { title, content, category, thumbnail_url, status, author_id } = body;
 
         // 업데이트할 데이터
         const updateData: Record<string, unknown> = {};
@@ -161,6 +161,20 @@ export async function PUT(
         if (category !== undefined) updateData.category = category;
         if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url;
         if (status !== undefined) updateData.status = status;
+
+        // 기자 배정 로직
+        // 1. 명시적 author_id 지정 (편집국장/지사장이 기자 지정)
+        if (author_id !== undefined) {
+            // 기자 지정 권한 확인 (access_level 2 이상: 지사장, 편집국장)
+            if (reporter.access_level >= 2) {
+                updateData.author_id = author_id;
+            }
+        }
+        // 2. 승인(published)으로 변경 시 author_id가 없으면 현재 기자로 자동 배정
+        else if (status === 'published' && !existingArticle.author_id) {
+            updateData.author_id = reporter.id;
+            updateData.published_at = new Date().toISOString();
+        }
 
         // 기사 업데이트
         const { data: updatedArticle, error: updateError } = await supabaseAdmin

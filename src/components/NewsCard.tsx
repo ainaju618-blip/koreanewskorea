@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { NewsItem } from '@/types/news'
 import { Clock, MapPin } from 'lucide-react'
+import { cleanContentPreview } from '@/lib/contentUtils'
 
 interface NewsCardProps {
     news: NewsItem
@@ -52,7 +53,7 @@ export function NewsCard({
                         {news.title}
                     </h3>
                     <p className="text-[15px] text-slate-500 line-clamp-3 leading-relaxed flex-1 font-sans">
-                        {news.ai_summary || news.content?.replace(/<[^>]*>?/gm, '').substring(0, 100)}
+                        {news.ai_summary || cleanContentPreview(news.content, 100)}
                     </p>
                     <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400 font-sans">
                         <span>{news.published_at?.split('T')[0]}</span>
@@ -144,7 +145,7 @@ export function NewsCard({
                     )}
 
                     <p className="text-base text-slate-600 leading-relaxed font-light line-clamp-3 md:line-clamp-2 mix-blend-multiply">
-                        {news.ai_summary || news.content?.replace(/<[^>]*>?/gm, '').substring(0, 160)}...
+                        {news.ai_summary || cleanContentPreview(news.content, 160)}...
                     </p>
                 </div>
 
@@ -189,7 +190,7 @@ export function NewsCard({
                         {news.title}
                     </h3>
                     <p className="text-sm text-slate-600 leading-relaxed font-light line-clamp-2 md:line-clamp-3 mb-3">
-                        {news.ai_summary || news.content?.replace(/<[^>]*>?/gm, '').substring(0, 160)}...
+                        {news.ai_summary || cleanContentPreview(news.content, 160)}...
                     </p>
                     <div className="mt-auto text-xs text-slate-400 flex items-center gap-2">
                         <Clock className="w-3 h-3" />

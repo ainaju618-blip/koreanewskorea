@@ -200,7 +200,7 @@ export default function Footer() {
                             <div className="flex flex-wrap gap-x-6 gap-y-1">
                                 <span><strong className="text-slate-400 font-medium">사업자등록번호:</strong> 801-07-03054</span>
                                 <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 010-2631-3865</span>
-                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> editor@koreanews.com</span>
+                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> editor@koreanewsone.com</span>
                             </div>
                             <div className="flex items-center gap-1 pt-1">
                                 <MapPin className="w-3 h-3 flex-shrink-0" />

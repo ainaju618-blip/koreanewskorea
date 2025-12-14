@@ -7,6 +7,19 @@ export async function GET(req: NextRequest) {
         const position = searchParams.get('position');
         const region = searchParams.get('region');
         const type = searchParams.get('type');
+        const simple = searchParams.get('simple'); // 간단 목록용 (드롭다운)
+
+        // 간단 목록: id, name만 조회 (기자 지정 드롭다운용)
+        if (simple === 'true') {
+            const { data, error } = await supabaseAdmin
+                .from('reporters')
+                .select('id, name, position, region')
+                .eq('status', 'Active')
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+            return NextResponse.json(data);
+        }
 
         let query = supabaseAdmin
             .from('reporters')

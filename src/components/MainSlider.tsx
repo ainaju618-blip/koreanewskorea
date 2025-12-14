@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cleanContentPreview } from '@/lib/contentUtils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -104,7 +105,7 @@ export default function MainSlider() {
                                 </h2>
                             </Link>
                             <p className="text-sm md:text-lg text-gray-200 line-clamp-2 md:w-3/4">
-                                {slide.summary || slide.content?.substring(0, 100).replace(/<[^>]*>?/gm, "")}
+                                {slide.summary || cleanContentPreview(slide.content, 100)}
                             </p>
                         </div>
                     </div>

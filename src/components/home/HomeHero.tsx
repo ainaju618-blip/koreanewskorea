@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { cleanContentPreview } from '@/lib/contentUtils';
 
 /**
  * Korea NEWS Home Hero Section
@@ -141,7 +142,7 @@ export default function HomeHero() {
                         <p className="text-gray-100 text-sm lg:text-base line-clamp-2 max-w-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 font-light leading-relaxed">
                             {(!article.content || article.content.includes('본문 내용을 가져올 수 없습니다'))
                                 ? (article.summary || '')
-                                : article.content.substring(0, 150)}...
+                                : cleanContentPreview(article.content, 150)}...
                         </p>
                     </div>
 
@@ -191,7 +192,7 @@ export default function HomeHero() {
                     <p className="text-slate-600 text-sm line-clamp-2 leading-snug font-normal">
                         {(!article.content || article.content.includes('본문 내용을 가져올 수 없습니다'))
                             ? (article.summary || '')
-                            : (article.content.substring(0, 60))}...
+                            : cleanContentPreview(article.content, 60)}...
                     </p>
                 </div>
             </Link>
