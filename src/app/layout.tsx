@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import { PWAInstallBanner } from "@/components/PWAInstallPrompt";
+// PWA 하단 배너 제거 - 햄버거 메뉴에서만 설치 가능
 
 // 웹폰트는 globals.css에서 @font-face로 로드
 // - 본문: Pretendard (현대적 고딕, 최고 가독성)
@@ -110,7 +110,6 @@ export default function RootLayout({
       <body className="font-sans min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white" suppressHydrationWarning>
         <Providers>
           {children}
-          <PWAInstallBanner />
         </Providers>
       </body>
     </html>
