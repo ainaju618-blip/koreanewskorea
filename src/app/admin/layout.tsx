@@ -1,4 +1,5 @@
 import AdminSidebarLayout from '@/components/admin/AdminSidebar';
+import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
 export default function AdminLayout({
     children,
@@ -6,9 +7,11 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <AdminSidebarLayout>
-            {children}
-        </AdminSidebarLayout>
+        <AdminAuthGuard>
+            <AdminSidebarLayout>
+                {children}
+            </AdminSidebarLayout>
+        </AdminAuthGuard>
     );
 }
 

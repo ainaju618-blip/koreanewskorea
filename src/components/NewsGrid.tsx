@@ -41,6 +41,9 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
                 .from('posts')
                 .select('*')
                 .in('status', ['approved', 'published'])
+                .not('thumbnail_url', 'is', null)  // ★ null 제외
+                .neq('thumbnail_url', '')          // ★ 빈 문자열 제외
+                .like('thumbnail_url', 'http%')    // ★ http로 시작하는 URL만
                 .order('created_at', { ascending: false })
                 .limit(limit);
 

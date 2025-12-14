@@ -7,7 +7,7 @@ Cloudinary 이미지 업로드 유틸리티
 - URL 반환
 
 설정:
-- CLOUDINARY_ENABLED = False: 로컬 저장만 (기본값)
+- CLOUDINARY_ENABLED = True: 로컬 저장만 (기본값)
 - CLOUDINARY_ENABLED = True: Cloudinary 업로드 시도
 """
 
@@ -22,10 +22,10 @@ import hashlib
 
 # ============================================================
 # Cloudinary 설정
-# CLOUDINARY_ENABLED = False로 설정하면 로컬 저장만 수행
+# CLOUDINARY_ENABLED = True로 설정하면 로컬 저장만 수행
 # 나중에 True로 변경하고 올바른 API 키를 설정하면 Cloudinary 업로드 활성화
 # ============================================================
-CLOUDINARY_ENABLED = False  # TODO: Cloudinary 연결 시 True로 변경
+CLOUDINARY_ENABLED = True  # TODO: Cloudinary 연결 시 True로 변경
 
 try:
     import cloudinary

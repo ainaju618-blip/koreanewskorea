@@ -40,7 +40,7 @@ export async function GET() {
     <channel>
         <title>코리아NEWS</title>
         <link>${siteUrl}</link>
-        <description>광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.</description>
+        <description>광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.</description>
         <language>ko</language>
         <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
         <atom:link href="${siteUrl}/feed.xml" rel="self" type="application/rss+xml"/>

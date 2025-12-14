@@ -68,6 +68,8 @@ export default function Header() {
 
     const getCategoryUrl = (category: Category, parent?: Category): string => {
         if (category.custom_url) return category.custom_url;
+        // 전남지역 카테고리는 기본값으로 나주로 이동
+        if (category.slug === 'jeonnam') return `/category/jeonnam/naju`;
         if (parent) return `/category/${parent.slug}/${category.slug}`;
         return `/category/${category.slug}`;
     };
@@ -234,7 +236,7 @@ export default function Header() {
                 MOBILE MENU OVERLAY
             ========================================================================= */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-[100] bg-white overflow-y-auto animate-fade-in-up">
+                <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
                     <div className="p-4 flex justify-between items-center border-b border-slate-100 bg-[#0a192f] text-white">
                         <span className="font-bold text-xl font-serif">Menu</span>
                         <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors">
@@ -259,26 +261,34 @@ export default function Header() {
                             {categories.map((category) => (
                                 <div key={category.id} className="border-b border-slate-100 pb-4 last:border-0">
                                     <div className="flex items-center justify-between py-2">
-                                        <Link
+                                        <a
                                             href={getCategoryUrl(category)}
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className="text-xl font-bold text-[#0a192f] font-serif"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setIsMobileMenuOpen(false);
+                                                window.location.href = getCategoryUrl(category);
+                                            }}
+                                            className="text-xl font-bold text-[#0a192f] font-serif cursor-pointer active:opacity-70"
                                         >
                                             {category.name}
-                                        </Link>
+                                        </a>
                                     </div>
 
                                     {hasChildren(category) && (
                                         <div className="grid grid-cols-2 gap-2 pt-2">
                                             {category.children!.map((child) => (
-                                                <Link
+                                                <a
                                                     key={child.id}
                                                     href={getCategoryUrl(child, category)}
-                                                    onClick={() => setIsMobileMenuOpen(false)}
-                                                    className="pl-3 py-2 text-sm text-slate-600 border-l-2 border-slate-100 hover:border-[#ff2e63] hover:text-[#ff2e63] hover:bg-slate-50 transition-all rounded-r-md block"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setIsMobileMenuOpen(false);
+                                                        window.location.href = getCategoryUrl(child, category);
+                                                    }}
+                                                    className="pl-3 py-2 text-sm text-slate-600 border-l-2 border-slate-100 hover:border-[#ff2e63] hover:text-[#ff2e63] hover:bg-slate-50 transition-all rounded-r-md block cursor-pointer active:opacity-70"
                                                 >
                                                     {child.name}
-                                                </Link>
+                                                </a>
                                             ))}
                                         </div>
                                     )}

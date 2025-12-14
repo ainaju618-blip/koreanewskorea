@@ -26,7 +26,8 @@ const STATUS_CONFIG: Record<string, StatusConfigMap> = {
     article: {
         draft: { label: "승인 대기", className: "bg-yellow-100 text-yellow-700" },
         published: { label: "발행됨", className: "bg-green-100 text-green-700" },
-        rejected: { label: "반려됨", className: "bg-red-100 text-red-700" },
+        limited: { label: "제한공개", className: "bg-orange-100 text-orange-700" },
+        rejected: { label: "노출불가", className: "bg-red-100 text-red-700" },
         trash: { label: "휴지통", className: "bg-gray-100 text-gray-600" },
     },
     // 사용자 상태

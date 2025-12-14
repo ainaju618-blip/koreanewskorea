@@ -47,10 +47,11 @@ export default function HomeHero() {
                     const data = await res.json();
                     const allPosts = data.posts || [];
 
-                    // ★ 이미지가 있는 기사만 메인 히어로에 표시 (이미지 없는 기사는 카테고리 페이지에서만 표시)
-                    // 잘못된 로컬 경로 필터링 (d:\, scrapers\ 등)
+                    // ★ 이미지가 있는 기사만 메인 히어로에 표시
+                    // 잘못된 URL 필터링 (로컬 경로, 빈 문자열, http 아닌 것)
                     const isValidImageUrl = (url?: string) => {
-                        if (!url || url.length <= 10) return false;
+                        if (!url || url.trim() === '' || url.length <= 10) return false;
+                        if (!url.startsWith('http')) return false;  // ★ http로 시작해야 함
                         if (url.includes(':\\') || url.includes('scrapers\\') || url.includes('scrapers/images')) return false;
                         return true;
                     };

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Trash2, RefreshCw, Loader2, AlertTriangle, Database, Calendar } from "lucide-react";
-import { ConfirmModal } from "@/components/admin/shared";
+import { ConfirmModal, DangerConfirmModal } from "@/components/admin/shared";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { localRegions, agencyRegions, allRegions, getRegionId } from "./regionData";
 import { useToast } from '@/components/ui/Toast';
@@ -388,13 +388,10 @@ export function DbManagerPanel() {
                 onCancel={() => setDeleteModal({ isOpen: false, preview: null })}
             />
 
-            {/* 전체 삭제 확인 모달 */}
-            <ConfirmModal
+            {/* 전체 삭제 확인 모달 - 5번 확인 필요 */}
+            <DangerConfirmModal
                 isOpen={deleteAllModal}
-                title="⚠️ 전체 삭제 확인"
                 message={`모든 기사 ${totalArticles.toLocaleString()}건을 삭제합니다.\n\n이 작업은 되돌릴 수 없습니다.\n정말 삭제하시겠습니까?`}
-                confirmLabel="전체 삭제"
-                variant="danger"
                 onConfirm={confirmDeleteAll}
                 onCancel={() => setDeleteAllModal(false)}
             />

@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import {
     StatusBadge,
     ConfirmModal,
+    DangerConfirmModal,
     FilterTabs,
     PageHeader,
     Pagination,
@@ -644,8 +645,8 @@ function AdminNewsListPage() {
                                 onClick={() => openBulkConfirmModal('bulk-restore')}
                                 disabled={isBulkProcessing || selectedIds.size === 0}
                                 className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
-                                        ? 'bg-green-600 text-white hover:bg-green-700'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                     }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -657,8 +658,8 @@ function AdminNewsListPage() {
                                 onClick={() => openBulkConfirmModal('bulk-approve')}
                                 disabled={isBulkProcessing || selectedIds.size === 0}
                                 className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                     }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -672,8 +673,8 @@ function AdminNewsListPage() {
                             onClick={() => openBulkConfirmModal('bulk-delete')}
                             disabled={isBulkProcessing || selectedIds.size === 0}
                             className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
-                                    ? 'bg-red-600 text-white hover:bg-red-700'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 }`}
                         >
                             {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -743,8 +744,9 @@ function AdminNewsListPage() {
                     tabs={[
                         { key: "all", label: "전체" },
                         { key: "draft", label: "승인 대기" },
+                        { key: "limited", label: "제한공개" },
                         { key: "published", label: "발행됨" },
-                        { key: "rejected", label: "반려됨" },
+                        { key: "rejected", label: "노출불가" },
                         { key: "trash", label: "휴지통" }
                     ]}
                     activeTab={filterStatus}
@@ -978,14 +980,27 @@ function AdminNewsListPage() {
                 )}
             </SlidePanel>
 
-            {/* ConfirmModal - 공통 컴포넌트 사용 */}
-            <ConfirmModal
-                isOpen={confirmModal.isOpen}
-                title="확인"
-                message={confirmModal.message}
-                onConfirm={handleConfirmAction}
-                onCancel={() => setConfirmModal({ isOpen: false, type: null, message: '' })}
-            />
+            {/* ConfirmModal - 일반 확인용 */}
+            {!(confirmModal.type === 'bulk-all-delete' && filterStatus === 'trash') && (
+                <ConfirmModal
+                    isOpen={confirmModal.isOpen}
+                    title="확인"
+                    message={confirmModal.message}
+                    confirmLabel="확인"
+                    onConfirm={handleConfirmAction}
+                    onCancel={() => setConfirmModal({ isOpen: false, type: null, message: '' })}
+                />
+            )}
+
+            {/* DangerConfirmModal - 휴지통 일괄 영구삭제용 (5번 확인) */}
+            {confirmModal.type === 'bulk-all-delete' && filterStatus === 'trash' && (
+                <DangerConfirmModal
+                    isOpen={confirmModal.isOpen}
+                    message={confirmModal.message}
+                    onConfirm={handleConfirmAction}
+                    onCancel={() => setConfirmModal({ isOpen: false, type: null, message: '' })}
+                />
+            )}
         </div>
     );
 }

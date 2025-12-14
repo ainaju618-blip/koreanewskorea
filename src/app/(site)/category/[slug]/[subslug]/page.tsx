@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
+import { NoImagePlaceholder } from '@/components/ui/NoImagePlaceholder';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,11 @@ async function getRegionNews(slug: string, regionCode: string) {
     try {
         const supabase = await createClient();
 
+        // published: 전체 공개, limited: 제한공개 (이미지 없음)
         let query = supabase
             .from('posts')
             .select('*')
-            .eq('status', 'published')
+            .in('status', ['published', 'limited'])
             .order('published_at', { ascending: false })
             .limit(20);
 
@@ -97,9 +99,10 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                                                 className="w-40 h-24 object-cover shrink-0 bg-slate-200"
                                             />
                                         ) : (
-                                            <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs">
-                                                No Image
-                                            </div>
+                                            <NoImagePlaceholder
+                                                regionName={item.source}
+                                                className="w-40 h-24 shrink-0"
+                                            />
                                         )}
                                         <div className="flex-1 flex flex-col justify-start">
                                             <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">

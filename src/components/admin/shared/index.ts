@@ -7,6 +7,7 @@
 
 export { StatusBadge } from "./StatusBadge";
 export { ConfirmModal } from "./ConfirmModal";
+export { DangerConfirmModal } from "./DangerConfirmModal";
 export { FilterTabs } from "./FilterTabs";
 export { PageHeader } from "./PageHeader";
 export { Pagination } from "./Pagination";

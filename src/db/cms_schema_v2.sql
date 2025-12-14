@@ -238,7 +238,7 @@ ON CONFLICT DO NOTHING;
 -- 메인 페이지 레이아웃 초기 데이터
 INSERT INTO layouts (page_type, section_name, section_type, source_type, order_index, items_count, title, background) VALUES
     ('home', 'hero', 'hero_carousel', 'latest', 1, 5, NULL, 'white'),
-    ('home', 'focus_naju', 'grid_4', 'category', 2, 4, 'Focus 나주 혁신도시', 'gray'),
+    ('home', 'focus_naju', 'grid_4', 'category', 2, 4, 'Focus 나주시', 'gray'),
     ('home', 'regional', 'split_2', 'categories_multi', 3, 4, NULL, 'gray'),
     ('home', 'education_ai', 'magazine', 'categories_multi', 4, 6, NULL, 'white')
 ON CONFLICT DO NOTHING;

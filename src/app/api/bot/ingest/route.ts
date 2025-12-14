@@ -7,6 +7,128 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
+// ============================================================
+// 기사 검증 시스템 (Article Validation System)
+// ============================================================
+
+interface ValidationResult {
+    isValid: boolean;
+    status: 'published' | 'limited' | 'draft' | 'rejected';
+    errors: string[];
+    warnings: string[];
+}
+
+/**
+ * 기사 검증 함수
+ * - CRITICAL 체크 실패 → rejected (노출 불가)
+ * - 이미지 없음 → limited (지역 게시판만 노출)
+ * - 모두 통과 → draft (관리자 승인 대기)
+ */
+function validateArticle(article: {
+    title?: string;
+    content?: string;
+    published_at?: string;
+    source?: string;
+    original_link?: string;
+    thumbnail_url?: string;
+    department?: string;
+}): ValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // === CRITICAL 체크 (하나라도 실패 시 rejected) ===
+
+    // 제목 검증
+    if (!article.title || article.title.trim().length < 10) {
+        errors.push('제목 없음 또는 10자 미만');
+    } else {
+        // 무의미한 제목 체크
+        const invalidTitles = ['제목없음', '제목 없음', '...', 'untitled', 'no title', '무제'];
+        if (invalidTitles.some(t => article.title?.toLowerCase().includes(t.toLowerCase()))) {
+            errors.push('무의미한 제목');
+        }
+    }
+
+    // 본문 검증
+    if (!article.content) {
+        errors.push('본문 없음');
+    } else {
+        // HTML 태그 제거 후 길이 체크
+        const textContent = article.content.replace(/<[^>]*>/g, '').trim();
+        if (textContent.length < 100) {
+            errors.push('본문 100자 미만');
+        }
+        // 본문이 제목과 동일한 경우
+        if (article.title && textContent === article.title.trim()) {
+            errors.push('본문이 제목과 동일');
+        }
+    }
+
+    // 날짜 검증
+    if (!article.published_at) {
+        errors.push('날짜 없음');
+    } else {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}/;
+        if (!dateRegex.test(article.published_at)) {
+            errors.push('날짜 형식 오류');
+        } else {
+            // 미래 날짜 체크 (내일까지는 허용)
+            const articleDate = new Date(article.published_at);
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (articleDate > tomorrow) {
+                errors.push('미래 날짜');
+            }
+        }
+    }
+
+    // 출처 검증
+    if (!article.source || article.source.trim() === '') {
+        errors.push('출처(지역) 없음');
+    }
+
+    // 원본 URL 검증
+    if (!article.original_link || !article.original_link.startsWith('http')) {
+        errors.push('원본 URL 오류');
+    }
+
+    // 인코딩 오류 체크 (깨진 문자)
+    const brokenChars = /[�]/;
+    if ((article.title && brokenChars.test(article.title)) ||
+        (article.content && brokenChars.test(article.content))) {
+        errors.push('인코딩 오류 감지');
+    }
+
+    // === WARNING 체크 (limited 처리) ===
+
+    // 이미지 검증
+    if (!article.thumbnail_url || article.thumbnail_url.trim() === '') {
+        warnings.push('썸네일 이미지 없음');
+    }
+
+    // 담당부서 검증 (경고만)
+    if (!article.department) {
+        warnings.push('담당부서 없음');
+    }
+
+    // === 최종 상태 결정 ===
+    let status: ValidationResult['status'];
+
+    if (errors.length > 0) {
+        status = 'rejected';
+    } else if (warnings.includes('썸네일 이미지 없음')) {
+        status = 'limited';
+    } else {
+        status = 'draft'; // 관리자 승인 대기
+    }
+
+    return {
+        isValid: errors.length === 0,
+        status,
+        errors,
+        warnings
+    };
+}
 export async function POST(request: Request) {
     try {
         // 1. Basic Auth Check (Simple API Key)
@@ -135,26 +257,26 @@ export async function POST(request: Request) {
             finalRegion = SOURCE_TO_REGION[source] || null;
         }
 
-        // 수집된 기사 상태 결정:
-        // - 모든 수집 기사 → 'pending' (승인대기)
-        // - 관리자 승인 후 → 'published' (발행)
-        // - 이미지/본문 품질에 따라 quality_score 저장 (추후 필터링용)
-        const hasTitle = title && title.trim().length > 0;
-        const hasContent = content && content.trim().length > 50;
-        const hasImage = thumbnail_url && thumbnail_url.trim().length > 0;
+        // ============================================================
+        // 기사 검증 실행 (Article Validation)
+        // ============================================================
+        const validation = validateArticle({
+            title,
+            content,
+            published_at,
+            source,
+            original_link,
+            thumbnail_url,
+        });
 
-        // 품질 점수 계산 (관리자 승인 시 참고용)
-        let qualityScore = 0;
-        if (hasTitle) qualityScore += 1;
-        if (hasContent) qualityScore += 1;
-        if (hasImage) qualityScore += 1;
+        // 검증 결과 로깅
+        if (validation.status === 'rejected') {
+            console.warn(`[REJECTED] ${title?.substring(0, 30)}...`, validation.errors);
+        } else if (validation.status === 'limited') {
+            console.info(`[LIMITED] ${title?.substring(0, 30)}...`, validation.warnings);
+        }
 
-        // ★ 핵심 변경: 모든 수집 기사는 'draft' 상태로 저장
-        // 관리자가 승인해야 'published'로 변경됨
-        // (DB 제약조건: draft | review | published | rejected | archived | trash)
-        const articleStatus = 'draft';
-
-        // 5. Insert
+        // 5. Insert (검증 결과 포함)
         const { data, error } = await supabaseAdmin
             .from('posts')
             .insert({
@@ -168,7 +290,9 @@ export async function POST(request: Request) {
                 published_at: published_at || new Date().toISOString(),
                 thumbnail_url,
                 ai_summary: ai_summary || '',
-                status: articleStatus, // 조건에 따른 상태
+                status: validation.status, // 검증에 따른 상태 (draft/limited/rejected)
+                // validation_errors: validation.errors.length > 0 ? validation.errors : null,
+                // validation_warnings: validation.warnings.length > 0 ? validation.warnings : null,
             })
             .select()
             .single();
@@ -181,8 +305,16 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             id: data.id,
+            status: validation.status,
+            validation: {
+                isValid: validation.isValid,
+                errors: validation.errors,
+                warnings: validation.warnings,
+            },
             category_id: category_id || null,
-            message: category_id ? '카테고리 연동 완료' : '카테고리 미발견 (TEXT 필드만 저장)'
+            message: validation.status === 'rejected'
+                ? '검증 실패: ' + validation.errors.join(', ')
+                : category_id ? '카테고리 연동 완료' : '저장 완료'
         }, { status: 201 });
 
     } catch (error: any) {

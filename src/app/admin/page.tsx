@@ -6,7 +6,7 @@ import {
     FileText, TrendingUp, Activity, Loader2, RefreshCw,
     CheckCircle2, ChevronRight, Zap, Settings,
     PenTool, Users, LayoutDashboard, Bot, Calendar,
-    Newspaper, MapPin, Lightbulb
+    Newspaper, MapPin, Lightbulb, Cloud, Database, Server, HardDrive
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -59,6 +59,7 @@ export default function AdminDashboardPage() {
     const [stats, setStats] = useState<any>(null);
     const [testConfig, setTestConfig] = useState<any>(null);
     const [regionStats, setRegionStats] = useState<any[]>([]);
+    const [usage, setUsage] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -77,7 +78,7 @@ export default function AdminDashboardPage() {
             today.setHours(0, 0, 0, 0);
             const todayISO = today.toISOString();
 
-            const [pending, todayPosts, views, logs, testRes, allPosts] = await Promise.all([
+            const [pending, todayPosts, views, logs, testRes, allPosts, usageRes] = await Promise.all([
                 supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'draft'),
                 supabase.from('posts').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
                 supabase.from('posts').select('view_count').order('created_at', { ascending: false }).limit(500),
@@ -85,7 +86,9 @@ export default function AdminDashboardPage() {
                 supabase.from('bot_logs').select('*').order('started_at', { ascending: false }).limit(5),
                 fetch('/api/bot/test-schedule').then(r => r.json()).catch(() => null),
                 // 시/군별 기사 수 조회
-                supabase.from('posts').select('source')
+                supabase.from('posts').select('source'),
+                // 서비스 사용량 조회
+                fetch('/api/admin/usage').then(r => r.json()).catch(() => null)
             ]);
 
             const totalViews = views.data?.reduce((sum, p) => sum + (p.view_count || 0), 0) || 0;
@@ -123,6 +126,7 @@ export default function AdminDashboardPage() {
                 totalArticles: allPosts.data?.length || 0
             });
             setTestConfig(testRes);
+            setUsage(usageRes);
         } catch (e) {
             console.error(e);
         } finally {
@@ -229,7 +233,7 @@ export default function AdminDashboardPage() {
                                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                                     교육기관
                                 </h3>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     {regionStats.filter(r => r.type === 'education').map((region) => (
                                         <RegionCard key={region.source} region={region} maxCount={Math.max(...regionStats.map(r => r.count))} />
                                     ))}
@@ -242,7 +246,7 @@ export default function AdminDashboardPage() {
                                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                                     지자체
                                 </h3>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     {regionStats.filter(r => r.type === 'local').map((region) => (
                                         <RegionCard key={region.source} region={region} maxCount={Math.max(...regionStats.map(r => r.count))} />
                                     ))}
@@ -320,6 +324,33 @@ export default function AdminDashboardPage() {
                                 <StatusRow label="스케줄러" value={testConfig?.enabled ? "활성화" : "비활성화"} status={testConfig?.enabled ? "ok" : "off"} />
                             </div>
                         </section>
+
+                        {/* 서비스 사용량 - 간단 현황 */}
+                        <Link href="/admin/usage">
+                            <section className="admin-card p-6 hover:border-slate-300 transition-colors cursor-pointer">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="admin-section-title flex items-center gap-2">
+                                        <HardDrive className="w-5 h-5 text-blue-600" />
+                                        서비스 사용량
+                                    </h2>
+                                    <span className="text-xs text-blue-600">상세 →</span>
+                                </div>
+                                <div className="space-y-3">
+                                    <UsageBarSimple
+                                        label="Cloudinary"
+                                        percent={usage?.cloudinary?.storage?.used && usage?.cloudinary?.storage?.limit
+                                            ? (usage.cloudinary.storage.used / usage.cloudinary.storage.limit) * 100
+                                            : 0}
+                                    />
+                                    <UsageBarSimple
+                                        label="Supabase"
+                                        percent={usage?.supabase?.database?.used && usage?.supabase?.database?.limit
+                                            ? (usage.supabase.database.used / usage.supabase.database.limit) * 100
+                                            : 0}
+                                    />
+                                </div>
+                            </section>
+                        </Link>
 
                         {/* Test Scheduler */}
                         <section className={`admin-card p-6 ${testConfig?.lastResult?.failedRegions?.length > 0 ? 'ring-2 ring-red-200 bg-red-50/30' : ''}`}>
@@ -605,4 +636,68 @@ function formatTime(dateString: string): string {
     if (diffMins < 60) return `${diffMins}분 전`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}시간 전`;
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+}
+
+function UsageBar({ icon: Icon, label, sublabel, used, limit, color }: any) {
+    const percent = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+    const formatSize = (bytes: number) => {
+        if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`;
+        if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+        return `${(bytes / 1024).toFixed(1)}KB`;
+    };
+
+    const colorClasses: Record<string, string> = {
+        blue: 'bg-blue-500',
+        emerald: 'bg-emerald-500',
+        amber: 'bg-amber-500',
+        red: 'bg-red-500'
+    };
+
+    const barColor = percent > 80 ? 'bg-red-500' : percent > 60 ? 'bg-amber-500' : colorClasses[color] || 'bg-blue-500';
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700">{label}</span>
+                    <span className="text-xs text-slate-400">{sublabel}</span>
+                </div>
+                <span className="text-xs font-medium text-slate-600">
+                    {formatSize(used)} / {formatSize(limit)}
+                </span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-2">
+                <div
+                    className={`h-2 rounded-full transition-all ${barColor}`}
+                    style={{ width: `${percent}%` }}
+                />
+            </div>
+            <div className="text-right">
+                <span className={`text-xs font-bold ${percent > 80 ? 'text-red-600' : percent > 60 ? 'text-amber-600' : 'text-slate-500'}`}>
+                    {percent.toFixed(1)}%
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function UsageBarSimple({ label, percent }: { label: string; percent: number }) {
+    const barColor = percent > 80 ? 'bg-red-500' : percent > 60 ? 'bg-amber-500' : 'bg-blue-500';
+    const textColor = percent > 80 ? 'text-red-600' : percent > 60 ? 'text-amber-600' : 'text-slate-600';
+
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-600 w-20">{label}</span>
+            <div className="flex-1 bg-slate-100 rounded-full h-2">
+                <div
+                    className={`h-2 rounded-full transition-all ${barColor}`}
+                    style={{ width: `${Math.min(percent, 100)}%` }}
+                />
+            </div>
+            <span className={`text-xs font-bold w-12 text-right ${textColor}`}>
+                {percent.toFixed(1)}%
+            </span>
+        </div>
+    );
 }

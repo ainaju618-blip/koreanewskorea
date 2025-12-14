@@ -39,9 +39,12 @@ export async function GET(req: NextRequest) {
             query = query.neq('status', 'hidden');
         }
 
-        // ★ 이미지 필수 필터 (메인 페이지용 - status=published 일 때 자동 적용)
+        // ★ 이미지 필수 필터 (메인 페이지용)
         if (requireImage) {
-            query = query.not('thumbnail_url', 'is', null);
+            query = query
+                .not('thumbnail_url', 'is', null)  // null 제외
+                .neq('thumbnail_url', '')          // 빈 문자열 제외
+                .like('thumbnail_url', 'http%');   // http로 시작하는 URL만
         }
 
         const { data, error, count } = await query;

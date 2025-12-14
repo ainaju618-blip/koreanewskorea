@@ -33,7 +33,9 @@ export default function MainSlider() {
                     .from('posts')
                     .select('*')
                     .eq('status', 'approved')
-                    .not('image_url', 'is', null) // Must have image
+                    .not('image_url', 'is', null)   // ★ null 제외
+                    .neq('image_url', '')           // ★ 빈 문자열 제외
+                    .like('image_url', 'http%')     // ★ http로 시작하는 URL만
                     .order('created_at', { ascending: false })
                     .limit(5);
 
