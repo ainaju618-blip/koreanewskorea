@@ -1,8 +1,11 @@
 """
 화순군 화순포커스 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
+- 버전: v1.1
+- 최종수정: 2025-12-14
 - 담당: AI Agent
+
+변경점 (v1.1):
+- 조회수/작성일 메타정보 제거 패턴 강화 (Claude 작업 지시)
 
 변경점 (v1.0):
 - 사용자 제공 상세 분석 데이터 기반 최초 작성
@@ -210,10 +213,19 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         """
         content = page.evaluate(js_code)
         if content:
-            # 메타정보 제거
-            content = re.sub(r'등록일\s*[:\s]+[^\n]+', '', content)
-            content = re.sub(r'담당부서\s*[:\s]+[^\n]+', '', content)
-            content = re.sub(r'조회수\s*[:\s]+\d+', '', content)
+            # 메타정보 제거 (v1.1: 조회수 패턴 강화 - Claude 작업 지시)
+            patterns_to_remove = [
+                r'등록일\s*[:\s]+[^\n]+',
+                r'담당부서\s*[:\s]+[^\n]+',
+                r'조회수?\s*[:：]?\s*\d+',
+                r'조회\s*[:：]\s*\d+',
+                r'작성일\s*[:：]?\s*[\d\-\.]+',
+                r'\d{4}-\d{2}-\d{2}',  # 날짜 형식
+            ]
+            for pattern in patterns_to_remove:
+                content = re.sub(pattern, '', content)
+            # 연속 공백/줄바꿈 정리
+            content = re.sub(r'\n{3,}', '\n\n', content)
             content = content.strip()[:5000]
     except Exception as e:
         print(f"      ⚠️ JS 본문 추출 실패: {e}")

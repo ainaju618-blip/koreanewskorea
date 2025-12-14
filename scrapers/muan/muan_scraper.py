@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""무안군청 보도자료 스크래퍼 v1.3
+"""무안군청 보도자료 스크래퍼 v1.4
 - 사이트: https://www.muan.go.kr/
 - 대상: 보도자료 게시판 (/www/openmuan/new/report)
-- 최종수정: 2025-12-13
+- 최종수정: 2025-12-14
 - 변경사항: 
-  - 본문 추출 전면 재설계 (시작/종료점 기반)
+  - v1.4: 이미지 추출 로직 일반화 (더 다양한 경로 지원, 첨부파일 이미지 추출)
+  - v1.3: 본문 추출 전면 재설계 (시작/종료점 기반)
   - 첨부파일 정보 완전 제거
 """
 
@@ -252,27 +253,61 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
     except:
         pass
 
-    # 3. 이미지 추출 (본문 내 img 태그 - ybmodule.file/board 경로)
+    # 3. 이미지 추출 (v1.4: 더 일반화된 이미지 추출)
     thumbnail_url = None
     original_image_url = None
     
     try:
+        # 전략 1: 본문 영역 내 모든 이미지 (아이콘 등 제외)
         imgs = page.locator('div.sub_inner img')
-        for i in range(min(imgs.count(), 10)):
+        for i in range(min(imgs.count(), 15)):
             src = imgs.nth(i).get_attribute('src') or ''
             
-            if any(x in src.lower() for x in ['icon', 'logo', 'kogl', 'opentype', 'btn', 'qr']):
+            # 제외할 이미지 패턴
+            if any(x in src.lower() for x in ['icon', 'logo', 'kogl', 'opentype', 'btn', 'qr', 'banner', 'bg_']):
                 continue
             
-            if 'ybmodule.file/board' in src or 'www_report' in src:
+            # 작은 이미지 제외 (width/height 체크)
+            try:
+                width = imgs.nth(i).get_attribute('width')
+                height = imgs.nth(i).get_attribute('height')
+                if width and int(width) < 50:
+                    continue
+                if height and int(height) < 50:
+                    continue
+            except:
+                pass
+            
+            # 유효한 이미지 경로인지 확인
+            if src and ('ybmodule' in src or 'file' in src or 'upload' in src or 
+                       'board' in src or 'www_report' in src or 
+                       src.endswith(('.jpg', '.jpeg', '.png', '.gif'))):
                 if src.startswith('./'):
                     original_image_url = f"{BASE_URL}{src[1:]}"
                 elif src.startswith('/'):
                     original_image_url = f"{BASE_URL}{src}"
+                elif not src.startswith('http'):
+                    original_image_url = urljoin(BASE_URL, src)
                 else:
                     original_image_url = src
-                print(f"      [IMG] 본문 이미지: {src[:50]}...")
+                print(f"      [IMG] 본문 이미지 발견: {src[:50]}...")
                 break
+        
+        # 전략 2: 첨부파일 영역에서 이미지 링크 찾기
+        if not original_image_url:
+            file_links = page.locator('a[href*=".jpg"], a[href*=".jpeg"], a[href*=".png"], a[href*=".gif"]')
+            for i in range(min(file_links.count(), 5)):
+                href = file_links.nth(i).get_attribute('href') or ''
+                if href and not any(x in href.lower() for x in ['icon', 'logo', 'btn']):
+                    if href.startswith('/'):
+                        original_image_url = f"{BASE_URL}{href}"
+                    elif not href.startswith('http'):
+                        original_image_url = urljoin(BASE_URL, href)
+                    else:
+                        original_image_url = href
+                    print(f"      [IMG] 첨부파일 이미지: {href[:50]}...")
+                    break
+                    
     except Exception as e:
         print(f"   [WARN] 이미지 추출 에러: {str(e)}")
 

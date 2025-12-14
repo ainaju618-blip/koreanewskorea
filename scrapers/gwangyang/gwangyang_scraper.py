@@ -1,8 +1,11 @@
 """
 광양시 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
+- 버전: v1.1
+- 최종수정: 2025-12-14
 - 담당: AI Agent
+
+변경점 (v1.1):
+- 담당부서/연락처/전화번호 메타정보 제거 패턴 추가 (Claude 작업 지시)
 
 변경점 (v1.0):
 - 사용자 제공 상세 분석 데이터 기반 최초 작성
@@ -237,11 +240,25 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         """
         content = page.evaluate(js_code)
         if content:
-            # 메타정보 제거
-            content = re.sub(r'등록일[^\n]+', '', content)
-            content = re.sub(r'작성자[^\n]+', '', content)
-            content = re.sub(r'조회수[^\n]+', '', content)
-            content = re.sub(r'첨부파일[^\n]+', '', content)
+            # 메타정보 제거 (v1.1: 담당부서/연락처 패턴 추가)
+            patterns_to_remove = [
+                r'등록일[^\n]+',
+                r'작성자[^\n]+',
+                r'조회수[^\n]+',
+                r'첨부파일[^\n]+',
+                # 담당부서/연락처 패턴 (Claude 작업 지시)
+                r'담당부서\s*[:：]?\s*[^\n]+',
+                r'담당자\s*[:：]?\s*[^\n]+',
+                r'부서명\s*[:：]?\s*[^\n]+',
+                r'연락처\s*[:：]?\s*[\d\-\s]+',
+                r'전화번호\s*[:：]?\s*[\d\-\s]+',
+                r'팩스\s*[:：]?\s*[\d\-\s]+',
+                r'\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}',  # 전화번호 형식
+            ]
+            for pattern in patterns_to_remove:
+                content = re.sub(pattern, '', content)
+            # 연속 공백/줄바꿈 정리
+            content = re.sub(r'\n{3,}', '\n\n', content)
             content = content.strip()[:5000]
     except Exception as e:
         print(f"      ⚠️ JS 본문 추출 실패: {e}")

@@ -566,136 +566,139 @@ function ReporterForm({
     isSubmitting, onSubmit, onCancel, submitLabel, showStatus, isAddMode, isEditMode
 }: ReporterFormProps) {
     return (
-        <div className="space-y-4">
-            {/* 기본 정보 */}
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-                    <input
-                        type="text"
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="예: 홍길동"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">유형 *</label>
-                    <select
-                        value={formType}
-                        onChange={(e) => setFormType(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                        {POSITIONS.map(p => (
-                            <option key={p.value} value={p.value}>{p.label}</option>
-                        ))}
-                    </select>
+        <div className="space-y-6">
+            {/* 섹션 1: 기본 정보 */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">기본 정보</h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">이름 *</label>
+                        <input
+                            type="text"
+                            value={formName}
+                            onChange={(e) => setFormName(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="홍길동"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">유형 *</label>
+                        <select
+                            value={formType}
+                            onChange={(e) => setFormType(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        >
+                            {POSITIONS.map(p => (
+                                <option key={p.value} value={p.value}>{p.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">담당 지역</label>
+                        <select
+                            value={formRegion}
+                            onChange={(e) => setFormRegion(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        >
+                            {REGIONS.map(r => (
+                                <option key={r.value} value={r.value}>{r.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* 섹션 2: 계정 정보 */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">계정 정보</h3>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">담당 지역</label>
-                    <select
-                        value={formRegion}
-                        onChange={(e) => setFormRegion(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                        {REGIONS.map(r => (
-                            <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
-                    </select>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                        아이디 <span className="text-gray-400">(로그인용)</span>
+                    </label>
+                    <div className="flex max-w-md">
+                        <input
+                            type="text"
+                            value={formEmail.replace(/@koreanews(one)?\.com$/, '')}
+                            onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace(/@koreanews(one)?\.com$/, '')}@koreanewsone.com` : '')}
+                            className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="userid"
+                        />
+                        <span className="inline-flex items-center px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-500 text-sm">
+                            @koreanewsone.com
+                        </span>
+                    </div>
                 </div>
+                {setFormPassword && (isAddMode || isEditMode) && (
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            비밀번호 <span className="text-gray-400">(선택)</span>
+                        </label>
+                        <input
+                            type="password"
+                            value={formPassword}
+                            onChange={(e) => setFormPassword(e.target.value)}
+                            className="max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder={isAddMode ? "미입력시 기본 비밀번호: a1234567!" : "변경시에만 입력"}
+                        />
+                    </div>
+                )}
             </div>
 
-            {/* 연락처 정보 */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* 섹션 3: 연락처 */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">연락처</h3>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">전화번호</label>
                     <input
                         type="tel"
                         value={formPhone}
                         onChange={(e) => setFormPhone(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                         placeholder="010-0000-0000"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        이메일 <span className="text-xs text-gray-400">(로그인용)</span>
-                    </label>
-                    <div className="flex">
-                        <input
-                            type="text"
-                            value={formEmail.replace('@koreanewsone.com', '')}
-                            onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace('@koreanewsone.com', '')}@koreanewsone.com` : '')}
-                            className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none border-r-0"
-                            placeholder="아이디 입력"
-                        />
-                        <span className="inline-flex items-center px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-lg text-gray-600 text-sm">
-                            @koreanewsone.com
-                        </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">이메일 입력 시 로그인 가능</p>
-                </div>
             </div>
 
-            {/* 비밀번호 (선택 - 미입력시 기본 비밀번호 a1234567! 사용) */}
-            {setFormPassword && (isAddMode || isEditMode) && (
+            {/* 섹션 4: 추가 정보 (선택) */}
+            <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">추가 정보 <span className="font-normal text-gray-400">(선택)</span></h3>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        비밀번호 <span className="text-xs text-gray-400">(선택)</span>
-                    </label>
-                    <input
-                        type="password"
-                        value={formPassword}
-                        onChange={(e) => setFormPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder={isAddMode ? "미입력시 기본 비밀번호: a1234567!" : "변경 시에만 입력 (6자 이상)"}
+                    <label className="block text-xs font-medium text-gray-600 mb-1">소개/약력</label>
+                    <textarea
+                        value={formBio}
+                        onChange={(e) => setFormBio(e.target.value)}
+                        rows={2}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        placeholder="간단한 소개 (선택사항)"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                        {isAddMode ? "미입력시 초기 비밀번호 a1234567!로 설정됩니다" : "입력하지 않으면 기존 비밀번호가 유지됩니다"}
-                    </p>
                 </div>
-            )}
-
-            {/* 소개 */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">소개/약력 (선택)</label>
-                <textarea
-                    value={formBio}
-                    onChange={(e) => setFormBio(e.target.value)}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                    placeholder="간단한 소개를 입력하세요"
-                />
+                {showStatus && setFormStatus && (
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">상태</label>
+                        <select
+                            value={formStatus}
+                            onChange={(e) => setFormStatus(e.target.value as "Active" | "Inactive")}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        >
+                            <option value="Active">활동 중</option>
+                            <option value="Inactive">비활성</option>
+                        </select>
+                    </div>
+                )}
             </div>
 
-            {showStatus && setFormStatus && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-                    <select
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value as "Active" | "Inactive")}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white"
-                    >
-                        <option value="Active">활동 중</option>
-                        <option value="Inactive">비활성</option>
-                    </select>
-                </div>
-            )}
-
-            <div className="flex gap-3 mt-8">
+            {/* 버튼 */}
+            <div className="flex gap-3 pt-4 border-t">
                 <button
                     onClick={onSubmit}
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center"
+                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center text-sm"
                 >
                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : submitLabel}
                 </button>
                 <button
                     onClick={onCancel}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 text-sm"
                 >
                     취소
                 </button>

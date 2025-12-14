@@ -1,8 +1,11 @@
 """
 광주광역시교육청 보도자료 스크래퍼
-- 버전: v4.0
-- 최종수정: 2025-12-12
+- 버전: v4.1
+- 최종수정: 2025-12-14
 - 담당: AI Agent
+
+변경점 (v4.1):
+- 조회수/날짜/담당자 메타정보 제거 패턴 추가 (Claude 작업 지시)
 
 사이트 특징:
 - URL 경로에 /v5/와 /v4/가 혼용됨 (이미지는 v4 경로)
@@ -184,7 +187,24 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = page.evaluate(js_code)
             
         if content:
-            content = content[:5000].strip()
+            # 메타정보 제거 (v4.1: 조회수/날짜 패턴 추가 - Claude 작업 지시)
+            patterns_to_remove = [
+                r'조회수?\s*[:：]?\s*\d+',
+                r'조회\s*[:：]\s*\d+',
+                r'작성일\s*[:：]?\s*[\d\-\.]+',
+                r'등록일\s*[:：]?\s*[\d\-\.]+',
+                r'\d{4}-\d{2}-\d{2}',  # 날짜 형식
+                r'기관명\s*[:：]\s*[^\n]+',
+                r'기관주소\s*[:：]\s*[^\n]+',
+                r'담당자\s*[:：]\s*[^\n]+',
+                r'전화번호\s*[:：]?\s*[\d\-]+',
+                r'개인정보처리방침.*',
+            ]
+            for pattern in patterns_to_remove:
+                content = re.sub(pattern, '', content)
+            # 연속 공백/줄바꿈 정리
+            content = re.sub(r'\n{3,}', '\n\n', content)
+            content = content.strip()[:5000]
             
     except Exception as e:
         print(f"      ⚠️ 본문 추출 실패: {e}")

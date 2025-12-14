@@ -1,8 +1,11 @@
 ﻿"""
 순천시 보도자료 스크래퍼
-- 버전: v3.0
-- 최종수정: 2025-12-12
+- 버전: v3.1
+- 최종수정: 2025-12-14
 - 담당: AI Agent
+
+변경점 (v3.1):
+- 이미지 추출 로직 개선 (로컬 저장 우선, 다양한 셀렉터 시도) - Claude 작업 지시
 
 변경점 (v3.0):
 - 사용자 제공 상세 가이드 기반 완전 재작성
@@ -345,22 +348,45 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     except Exception as e:
         print(f"      ⚠️ 첨부파일 처리 실패: {e}", flush=True)
     
-    # 본문 내 이미지가 있는지도 확인
-    try:
-        imgs = page.locator('td img, div img')
-        for i in range(min(imgs.count(), 3)):
-            src = safe_get_attr(imgs.nth(i), 'src')
-            if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet']):
-                full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                # Cloudinary 업로드 시도
-                cloudinary_url = download_and_upload_image(full_url, BASE_URL, folder=REGION_CODE)
-                if cloudinary_url:
-                    thumbnail_url = cloudinary_url
-                else:
-                    thumbnail_url = full_url
-                break
-    except:
-        pass
+    # 3. 본문 내 이미지 추출 (v3.1: 로컬 저장 우선, 다양한 셀렉터)
+    if not thumbnail_url:
+        try:
+            # 더 다양한 이미지 셀렉터 시도
+            img_selectors = [
+                'td img[src*=".jpg"]',
+                'td img[src*=".png"]',
+                'td img[src*=".jpeg"]',
+                'div img[src*=".jpg"]',
+                'div img[src*=".png"]',
+                'img[src*="upload"]',
+                'img[src*="file"]',
+            ]
+            
+            for sel in img_selectors:
+                imgs = page.locator(sel)
+                for i in range(min(imgs.count(), 3)):
+                    src = safe_get_attr(imgs.nth(i), 'src')
+                    if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet', 'blank', 'spacer']):
+                        full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
+                        
+                        # 로컬 저장 우선 시도
+                        from utils.local_image_saver import download_and_save_locally
+                        saved_path = download_and_save_locally(full_url, BASE_URL, REGION_CODE)
+                        if saved_path:
+                            thumbnail_url = saved_path
+                            print(f"      [IMG] 본문 이미지 저장: {saved_path}")
+                            break
+                        
+                        # Cloudinary 폴백
+                        cloudinary_url = download_and_upload_image(full_url, BASE_URL, folder=REGION_CODE)
+                        if cloudinary_url:
+                            thumbnail_url = cloudinary_url
+                            break
+                
+                if thumbnail_url:
+                    break
+        except Exception as e:
+            print(f"      [WARN] 본문 이미지 추출 실패: {e}")
     
     return content, thumbnail_url, pub_date, department
 
