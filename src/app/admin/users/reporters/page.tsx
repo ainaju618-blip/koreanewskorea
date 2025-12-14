@@ -624,13 +624,18 @@ function ReporterForm({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         이메일 <span className="text-xs text-gray-400">(로그인용)</span>
                     </label>
-                    <input
-                        type="email"
-                        value={formEmail}
-                        onChange={(e) => setFormEmail(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="userid@koreanewsone.com"
-                    />
+                    <div className="flex">
+                        <input
+                            type="text"
+                            value={formEmail.replace('@koreanewsone.com', '')}
+                            onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace('@koreanewsone.com', '')}@koreanewsone.com` : '')}
+                            className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none border-r-0"
+                            placeholder="아이디 입력"
+                        />
+                        <span className="inline-flex items-center px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-lg text-gray-600 text-sm">
+                            @koreanewsone.com
+                        </span>
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">이메일 입력 시 로그인 가능</p>
                 </div>
             </div>
@@ -740,8 +745,8 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
     return (
         <div
             className={`border-2 rounded-lg p-4 transition-all bg-white cursor-pointer ${isActive
-                    ? 'border-gray-100 hover:border-blue-400 hover:shadow-md'
-                    : 'border-gray-100 opacity-60'
+                ? 'border-gray-100 hover:border-blue-400 hover:shadow-md'
+                : 'border-gray-100 opacity-60'
                 }`}
             onClick={onView}
         >

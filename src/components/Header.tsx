@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight } from 'lucide-react';
 import NewsTicker from './NewsTicker';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
@@ -25,6 +26,26 @@ export default function Header() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [currentDate, setCurrentDate] = useState('');
     const megaMenuRef = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
+
+    // 현재 경로가 해당 카테고리에 속하는지 확인
+    const isActiveCategory = (category: Category): boolean => {
+        if (pathname === '/' && category.slug === 'home') return true;
+        // 전남지역(region)은 jeonnam-region 경로에서 활성화
+        if (category.slug === 'region' && pathname.startsWith('/category/jeonnam-region')) {
+            return true;
+        }
+        // 정확한 경로 매칭 (예: /category/jeonnam 과 /category/jeonnam-region 구분)
+        const categoryPath = `/category/${category.slug}`;
+        if (pathname === categoryPath || pathname.startsWith(`${categoryPath}/`) || pathname.startsWith(`${categoryPath}?`)) {
+            return true;
+        }
+        // 하위 카테고리 확인
+        if (category.children) {
+            return category.children.some(child => pathname.includes(`/${child.slug}`));
+        }
+        return false;
+    };
 
     // 날짜 설정
     useEffect(() => {
@@ -68,8 +89,8 @@ export default function Header() {
 
     const getCategoryUrl = (category: Category, parent?: Category): string => {
         if (category.custom_url) return category.custom_url;
-        // 전남지역 카테고리는 기본값으로 나주로 이동
-        if (category.slug === 'jeonnam') return `/category/jeonnam/naju`;
+        // 전남지역(region)은 jeonnam-region 페이지로 이동
+        if (category.slug === 'region') return '/category/jeonnam-region';
         if (parent) return `/category/${parent.slug}/${category.slug}`;
         return `/category/${category.slug}`;
     };
@@ -147,13 +168,24 @@ export default function Header() {
                     <nav className="hidden md:flex items-center justify-center h-full">
                         {/* 메뉴 가운데 정렬 */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
-                            <Link href="/" className="h-full flex items-center text-[#0a192f] hover:text-[#ff2e63] transition-colors font-serif italic text-lg mr-2">
+                            <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative
+                                ${pathname === '/' ? 'text-[#ff2e63]' : 'text-[#0a192f] hover:text-[#ff2e63]'}
+                            `}>
                                 Home
+                                {pathname === '/' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
+                                )}
                             </Link>
 
-                            <Link href="/news/network" className="h-full flex items-center text-slate-800 hover:text-[#ff2e63] transition-colors relative group">
+                            <Link href="/news/network" className={`h-full flex items-center transition-colors relative
+                                ${pathname.startsWith('/news') ? 'text-[#ff2e63]' : 'text-slate-800 hover:text-[#ff2e63]'}
+                            `}>
                                 <span>뉴스TV</span>
-                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                                {pathname.startsWith('/news') ? (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
+                                ) : (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                                )}
                             </Link>
 
                             {categories.map((category) => (
@@ -166,12 +198,12 @@ export default function Header() {
                                     <Link
                                         href={getCategoryUrl(category)}
                                         className={`h-full flex items-center transition-colors relative
-                                            ${activeMegaMenu === category.id ? 'text-[#ff2e63]' : 'text-slate-900'}
+                                            ${isActiveCategory(category) || activeMegaMenu === category.id ? 'text-[#ff2e63]' : 'text-slate-900'}
                                             hover:text-[#ff2e63]
                                         `}
                                     >
                                         {category.name}
-                                        {activeMegaMenu === category.id && (
+                                        {(isActiveCategory(category) || activeMegaMenu === category.id) && (
                                             <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
                                         )}
                                     </Link>

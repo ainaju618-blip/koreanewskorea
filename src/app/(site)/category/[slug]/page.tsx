@@ -21,13 +21,17 @@ async function getCategoryNews(slug: string, categoryName: string, page: number 
             .order('published_at', { ascending: false })
             .range(start, end);
 
-        // 전남인 경우: 모든 전남 시군의 기사를 가져옴 (전남은 별도 로직 유지)
-        if (slug === 'jeonnam') {
-            // region이 전남 시군 코드 중 하나이거나, category가 '전남'인 기사
-            query = query.or(`region.in.(${JEONNAM_REGION_CODES.join(',')}),category.eq.전남`);
+        // 전남지역(시군 전체)인 경우: 모든 전남 시군의 기사를 가져옴
+        if (slug === 'jeonnam-region') {
+            // region이 전남 시군 코드 중 하나인 기사 (전라남도청 제외)
+            query = query.in('region', JEONNAM_REGION_CODES);
         }
-        // 그 외 모든 카테고리 (광주 방식 적용)
-        // 카테고리명으로 찾거나, URL slug와 일치하는 region으로 찾음 (예: category='광주' OR region='gwangju')
+        // 전라남도인 경우: 전라남도청 보도자료만
+        else if (slug === 'jeonnam') {
+            // region이 'jeonnam'이거나, source가 '전라남도'인 기사
+            query = query.or(`region.eq.jeonnam,source.eq.전라남도`);
+        }
+        // 그 외 모든 카테고리
         else {
             query = query.or(`category.eq.${categoryName},region.eq.${slug}`);
         }

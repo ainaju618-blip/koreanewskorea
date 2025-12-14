@@ -37,9 +37,14 @@ export const CATEGORY_MAP: Record<string, { name: string; subMenus: string[]; db
 
     // 지역 섹션 (전남 시군)
     'jeonnam': {
-        name: '전남',
+        name: '전라남도',
         subMenus: ['전남일반'],
         dbCategory: '전남'
+    },
+    'jeonnam-region': {
+        name: '전남지역',
+        subMenus: ['전체', '나주', '목포', '순천', '여수', '광양', '담양', '곡성', '구례', '고흥', '보성', '화순', '장흥', '강진', '해남', '영암', '무안', '함평', '영광', '장성', '완도', '진도', '신안'],
+        dbCategory: '전남지역'
     },
     'region': {
         name: '지역',
