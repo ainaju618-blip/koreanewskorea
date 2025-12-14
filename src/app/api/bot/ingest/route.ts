@@ -101,9 +101,21 @@ function validateArticle(article: {
 
     // === WARNING 체크 (limited 처리) ===
 
-    // 이미지 검증
-    if (!article.thumbnail_url || article.thumbnail_url.trim() === '') {
+    // 이미지 검증 - 공공누리 이미지 패턴 제외
+    const invalidImagePatterns = [
+        'opentype', 'kor_type', 'type0', 'type1', 'type2', 'type3', 'type4',
+        'copyright', 'license', 'footer', 'banner', 'logo'
+    ];
+    const thumbnailUrl = article.thumbnail_url?.toLowerCase() || '';
+    const isInvalidImage = invalidImagePatterns.some(pattern => thumbnailUrl.includes(pattern));
+
+    if (!article.thumbnail_url || article.thumbnail_url.trim() === '' || isInvalidImage) {
         warnings.push('썸네일 이미지 없음');
+        // 공공누리 등 무효 이미지인 경우 명시적으로 삭제
+        if (isInvalidImage) {
+            article.thumbnail_url = undefined;
+            warnings.push('공공누리/비콘텐츠 이미지 제외됨');
+        }
     }
 
     // 담당부서 검증 (경고만)
@@ -112,12 +124,14 @@ function validateArticle(article: {
     }
 
     // === 최종 상태 결정 ===
+    // DB 체크 제약조건(posts_status_check)과 호환되는 값만 사용
+    // published, draft, hidden, trash만 허용됨
     let status: ValidationResult['status'];
 
     if (errors.length > 0) {
-        status = 'rejected';
+        status = 'rejected'; // API 응답용 (실제 DB에는 'hidden'으로 저장)
     } else if (warnings.includes('썸네일 이미지 없음')) {
-        status = 'limited';
+        status = 'limited'; // API 응답용 (실제 DB에는 'draft'로 저장)
     } else {
         status = 'draft'; // 관리자 승인 대기
     }
@@ -277,6 +291,11 @@ export async function POST(request: Request) {
         }
 
         // 5. Insert (검증 결과 포함)
+        // DB 체크 제약조건 호환: rejected→hidden, limited→draft
+        const dbStatus = validation.status === 'rejected' ? 'hidden'
+            : validation.status === 'limited' ? 'draft'
+                : validation.status;
+
         const { data, error } = await supabaseAdmin
             .from('posts')
             .insert({
@@ -290,7 +309,7 @@ export async function POST(request: Request) {
                 published_at: published_at || new Date().toISOString(),
                 thumbnail_url,
                 ai_summary: ai_summary || '',
-                status: validation.status, // 검증에 따른 상태 (draft/limited/rejected)
+                status: dbStatus, // DB 호환 상태 (published/draft/hidden/trash)
                 // validation_errors: validation.errors.length > 0 ? validation.errors : null,
                 // validation_warnings: validation.warnings.length > 0 ? validation.warnings : null,
             })

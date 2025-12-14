@@ -93,25 +93,14 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
     return content, thumbnail_url, pub_date
 
-def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
-    """
-    보도자료 수집 (날짜 필터링 지원)
-
-    Args:
-        days: 수집 기간 (일) - start_date/end_date가 없을 때 사용
-        max_articles: 최대 수집 기사 수
-        start_date: 수집 시작일 (YYYY-MM-DD) - 이 날짜 이후 기사만 수집
-        end_date: 수집 종료일 (YYYY-MM-DD) - 이 날짜 이전 기사만 수집
-    """
-    # 날짜 필터 계산 (start_date, end_date가 전달되면 우선 사용)
+def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {days}일, 최대: {max_articles}개)")
+    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
+    
+    # 날짜 필터 계산
     from datetime import timedelta
-    if not end_date:
-        end_date = datetime.now().strftime('%Y-%m-%d')
-    if not start_date:
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {start_date} ~ {end_date}, 최대: {max_articles}개)")
-    log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작 ({start_date}~{end_date})', 'info')
+    end_date = datetime.now().strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     collected_links = []
     
@@ -176,18 +165,10 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
             
             content, thumbnail_url, pub_date = fetch_detail(page, url)
-
+            
             if not pub_date:
                 pub_date = datetime.now().strftime('%Y-%m-%d')
-
-            # ★ 날짜 필터링 (핵심!) - 지정된 기간 외의 기사는 스킵
-            if pub_date < start_date:
-                print(f"      [SKIP] 기사 날짜({pub_date})가 시작일({start_date}) 이전입니다. 수집 중단.")
-                break  # 오래된 기사가 나오면 더 이상 수집할 필요 없음 (최신순 정렬 가정)
-            if pub_date > end_date:
-                print(f"      [SKIP] 기사 날짜({pub_date})가 종료일({end_date}) 이후입니다. 건너뜀.")
-                continue  # 미래 날짜는 건너뛰고 다음 기사 확인
-
+            
             # 데이터 객체 생성
             article_data = {
                 'title': title,
@@ -230,18 +211,8 @@ def main():
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
     parser.add_argument('--max-articles', type=int, default=30, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
-    # bot-service.ts 호환 인자 (필수)
-    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
-    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
     args = parser.parse_args()
-
-    # start_date, end_date를 collect_articles에 전달 (날짜 필터링 활성화)
-    collect_articles(
-        days=args.days,
-        max_articles=args.max_articles,
-        start_date=args.start_date,
-        end_date=args.end_date
-    )
+    collect_articles(days=args.days, max_articles=args.max_articles)
 
 if __name__ == "__main__":
     main()
