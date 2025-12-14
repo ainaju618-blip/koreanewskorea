@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle, UserPlus } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
 // 공통 컴포넌트 import
@@ -27,6 +27,21 @@ interface Category {
     depth: number;
 }
 
+// GNB 카테고리 (메인 메뉴와 동일)
+interface GnbCategory {
+    id: string;
+    name: string;
+    slug: string;
+    children?: GnbCategory[];
+}
+
+// 기본 기자 정보 (기자 목록이 비어있을 때 사용)
+const DEFAULT_REPORTER = {
+    id: 'default-koreanews',  // 특수 ID (실제 DB에는 이 ID로 저장하지 않음)
+    name: '코리아뉴스',
+    email: 'news@koreanewsone.com'
+};
+
 // Suspense 바운더리 내에서 useSearchParams를 사용하는 래퍼 컴포넌트
 export default function AdminNewsListPageWrapper() {
     return (
@@ -44,8 +59,10 @@ function AdminNewsListPage() {
 
     const [articles, setArticles] = useState<any[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [gnbCategories, setGnbCategories] = useState<GnbCategory[]>([]); // GNB 메뉴용
     const [filterStatus, setFilterStatus] = useState(urlStatus);
     const [filterCategory, setFilterCategory] = useState("all");
+    const [activeGnbCategory, setActiveGnbCategory] = useState<string | null>(null); // 선택된 GNB 카테고리
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -72,6 +89,10 @@ function AdminNewsListPage() {
         message: string;
     }>({ isOpen: false, type: null, message: '' });
 
+    // 기자 지정 관련 상태
+    const [reporters, setReporters] = useState<{ id: string; name: string; position: string; region: string }[]>([]);
+    const [bulkReporterId, setBulkReporterId] = useState<string>(""); // 일괄 배정용
+
     // URL 파라미터 변경 시 상태 동기화
     useEffect(() => {
         setFilterStatus(urlStatus);
@@ -88,8 +109,9 @@ function AdminNewsListPage() {
             const pageParam = `&page=${currentPage}`;
             const limitParam = `&limit=20`; // Server-side paging (20 items)
             const sortParam = `&sort=created_at`; // Admin wants to see latest created first
+            const categoryParam = activeGnbCategory ? `&category=${encodeURIComponent(activeGnbCategory)}` : '';
 
-            const res = await fetch(`/api/posts?${limitParam}${pageParam}${statusParam}${sortParam}`);
+            const res = await fetch(`/api/posts?${limitParam}${pageParam}${statusParam}${sortParam}${categoryParam}`);
             if (!res.ok) throw new Error('Failed to fetch');
             const data = await res.json();
 
@@ -103,7 +125,8 @@ function AdminNewsListPage() {
                 views: p.view_count || 0,
                 category: p.category || '미분류',
                 source: p.source || 'Korea NEWS',
-                author: p.author || 'AI Reporter',
+                author: p.author_name || 'AI Reporter',  // DB 필드명: author_name
+                author_id: p.author_id,  // 기자 ID (UUID)
                 original_link: p.original_link,
                 thumbnail_url: p.thumbnail_url,
                 subtitle: p.subtitle || '',
@@ -121,7 +144,7 @@ function AdminNewsListPage() {
         }
     };
 
-    // 카테고리 목록 로딩
+    // 카테고리 목록 로딩 (드롭다운용)
     const fetchCategories = async () => {
         try {
             const res = await fetch('/api/categories?flat=true');
@@ -134,13 +157,49 @@ function AdminNewsListPage() {
         }
     };
 
-    // 상태 필터 또는 페이지 변경 시 API 재호출
+    // GNB 카테고리 로딩 (상단 메뉴용)
+    const fetchGnbCategories = async () => {
+        try {
+            const res = await fetch('/api/categories?gnb=true');
+            if (res.ok) {
+                const data = await res.json();
+                setGnbCategories(data.categories || []);
+            }
+        } catch (err) {
+            console.error('GNB 카테고리 로딩 실패:', err);
+        }
+    };
+
+    // 상태 필터, 페이지, 또는 GNB 카테고리 변경 시 API 재호출
     useEffect(() => {
         fetchArticles();
-    }, [filterStatus, currentPage]);
+    }, [filterStatus, currentPage, activeGnbCategory]);
 
     useEffect(() => {
         fetchCategories();
+        fetchGnbCategories();
+    }, []);
+
+    // 기자 목록 로딩
+    const fetchReporters = async () => {
+        try {
+            console.log('[fetchReporters] 기자 목록 로딩 시작...');
+            const res = await fetch('/api/users/reporters?simple=true');
+            if (res.ok) {
+                const data = await res.json();
+                console.log('[fetchReporters] 기자 목록 로딩 완료:', data?.length || 0, '명');
+                console.log('[fetchReporters] 기자 목록:', data);
+                setReporters(data || []);
+            } else {
+                console.error('[fetchReporters] API 응답 실패:', res.status, res.statusText);
+            }
+        } catch (err) {
+            console.error('[fetchReporters] 기자 목록 로딩 실패:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchReporters();
     }, []);
 
     // Open Preview
@@ -227,24 +286,68 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Approve 실행 - Promise.allSettled로 개별 응답 확인
+    // Bulk Approve 실행 - 랜덤 기자 배정 포함
     const executeBulkApprove = async () => {
         console.log('=== 선택 승인 시작 ===');
         console.log('선택된 ID 개수:', selectedIds.size);
         console.log('선택된 ID 목록:', Array.from(selectedIds));
+        console.log('[executeBulkApprove] reporters 배열 길이:', reporters.length);
+        console.log('[executeBulkApprove] reporters 목록:', reporters);
 
         setIsBulkProcessing(true);
+        let assignedCount = 0;
+
         try {
+            // reporters가 비어있으면 직접 API에서 로드
+            let availableReporters = reporters;
+            if (availableReporters.length === 0) {
+                console.log('[executeBulkApprove] reporters가 비어있어 API에서 직접 로드...');
+                try {
+                    const reporterRes = await fetch('/api/users/reporters?simple=true');
+                    if (reporterRes.ok) {
+                        availableReporters = await reporterRes.json();
+                        console.log('[executeBulkApprove] API에서 로드된 기자:', availableReporters?.length || 0, '명');
+                        if (availableReporters.length > 0) {
+                            setReporters(availableReporters); // 상태 업데이트
+                        }
+                    }
+                } catch (e) {
+                    console.error('[executeBulkApprove] 기자 목록 로드 실패:', e);
+                }
+            }
+
             const results = await Promise.allSettled(
                 Array.from(selectedIds).map(async (id) => {
                     console.log(`[승인 요청] ID: ${id}`);
+
+                    // 해당 기사의 현재 author_id 확인
+                    const article = articles.find(a => a.id === id);
+                    const updateData: Record<string, unknown> = {
+                        status: 'published',
+                        published_at: new Date().toISOString()
+                    };
+
+                    // 기자가 배정되지 않은 경우 랜덤 배정 또는 기본 기자
+                    if (!article?.author_id) {
+                        if (availableReporters.length > 0) {
+                            const randomIndex = Math.floor(Math.random() * availableReporters.length);
+                            const randomReporter = availableReporters[randomIndex];
+                            updateData.author_id = randomReporter.id;
+                            updateData.author_name = randomReporter.name;  // DB 필드명
+                            assignedCount++;
+                            console.log(`[랜덤 기자 배정] ID: ${id} → ${randomReporter.name}`);
+                        } else {
+                            // 기자 목록이 비어있으면 기본 기자(코리아뉴스) 사용
+                            updateData.author_name = DEFAULT_REPORTER.name;
+                            assignedCount++;
+                            console.log(`[기본 기자 배정] ID: ${id} → ${DEFAULT_REPORTER.name}`);
+                        }
+                    }
+
                     const res = await fetch(`/api/posts/${id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            status: 'published',
-                            published_at: new Date().toISOString()
-                        })
+                        body: JSON.stringify(updateData)
                     });
 
                     const responseData = await res.json();
@@ -261,7 +364,7 @@ function AdminNewsListPage() {
             const failed = results.filter(r => r.status === 'rejected').length;
 
             console.log('=== 승인 결과 ===');
-            console.log(`성공: ${succeeded}, 실패: ${failed}`);
+            console.log(`성공: ${succeeded}, 실패: ${failed}, 랜덤 기자 배정: ${assignedCount}`);
             results.forEach((r, i) => {
                 if (r.status === 'rejected') {
                     console.error(`실패 항목 ${i}:`, r.reason);
@@ -271,7 +374,8 @@ function AdminNewsListPage() {
             if (failed > 0) {
                 showWarning(`${succeeded}개 승인 완료, ${failed}개 실패`);
             } else {
-                showSuccess(`${succeeded}개 기사가 승인되었습니다.`);
+                const assignMsg = assignedCount > 0 ? ` (${assignedCount}개 랜덤 기자 배정)` : '';
+                showSuccess(`${succeeded}개 기사가 승인되었습니다.${assignMsg}`);
             }
             setSelectedIds(new Set());
             fetchArticles();
@@ -349,7 +453,7 @@ function AdminNewsListPage() {
         }
     };
 
-    // 일괄 승인 실행 (현재 필터의 모든 기사)
+    // 일괄 승인 실행 (현재 필터의 모든 기사) - 랜덤 기자 배정 포함
     const executeBulkAllApprove = async () => {
         setIsBulkProcessing(true);
         try {
@@ -358,26 +462,62 @@ function AdminNewsListPage() {
             const res = await fetch(`/api/posts?limit=1000${statusParam}`);
             if (!res.ok) throw new Error('기사 목록 조회 실패');
             const data = await res.json();
-            const allIds = (data.posts || []).map((p: any) => p.id);
+            const allPosts = data.posts || [];
 
-            if (allIds.length === 0) {
+            if (allPosts.length === 0) {
                 showWarning('승인할 기사가 없습니다.');
                 setIsBulkProcessing(false);
                 return;
             }
 
+            // reporters가 비어있으면 직접 API에서 로드
+            let availableReporters = reporters;
+            if (availableReporters.length === 0) {
+                console.log('[executeBulkAllApprove] reporters가 비어있어 API에서 직접 로드...');
+                try {
+                    const reporterRes = await fetch('/api/users/reporters?simple=true');
+                    if (reporterRes.ok) {
+                        availableReporters = await reporterRes.json();
+                        console.log('[executeBulkAllApprove] API에서 로드된 기자:', availableReporters?.length || 0, '명');
+                        if (availableReporters.length > 0) {
+                            setReporters(availableReporters);
+                        }
+                    }
+                } catch (e) {
+                    console.error('[executeBulkAllApprove] 기자 목록 로드 실패:', e);
+                }
+            }
+
+            let assignedCount = 0;
             const results = await Promise.allSettled(
-                allIds.map(async (id: string) => {
-                    const res = await fetch(`/api/posts/${id}`, {
+                allPosts.map(async (post: any) => {
+                    // 기자가 배정되지 않은 경우 랜덤 배정 또는 기본 기자
+                    const updateData: Record<string, unknown> = {
+                        status: 'published',
+                        published_at: new Date().toISOString()
+                    };
+
+                    if (!post.author_id) {
+                        if (availableReporters.length > 0) {
+                            const randomIndex = Math.floor(Math.random() * availableReporters.length);
+                            const randomReporter = availableReporters[randomIndex];
+                            updateData.author_id = randomReporter.id;
+                            updateData.author_name = randomReporter.name;  // DB 필드명
+                            assignedCount++;
+                        } else {
+                            // 기자 목록이 비어있으면 기본 기자(코리아뉴스) 사용
+                            updateData.author_name = DEFAULT_REPORTER.name;
+                            assignedCount++;
+                        }
+                    }
+
+                    const res = await fetch(`/api/posts/${post.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            status: 'published',
-                            published_at: new Date().toISOString()
-                        })
+                        body: JSON.stringify(updateData)
                     });
-                    if (!res.ok) throw new Error(`ID ${id} 승인 실패`);
-                    return id;
+                    if (!res.ok) throw new Error(`ID ${post.id} 승인 실패`);
+                    return post.id;
                 })
             );
 
@@ -387,7 +527,8 @@ function AdminNewsListPage() {
             if (failed > 0) {
                 showWarning(`${succeeded}개 일괄 승인 완료, ${failed}개 실패`);
             } else {
-                showSuccess(`${succeeded}개 기사가 일괄 승인되었습니다.`);
+                const assignMsg = assignedCount > 0 ? ` (${assignedCount}개 기사에 랜덤 기자 배정)` : '';
+                showSuccess(`${succeeded}개 기사가 일괄 승인되었습니다.${assignMsg}`);
             }
             setSelectedIds(new Set());
             fetchArticles();
@@ -484,8 +625,61 @@ function AdminNewsListPage() {
         openSingleConfirmModal('single-approve');
     };
 
+    // 일괄 기자 배정 함수 (체크박스 선택된 기사들)
+    const handleBulkAssignReporter = async () => {
+        if (selectedIds.size === 0) {
+            showWarning('기사를 먼저 선택해주세요.');
+            return;
+        }
+        if (!bulkReporterId) {
+            showWarning('배정할 기자를 선택해주세요.');
+            return;
+        }
 
-    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 포함)
+        setIsBulkProcessing(true);
+        const selectedReporter = reporters.find(r => r.id === bulkReporterId);
+        try {
+            const results = await Promise.allSettled(
+                Array.from(selectedIds).map(async (id) => {
+                    const res = await fetch(`/api/posts/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            author_id: bulkReporterId,
+                            author_name: selectedReporter?.name  // DB 필드명
+                        })
+                    });
+                    if (!res.ok) throw new Error(`ID ${id} 기자 배정 실패`);
+                    return id;
+                })
+            );
+
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+
+            // 로컬 상태 업데이트
+            setArticles(articles.map(a =>
+                selectedIds.has(a.id)
+                    ? { ...a, author: selectedReporter?.name || '지정됨', author_id: bulkReporterId }
+                    : a
+            ));
+
+            if (failed > 0) {
+                showWarning(`${succeeded}개 기자 배정 완료, ${failed}개 실패`);
+            } else {
+                showSuccess(`${succeeded}개 기사에 ${selectedReporter?.name} 기자가 배정되었습니다.`);
+            }
+            setSelectedIds(new Set());
+            setBulkReporterId('');
+        } catch (error) {
+            console.error('기자 배정 처리 오류:', error);
+            showError('기자 배정 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
+    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 + 랜덤 기자 배정 포함)
     const executeSingleApprove = async () => {
         if (!previewArticle) return;
 
@@ -520,24 +714,90 @@ function AdminNewsListPage() {
                 }
             }
 
-            // 2. DB 업데이트 (thumbnail_url 포함)
+            // 2. 기자가 배정되지 않은 경우 랜덤 배정 (또는 기본 기자)
+            let assignedAuthorId = previewArticle.author_id;
+            let assignedAuthorName = previewArticle.author;
+            let useDefaultReporter = false;
+
+            // reporters가 비어있으면 직접 API에서 로드
+            let availableReporters = reporters;
+            if (availableReporters.length === 0) {
+                console.log('[executeSingleApprove] reporters가 비어있어 API에서 직접 로드...');
+                try {
+                    const reporterRes = await fetch('/api/users/reporters?simple=true');
+                    if (reporterRes.ok) {
+                        availableReporters = await reporterRes.json();
+                        console.log('[executeSingleApprove] API에서 로드된 기자:', availableReporters?.length || 0, '명');
+                        if (availableReporters.length > 0) {
+                            setReporters(availableReporters);
+                        }
+                    }
+                } catch (e) {
+                    console.error('[executeSingleApprove] 기자 목록 로드 실패:', e);
+                }
+            }
+
+            if (!assignedAuthorId) {
+                if (availableReporters.length > 0) {
+                    // 랜덤으로 기자 선택
+                    const randomIndex = Math.floor(Math.random() * availableReporters.length);
+                    const randomReporter = availableReporters[randomIndex];
+                    assignedAuthorId = randomReporter.id;
+                    assignedAuthorName = randomReporter.name;
+                    console.log(`[승인] 랜덤 기자 배정: ${randomReporter.name} (${randomReporter.region})`);
+                } else {
+                    // 기자 목록이 비어있으면 기본 기자(코리아뉴스) 사용
+                    // author_id는 null로 두고 이름만 설정 (또는 author 필드만 업데이트)
+                    assignedAuthorId = null; // DB에 특수 ID 대신 null 저장
+                    assignedAuthorName = DEFAULT_REPORTER.name;
+                    useDefaultReporter = true;
+                    console.log(`[승인] 기본 기자 배정: ${DEFAULT_REPORTER.name}`);
+                }
+            }
+
+            // 3. DB 업데이트 (thumbnail_url + author_id/author 포함)
+            const updateData: Record<string, unknown> = {
+                status: 'published',
+                published_at: new Date().toISOString(),
+                thumbnail_url: finalThumbnailUrl
+            };
+
+            // 기자 배정 추가 (author_id + author_name 모두 업데이트)
+            if (assignedAuthorId) {
+                updateData.author_id = assignedAuthorId;
+                updateData.author_name = assignedAuthorName;  // DB 필드명
+            }
+            // 기본 기자(코리아뉴스)인 경우 author_name 필드만 업데이트
+            if (useDefaultReporter) {
+                updateData.author_name = DEFAULT_REPORTER.name;
+            }
+
             const res = await fetch(`/api/posts/${previewArticle.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    status: 'published',
-                    published_at: new Date().toISOString(),
-                    thumbnail_url: finalThumbnailUrl  // Cloudinary URL로 교체
-                })
+                body: JSON.stringify(updateData)
             });
 
             if (res.ok) {
                 setArticles(articles.map(a =>
                     a.id === previewArticle.id
-                        ? { ...a, status: 'published', published_at: new Date().toISOString(), thumbnail_url: finalThumbnailUrl }
+                        ? {
+                            ...a,
+                            status: 'published',
+                            published_at: new Date().toISOString(),
+                            thumbnail_url: finalThumbnailUrl,
+                            author_id: assignedAuthorId,
+                            author: assignedAuthorName
+                        }
                         : a
                 ));
-                showSuccess("기사가 메인 페이지에 발행되었습니다!");
+
+                // 랜덤 배정된 경우 메시지에 기자 이름 포함
+                if (!previewArticle.author_id && assignedAuthorName) {
+                    showSuccess(`기사가 발행되었습니다! (${assignedAuthorName} 기자 배정)`);
+                } else {
+                    showSuccess("기사가 메인 페이지에 발행되었습니다!");
+                }
                 closePreview();
                 fetchArticles();
             } else {
@@ -629,8 +889,88 @@ function AdminNewsListPage() {
 
     const paginatedArticles = filteredArticles;
 
+    // GNB 카테고리 클릭 핸들러
+    const handleGnbCategoryClick = (categoryName: string | null) => {
+        setActiveGnbCategory(categoryName);
+        setCurrentPage(1); // 페이지 리셋
+        setSelectedIds(new Set()); // 선택 초기화
+    };
+
     return (
-        <div className="space-y-6 relative h-[calc(100vh-100px)]">
+        <div className="space-y-4 relative h-[calc(100vh-100px)]">
+            {/* GNB 스타일 카테고리 메뉴 - 메인 사이트와 동일 */}
+            <div className="bg-white border-b-2 border-[#0a192f] rounded-t-xl overflow-hidden">
+                <div className="flex items-center h-[50px] px-4 gap-1 overflow-x-auto">
+                    {/* 전체 버튼 */}
+                    <button
+                        onClick={() => handleGnbCategoryClick(null)}
+                        className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-lg ${
+                            activeGnbCategory === null
+                                ? 'bg-[#0a192f] text-white'
+                                : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                    >
+                        전체
+                    </button>
+
+                    {/* GNB 카테고리들 */}
+                    {gnbCategories.map((category) => (
+                        <div key={category.id} className="relative group">
+                            <button
+                                onClick={() => handleGnbCategoryClick(category.name)}
+                                className={`px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors rounded-lg flex items-center gap-1 ${
+                                    activeGnbCategory === category.name
+                                        ? 'bg-[#ff2e63] text-white'
+                                        : 'text-slate-700 hover:bg-slate-100 hover:text-[#ff2e63]'
+                                }`}
+                            >
+                                {category.name}
+                                {category.children && category.children.length > 0 && (
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                )}
+                            </button>
+
+                            {/* 서브 카테고리 드롭다운 */}
+                            {category.children && category.children.length > 0 && (
+                                <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-2 min-w-[150px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                    {category.children.map((child) => (
+                                        <button
+                                            key={child.id}
+                                            onClick={() => handleGnbCategoryClick(child.name)}
+                                            className={`w-full px-4 py-2 text-sm text-left transition-colors ${
+                                                activeGnbCategory === child.name
+                                                    ? 'bg-[#ff2e63]/10 text-[#ff2e63] font-bold'
+                                                    : 'text-slate-600 hover:bg-slate-50 hover:text-[#ff2e63]'
+                                            }`}
+                                        >
+                                            {child.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* 현재 선택된 카테고리 표시 */}
+                {activeGnbCategory && (
+                    <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-sm text-slate-600">
+                            <span className="font-bold text-[#ff2e63]">{activeGnbCategory}</span> 카테고리 기사
+                        </span>
+                        <button
+                            onClick={() => handleGnbCategoryClick(null)}
+                            className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                        >
+                            <X className="w-3 h-3" />
+                            필터 해제
+                        </button>
+                    </div>
+                )}
+            </div>
+
             {/* Header - 공통 컴포넌트 사용 */}
             <PageHeader
                 title="기사 통합 관리"
@@ -638,7 +978,41 @@ function AdminNewsListPage() {
                 icon={FileEdit}
                 iconBgColor="bg-blue-600"
                 actions={
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-2 flex-wrap items-center">
+                        {/* 기자 일괄배정 - 휴지통 제외 */}
+                        {filterStatus !== 'trash' && (
+                            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200">
+                                <UserPlus className="w-4 h-4 text-purple-600" />
+                                <select
+                                    value={bulkReporterId}
+                                    onChange={(e) => setBulkReporterId(e.target.value)}
+                                    className="border-0 bg-transparent text-sm focus:ring-0 outline-none text-purple-800 font-medium min-w-[120px]"
+                                >
+                                    <option value="">기자 선택</option>
+                                    {reporters.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.name} ({r.region})
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleBulkAssignReporter}
+                                    disabled={isBulkProcessing || selectedIds.size === 0 || !bulkReporterId}
+                                    className={`px-3 py-1.5 font-medium rounded-lg text-sm transition flex items-center gap-1 ${
+                                        selectedIds.size > 0 && bulkReporterId
+                                            ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {isBulkProcessing && <Loader2 className="w-3 h-3 animate-spin" />}
+                                    배정 {selectedIds.size > 0 && `(${selectedIds.size})`}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 구분선 */}
+                        {filterStatus !== 'trash' && <div className="w-px h-8 bg-gray-300 mx-1" />}
+
                         {/* 선택 승인/복구 버튼 - 항상 표시, 선택 없으면 비활성화 */}
                         {filterStatus === 'trash' ? (
                             <button
@@ -959,7 +1333,7 @@ function AdminNewsListPage() {
                             <button
                                 onClick={handleApprove}
                                 disabled={isApproving}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-sm transition disabled:opacity-50 mt-4"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-sm transition disabled:opacity-50 mt-2"
                             >
                                 {isApproving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
                                 {isApproving ? '승인 처리 중...' : '승인 및 발행'}

@@ -9,7 +9,7 @@ export type NewsItem = {
     status: 'draft' | 'review' | 'published' | 'rejected' | 'archived'
     thumbnail_url?: string | null
     author_id?: string
-    reporter_name?: string
+    author_name?: string  // DB 컬럼명 (reporter_name에서 변경)
     rejected_reason?: string
     view_count?: number
     category?: string | null

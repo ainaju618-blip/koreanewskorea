@@ -22,6 +22,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
             // body.created_at = now; // 선택사항: 정렬 기준이 created_at이라면 이것도 갱신 필요
         }
 
+        console.log('[PATCH /api/posts] ID:', id, 'Body:', JSON.stringify(body));
+
         const { data, error } = await supabaseAdmin
             .from('posts')
             .update(body)
@@ -29,10 +31,15 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('[PATCH /api/posts] Supabase Error:', error);
+            throw error;
+        }
 
+        console.log('[PATCH /api/posts] Success:', data?.id);
         return NextResponse.json(data);
     } catch (error: unknown) {
+        console.error('[PATCH /api/posts] Catch Error:', error);
         const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
         return NextResponse.json({ message }, { status: 500 });
     }
