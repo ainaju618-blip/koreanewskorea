@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight } from 'lucide-react';
 import NewsTicker from './NewsTicker';
-import { PWAInstallButton } from './PWAInstallPrompt';
+import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
 
 // 카테고리 타입 정의
 interface Category {
@@ -243,6 +243,9 @@ export default function Header() {
                     </div>
 
                     <div className="p-6 space-y-8">
+                        {/* 앱 설치 버튼 - 최상단 */}
+                        <PWAInstallMenuItem onMenuClose={() => setIsMobileMenuOpen(false)} />
+
                         <div className="grid grid-cols-2 gap-3">
                             <Link href="/reporter/login" className="flex items-center justify-center gap-2 py-3 bg-slate-50/80 rounded-xl font-bold text-slate-700 border border-slate-200 shadow-sm">
                                 <User className="w-4 h-4" /> 기자로그인

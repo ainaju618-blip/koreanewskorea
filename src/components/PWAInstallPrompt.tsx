@@ -18,8 +18,8 @@ declare global {
   }
 }
 
-// 헤더용 설치 버튼 (아이콘만)
-export function PWAInstallButton() {
+// 공통 PWA 설치 로직 훅
+function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -70,6 +70,65 @@ export function PWAInstallButton() {
     }
   };
 
+  return {
+    isInstallable,
+    isIOS,
+    showIOSGuide,
+    setShowIOSGuide,
+    handleInstallClick,
+  };
+}
+
+// iOS 가이드 모달 컴포넌트
+function IOSGuideModal({ show, onClose }: { show: boolean; onClose: () => void }) {
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-[#0a192f]">홈 화면에 추가</h3>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="space-y-4 text-sm text-slate-600">
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
+            <p>Safari 하단의 <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </span> 공유 버튼을 탭하세요</p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
+            <p><strong>&quot;홈 화면에 추가&quot;</strong>를 선택하세요</p>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
+            <p>오른쪽 상단의 <strong>&quot;추가&quot;</strong>를 탭하세요</p>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-6 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 text-white font-medium rounded-xl transition-colors"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 헤더용 설치 버튼 (PC용)
+export function PWAInstallButton() {
+  const { isInstallable, showIOSGuide, setShowIOSGuide, handleInstallClick } = usePWAInstall();
+
   if (!isInstallable) return null;
 
   return (
@@ -82,48 +141,35 @@ export function PWAInstallButton() {
         <Download className="w-4 h-4" />
         <span className="hidden sm:inline">앱 설치</span>
       </button>
+      <IOSGuideModal show={showIOSGuide} onClose={() => setShowIOSGuide(false)} />
+    </>
+  );
+}
 
-      {/* iOS 설치 가이드 모달 */}
-      {showIOSGuide && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-[#0a192f]">홈 화면에 추가</h3>
-              <button onClick={() => setShowIOSGuide(false)} className="p-1 hover:bg-slate-100 rounded-full">
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
+// 모바일 메뉴용 설치 버튼 (햄버거 메뉴 내부용)
+export function PWAInstallMenuItem({ onMenuClose }: { onMenuClose?: () => void }) {
+  const { isInstallable, showIOSGuide, setShowIOSGuide, handleInstallClick } = usePWAInstall();
 
-            <div className="space-y-4 text-sm text-slate-600">
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
-                <p>Safari 하단의 <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                </span> 공유 버튼을 탭하세요</p>
-              </div>
+  if (!isInstallable) return null;
 
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
-                <p><strong>"홈 화면에 추가"</strong>를 선택하세요</p>
-              </div>
+  const handleClick = () => {
+    handleInstallClick();
+    // iOS가 아닌 경우 메뉴 닫기
+    if (onMenuClose) {
+      onMenuClose();
+    }
+  };
 
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
-                <p>오른쪽 상단의 <strong>"추가"</strong>를 탭하세요</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowIOSGuide(false)}
-              className="w-full mt-6 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 text-white font-medium rounded-xl transition-colors"
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
+  return (
+    <>
+      <button
+        onClick={handleClick}
+        className="flex items-center justify-center gap-2 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 rounded-xl font-bold text-white border border-[#0a192f] shadow-sm w-full col-span-2 transition-colors"
+      >
+        <Download className="w-5 h-5" />
+        <span>앱 설치하기</span>
+      </button>
+      <IOSGuideModal show={showIOSGuide} onClose={() => setShowIOSGuide(false)} />
     </>
   );
 }
