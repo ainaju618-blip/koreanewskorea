@@ -146,17 +146,32 @@ export function PWAInstallButton() {
   );
 }
 
-// 모바일 메뉴용 설치 버튼 (햄버거 메뉴 내부용)
+// 모바일 메뉴용 설치 버튼 (햄버거 메뉴 내부용) - 항상 표시
 export function PWAInstallMenuItem({ onMenuClose }: { onMenuClose?: () => void }) {
-  const { isInstallable, showIOSGuide, setShowIOSGuide, handleInstallClick } = usePWAInstall();
+  const { isInstallable, isIOS, showIOSGuide, setShowIOSGuide, handleInstallClick } = usePWAInstall();
+  const [showGuide, setShowGuide] = useState(false);
 
-  if (!isInstallable) return null;
+  // 이미 standalone 모드로 실행 중인지 확인
+  const [isStandalone, setIsStandalone] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsStandalone(window.matchMedia('(display-mode: standalone)').matches);
+    }
+  }, []);
+
+  // 이미 앱으로 실행 중이면 숨김
+  if (isStandalone) return null;
 
   const handleClick = () => {
-    handleInstallClick();
-    // iOS가 아닌 경우 메뉴 닫기
-    if (onMenuClose) {
-      onMenuClose();
+    if (isInstallable) {
+      // 설치 가능한 경우 (Android Chrome 등)
+      handleInstallClick();
+      if (onMenuClose && !isIOS) {
+        onMenuClose();
+      }
+    } else {
+      // 설치 불가능한 경우 (iOS Safari 등) - 가이드 표시
+      setShowGuide(true);
     }
   };
 
@@ -167,9 +182,9 @@ export function PWAInstallMenuItem({ onMenuClose }: { onMenuClose?: () => void }
         className="flex items-center justify-center gap-2 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 rounded-xl font-bold text-white border border-[#0a192f] shadow-sm w-full col-span-2 transition-colors"
       >
         <Download className="w-5 h-5" />
-        <span>앱 설치하기</span>
+        <span>홈 화면에 추가</span>
       </button>
-      <IOSGuideModal show={showIOSGuide} onClose={() => setShowIOSGuide(false)} />
+      <IOSGuideModal show={showIOSGuide || showGuide} onClose={() => { setShowIOSGuide(false); setShowGuide(false); }} />
     </>
   );
 }
