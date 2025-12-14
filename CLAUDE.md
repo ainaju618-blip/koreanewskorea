@@ -130,29 +130,50 @@ Claude와 Gemini(Antigravity) 간 소통 채널
 
 프로젝트 문서 맵:
 ├── README.md              # 프로젝트 개요
-├── info/                  # ⭐ 에러/가이드 통합 정보 허브
-│   ├── README.md          # 인덱스 (빠른 참조)
-│   ├── git.md             # Git/Vercel/배포
-│   ├── scraper.md         # 스크래퍼 개발/에러
-│   ├── frontend.md        # Next.js/React/UI
-│   ├── backend.md         # API/Supabase/인증
-│   ├── database.md        # DB 스키마/마이그레이션
-│   ├── collaboration.md   # AI 협업 (Claude ↔ Gemini)
-│   └── troubleshooting.md # 공통 문제 해결
+├── info/                  # ⭐ 에러/가이드 통합 정보 허브 (3계층)
+│   ├── _index.md          # 1차 진입점 (필수)
+│   ├── errors/            # 에러 해결
+│   │   ├── _catalog.md    # 에러 카탈로그 (키워드 검색)
+│   │   ├── deploy/        # 배포 관련
+│   │   ├── scraper/       # 스크래퍼 관련
+│   │   ├── frontend/      # 프론트엔드 관련
+│   │   ├── backend/       # 백엔드 관련
+│   │   └── database/      # DB 관련
+│   ├── guides/            # 개발 가이드
+│   │   ├── _catalog.md    # 가이드 카탈로그
+│   │   └── [분야]/        # 분야별 가이드
+│   ├── config/            # 설정/계정 정보
+│   └── ai-collab/         # AI 협업 가이드 (Claude/Gemini)
 ├── scrapers/
 │   ├── STATUS.md          # 전체 현황 (간략)
-│   ├── _queue/PRIORITY.md # 작업 우선순위
-│   └── [완료]/README.md   # 완료된 것만 상세
-├── processors/README.md   # 가공 모듈
-├── web/README.md          # 프론트엔드
-├── src/README.md          # 메인 앱
-└── scripts/README.md      # 유틸리티
+│   └── [지역]/ALGORITHM.md # 지역별 알고리즘
+├── .claude/context/       # 세션 컨텍스트
+└── .ai-collab/            # AI 소통 채널
 
 규칙:
 - README.md는 완료/진행중만 생성
 - 대기 항목은 STATUS.md에 1줄 목록
 - 작업 시작 시 해당 폴더에 TASK.md 생성
 - ⭐ 에러/가이드 발견 시 info/ 폴더에 누적 기록
+```
+
+### 0.8.1 "인포 참조해" 명령 처리 (Claude/Gemini 공통)
+```
+주인님이 "인포 찾아봐" 또는 "인포 참조해" 하면:
+
+1단계: info/_index.md 읽기 (진입점)
+       ↓
+2단계: 상황 판단
+       ├── 에러면 → errors/_catalog.md
+       ├── 가이드면 → guides/_catalog.md
+       └── 설정이면 → config/accounts.md
+       ↓
+3단계: _catalog.md에서 키워드 검색
+       → 해당 파일 경로 확인
+       ↓
+4단계: 해당 파일만 읽고 해결책 적용
+
+⚠️ 전체 파일 읽지 않기 = 토큰 절약!
 ```
 
 **기록 형식:**
