@@ -2,7 +2,7 @@
 
 ## 1. 현황 분석
 *   **현재 상태:**
-    *   단순 이메일(`news@koreanews.com`)만 노출.
+    *   단순 이메일(`news@koreanewsone.com`)만 노출.
     *   기자 개인 정보(경력, 전문분야 등) 부재로 **E-E-A-T(Experience, Expertise, Authoritativeness, Trustworthiness)** 점수가 매우 낮음.
 *   **벤치마킹 (중앙일보 등):**
     *   프로필 사진, 상세 소속, 이메일, 자기소개 제공.
@@ -28,7 +28,7 @@
 │  ┌─────────┐                                                │
 │  │  Photo  │  홍길동 기자                    [공유] [구독]   │
 │  │ 120x120 │  정치부 | 탐사보도팀                           │
-│  └─────────┘  hong@koreanews.com                           │
+│  └─────────┘  hong@koreanewsone.com                           │
 │                                                              │
 │  "지역의 목소리를 전국에 전합니다" (Bio)                      │
 │                                                              │

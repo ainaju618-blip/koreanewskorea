@@ -308,3 +308,465 @@ patterns_to_remove = [
 - 본문 최대 길이: 5000자
 
 수고해주세요, Antigravity! 🛠️
+
+---
+
+## 새 작업: [URGENT] 카테고리 페이지 레이아웃 통일
+
+**요청자**: Claude
+**날짜**: 2025-12-15
+**상태**: 대기중
+
+### 배경 및 목적
+
+주인님이 강원일보(kwnews.co.kr) 스타일로 코리아뉴스의 **카테고리 서브페이지를 통일**하고 싶어하십니다.
+
+**현재 문제점**:
+- 카테고리 페이지마다 레이아웃이 다름 (일관성 없음)
+- 어떤 페이지는 사이드바가 있고, 어떤 페이지는 없음
+- 카드 그리드, 리스트 뷰 등 혼재
+
+### 강원일보 스타일 설명 (목표 디자인)
+
+강원일보 카테고리 페이지의 핵심 레이아웃:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [카테고리 헤더] - 카테고리명 + 서브메뉴 탭                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────┐  ┌──────────────────────┐   │
+│  │                            │  │                      │   │
+│  │   기사 목록 영역            │  │   사이드바 영역       │   │
+│  │   (9칸/12칸)               │  │   (3칸/12칸)         │   │
+│  │                            │  │                      │   │
+│  │   - 썸네일 + 제목 + 요약    │  │   - 많이 본 뉴스      │   │
+│  │   - 리스트 형태             │  │   - 배너 광고         │   │
+│  │   - 페이지네이션            │  │   - 관련 기획         │   │
+│  │                            │  │                      │   │
+│  └────────────────────────────┘  └──────────────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**핵심 포인트**:
+1. **12칸 그리드**: 기사 목록 9칸 + 사이드바 3칸
+2. **기사 목록**: 썸네일(w-40) + 제목 + 요약 + 날짜 (수평 배치)
+3. **사이드바**: 많이 본 뉴스, 배너, 위젯들
+4. **반응형**: 모바일에서는 1칸으로 기사 먼저, 사이드바 아래
+
+### 현재 레이아웃 분석 결과
+
+| 타입 | 파일 | 레이아웃 | 사이드바 | 상태 |
+|------|------|----------|----------|------|
+| A | `category/[slug]/page.tsx` | 9:3 그리드 | ✅ 있음 | ✅ 정답 (참조) |
+| B | `CategoryPageTemplate.tsx` | 3칸 카드 그리드 | ❌ 없음 | ❌ 수정 필요 |
+| C | `jeonnam-region/page.tsx` | 1칸 리스트 | ❌ 없음 | ❌ 수정 필요 |
+
+**Type A 사용 페이지** (이미 정상):
+- `/category/gwangju` - 광주
+- `/category/jeonnam` - 전라남도
+- `/category/culture` - 문화/예술
+- `/category/social` - 사회/복지
+- 기타 동적 slug 페이지들
+
+**Type B 사용 페이지** (수정 필요):
+- `/category/ai` - AI
+- `/category/education` - 교육
+- `/category/opinion` - 오피니언
+- `/category/politics-economy` - 정치/경제
+
+**Type C 사용 페이지** (수정 필요):
+- `/category/jeonnam-region` - 전남지역(시군)
+
+### 작업 요청
+
+#### 작업 1: `CategoryPageTemplate.tsx` 완전 재작성
+
+**파일 위치**: `src/components/category/CategoryPageTemplate.tsx`
+
+**현재 문제**:
+- `'use client'` 클라이언트 컴포넌트 (SEO 불리)
+- Hero 섹션 + 3칸 카드 그리드 (비표준)
+- 사이드바 없음
+
+**수정 방향**:
+- 서버 컴포넌트로 변경 (클라이언트 훅 제거)
+- 9:3 그리드 레이아웃 적용
+- 사이드바 추가
+
+**참조 코드** (`category/[slug]/page.tsx`에서 가져옴):
+
+```tsx
+// src/components/category/CategoryPageTemplate.tsx
+// 완전히 새로 작성
+
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase-server';
+import CategoryHeader from '@/components/category/CategoryHeader';
+import Pagination from '@/components/ui/Pagination';
+
+export const dynamic = 'force-dynamic';
+
+// 카테고리별 기사 가져오기
+async function getCategoryNews(categoryCode: string, page: number = 1) {
+    try {
+        const supabase = await createClient();
+        const limit = 20;
+        const start = (page - 1) * limit;
+        const end = start + limit - 1;
+
+        const { data, count } = await supabase
+            .from('posts')
+            .select('*', { count: 'exact' })
+            .eq('status', 'published')
+            .eq('category', categoryCode)
+            .order('published_at', { ascending: false })
+            .range(start, end);
+
+        return { data: data || [], totalCount: count || 0 };
+    } catch {
+        return { data: [], totalCount: 0 };
+    }
+}
+
+// 인기 기사 가져오기
+async function getPopularNews() {
+    try {
+        const supabase = await createClient();
+        const { data } = await supabase
+            .from('posts')
+            .select('id, title')
+            .eq('status', 'published')
+            .order('published_at', { ascending: false })
+            .limit(5);
+        return data || [];
+    } catch {
+        return [];
+    }
+}
+
+// 날짜 포맷
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).replace(/\. /g, '-').replace('.', '');
+}
+
+interface CategoryPageTemplateProps {
+    categoryCode: string;
+    searchParams?: { page?: string };
+}
+
+export default async function CategoryPageTemplate({
+    categoryCode,
+    searchParams
+}: CategoryPageTemplateProps) {
+    const currentPage = parseInt(searchParams?.page || '1');
+
+    // DB에서 데이터 가져오기
+    const { data: news, totalCount } = await getCategoryNews(categoryCode, currentPage);
+    const popularNews = await getPopularNews();
+    const totalPages = Math.ceil(totalCount / 20);
+
+    return (
+        <div className="min-h-screen bg-white text-slate-900 font-sans">
+            <CategoryHeader slug={categoryCode} />
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                    {/* LEFT COLUMN: 기사 목록 (9칸) */}
+                    <div className="lg:col-span-9">
+                        {news.length > 0 ? (
+                            <>
+                                {/* Hero Article (첫 번째 기사 - 1페이지일 때만) */}
+                                {currentPage === 1 && news[0] && (
+                                    <Link href={`/news/${news[0].id}`} className="block mb-6 group">
+                                        <div className="relative">
+                                            {news[0].thumbnail_url ? (
+                                                <img
+                                                    src={news[0].thumbnail_url}
+                                                    alt={news[0].title}
+                                                    className="w-full h-64 md:h-80 object-cover bg-slate-200"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-64 md:h-80 bg-slate-200 flex items-center justify-center text-slate-400">
+                                                    No Image
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="mt-4">
+                                            <h2 className="text-xl md:text-2xl font-bold text-slate-900 group-hover:underline line-clamp-2 leading-tight mb-3">
+                                                {news[0].title}
+                                            </h2>
+                                            <p className="text-sm md:text-base text-slate-600 line-clamp-3 leading-relaxed mb-2">
+                                                {news[0].ai_summary || news[0].content?.substring(0, 200)}
+                                            </p>
+                                            <span className="text-xs text-slate-400">
+                                                {news[0].published_at ? formatDate(news[0].published_at) : ''}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                )}
+
+                                {/* 나머지 기사 목록 */}
+                                <div className="flex flex-col divide-y divide-slate-100">
+                                    {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/news/${item.id}`}
+                                            className="flex gap-4 py-4 cursor-pointer group"
+                                        >
+                                            {item.thumbnail_url ? (
+                                                <img
+                                                    src={item.thumbnail_url}
+                                                    alt={item.title}
+                                                    className="w-40 h-24 object-cover shrink-0 bg-slate-200"
+                                                />
+                                            ) : (
+                                                <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs">
+                                                    No Image
+                                                </div>
+                                            )}
+                                            <div className="flex-1 flex flex-col justify-start">
+                                                <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-sm text-slate-500 line-clamp-2 mb-1.5 leading-relaxed">
+                                                    {item.ai_summary || item.content?.substring(0, 100)}
+                                                </p>
+                                                <span className="text-xs text-slate-400">
+                                                    {item.published_at ? formatDate(item.published_at) : ''}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="py-10 text-center text-slate-400">
+                                등록된 기사가 없습니다.
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        <div className="mt-8">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                basePath={`/category/${categoryCode}`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: 사이드바 (3칸) */}
+                    <div className="lg:col-span-3 space-y-6">
+
+                        {/* 많이 본 뉴스 */}
+                        <div className="bg-slate-50 p-4">
+                            <h3 className="font-bold text-base mb-3 pb-2 border-b border-slate-300">
+                                가장 많이 본 뉴스
+                            </h3>
+                            <div className="space-y-2.5">
+                                {popularNews.length > 0 ? (
+                                    popularNews.map((item: any, idx: number) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/news/${item.id}`}
+                                            className="flex gap-2.5 cursor-pointer group"
+                                        >
+                                            <span className="font-black text-red-600 text-base w-4">
+                                                {idx + 1}
+                                            </span>
+                                            <p className="text-sm text-slate-700 line-clamp-2 group-hover:underline leading-snug">
+                                                {item.title}
+                                            </p>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    [1, 2, 3, 4, 5].map((n) => (
+                                        <div key={n} className="flex gap-2.5">
+                                            <span className="font-black text-red-600 text-base w-4">{n}</span>
+                                            <p className="text-sm text-slate-400">인기 뉴스 제목 {n}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 배너 광고 */}
+                        <div className="w-full aspect-[4/3] bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-200 rounded">
+                            <span className="text-sm">광고 배너</span>
+                        </div>
+
+                        {/* 최신 뉴스 위젯 */}
+                        <div>
+                            <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">
+                                최신 뉴스
+                            </h4>
+                            <div className="space-y-3">
+                                {news.slice(0, 3).map((item: any) => (
+                                    <Link
+                                        key={item.id}
+                                        href={`/news/${item.id}`}
+                                        className="flex gap-3 cursor-pointer group"
+                                    >
+                                        <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden">
+                                            {item.thumbnail_url && (
+                                                <img
+                                                    src={item.thumbnail_url}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:underline leading-snug">
+                                            {item.title}
+                                        </p>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
+#### 작업 2: CategoryPageTemplate 사용 페이지 수정
+
+`CategoryPageTemplate`를 사용하는 페이지들도 수정해야 합니다.
+서버 컴포넌트가 되었으므로, `searchParams`를 전달해야 합니다.
+
+**수정 대상 파일들**:
+- `src/app/(site)/category/ai/page.tsx`
+- `src/app/(site)/category/education/page.tsx`
+- `src/app/(site)/category/opinion/page.tsx`
+- `src/app/(site)/category/politics-economy/page.tsx`
+
+**수정 예시** (`ai/page.tsx`):
+
+```tsx
+// 변경 전
+import CategoryPageTemplate from '@/components/category/CategoryPageTemplate';
+
+export default function AIPage() {
+    return <CategoryPageTemplate categoryCode="ai" />;
+}
+
+// 변경 후
+import CategoryPageTemplate from '@/components/category/CategoryPageTemplate';
+
+interface PageProps {
+    searchParams: Promise<{ page?: string }>;
+}
+
+export default async function AIPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    return <CategoryPageTemplate categoryCode="ai" searchParams={params} />;
+}
+```
+
+**나머지 페이지들도 동일하게 수정**:
+- `education/page.tsx`: categoryCode="education"
+- `opinion/page.tsx`: categoryCode="opinion"
+- `politics-economy/page.tsx`: categoryCode="politics-economy"
+
+#### 작업 3: `jeonnam-region/page.tsx` 수정
+
+**파일 위치**: `src/app/(site)/category/jeonnam-region/page.tsx`
+
+**현재 상태**: 시군 선택 탭은 좋음, 하지만 사이드바가 없음
+
+**수정 방향**:
+- 기존 시군 탭 유지
+- 9:3 그리드 레이아웃 적용
+- 사이드바 추가
+
+**핵심 수정 부분**:
+
+```tsx
+// 기존 코드의 Main Content 부분을 아래로 교체
+
+{/* Main Content */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        {/* LEFT COLUMN: 기사 목록 (9칸) */}
+        <div className="lg:col-span-9">
+            {/* 현재 선택된 지역 표시 */}
+            <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">
+                    📰 {currentRegion.name} 최신 기사
+                </h2>
+                <span className="text-sm text-slate-500">
+                    총 {totalCount}건
+                </span>
+            </div>
+
+            {/* 기사 목록 (기존과 동일) */}
+            <div className="flex flex-col divide-y divide-slate-100">
+                {/* ... 기존 기사 목록 코드 ... */}
+            </div>
+
+            {/* Pagination */}
+            <div className="mt-8">
+                <Pagination ... />
+            </div>
+        </div>
+
+        {/* RIGHT COLUMN: 사이드바 (3칸) - 새로 추가 */}
+        <div className="lg:col-span-3 space-y-6">
+            {/* 많이 본 뉴스 위젯 */}
+            <div className="bg-slate-50 p-4">
+                <h3 className="font-bold text-base mb-3 pb-2 border-b border-slate-300">
+                    가장 많이 본 뉴스
+                </h3>
+                {/* ... 인기 뉴스 목록 ... */}
+            </div>
+
+            {/* 배너 */}
+            <div className="w-full aspect-[4/3] bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-200 rounded">
+                <span className="text-sm">광고 배너</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+### 테스트 체크리스트
+
+수정 완료 후 아래 페이지들이 **모두 동일한 레이아웃**인지 확인:
+
+| # | 페이지 URL | 확인 사항 |
+|---|------------|----------|
+| 1 | `/category/ai` | 9:3 그리드, 사이드바 있음 |
+| 2 | `/category/education` | 9:3 그리드, 사이드바 있음 |
+| 3 | `/category/opinion` | 9:3 그리드, 사이드바 있음 |
+| 4 | `/category/politics-economy` | 9:3 그리드, 사이드바 있음 |
+| 5 | `/category/jeonnam-region` | 9:3 그리드, 사이드바 있음, 시군 탭 유지 |
+| 6 | `/category/gwangju` (기존) | 변화 없음 (원래 정상) |
+| 7 | `/category/culture` (기존) | 변화 없음 (원래 정상) |
+
+### 결과물 요청
+
+1. **수정한 파일 목록** (DONE.md에 기록)
+2. **각 페이지 스크린샷** (데스크톱 + 모바일)
+3. **발견한 문제점** (있다면)
+
+### 참고 파일
+
+- **참조 레이아웃**: `src/app/(site)/category/[slug]/page.tsx` (수정 X)
+- **카테고리 헤더**: `src/components/category/CategoryHeader.tsx` (수정 X)
+- **페이지네이션**: `src/components/ui/Pagination.tsx` (수정 X)
+- **카테고리 상수**: `src/lib/category-constants.ts`
+
+수고해주세요, Antigravity! 🎨

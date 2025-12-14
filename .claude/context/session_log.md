@@ -5,6 +5,54 @@
 
 ---
 
+## [2025-12-15] 세션 #7
+
+### 주인님 의도
+1. **강원일보(kwnews.co.kr) 구조 분석** - 코리아뉴스 서브페이지 개편 참조용
+2. **카테고리 페이지 레이아웃 통일** - 현재 일관성 없음 (사이드바 유무, 카드/리스트 혼재)
+3. 강원일보 스타일(9:3 그리드 + 사이드바)로 통일하고 싶음
+4. Gemini Antigravity에게 작업 위임
+
+### 수행 작업
+
+1. **강원일보 웹사이트 구조 분석**
+   - Playwright로 kwnews.co.kr 탐색
+   - 전체 페이지 구조 추출 (GNB, 카테고리, 지역 18개, URL 패턴)
+   - `kwnews_structure.html` 문서 생성
+
+2. **코리아뉴스 카테고리 페이지 현황 분석**
+   - **Type A** (`category/[slug]/page.tsx`): 9:3 그리드 + 사이드바 ✅ 정상
+   - **Type B** (`CategoryPageTemplate.tsx`): 3칸 카드 그리드, 사이드바 없음 ❌
+   - **Type C** (`jeonnam-region/page.tsx`): 1칸 리스트, 사이드바 없음 ❌
+
+3. **작업 지시서 작성**
+   - `.ai-collab/TASK.md`에 상세 지시 추가
+   - 강원일보 목표 레이아웃 다이어그램 제공
+   - 참조 코드 (`category/[slug]/page.tsx`) 전체 포함
+   - 수정 대상 파일 6개 명시
+   - 테스트 체크리스트 7개 페이지
+
+### 분석 결과 요약
+
+| 타입 | 파일 | 현재 상태 | 수정 필요 |
+|------|------|----------|----------|
+| A | `category/[slug]/page.tsx` | 9:3 + 사이드바 | ✅ 참조용 |
+| B | `CategoryPageTemplate.tsx` | 카드 그리드 | ❌ 완전 재작성 |
+| C | `jeonnam-region/page.tsx` | 리스트 | ❌ 사이드바 추가 |
+
+### 주요 생성/수정 파일
+```
+kwnews_structure.html (신규) - 강원일보 구조 문서
+.ai-collab/TASK.md (수정) - 레이아웃 통일 작업 지시서 추가
+```
+
+### 다음 작업
+- 주인님이 Gemini Antigravity에게 "읽어봐" 전달
+- Antigravity가 작업 완료 후 DONE.md에 결과 보고
+- Claude가 검토 후 git push && vercel --prod
+
+---
+
 ## [2025-12-14] 세션 #6
 
 ### 주인님 의도

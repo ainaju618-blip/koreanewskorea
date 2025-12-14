@@ -342,7 +342,7 @@ async def scrape_openai_blog():
 ### 6.2 User-Agent 설정
 ```python
 headers = {
-    'User-Agent': 'KoreaNews/1.0 (AI News Aggregator; contact@koreanews.com)'
+    'User-Agent': 'KoreaNews/1.0 (AI News Aggregator; contact@koreanewsone.com)'
 }
 ```
 

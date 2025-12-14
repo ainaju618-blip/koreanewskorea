@@ -226,7 +226,7 @@ def generate_article_image(title: str, keywords: list) -> str:
 본 사이트의 AI 뉴스는 해외 매체의 보도를 바탕으로
 사실 정보를 추출하여 독자적으로 재작성한 콘텐츠입니다.
 원문 출처는 각 기사에 명시되어 있습니다.
-저작권 관련 문의: legal@koreanews.com
+저작권 관련 문의: legal@koreanewsone.com
 ```
 
 ---

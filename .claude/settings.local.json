@@ -45,7 +45,26 @@
       "Bash(timeout /t 10 /nobreak)",
       "Bash(start \"\" \"https://koreanews.vercel.app\")",
       "Bash(timeout /t 30 /nobreak)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(cmd /c \"del /f d:\\cbt\\koreanews\\.next\\dev\\lock\")",
+      "Bash(cmd /c \"rmdir /s /q d:\\cbt\\koreanews\\.next 2>nul\")",
+      "Bash(\"src/app/(site)/category/ai/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/education/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/opinion/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/politics-economy/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/jeonnam-region/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/[slug]/page.tsx\" )",
+      "Bash(\"src/app/(site)/category/[slug]/[subslug]/page.tsx\" )",
+      "Bash(src/components/category/CategoryPageTemplate.tsx )",
+      "Bash(src/components/category/BoardSidebar.tsx )",
+      "Bash(src/components/category/ServerBoardSidebar.tsx )",
+      "Bash(src/app/admin/layout.tsx )",
+      "Bash(src/components/admin/AdminSidebar.tsx)",
+      "Bash(scrapers/gwangju_edu/gwangju_edu_scraper.py )",
+      "Bash(scrapers/suncheon/suncheon_scraper.py )",
+      "Bash(scrapers/utils/content_cleaner.py )",
+      "Bash(scrapers/utils/content_validator.py )",
+      "Bash(.ai-collab/DONE.md)"
     ]
   }
 }
