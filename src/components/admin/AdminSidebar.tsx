@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
     LayoutDashboard,
     Newspaper,
@@ -26,8 +26,18 @@ import {
     UserCircle,
     LucideIcon,
     Lightbulb,
-    ExternalLink
+    ExternalLink,
+    Home,
+    MapPin
 } from 'lucide-react';
+
+// GNB 카테고리 타입 (메인과 동일)
+interface GnbCategory {
+    id: string;
+    name: string;
+    slug: string;
+    children?: GnbCategory[];
+}
 
 // --- 메뉴 아이템 타입 정의 ---
 interface SubMenuItem {
@@ -125,7 +135,38 @@ const MENU_ITEMS: MenuGroup[] = [
 
 export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
     const [expandedMenus, setExpandedMenus] = useState<string[]>(['기사 관리', '봇 관리 센터']);
+    const [gnbCategories, setGnbCategories] = useState<GnbCategory[]>([]);
+    const [activeGnbDropdown, setActiveGnbDropdown] = useState<string | null>(null);
     const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const currentCategory = searchParams.get('category');
+
+    // GNB 카테고리 로드
+    useEffect(() => {
+        const fetchGnbCategories = async () => {
+            try {
+                const res = await fetch('/api/categories?gnb=true');
+                if (res.ok) {
+                    const data = await res.json();
+                    setGnbCategories(data.categories || []);
+                }
+            } catch (err) {
+                console.error('GNB 카테고리 로딩 실패:', err);
+            }
+        };
+        fetchGnbCategories();
+    }, []);
+
+    // 카테고리 클릭 핸들러
+    const handleCategoryClick = (slug: string | null) => {
+        if (slug === null) {
+            router.push('/admin/news');
+        } else {
+            router.push(`/admin/news?category=${encodeURIComponent(slug)}`);
+        }
+        setActiveGnbDropdown(null);
+    };
 
     const toggleMenu = (label: string) => {
         if (expandedMenus.includes(label)) {
@@ -248,6 +289,89 @@ export default function AdminSidebarLayout({ children }: { children: React.React
 
             {/* --- Main Content Layout --- */}
             <main className="flex-1 ml-64 min-h-screen bg-slate-50/50">
+                {/* GNB 카테고리 바 - 메인과 동일 스타일 */}
+                <div className="sticky top-0 z-30 bg-white border-b-2 border-[#0a192f] shadow-sm">
+                    <div className="px-8 max-w-[1600px] mx-auto">
+                        <nav className="flex items-center h-12 gap-1 overflow-x-auto">
+                            {/* 전체 (홈) */}
+                            <button
+                                onClick={() => handleCategoryClick(null)}
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold whitespace-nowrap rounded-t transition-all
+                                    ${!currentCategory
+                                        ? 'text-[#ff2e63] border-b-2 border-[#ff2e63] -mb-[2px]'
+                                        : 'text-slate-600 hover:text-[#0a192f] hover:bg-slate-50'
+                                    }`}
+                            >
+                                <Home className="w-4 h-4" />
+                                전체
+                            </button>
+
+                            {/* 카테고리 메뉴 */}
+                            {gnbCategories.map((category) => (
+                                <div
+                                    key={category.id}
+                                    className="relative"
+                                    onMouseEnter={() => category.children && category.children.length > 0 && setActiveGnbDropdown(category.id)}
+                                    onMouseLeave={() => setActiveGnbDropdown(null)}
+                                >
+                                    <button
+                                        onClick={() => handleCategoryClick(category.slug)}
+                                        className={`flex items-center gap-1 px-4 py-2 text-sm font-bold whitespace-nowrap rounded-t transition-all
+                                            ${currentCategory === category.slug
+                                                ? 'text-[#ff2e63] border-b-2 border-[#ff2e63] -mb-[2px]'
+                                                : 'text-slate-600 hover:text-[#0a192f] hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {category.name}
+                                        {category.children && category.children.length > 0 && (
+                                            <ChevronDown className="w-3 h-3 opacity-50" />
+                                        )}
+                                    </button>
+
+                                    {/* 드롭다운 메뉴 */}
+                                    {category.children && category.children.length > 0 && activeGnbDropdown === category.id && (
+                                        <div className="absolute top-full left-0 mt-0 bg-white border border-slate-200 rounded-b-lg shadow-lg py-2 min-w-[160px] z-50">
+                                            <div className="px-3 py-1.5 text-xs font-bold text-slate-400 uppercase border-b border-slate-100 mb-1 flex items-center gap-1">
+                                                <MapPin className="w-3 h-3" />
+                                                {category.name}
+                                            </div>
+                                            {category.children.map((child) => (
+                                                <button
+                                                    key={child.id}
+                                                    onClick={() => handleCategoryClick(child.slug)}
+                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors
+                                                        ${currentCategory === child.slug
+                                                            ? 'text-[#ff2e63] font-bold bg-red-50'
+                                                            : 'text-slate-600 hover:text-[#0a192f] hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    {child.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* 현재 선택된 카테고리 표시 */}
+                            {currentCategory && (
+                                <div className="ml-auto flex items-center gap-2 text-sm text-slate-500">
+                                    <span>필터:</span>
+                                    <span className="px-2 py-0.5 bg-[#ff2e63]/10 text-[#ff2e63] rounded font-bold">
+                                        {currentCategory}
+                                    </span>
+                                    <button
+                                        onClick={() => handleCategoryClick(null)}
+                                        className="text-slate-400 hover:text-slate-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            )}
+                        </nav>
+                    </div>
+                </div>
+
                 <div className="p-8 max-w-[1600px] mx-auto">
                     {/* This is where the specific page content (Opus's work) will be injected */}
                     {children}

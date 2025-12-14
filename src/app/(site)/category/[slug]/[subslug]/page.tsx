@@ -88,9 +88,38 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                     <div className="lg:col-span-9">
 
                         {/* News List */}
-                        <div className="flex flex-col divide-y divide-slate-100">
-                            {news.length > 0 ? (
-                                news.map((item: any) => (
+                        {news.length > 0 ? (
+                            <div className="flex flex-col divide-y divide-slate-100">
+                                {/* 첫 번째 기사 - 큰 썸네일 */}
+                                {news[0] && (
+                                    <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
+                                        {news[0].thumbnail_url ? (
+                                            <img
+                                                src={news[0].thumbnail_url}
+                                                alt={news[0].title}
+                                                className="w-96 h-40 object-cover shrink-0 bg-slate-200"
+                                            />
+                                        ) : (
+                                            <NoImagePlaceholder
+                                                regionName={news[0].source}
+                                                className="w-96 h-40 shrink-0"
+                                            />
+                                        )}
+                                        <div className="flex-1 flex flex-col justify-start">
+                                            <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:underline line-clamp-2 leading-snug">
+                                                {news[0].title}
+                                            </h2>
+                                            <p className="text-sm text-slate-500 line-clamp-3 mb-2 leading-relaxed">
+                                                {news[0].ai_summary || news[0].content?.substring(0, 200)}
+                                            </p>
+                                            <span className="text-xs text-slate-400">
+                                                {news[0].published_at ? formatDate(news[0].published_at) : ''}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                )}
+                                {/* 나머지 기사 목록 */}
+                                {news.slice(1).map((item: any) => (
                                     <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
                                         {item.thumbnail_url ? (
                                             <img
@@ -116,17 +145,17 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                                             </span>
                                         </div>
                                     </Link>
-                                ))
-                            ) : (
-                                <div className="py-10 text-center text-slate-400">
-                                    {isValidRegion ? (
-                                        <p>'{subslug}' 지역의 등록된 기사가 없습니다.</p>
-                                    ) : (
-                                        <p>존재하지 않는 지역이거나 기사가 없습니다.</p>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-10 text-center text-slate-400">
+                                {isValidRegion ? (
+                                    <p>'{subslug}' 지역의 등록된 기사가 없습니다.</p>
+                                ) : (
+                                    <p>존재하지 않는 지역이거나 기사가 없습니다.</p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Pagination */}
                         {news.length > 0 && (

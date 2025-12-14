@@ -1,5 +1,10 @@
 import CategoryPageTemplate from '@/components/category/CategoryPageTemplate';
 
-export default function EducationPage() {
-    return <CategoryPageTemplate categoryCode="education" />;
+interface PageProps {
+    searchParams: Promise<{ page?: string }>;
+}
+
+export default async function EducationPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    return <CategoryPageTemplate categoryCode="education" searchParams={params} />;
 }

@@ -1,5 +1,10 @@
 import CategoryPageTemplate from '@/components/category/CategoryPageTemplate';
 
-export default function OpinionPage() {
-    return <CategoryPageTemplate categoryCode="opinion" />;
+interface PageProps {
+    searchParams: Promise<{ page?: string }>;
+}
+
+export default async function OpinionPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    return <CategoryPageTemplate categoryCode="opinion" searchParams={params} />;
 }

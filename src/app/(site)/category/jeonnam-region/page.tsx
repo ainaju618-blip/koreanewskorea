@@ -69,6 +69,22 @@ async function getRegionNews(region: string, page: number = 1) {
     }
 }
 
+// 인기 기사 가져오기
+async function getPopularNews() {
+    try {
+        const supabase = await createClient();
+        const { data } = await supabase
+            .from('posts')
+            .select('id, title')
+            .eq('status', 'published')
+            .order('published_at', { ascending: false })
+            .limit(5);
+        return data || [];
+    } catch {
+        return [];
+    }
+}
+
 // 날짜 포맷
 function formatDate(dateString: string) {
     const date = new Date(dateString);
@@ -84,6 +100,7 @@ export default async function JeonnamRegionPage({ searchParams }: PageProps) {
     const currentPage = parseInt(page || '1');
 
     const { data: news, totalCount } = await getRegionNews(region, currentPage);
+    const popularNews = await getPopularNews();
     const totalPages = Math.ceil(totalCount / 20);
 
     const currentRegion = JEONNAM_REGIONS.find(r => r.code === region) || JEONNAM_REGIONS[0];
@@ -112,66 +129,176 @@ export default async function JeonnamRegionPage({ searchParams }: PageProps) {
                 </div>
             </div>
 
-            {/* Main Content */}
+            {/* Main Content - 9:3 그리드 */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* 현재 선택된 지역 표시 */}
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900">
-                        📰 {currentRegion.name} 최신 기사
-                    </h2>
-                    <span className="text-sm text-slate-500">
-                        총 {totalCount}건
-                    </span>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                {/* 기사 목록 */}
-                <div className="flex flex-col divide-y divide-slate-100">
-                    {news.length > 0 ? (
-                        news.map((item: any) => (
-                            <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
-                                {item.thumbnail_url ? (
-                                    <img
-                                        src={item.thumbnail_url}
-                                        alt={item.title}
-                                        className="w-40 h-24 object-cover shrink-0 bg-slate-200 rounded"
-                                    />
-                                ) : (
-                                    <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs rounded">
-                                        No Image
-                                    </div>
-                                )}
-                                <div className="flex-1 flex flex-col justify-start">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                            {REGION_CODE_TO_NAME[item.region] || item.region}
-                                        </span>
-                                    </div>
-                                    <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 mb-1.5 leading-relaxed">
-                                        {item.ai_summary || item.content?.substring(0, 100)}
-                                    </p>
-                                    <span className="text-xs text-slate-400">
-                                        {item.published_at ? formatDate(item.published_at) : ''}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))
-                    ) : (
-                        <div className="py-10 text-center text-slate-400">
-                            등록된 기사가 없습니다.
+                    {/* LEFT COLUMN: 기사 목록 (9칸) */}
+                    <div className="lg:col-span-9">
+                        {/* 현재 선택된 지역 표시 */}
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-slate-900">
+                                📰 {currentRegion.name} 최신 기사
+                            </h2>
+                            <span className="text-sm text-slate-500">
+                                총 {totalCount}건
+                            </span>
                         </div>
-                    )}
-                </div>
 
-                {/* Pagination */}
-                <div className="mt-8">
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        basePath={`/category/jeonnam-region?region=${region}`}
-                    />
+                        {/* 기사 목록 */}
+                        {news.length > 0 ? (
+                            <div className="flex flex-col divide-y divide-slate-100">
+                                {/* 첫 번째 기사 - 큰 썸네일 (1페이지일 때만) */}
+                                {currentPage === 1 && news[0] && (
+                                    <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
+                                        {news[0].thumbnail_url ? (
+                                            <img
+                                                src={news[0].thumbnail_url}
+                                                alt={news[0].title}
+                                                className="w-96 h-40 object-cover shrink-0 bg-slate-200"
+                                            />
+                                        ) : (
+                                            <div className="w-96 h-40 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="flex-1 flex flex-col justify-start">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                                    {REGION_CODE_TO_NAME[news[0].region] || news[0].region}
+                                                </span>
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:underline line-clamp-2 leading-snug">
+                                                {news[0].title}
+                                            </h2>
+                                            <p className="text-sm text-slate-500 line-clamp-3 mb-2 leading-relaxed">
+                                                {news[0].ai_summary || news[0].content?.substring(0, 200)}
+                                            </p>
+                                            <span className="text-xs text-slate-400">
+                                                {news[0].published_at ? formatDate(news[0].published_at) : ''}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                )}
+                                {/* 나머지 기사 목록 */}
+                                {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
+                                    <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
+                                        {item.thumbnail_url ? (
+                                            <img
+                                                src={item.thumbnail_url}
+                                                alt={item.title}
+                                                className="w-40 h-24 object-cover shrink-0 bg-slate-200"
+                                            />
+                                        ) : (
+                                            <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="flex-1 flex flex-col justify-start">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                                    {REGION_CODE_TO_NAME[item.region] || item.region}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">
+                                                {item.title}
+                                            </h3>
+                                            <p className="text-sm text-slate-500 line-clamp-2 mb-1.5 leading-relaxed">
+                                                {item.ai_summary || item.content?.substring(0, 100)}
+                                            </p>
+                                            <span className="text-xs text-slate-400">
+                                                {item.published_at ? formatDate(item.published_at) : ''}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-10 text-center text-slate-400">
+                                등록된 기사가 없습니다.
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        <div className="mt-8">
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                basePath={`/category/jeonnam-region?region=${region}`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: 사이드바 (3칸) */}
+                    <div className="lg:col-span-3 space-y-6">
+
+                        {/* 많이 본 뉴스 */}
+                        <div className="bg-slate-50 p-4">
+                            <h3 className="font-bold text-base mb-3 pb-2 border-b border-slate-300">
+                                가장 많이 본 뉴스
+                            </h3>
+                            <div className="space-y-2.5">
+                                {popularNews.length > 0 ? (
+                                    popularNews.map((item: any, idx: number) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/news/${item.id}`}
+                                            className="flex gap-2.5 cursor-pointer group"
+                                        >
+                                            <span className="font-black text-red-600 text-base w-4">
+                                                {idx + 1}
+                                            </span>
+                                            <p className="text-sm text-slate-700 line-clamp-2 group-hover:underline leading-snug">
+                                                {item.title}
+                                            </p>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    [1, 2, 3, 4, 5].map((n) => (
+                                        <div key={n} className="flex gap-2.5">
+                                            <span className="font-black text-red-600 text-base w-4">{n}</span>
+                                            <p className="text-sm text-slate-400">인기 뉴스 제목 {n}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 배너 광고 */}
+                        <div className="w-full aspect-[4/3] bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-200 rounded">
+                            <span className="text-sm">광고 배너</span>
+                        </div>
+
+                        {/* 최신 뉴스 위젯 */}
+                        <div>
+                            <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">
+                                전남 최신 뉴스
+                            </h4>
+                            <div className="space-y-3">
+                                {news.slice(0, 3).map((item: any) => (
+                                    <Link
+                                        key={item.id}
+                                        href={`/news/${item.id}`}
+                                        className="flex gap-3 cursor-pointer group"
+                                    >
+                                        <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden">
+                                            {item.thumbnail_url && (
+                                                <img
+                                                    src={item.thumbnail_url}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:underline leading-snug">
+                                            {item.title}
+                                        </p>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>

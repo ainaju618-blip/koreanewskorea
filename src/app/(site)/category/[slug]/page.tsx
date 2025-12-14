@@ -31,6 +31,21 @@ async function getCategoryNews(slug: string, categoryName: string, page: number 
             // region이 'jeonnam'이거나, source가 '전라남도'인 기사
             query = query.or(`region.eq.jeonnam,source.eq.전라남도`);
         }
+        // 광주교육청: source 필드로 필터링
+        else if (slug === 'kedu') {
+            query = query.or(`source.eq.광주시교육청,source.eq.광주광역시교육청,source.eq.광주교육청`);
+        }
+        // 전남교육청: source 필드로 필터링
+        else if (slug === 'jedu') {
+            query = query.or(`source.eq.전남교육청,source.eq.전라남도교육청`);
+        }
+        // 광주광역시: 교육청 관련 기사 모두 제외 (source + region)
+        else if (slug === 'gwangju') {
+            query = query
+                .or(`category.eq.${categoryName},region.eq.${slug}`)
+                .not('source', 'in', '(광주시교육청,광주광역시교육청,광주교육청)')
+                .not('region', 'eq', 'gwangju_edu');
+        }
         // 그 외 모든 카테고리
         else {
             query = query.or(`category.eq.${categoryName},region.eq.${slug}`);
@@ -93,11 +108,38 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Left Column */}
                     <div className="lg:col-span-9">
-                        <div className="flex flex-col divide-y divide-slate-100">
-                            {news.length > 0 ? (
-                                news.map((item: any) => (
+                        {news.length > 0 ? (
+                            <div className="flex flex-col divide-y divide-slate-100">
+                                {/* 첫 번째 기사 - 큰 썸네일 (1페이지일 때만) */}
+                                {currentPage === 1 && news[0] && (
+                                    <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
+                                        {news[0].thumbnail_url ? (
+                                            <img
+                                                src={news[0].thumbnail_url}
+                                                alt={news[0].title}
+                                                className="w-96 h-40 object-cover shrink-0 bg-slate-200"
+                                            />
+                                        ) : (
+                                            <div className="w-96 h-40 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400">
+                                                No Image
+                                            </div>
+                                        )}
+                                        <div className="flex-1 flex flex-col justify-start">
+                                            <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:underline line-clamp-2 leading-snug">
+                                                {news[0].title}
+                                            </h2>
+                                            <p className="text-sm text-slate-500 line-clamp-3 mb-2 leading-relaxed">
+                                                {news[0].ai_summary || news[0].content?.substring(0, 200)}
+                                            </p>
+                                            <span className="text-xs text-slate-400">
+                                                {news[0].published_at ? formatDate(news[0].published_at) : ''}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                )}
+                                {/* 나머지 기사 목록 */}
+                                {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
                                     <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
-                                        {/* ... (Article rendering logic remains same) ... */}
                                         {item.thumbnail_url ? (
                                             <img
                                                 src={item.thumbnail_url}
@@ -121,13 +163,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                             </span>
                                         </div>
                                     </Link>
-                                ))
-                            ) : (
-                                <div className="py-10 text-center text-slate-400">
-                                    등록된 기사가 없습니다.
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-10 text-center text-slate-400">
+                                등록된 기사가 없습니다.
+                            </div>
+                        )}
 
                         {/* Pagination */}
                         <div className="mt-8">

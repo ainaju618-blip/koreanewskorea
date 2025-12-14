@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import AdminSidebarLayout from '@/components/admin/AdminSidebar';
 import AdminAuthGuard from '@/components/admin/AdminAuthGuard';
 
@@ -8,9 +9,11 @@ export default function AdminLayout({
 }) {
     return (
         <AdminAuthGuard>
-            <AdminSidebarLayout>
-                {children}
-            </AdminSidebarLayout>
+            <Suspense fallback={<div className="flex-1 ml-64 min-h-screen bg-slate-50/50 animate-pulse" />}>
+                <AdminSidebarLayout>
+                    {children}
+                </AdminSidebarLayout>
+            </Suspense>
         </AdminAuthGuard>
     );
 }

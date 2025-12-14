@@ -1,5 +1,10 @@
 import CategoryPageTemplate from '@/components/category/CategoryPageTemplate';
 
-export default function AIPage() {
-    return <CategoryPageTemplate categoryCode="ai" />;
+interface PageProps {
+    searchParams: Promise<{ page?: string }>;
+}
+
+export default async function AIPage({ searchParams }: PageProps) {
+    const params = await searchParams;
+    return <CategoryPageTemplate categoryCode="ai" searchParams={params} />;
 }
