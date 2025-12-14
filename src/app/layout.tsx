@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import CookieConsentBanner from "@/components/CookieConsentBanner";
+import { PWAInstallBanner } from "@/components/PWAInstallPrompt";
 
 // 웹폰트는 globals.css에서 @font-face로 로드
 // - 본문: Pretendard (현대적 고딕, 최고 가독성)
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     default: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
     template: '%s | 코리아NEWS',
   },
-  description: '광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
+  description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
   keywords: ['광주뉴스', '전남뉴스', '나주뉴스', '지역뉴스', '혁신도시', 'AI뉴스', '코리아NEWS'],
   authors: [{ name: '코리아NEWS', url: siteUrl }],
   creator: '코리아NEWS',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: '코리아NEWS',
     title: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
-    description: '광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
+    description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
     images: [
       {
         url: `${siteUrl}/og-image.png`,
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
-    description: '광주, 전남, 나주 혁신도시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
+    description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
     images: [`${siteUrl}/og-image.png`],
   },
 
@@ -71,6 +71,33 @@ export const metadata: Metadata = {
     // google: 'Google Search Console 인증 코드',
     // naver: '네이버 서치어드바이저 인증 코드',
   },
+
+  // PWA 관련 메타
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '코리아NEWS',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: '/icons/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a192f',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -83,7 +110,7 @@ export default function RootLayout({
       <body className="font-sans min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white" suppressHydrationWarning>
         <Providers>
           {children}
-          <CookieConsentBanner />
+          <PWAInstallBanner />
         </Providers>
       </body>
     </html>

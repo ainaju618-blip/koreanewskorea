@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight } from 'lucide-react';
 import NewsTicker from './NewsTicker';
+import { PWAInstallButton } from './PWAInstallPrompt';
 
 // 카테고리 타입 정의
 interface Category {
@@ -141,7 +142,8 @@ export default function Header() {
             <div className="sticky top-0 z-40 bg-white border-t border-b-2 border-[#0a192f] shadow-sm h-[50px] md:h-[55px]">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full relative">
 
-                    <nav className="hidden md:flex items-center justify-between h-full">
+                    <nav className="hidden md:flex items-center justify-center h-full">
+                        {/* 메뉴 가운데 정렬 */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
                             <Link href="/" className="h-full flex items-center text-[#0a192f] hover:text-[#ff2e63] transition-colors font-serif italic text-lg mr-2">
                                 Home
@@ -198,13 +200,14 @@ export default function Header() {
                                     )}
                                 </div>
                             ))}
-                        </div>
 
-                        {/* Right Actions - Search */}
-                        <div className="flex items-center gap-3">
-                            <div className="relative group">
-                                <input type="text" placeholder="Search..." className="pl-4 pr-9 py-1.5 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:border-[#ff2e63] focus:ring-1 focus:ring-[#ff2e63]/20 w-[160px] focus:w-[220px] transition-all duration-300 font-sans" />
-                                <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 group-focus-within:text-[#ff2e63] transition-colors" />
+                            {/* Search & PWA Install - 메뉴와 함께 가운데 배치 */}
+                            <div className="flex items-center gap-3 ml-6">
+                                <div className="relative group">
+                                    <input type="text" placeholder="Search..." className="pl-4 pr-9 py-1.5 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:border-[#ff2e63] focus:ring-1 focus:ring-[#ff2e63]/20 w-[140px] focus:w-[180px] transition-all duration-300 font-sans font-normal" />
+                                    <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 group-focus-within:text-[#ff2e63] transition-colors" />
+                                </div>
+                                <PWAInstallButton />
                             </div>
                         </div>
                     </nav>
