@@ -106,6 +106,8 @@ Claude와 Gemini(Antigravity) 간 소통 채널
 2. .claude/context/ 폴더의 최신 컨텍스트 파일 확인
 3. 현재 진행 중인 작업 파악
 4. 주인님께 현황 보고 후 지시 대기
+
+⭐ 문제 해결 필요 시: info/ 폴더 참조 (에러/가이드 모음)
 ```
 
 ### 0.6 의도 파악 및 기록
@@ -128,6 +130,15 @@ Claude와 Gemini(Antigravity) 간 소통 채널
 
 프로젝트 문서 맵:
 ├── README.md              # 프로젝트 개요
+├── info/                  # ⭐ 에러/가이드 통합 정보 허브
+│   ├── README.md          # 인덱스 (빠른 참조)
+│   ├── git.md             # Git/Vercel/배포
+│   ├── scraper.md         # 스크래퍼 개발/에러
+│   ├── frontend.md        # Next.js/React/UI
+│   ├── backend.md         # API/Supabase/인증
+│   ├── database.md        # DB 스키마/마이그레이션
+│   ├── collaboration.md   # AI 협업 (Claude ↔ Gemini)
+│   └── troubleshooting.md # 공통 문제 해결
 ├── scrapers/
 │   ├── STATUS.md          # 전체 현황 (간략)
 │   ├── _queue/PRIORITY.md # 작업 우선순위
@@ -141,6 +152,7 @@ Claude와 Gemini(Antigravity) 간 소통 채널
 - README.md는 완료/진행중만 생성
 - 대기 항목은 STATUS.md에 1줄 목록
 - 작업 시작 시 해당 폴더에 TASK.md 생성
+- ⭐ 에러/가이드 발견 시 info/ 폴더에 누적 기록
 ```
 
 **기록 형식:**

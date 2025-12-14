@@ -5,6 +5,57 @@
 
 ---
 
+## [2025-12-15] 세션 #8
+
+### 주인님 의도
+1. Git/Vercel 배포 상태 확인 및 문제 해결
+2. 프로젝트 정보/에러/가이드를 체계적으로 관리할 `info/` 폴더 생성
+3. 새 세션에서도 AI가 상태를 알 수 있도록 구조화
+
+### 수행 작업
+
+1. **Vercel 자동 배포 문제 해결**
+   - 원인: GitHub 웹훅 없음 (`gh api repos/.../hooks` → 빈 배열)
+   - 해결: `vercel git connect` 실행 → 자동 배포 복구
+
+2. **info/ 폴더 생성 (정보 통합 허브)**
+   - `info/README.md` - 인덱스 및 빠른 참조
+   - `info/git.md` - Git/Vercel/배포 (기존 gitinfo/ 통합)
+   - `info/scraper.md` - 스크래퍼 개발/에러
+   - `info/frontend.md` - Next.js/React/UI
+   - `info/backend.md` - API/Supabase/인증
+   - `info/database.md` - DB 스키마/마이그레이션
+   - `info/collaboration.md` - AI 협업 (Claude ↔ Gemini)
+   - `info/troubleshooting.md` - 공통 문제 해결
+
+3. **CLAUDE.md 업데이트**
+   - 0.5 세션 시작 프로세스에 info/ 참조 추가
+   - 0.8 분산형 문서 관리에 info/ 폴더 구조 추가
+
+4. **기존 gitinfo/ 폴더 삭제**
+   - info/git.md로 통합 완료
+
+### 주요 생성/수정 파일
+```
+info/ (신규 폴더)
+├── README.md
+├── git.md
+├── scraper.md
+├── frontend.md
+├── backend.md
+├── database.md
+├── collaboration.md
+└── troubleshooting.md
+
+CLAUDE.md (수정) - info/ 폴더 참조 추가
+gitinfo/ (삭제) - info/git.md로 통합
+```
+
+### 다음 작업
+- current_task.md, session_log.md 최신화 필요 (이번 세션에서 완료)
+
+---
+
 ## [2025-12-15] 세션 #7
 
 ### 주인님 의도
