@@ -21,11 +21,11 @@ export default function FloatingAdminPanel() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [deleteType, setDeleteType] = useState<'soft' | 'hard'>('soft');
 
-    // 관리자 인증 확인
+    // 관리자 인증 확인 (localStorage 사용 - 모든 탭에서 공유)
     useEffect(() => {
         const checkAdmin = () => {
             if (typeof window !== 'undefined') {
-                const auth = sessionStorage.getItem('korea_news_admin_auth');
+                const auth = localStorage.getItem('korea_news_admin_auth');
                 setIsAdmin(auth === 'authenticated');
             }
         };

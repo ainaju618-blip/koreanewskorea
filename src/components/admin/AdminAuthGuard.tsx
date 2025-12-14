@@ -17,9 +17,9 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 세션 스토리지에서 인증 상태 확인
+    // 로컬 스토리지에서 인증 상태 확인 (모든 탭에서 공유)
     useEffect(() => {
-        const authData = sessionStorage.getItem(ADMIN_PASSWORD_KEY);
+        const authData = localStorage.getItem(ADMIN_PASSWORD_KEY);
         if (authData === "authenticated") {
             setIsAuthenticated(true);
         }
@@ -39,7 +39,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
             });
 
             if (res.ok) {
-                sessionStorage.setItem(ADMIN_PASSWORD_KEY, "authenticated");
+                localStorage.setItem(ADMIN_PASSWORD_KEY, "authenticated");
                 setIsAuthenticated(true);
             } else {
                 const data = await res.json();
