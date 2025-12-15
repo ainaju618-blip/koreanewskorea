@@ -25,7 +25,7 @@ from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr
 )
-from utils.local_image_saver import download_and_save_locally
+from utils.cloudinary_uploader import download_and_upload_image
 
 def normalize_date(date_str: str) -> str:
     """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
@@ -244,7 +244,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
             src = safe_get_attr(imgs.nth(i), 'src')
             if src and not any(x in src.lower() for x in ['icon', 'button', 'logo', 'blank', 'data:image']):
                 img_url = urljoin(BASE_URL, src)
-                local_path = download_and_save_locally(img_url, BASE_URL, REGION_CODE)
+                local_path = download_and_upload_image(img_url, BASE_URL, REGION_CODE)
                 if local_path:
                     thumbnail_url = local_path
                     print(f"      💾 본문 이미지 저장: {local_path}")

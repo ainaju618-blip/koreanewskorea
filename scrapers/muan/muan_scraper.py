@@ -21,7 +21,7 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.local_image_saver import download_and_save_locally
+from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================
 # 상수 정의
@@ -314,7 +314,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
     # 로컬 저장
     if original_image_url:
         try:
-            local_path = download_and_save_locally(original_image_url, BASE_URL, REGION_CODE)
+            local_path = download_and_upload_image(original_image_url, BASE_URL, REGION_CODE)
             if local_path and local_path.startswith('/images/'):
                 thumbnail_url = local_path
                 print(f"      [LOCAL] 저장: {local_path}")

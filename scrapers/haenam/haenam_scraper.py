@@ -34,7 +34,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
-from utils.local_image_saver import download_and_save_locally
+from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
 # 4. 상수 정의
@@ -262,7 +262,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 print(f"      📥 첨부파일 다운로드 시도: {link_text[:50]}...")
                 
                 # 로컬 저장
-                saved_path = download_and_save_locally(full_url, url, REGION_CODE)
+                saved_path = download_and_upload_image(full_url, url, REGION_CODE)
                 if saved_path:
                     thumbnail_url = saved_path
                     break
@@ -277,7 +277,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 src = safe_get_attr(imgs.nth(i), 'src')
                 if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'arrow', 'bullet', 'blank']):
                     download_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                    saved_path = download_and_save_locally(download_url, url, REGION_CODE)
+                    saved_path = download_and_upload_image(download_url, url, REGION_CODE)
                     if saved_path:
                         thumbnail_url = saved_path
                         print(f"      💾 본문 이미지 저장: {saved_path}")

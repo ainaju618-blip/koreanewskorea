@@ -377,18 +377,11 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     if src and not any(x in src.lower() for x in exclude_patterns):
                         full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
                         
-                        # 로컬 저장 우선 시도
-                        from utils.local_image_saver import download_and_save_locally
-                        saved_path = download_and_save_locally(full_url, BASE_URL, REGION_CODE)
-                        if saved_path:
-                            thumbnail_url = saved_path
-                            print(f"      [IMG] 본문 이미지 저장: {saved_path}")
-                            break
-                        
-                        # Cloudinary 폴백
+                        # Cloudinary 업로드
                         cloudinary_url = download_and_upload_image(full_url, BASE_URL, folder=REGION_CODE)
                         if cloudinary_url:
                             thumbnail_url = cloudinary_url
+                            print(f"      [IMG] 본문 이미지 Cloudinary: {cloudinary_url[:50]}...")
                             break
                 
                 if thumbnail_url:

@@ -63,7 +63,7 @@ HEADERS = {
 
 def download_and_upload_image(image_url: str, base_url: str = None, folder: str = "news") -> Optional[str]:
     """
-    이미지를 다운로드하고 로컬에 저장한 후 Cloudinary에 업로드 (활성화 시)
+    이미지를 다운로드하고 Cloudinary에 업로드
     
     Args:
         image_url: 원본 이미지 URL (상대경로 가능)
@@ -71,19 +71,25 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         folder: 저장 폴더 이름
         
     Returns:
-        - CLOUDINARY_CONFIGURED=True: Cloudinary 이미지 URL
-        - CLOUDINARY_CONFIGURED=False: 로컬 저장 경로 (상대경로)
-        - 실패 시: None
+        - 성공: Cloudinary 이미지 URL
+        - 실패: None (에러 발생)
+        
+    Raises:
+        RuntimeError: Cloudinary 미설정 또는 업로드 실패 시
     """
     if not image_url:
         return None
+    
+    # ★ Cloudinary 미설정 시 즉시 에러
+    if not CLOUDINARY_CONFIGURED:
+        raise RuntimeError("[ERROR] Cloudinary가 설정되지 않았습니다. API 키를 확인하세요.")
     
     # 상대경로 → 절대경로 변환
     if not image_url.startswith(('http://', 'https://')):
         if base_url:
             image_url = urljoin(base_url, image_url)
         else:
-            print(f"⚠️ 상대경로지만 base_url 없음: {image_url}")
+            print(f"[ERROR] 상대경로지만 base_url 없음: {image_url}")
             return None
     
     try:
@@ -106,47 +112,44 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         # 3. 800px 너비로 리사이즈 (비율 유지)
         img = resize_image(img, TARGET_WIDTH, TARGET_HEIGHT)
         
-        # 4. 로컬 폴더에 저장 (public/images/{folder}/)
+        # 4. 임시 파일에 저장 (Cloudinary 업로드용)
         file_hash = hashlib.md5(image_url.encode()).hexdigest()
-
-        # 프로젝트 루트 경로 계산: scrapers/utils/ → koreanews/
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        # Next.js는 루트의 public 폴더를 사용함 (web/public이 아님)
-        local_folder = os.path.join(project_root, 'public', 'images', folder)
-        os.makedirs(local_folder, exist_ok=True)
-
-        local_path = os.path.join(local_folder, f"{file_hash}.jpg")
-        img.save(local_path, 'JPEG', quality=85, optimize=True)
-        print(f"[IMG] 저장: {local_path}")
+        temp_path = os.path.join(tempfile.gettempdir(), f"{file_hash}.jpg")
+        img.save(temp_path, 'JPEG', quality=85, optimize=True)
         
-        # 5. Cloudinary 업로드 (활성화된 경우에만)
-        if CLOUDINARY_CONFIGURED:
-            try:
-                public_id = f"{folder}/{file_hash}"
-                result = cloudinary.uploader.upload(
-                    local_path,
-                    public_id=public_id,
-                    overwrite=False,
-                    resource_type="image"
-                )
-                cloudinary_url = result.get('secure_url')
-                print(f"☁️ Cloudinary 업로드 완료: {cloudinary_url[:60]}...")
-                return cloudinary_url
-            except Exception as e:
-                print(f"⚠️ Cloudinary 업로드 실패, 로컬 경로 사용: {str(e)[:50]}")
-        
-        # Cloudinary 비활성화 또는 실패 시 웹 접근 경로 반환
-        # /images/{folder}/{hash}.jpg 형태로 Next.js public 폴더에서 접근 가능
-        web_path = f"/images/{folder}/{file_hash}.jpg"
-        print(f"[IMG] 웹 경로: {web_path}")
-        return web_path
+        # 5. Cloudinary 업로드 (★ 실패 시 에러 발생)
+        try:
+            public_id = f"{folder}/{file_hash}"
+            result = cloudinary.uploader.upload(
+                temp_path,
+                public_id=public_id,
+                overwrite=False,
+                resource_type="image"
+            )
+            cloudinary_url = result.get('secure_url')
+            print(f"[OK] Cloudinary 업로드: {cloudinary_url[:60]}...")
+            
+            # 임시 파일 삭제
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            
+            return cloudinary_url
+        except Exception as e:
+            # ★ Cloudinary 업로드 실패 시 에러 발생 (fallback 없음)
+            error_msg = f"[ERROR] Cloudinary 업로드 실패: {str(e)[:100]}"
+            print(error_msg)
+            raise RuntimeError(error_msg)
         
     except requests.exceptions.RequestException as e:
-        print(f"❌ 이미지 다운로드 실패: {str(e)[:50]}")
-        return None
+        error_msg = f"[ERROR] 이미지 다운로드 실패: {str(e)[:100]}"
+        print(error_msg)
+        raise RuntimeError(error_msg)
+    except RuntimeError:
+        raise  # 이미 RuntimeError면 그대로 전파
     except Exception as e:
-        print(f"❌ 이미지 처리 오류: {str(e)[:50]}")
-        return None
+        error_msg = f"[ERROR] 이미지 처리 오류: {str(e)[:100]}"
+        print(error_msg)
+        raise RuntimeError(error_msg)
 
 
 def upload_local_image(local_path: str, folder: str = "news", resize: bool = True) -> Optional[str]:
