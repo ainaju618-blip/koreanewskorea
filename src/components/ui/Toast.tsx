@@ -134,46 +134,83 @@ function ToastItem({ toast, onClose }: { toast: ToastItem; onClose: () => void }
         }
     }, [toast.duration, onClose]);
 
+    const styles = {
+        success: {
+            bg: 'bg-white',
+            border: 'border-emerald-200',
+            iconBg: 'bg-emerald-100',
+            iconColor: 'text-emerald-600',
+            text: 'text-slate-700',
+            accent: 'bg-gradient-to-r from-emerald-500 to-emerald-400',
+        },
+        error: {
+            bg: 'bg-white',
+            border: 'border-red-200',
+            iconBg: 'bg-red-100',
+            iconColor: 'text-red-600',
+            text: 'text-slate-700',
+            accent: 'bg-gradient-to-r from-red-500 to-red-400',
+        },
+        info: {
+            bg: 'bg-white',
+            border: 'border-blue-200',
+            iconBg: 'bg-blue-100',
+            iconColor: 'text-blue-600',
+            text: 'text-slate-700',
+            accent: 'bg-gradient-to-r from-blue-500 to-blue-400',
+        },
+        warning: {
+            bg: 'bg-white',
+            border: 'border-amber-200',
+            iconBg: 'bg-amber-100',
+            iconColor: 'text-amber-600',
+            text: 'text-slate-700',
+            accent: 'bg-gradient-to-r from-amber-500 to-amber-400',
+        },
+    };
+
     const icons = {
-        success: <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />,
-        error: <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />,
-        info: <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />,
-        warning: <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />,
+        success: <CheckCircle className={`w-5 h-5 ${styles[toast.type].iconColor}`} />,
+        error: <AlertCircle className={`w-5 h-5 ${styles[toast.type].iconColor}`} />,
+        info: <Info className={`w-5 h-5 ${styles[toast.type].iconColor}`} />,
+        warning: <AlertTriangle className={`w-5 h-5 ${styles[toast.type].iconColor}`} />,
     };
 
-    const bgColors = {
-        success: 'bg-emerald-50 border-emerald-200',
-        error: 'bg-red-50 border-red-200',
-        info: 'bg-blue-50 border-blue-200',
-        warning: 'bg-amber-50 border-amber-200',
-    };
-
-    const textColors = {
-        success: 'text-emerald-800',
-        error: 'text-red-800',
-        info: 'text-blue-800',
-        warning: 'text-amber-800',
-    };
+    const style = styles[toast.type];
 
     return (
         <div
-            className={`fixed z-[9999] flex items-start gap-3 px-4 py-3 rounded-lg border shadow-xl
-                        animate-scale-in min-w-[200px] max-w-[320px] ${bgColors[toast.type]}`}
+            className={`fixed z-[9999] ${style.bg} rounded-2xl border ${style.border} shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)]
+                        animate-scale-in min-w-[240px] max-w-[360px] overflow-hidden`}
             style={{
                 top: position.top,
                 left: position.left,
             }}
         >
-            {icons[toast.type]}
-            <p className={`flex-1 text-sm font-medium ${textColors[toast.type]} whitespace-pre-line`}>
-                {toast.message}
-            </p>
-            <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-            >
-                <X className="w-4 h-4" />
-            </button>
+            {/* Accent Bar */}
+            <div className={`h-1 ${style.accent}`} />
+
+            <div className="flex items-start gap-3 p-4">
+                {/* Icon */}
+                <div className={`flex-shrink-0 p-2 ${style.iconBg} rounded-xl`}>
+                    {icons[toast.type]}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 pt-0.5">
+                    <p className={`text-sm font-semibold ${style.text} whitespace-pre-line leading-relaxed`}>
+                        {toast.message}
+                    </p>
+                </div>
+
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="flex-shrink-0 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     );
 }

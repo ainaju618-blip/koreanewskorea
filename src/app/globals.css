@@ -19,6 +19,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Thin.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 300;
@@ -26,6 +27,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Light.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 400;
@@ -33,6 +35,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 500;
@@ -40,6 +43,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Medium.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 600;
@@ -47,6 +51,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-SemiBold.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 700;
@@ -54,6 +59,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 800;
@@ -61,6 +67,7 @@
     font-display: swap;
     src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-ExtraBold.woff2') format('woff2');
 }
+
 @font-face {
     font-family: 'Pretendard';
     font-weight: 900;
@@ -82,13 +89,15 @@
     --font-sans: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     --font-serif: "ChosunilboMyungjo", "Noto Serif KR", Georgia, serif;
 
-    /* Color Palette - The Modern Chronicle */
-    --color-primary: #0a192f;
-    /* Deep Royal Blue */
-    --color-secondary: #172a45;
-    /* Lighter Navy */
-    --color-accent: #ff2e63;
-    /* Electric Crimson */
+    /* Color Palette - Korea NEWS Brand */
+    --color-primary: #A6121D;
+    /* Korea Red - Main Brand Color */
+    --color-primary-dark: #850F17;
+    /* Darker Red for hover */
+    --color-secondary: #0a192f;
+    /* Deep Navy - Supporting Color */
+    --color-accent: #C8161D;
+    /* Bright Red - Accent */
     --color-background: #f8f9fa;
     /* Off-White Paper */
     --color-surface: #ffffff;
@@ -112,11 +121,15 @@
     }
 
     h1 {
-        @apply font-serif font-bold text-[36px] leading-tight tracking-tight text-[#0a192f];
+        @apply font-serif font-bold text-[32px] leading-tight tracking-tight text-slate-900;
     }
 
     h2 {
-        @apply font-serif font-bold text-[28px] leading-snug text-[#0a192f];
+        @apply font-serif font-bold text-[24px] leading-snug text-slate-900;
+    }
+
+    h3 {
+        @apply font-serif font-semibold text-[20px] leading-snug text-slate-800;
     }
 
     p {
@@ -143,11 +156,11 @@
 }
 
 /* ===================================
-   Admin Dashboard Design System
-   - Color: 3-tier (Primary, Neutral, Accent)
-   - Grid: 8px base
-   - Border Radius: 16px (cards)
-   - Font: Pretendard only (고딕 통일)
+   Admin Dashboard Design System v2.0
+   - Modern Dark Theme (VS Code / Discord style)
+   - Glassmorphism effects
+   - Smooth transitions
+   - Semantic color tokens
    =================================== */
 
 /* Admin 영역은 고딕(Pretendard)으로 통일 */
@@ -160,23 +173,500 @@
     font-family: var(--font-sans);
 }
 
+/* ===================================
+   Admin Dark Mode Color Tokens
+   =================================== */
+.admin-layout {
+    color-scheme: dark;
+
+    /* Background layers */
+    --admin-bg-base: #0d1117;
+    --admin-bg-surface: #161b22;
+    --admin-bg-elevated: #1c2128;
+    --admin-bg-overlay: #21262d;
+
+    /* Border colors */
+    --admin-border-default: #30363d;
+    --admin-border-muted: #21262d;
+    --admin-border-emphasis: #484f58;
+
+    /* Text colors */
+    --admin-text-primary: #e6edf3;
+    --admin-text-secondary: #8b949e;
+    --admin-text-muted: #6e7681;
+    --admin-text-placeholder: #484f58;
+
+    /* Accent colors */
+    --admin-accent-red: #f85149;
+    --admin-accent-red-muted: rgba(248, 81, 73, 0.15);
+    --admin-accent-green: #3fb950;
+    --admin-accent-green-muted: rgba(63, 185, 80, 0.15);
+    --admin-accent-blue: #58a6ff;
+    --admin-accent-blue-muted: rgba(88, 166, 255, 0.15);
+    --admin-accent-orange: #d29922;
+    --admin-accent-orange-muted: rgba(210, 153, 34, 0.15);
+    --admin-accent-purple: #a371f7;
+    --admin-accent-purple-muted: rgba(163, 113, 247, 0.15);
+}
+
+/* ===================================
+   Base Styles
+   =================================== */
+
+/* Cards with glassmorphism */
+.admin-layout .bg-white {
+    background-color: var(--admin-bg-surface) !important;
+    border: 1px solid var(--admin-border-default) !important;
+    border-radius: 12px !important;
+}
+
+.admin-layout .bg-gray-50,
+.admin-layout .bg-slate-50,
+.admin-layout .bg-slate-50\/50 {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+.admin-layout .bg-gray-100,
+.admin-layout .bg-slate-100 {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+/* Text colors - refined hierarchy */
+.admin-layout .text-gray-900,
+.admin-layout .text-slate-900,
+.admin-layout .text-gray-800,
+.admin-layout .text-slate-800 {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .text-gray-700,
+.admin-layout .text-slate-700 {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout .text-gray-600,
+.admin-layout .text-slate-600 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .text-gray-500,
+.admin-layout .text-slate-500 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .text-gray-400,
+.admin-layout .text-slate-400 {
+    color: var(--admin-text-muted) !important;
+}
+
+/* Border colors */
+.admin-layout .border-gray-100,
+.admin-layout .border-slate-100,
+.admin-layout .border-gray-200,
+.admin-layout .border-slate-200 {
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout .border-gray-300,
+.admin-layout .border-slate-300 {
+    border-color: var(--admin-border-emphasis) !important;
+}
+
+/* Hover states with smooth transitions */
+.admin-layout .hover\:bg-gray-50:hover,
+.admin-layout .hover\:bg-slate-50:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .hover\:bg-gray-100:hover,
+.admin-layout .hover\:bg-slate-100:hover {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+/* ===================================
+   Form Elements - Modern Style
+   =================================== */
+.admin-layout input[type="text"],
+.admin-layout input[type="email"],
+.admin-layout input[type="password"],
+.admin-layout input[type="number"],
+.admin-layout input[type="date"],
+.admin-layout input[type="datetime-local"],
+.admin-layout input[type="search"],
+.admin-layout textarea,
+.admin-layout select {
+    background-color: var(--admin-bg-base) !important;
+    border: 1px solid var(--admin-border-default) !important;
+    border-radius: 8px !important;
+    color: var(--admin-text-primary) !important;
+    transition: all 0.2s ease !important;
+}
+
+.admin-layout input:focus,
+.admin-layout textarea:focus,
+.admin-layout select:focus {
+    border-color: var(--admin-accent-blue) !important;
+    box-shadow: 0 0 0 3px var(--admin-accent-blue-muted) !important;
+    outline: none !important;
+}
+
+.admin-layout input::placeholder,
+.admin-layout textarea::placeholder {
+    color: var(--admin-text-placeholder) !important;
+}
+
+/* Checkbox & Radio */
+.admin-layout input[type="checkbox"],
+.admin-layout input[type="radio"] {
+    background-color: var(--admin-bg-base) !important;
+    border: 1px solid var(--admin-border-emphasis) !important;
+    border-radius: 4px !important;
+}
+
+.admin-layout input[type="checkbox"]:checked,
+.admin-layout input[type="radio"]:checked {
+    background-color: var(--admin-accent-blue) !important;
+    border-color: var(--admin-accent-blue) !important;
+}
+
+/* ===================================
+   Accent Colors - Semantic
+   =================================== */
+
+/* Blue - Info/Primary */
+.admin-layout .bg-blue-50 {
+    background-color: var(--admin-accent-blue-muted) !important;
+}
+
+.admin-layout .bg-blue-100 {
+    background-color: rgba(88, 166, 255, 0.2) !important;
+}
+
+.admin-layout .border-blue-100,
+.admin-layout .border-blue-200 {
+    border-color: rgba(88, 166, 255, 0.3) !important;
+}
+
+.admin-layout .text-blue-600,
+.admin-layout .text-blue-500 {
+    color: var(--admin-accent-blue) !important;
+}
+
+/* Green - Success */
+.admin-layout .bg-green-50 {
+    background-color: var(--admin-accent-green-muted) !important;
+}
+
+.admin-layout .border-green-100,
+.admin-layout .border-green-200 {
+    border-color: rgba(63, 185, 80, 0.3) !important;
+}
+
+.admin-layout .text-green-600,
+.admin-layout .text-green-500 {
+    color: var(--admin-accent-green) !important;
+}
+
+/* Red - Error/Danger */
+.admin-layout .bg-red-50 {
+    background-color: var(--admin-accent-red-muted) !important;
+}
+
+.admin-layout .border-red-100,
+.admin-layout .border-red-200 {
+    border-color: rgba(248, 81, 73, 0.3) !important;
+}
+
+.admin-layout .text-red-600,
+.admin-layout .text-red-500 {
+    color: var(--admin-accent-red) !important;
+}
+
+/* Orange - Warning */
+.admin-layout .bg-orange-50,
+.admin-layout .bg-yellow-50,
+.admin-layout .bg-amber-50 {
+    background-color: var(--admin-accent-orange-muted) !important;
+}
+
+.admin-layout .border-orange-100,
+.admin-layout .border-orange-200,
+.admin-layout .border-yellow-100,
+.admin-layout .border-amber-100 {
+    border-color: rgba(210, 153, 34, 0.3) !important;
+}
+
+.admin-layout .text-orange-600,
+.admin-layout .text-yellow-600,
+.admin-layout .text-amber-600 {
+    color: var(--admin-accent-orange) !important;
+}
+
+/* Purple - Special */
+.admin-layout .bg-purple-50,
+.admin-layout .bg-violet-50 {
+    background-color: var(--admin-accent-purple-muted) !important;
+}
+
+.admin-layout .text-purple-600,
+.admin-layout .text-violet-600 {
+    color: var(--admin-accent-purple) !important;
+}
+
+/* ===================================
+   Table Styles - Clean & Modern
+   =================================== */
+.admin-layout table {
+    font-size: 13px !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
+    background-color: transparent !important;
+}
+
+.admin-layout table thead {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+.admin-layout table th {
+    padding: 12px 16px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    background-color: var(--admin-bg-elevated) !important;
+    border-bottom: 1px solid var(--admin-border-default) !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    color: var(--admin-text-muted) !important;
+}
+
+.admin-layout table th:first-child {
+    border-top-left-radius: 8px !important;
+}
+
+.admin-layout table th:last-child {
+    border-top-right-radius: 8px !important;
+}
+
+.admin-layout table td {
+    padding: 12px 16px !important;
+    border-bottom: 1px solid var(--admin-border-muted) !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    vertical-align: middle !important;
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout table tbody tr {
+    transition: background-color 0.15s ease !important;
+}
+
+.admin-layout table tbody tr:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 8px !important;
+}
+
+.admin-layout table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 8px !important;
+}
+
+/* Status badges */
+.admin-layout table span[class*="px-"] {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    border-radius: 9999px !important;
+}
+
+/* ===================================
+   Card & Container Styles
+   =================================== */
+
+/* Keep rounded corners for cards */
+.admin-layout .rounded-xl {
+    border-radius: 12px !important;
+}
+
+.admin-layout .rounded-2xl {
+    border-radius: 16px !important;
+}
+
+.admin-layout .rounded-lg {
+    border-radius: 8px !important;
+}
+
+/* Subtle shadows for depth */
+.admin-layout .shadow-sm {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-layout .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.admin-layout .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Border for cards */
+.admin-layout .border {
+    border: 1px solid var(--admin-border-default) !important;
+}
+
+/* ===================================
+   Spacing - Comfortable
+   =================================== */
+.admin-layout .p-8 {
+    padding: 24px !important;
+}
+
+.admin-layout .p-6 {
+    padding: 20px !important;
+}
+
+.admin-layout .p-4 {
+    padding: 16px !important;
+}
+
+.admin-layout .gap-6 {
+    gap: 20px !important;
+}
+
+.admin-layout .gap-4 {
+    gap: 16px !important;
+}
+
+.admin-layout .space-y-6>*+* {
+    margin-top: 20px !important;
+}
+
+.admin-layout .space-y-4>*+* {
+    margin-top: 16px !important;
+}
+
+/* ===================================
+   Scrollbar - Sleek
+   =================================== */
+.admin-layout ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.admin-layout ::-webkit-scrollbar-track {
+    background: var(--admin-bg-base);
+    border-radius: 4px;
+}
+
+.admin-layout ::-webkit-scrollbar-thumb {
+    background: var(--admin-border-emphasis);
+    border-radius: 4px;
+}
+
+.admin-layout ::-webkit-scrollbar-thumb:hover {
+    background: var(--admin-text-muted);
+}
+
+/* ===================================
+   Button Styles
+   =================================== */
+.admin-layout button {
+    transition: all 0.2s ease !important;
+}
+
+.admin-layout button:hover {
+    transform: translateY(-1px);
+}
+
+.admin-layout button:active {
+    transform: translateY(0);
+}
+
+/* Primary button */
+.admin-layout .bg-red-600,
+.admin-layout .bg-red-500 {
+    background-color: var(--admin-accent-red) !important;
+}
+
+.admin-layout .bg-red-600:hover,
+.admin-layout .bg-red-500:hover {
+    background-color: #da3633 !important;
+}
+
+.admin-layout .bg-blue-600,
+.admin-layout .bg-blue-500 {
+    background-color: var(--admin-accent-blue) !important;
+}
+
+.admin-layout .bg-blue-600:hover,
+.admin-layout .bg-blue-500:hover {
+    background-color: #4090e0 !important;
+}
+
+.admin-layout .bg-green-600,
+.admin-layout .bg-green-500 {
+    background-color: var(--admin-accent-green) !important;
+}
+
+.admin-layout .bg-green-600:hover,
+.admin-layout .bg-green-500:hover {
+    background-color: #2ea043 !important;
+}
+
+/* ===================================
+   Modal & Dialog
+   =================================== */
+.admin-layout [role="dialog"],
+.admin-layout .modal {
+    background-color: var(--admin-bg-surface) !important;
+    border: 1px solid var(--admin-border-default) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Backdrop */
+.admin-layout .backdrop,
+.admin-layout [class*="bg-black/"] {
+    backdrop-filter: blur(4px) !important;
+}
+
 @layer components {
+
     /* --- Admin Color Tokens --- */
     :root {
-        --admin-primary: 185 28 28; /* B91C1C - Korea Red */
-        --admin-primary-dark: 153 27 27; /* 991B1B */
-        --admin-neutral-900: 15 23 42; /* 0F172A */
-        --admin-neutral-800: 30 41 59; /* 1E293B */
-        --admin-neutral-700: 51 65 85; /* 334155 */
-        --admin-neutral-600: 71 85 105; /* 475569 */
-        --admin-neutral-500: 100 116 139; /* 64748B */
-        --admin-neutral-400: 148 163 184; /* 94A3B8 */
-        --admin-neutral-300: 203 213 225; /* CBD5E1 */
-        --admin-neutral-200: 226 232 240; /* E2E8F0 */
-        --admin-neutral-100: 241 245 249; /* F1F5F9 */
-        --admin-neutral-50: 248 250 252; /* F8FAFC */
-        --admin-accent: 16 185 129; /* 10B981 - Emerald */
-        --admin-accent-soft: 209 250 229; /* D1FAE5 */
+        --admin-primary: 185 28 28;
+        /* B91C1C - Korea Red */
+        --admin-primary-dark: 153 27 27;
+        /* 991B1B */
+        --admin-neutral-900: 15 23 42;
+        /* 0F172A */
+        --admin-neutral-800: 30 41 59;
+        /* 1E293B */
+        --admin-neutral-700: 51 65 85;
+        /* 334155 */
+        --admin-neutral-600: 71 85 105;
+        /* 475569 */
+        --admin-neutral-500: 100 116 139;
+        /* 64748B */
+        --admin-neutral-400: 148 163 184;
+        /* 94A3B8 */
+        --admin-neutral-300: 203 213 225;
+        /* CBD5E1 */
+        --admin-neutral-200: 226 232 240;
+        /* E2E8F0 */
+        --admin-neutral-100: 241 245 249;
+        /* F1F5F9 */
+        --admin-neutral-50: 248 250 252;
+        /* F8FAFC */
+        --admin-accent: 16 185 129;
+        /* 10B981 - Emerald */
+        --admin-accent-soft: 209 250 229;
+        /* D1FAE5 */
 
         /* Spacing (8px grid) */
         --admin-space-1: 4px;
@@ -347,9 +837,12 @@
 
 /* Animations */
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -360,6 +853,7 @@
         opacity: 0;
         transform: translate(-50%, 20px);
     }
+
     to {
         opacity: 1;
         transform: translate(-50%, 0);
@@ -375,6 +869,7 @@
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -391,6 +886,7 @@
         opacity: 0;
         transform: translateY(16px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -407,6 +903,7 @@
         opacity: 0;
         transform: scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -415,4 +912,17 @@
 
 .animate-scale-in {
     animation: scaleIn 0.2s ease-out;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }

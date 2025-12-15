@@ -148,36 +148,36 @@ export default function AdminSidebarLayout({ children }: { children: React.React
     };
 
     return (
-        <div className="admin-layout flex min-h-screen bg-gray-50 text-gray-800 font-sans">
+        <div className="admin-layout flex min-h-screen bg-[#0d1117] text-gray-100 font-sans">
 
-            {/* --- Sidebar --- */}
-            <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-10 shadow-lg">
-                {/* Logo Area - 반분할 */}
-                <div className="h-16 flex items-stretch border-b border-slate-100 bg-white">
+            {/* --- Sidebar (Modern Dark Mode) --- */}
+            <aside className="w-64 bg-[#010409] border-r border-[#21262d] flex flex-col fixed h-full z-10">
+                {/* Logo Area */}
+                <div className="h-16 flex items-stretch border-b border-[#21262d] bg-[#010409]">
                     {/* Korea CMS */}
-                    <Link href="/admin" className="flex-1 flex items-center px-4 hover:bg-slate-50 transition-colors border-r border-slate-100">
-                        <div className="w-7 h-7 bg-[#A6121D] rounded flex items-center justify-center text-white font-black mr-2 text-sm">K</div>
-                        <span className="text-sm font-black text-slate-800 tracking-tight">Korea CMS</span>
+                    <Link href="/admin" className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 border-r border-[#21262d] group">
+                        <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center text-white font-black mr-2.5 text-sm shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">K</div>
+                        <span className="text-sm font-bold text-[#e6edf3] tracking-tight">Korea CMS</span>
                     </Link>
                     {/* AI 아이디어 */}
-                    <Link href="/idea" className="flex-1 flex items-center px-4 hover:bg-amber-50 transition-colors group">
-                        <div className="w-7 h-7 bg-amber-500 rounded flex items-center justify-center text-white mr-2">
+                    <Link href="/idea" className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 group">
+                        <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center text-white mr-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
                             <Lightbulb className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-bold text-amber-700 group-hover:text-amber-800">AI 아이디어</span>
+                        <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">AI Idea</span>
                     </Link>
                 </div>
 
-                {/* Navigation - 스크롤 가능 영역 */}
-                <nav className="flex-1 overflow-y-auto p-4 space-y-6" style={{ maxHeight: 'calc(100vh - 64px - 80px)' }}>
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto p-3 space-y-5" style={{ maxHeight: 'calc(100vh - 64px - 80px)' }}>
                     {MENU_ITEMS.map((group, idx) => (
                         <div key={idx}>
                             {group.category && (
-                                <div className="px-3 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <div className="px-3 mb-2 text-[10px] font-semibold text-[#8b949e] uppercase tracking-widest">
                                     {group.category}
                                 </div>
                             )}
-                            <ul className="space-y-1">
+                            <ul className="space-y-0.5">
                                 {group.items.map((item) => {
                                     const isActive = pathname === item.href || item.subItems?.some(sub => pathname === sub.href);
                                     const isExpanded = expandedMenus.includes(item.label);
@@ -190,22 +190,21 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                                                 <div>
                                                     <button
                                                         onClick={() => toggleMenu(item.label)}
-                                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-200
-                                ${isActive ? 'bg-red-50 text-[#A6121D]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200
+                                ${isActive ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
                             `}
                                                     >
-                                                        <div className="flex items-center gap-3">
-                                                            <Icon className={`w-4 h-4 ${isActive ? 'text-[#A6121D]' : 'text-slate-400'}`} />
+                                                        <div className="flex items-center gap-2.5">
+                                                            <Icon className={`w-4 h-4 ${isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
                                                             <span>{item.label}</span>
                                                         </div>
-                                                        {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                                                        <ChevronRight className={`w-3.5 h-3.5 text-[#6e7681] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                                     </button>
 
-                                                    {/* Submenu */}
-                                                    {isExpanded && (
-                                                        <ul className="mt-1 ml-4 space-y-1 border-l-2 border-slate-100 pl-2">
+                                                    {/* Submenu with smooth animation */}
+                                                    <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                                                        <ul className="mt-1 ml-3 space-y-0.5 border-l border-[#30363d] pl-3">
                                                             {item.subItems.map((sub) => {
-                                                                // 쿼리 파라미터를 포함한 활성화 상태 확인
                                                                 const isSubActive = sub.href.includes('?')
                                                                     ? pathname + '?' + (typeof window !== 'undefined' ? window.location.search.slice(1) : '') === sub.href || sub.href.startsWith(pathname + '?')
                                                                     : pathname === sub.href || pathname.startsWith(sub.href + '/');
@@ -213,25 +212,25 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                                                                     <li key={sub.label}>
                                                                         <Link
                                                                             href={sub.href}
-                                                                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors w-full
-                                                                                ${isSubActive ? 'text-[#A6121D] font-bold bg-white shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}
+                                                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] transition-all duration-150 w-full
+                                                                                ${isSubActive ? 'text-[#58a6ff] font-semibold bg-[#1f6feb]/10' : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#21262d]'}
                                                                             `}
                                                                         >
-                                                                            {sub.icon && <sub.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-[#A6121D]' : 'text-slate-400'}`} />}
+                                                                            {sub.icon && <sub.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-[#58a6ff]' : 'text-[#6e7681]'}`} />}
                                                                             <span>{sub.label}</span>
                                                                         </Link>
                                                                     </li>
                                                                 );
                                                             })}
                                                         </ul>
-                                                    )}
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 /* Single Menu Item */
-                                                <Link href={item.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all duration-200
-                            ${pathname === item.href ? 'bg-red-50 text-[#A6121D]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+                                                <Link href={item.href} className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200
+                            ${pathname === item.href ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
                         `}>
-                                                    <Icon className={`w-4 h-4 ${pathname === item.href ? 'text-[#A6121D]' : 'text-slate-400'}`} />
+                                                    <Icon className={`w-4 h-4 ${pathname === item.href ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
                                                     <span>{item.label}</span>
                                                 </Link>
                                             )}
@@ -244,24 +243,23 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                 </nav>
 
                 {/* Footer User Profile */}
-                <div className="p-4 border-t border-slate-100 bg-slate-50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold border-2 border-white shadow-sm">KO</div>
+                <div className="p-3 border-t border-[#21262d] bg-[#010409]">
+                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#161b22] transition-colors cursor-pointer group">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#58a6ff] to-[#1f6feb] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1f6feb]/20">KO</div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-800 truncate">발행인</p>
-                            <p className="text-xs text-slate-500">Administrator</p>
+                            <p className="text-[13px] font-semibold text-[#e6edf3] truncate">Administrator</p>
+                            <p className="text-[11px] text-[#8b949e]">Super Admin</p>
                         </div>
-                        <Link href="/" className="text-slate-400 hover:text-[#A6121D]">
+                        <Link href="/" className="p-1.5 rounded-md text-[#6e7681] hover:text-[#f85149] hover:bg-[#21262d] transition-all">
                             <LogOut className="w-4 h-4" />
                         </Link>
                     </div>
                 </div>
             </aside>
 
-            {/* --- Main Content Layout --- */}
-            <main className="flex-1 ml-64 min-h-screen bg-slate-50/50">
-                <div className="p-8 max-w-[1600px] mx-auto">
-                    {/* This is where the specific page content (Opus's work) will be injected */}
+            {/* --- Main Content Layout (Modern Dark Mode) --- */}
+            <main className="flex-1 ml-64 min-h-screen bg-[#0d1117]">
+                <div className="p-6 max-w-[1600px] mx-auto">
                     {children}
                 </div>
             </main>

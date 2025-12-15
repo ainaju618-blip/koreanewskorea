@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight } from 'lucide-react';
+import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper } from 'lucide-react';
 import NewsTicker from './NewsTicker';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
 
@@ -106,9 +106,9 @@ export default function Header() {
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex justify-between items-center text-xs">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 opacity-80">
-                            <a href="#" className="hover:text-[#ff2e63] transition-colors"><Twitter className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-[#ff2e63] transition-colors"><Facebook className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-[#ff2e63] transition-colors"><Instagram className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-[#A6121D] transition-colors"><Twitter className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-[#A6121D] transition-colors"><Facebook className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-[#A6121D] transition-colors"><Instagram className="w-3.5 h-3.5" /></a>
                         </div>
                         <span className="opacity-60 font-medium">
                             {currentDate}
@@ -116,9 +116,9 @@ export default function Header() {
                     </div>
 
                     <div className="flex items-center gap-4 font-medium tracking-wide opacity-90">
-                        <Link href="/subscribe" className="hover:text-[#ff2e63] transition-colors">구독신청</Link>
+                        <Link href="/subscribe" className="hover:text-[#A6121D] transition-colors">구독신청</Link>
                         <span className="w-[1px] h-2.5 bg-white/20"></span>
-                        <Link href="/reporter/login" className="flex items-center gap-1 hover:text-[#ff2e63] transition-colors">
+                        <Link href="/reporter/login" className="flex items-center gap-1 hover:text-[#A6121D] transition-colors">
                             <User className="w-3 h-3" /> 기자로그인
                         </Link>
                     </div>
@@ -140,14 +140,19 @@ export default function Header() {
                     <div className="flex flex-col items-center justify-center flex-1">
                         <Link href="/" className="group flex items-center gap-1.5">
                             <span className="text-4xl md:text-5xl font-serif font-black text-[#0a192f] tracking-tighter group-hover:opacity-90 transition-opacity">
-                                코리아<span className="text-[#ff2e63]">NEWS</span>
+                                코리아<span className="text-[#A6121D]">NEWS</span>
                             </span>
                         </Link>
                     </div>
 
                     {/* Mobile Menu Toggle */}
                     <div className="md:hidden absolute right-4 top-5">
-                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-[#0a192f]">
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="p-2 text-[#0a192f]"
+                            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
+                            aria-expanded={isMobileMenuOpen}
+                        >
                             {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
                         </button>
                     </div>
@@ -169,22 +174,22 @@ export default function Header() {
                         {/* 메뉴 가운데 정렬 */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
                             <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative
-                                ${pathname === '/' ? 'text-[#ff2e63]' : 'text-[#0a192f] hover:text-[#ff2e63]'}
+                                ${pathname === '/' ? 'text-[#A6121D]' : 'text-[#0a192f] hover:text-[#A6121D]'}
                             `}>
                                 Home
                                 {pathname === '/' && (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#A6121D]"></span>
                                 )}
                             </Link>
 
                             <Link href="/news/network" className={`h-full flex items-center transition-colors relative
-                                ${pathname.startsWith('/news') ? 'text-[#ff2e63]' : 'text-slate-800 hover:text-[#ff2e63]'}
+                                ${pathname.startsWith('/news') ? 'text-[#A6121D]' : 'text-slate-800 hover:text-[#A6121D]'}
                             `}>
                                 <span>뉴스TV</span>
                                 {pathname.startsWith('/news') ? (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#A6121D]"></span>
                                 ) : (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#A6121D] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
                                 )}
                             </Link>
 
@@ -198,36 +203,53 @@ export default function Header() {
                                     <Link
                                         href={getCategoryUrl(category)}
                                         className={`h-full flex items-center transition-colors relative
-                                            ${isActiveCategory(category) || activeMegaMenu === category.id ? 'text-[#ff2e63]' : 'text-slate-900'}
-                                            hover:text-[#ff2e63]
+                                            ${isActiveCategory(category) || activeMegaMenu === category.id ? 'text-[#A6121D]' : 'text-slate-900'}
+                                            hover:text-[#A6121D]
                                         `}
                                     >
                                         {category.name}
                                         {(isActiveCategory(category) || activeMegaMenu === category.id) && (
-                                            <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#ff2e63]"></span>
+                                            <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#A6121D]"></span>
                                         )}
                                     </Link>
 
-                                    {/* MEGA MENU DROPDOWN - Modern Shadow & Border */}
+                                    {/* MEGA MENU DROPDOWN - Modern Design with Animation */}
                                     {hasChildren(category) && category.slug !== 'jeonnam' && (
-                                        <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[600px] bg-white border-t-2 border-[#ff2e63] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] rounded-b-lg p-6 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-200 ease-out z-50
-                                            grid grid-cols-4 gap-6
+                                        <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
+                                            opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
                                         `}>
-                                            <div className="col-span-4 mb-3 pb-2 border-b border-slate-100 font-serif font-bold text-[#0a192f] text-lg flex items-center gap-2">
-                                                <MapPin className="w-5 h-5 text-[#ff2e63]" /> {category.name}
+                                            {/* Header */}
+                                            <div className="bg-gradient-to-r from-[#0a192f] to-[#1a365d] px-6 py-4 flex items-center gap-3">
+                                                <div className="p-2 bg-white/10 rounded-lg">
+                                                    <MapPin className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-serif font-bold text-white text-lg">{category.name}</h3>
+                                                    <p className="text-white/60 text-xs">{category.children?.length || 0} categories</p>
+                                                </div>
                                             </div>
-                                            {category.children!.map((child) => (
-                                                <Link
-                                                    key={child.id}
-                                                    href={getCategoryUrl(child, category)}
-                                                    className="text-slate-600 hover:text-[#0a192f] hover:font-bold hover:bg-slate-50 text-sm transition-all text-center py-2 rounded-md block"
-                                                >
-                                                    {child.name}
-                                                </Link>
-                                            ))}
-                                            <div className="col-span-4 border-t border-slate-50 mt-2 pt-3 text-center">
-                                                <Link href={getCategoryUrl(category)} className="text-xs text-slate-400 hover:text-[#ff2e63] flex items-center justify-center gap-1 font-medium transition-colors">
-                                                    View All <ChevronRight className="w-3 h-3" />
+
+                                            {/* Menu Items Grid */}
+                                            <div className="p-5 grid grid-cols-4 gap-2">
+                                                {category.children!.map((child, idx) => (
+                                                    <Link
+                                                        key={child.id}
+                                                        href={getCategoryUrl(child, category)}
+                                                        className="group/item relative flex items-center justify-center gap-2 px-3 py-3 text-sm text-slate-600 hover:text-[#A6121D] bg-slate-50/50 hover:bg-[#A6121D]/5 rounded-xl transition-all duration-200 border border-transparent hover:border-[#A6121D]/20"
+                                                        style={{ animationDelay: `${idx * 30}ms` }}
+                                                    >
+                                                        <span className="font-medium">{child.name}</span>
+                                                        <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all" />
+                                                    </Link>
+                                                ))}
+                                            </div>
+
+                                            {/* Footer */}
+                                            <div className="border-t border-slate-100 px-6 py-3 bg-slate-50/50">
+                                                <Link href={getCategoryUrl(category)} className="text-xs text-slate-500 hover:text-[#A6121D] flex items-center justify-center gap-1.5 font-semibold transition-colors group/all">
+                                                    <Newspaper className="w-3.5 h-3.5" />
+                                                    View All {category.name}
+                                                    <ChevronRight className="w-3 h-3 group-hover/all:translate-x-0.5 transition-transform" />
                                                 </Link>
                                             </div>
                                         </div>
@@ -235,11 +257,16 @@ export default function Header() {
                                 </div>
                             ))}
 
-                            {/* Search & PWA Install - 메뉴와 함께 가운데 배치 */}
-                            <div className="flex items-center gap-3 ml-6">
-                                <div className="relative group">
-                                    <input type="text" placeholder="Search..." className="pl-4 pr-9 py-1.5 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:border-[#ff2e63] focus:ring-1 focus:ring-[#ff2e63]/20 w-[140px] focus:w-[180px] transition-all duration-300 font-sans font-normal" />
-                                    <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 group-focus-within:text-[#ff2e63] transition-colors" />
+                            {/* Search & PWA Install - Modern Design */}
+                            <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
+                                <div className="relative group/search">
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        aria-label="Search articles"
+                                        className="pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50/80 focus:outline-none focus:border-[#A6121D] focus:ring-2 focus:ring-[#A6121D]/10 focus:bg-white w-[160px] focus:w-[200px] transition-all duration-300 font-sans font-normal placeholder:text-slate-400"
+                                    />
+                                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within/search:text-[#A6121D] transition-colors" />
                                 </div>
                                 <PWAInstallButton />
                             </div>
@@ -265,34 +292,65 @@ export default function Header() {
 
 
             {/* =========================================================================
-                MOBILE MENU OVERLAY
+                MOBILE MENU OVERLAY - Modern Slide-in Design
             ========================================================================= */}
-            {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
-                    <div className="p-4 flex justify-between items-center border-b border-slate-100 bg-[#0a192f] text-white">
-                        <span className="font-bold text-xl font-serif">Menu</span>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors">
-                            <X className="w-6 h-6" />
+            <div className={`fixed inset-0 z-[100] transition-all duration-300 ${isMobileMenuOpen ? 'visible' : 'invisible'}`}>
+                {/* Backdrop */}
+                <div
+                    className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+
+                {/* Menu Panel */}
+                <div className={`absolute right-0 top-0 h-full w-[85%] max-w-[360px] bg-white shadow-2xl transition-transform duration-300 ease-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    {/* Header */}
+                    <div className="p-5 flex justify-between items-center bg-gradient-to-r from-[#0a192f] to-[#1a365d] text-white">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                                <Menu className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <span className="font-bold text-lg font-serif block">Menu</span>
+                                <span className="text-white/60 text-xs">Navigation</span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-8">
-                        {/* 앱 설치 버튼 - 최상단 */}
-                        <PWAInstallMenuItem onMenuClose={() => setIsMobileMenuOpen(false)} />
+                    {/* Content */}
+                    <div className="h-[calc(100%-80px)] overflow-y-auto">
+                        <div className="p-5 space-y-6">
+                            {/* App Install Button */}
+                            <PWAInstallMenuItem onMenuClose={() => setIsMobileMenuOpen(false)} />
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <Link href="/reporter/login" className="flex items-center justify-center gap-2 py-3 bg-slate-50/80 rounded-xl font-bold text-slate-700 border border-slate-200 shadow-sm">
-                                <User className="w-4 h-4" /> 기자로그인
-                            </Link>
-                            <Link href="/subscribe" className="flex items-center justify-center gap-2 py-3 bg-[#ff2e63]/10 rounded-xl font-bold text-[#ff2e63] border border-[#ff2e63]/20 shadow-sm">
-                                <FileText className="w-4 h-4" /> 구독신청
-                            </Link>
-                        </div>
+                            {/* Quick Actions */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href="/reporter/login"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center justify-center gap-2 py-3.5 bg-slate-50 rounded-xl font-semibold text-slate-700 border border-slate-200 hover:border-slate-300 transition-colors"
+                                >
+                                    <User className="w-4 h-4" /> Login
+                                </Link>
+                                <Link
+                                    href="/subscribe"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#A6121D] to-[#c41e2a] rounded-xl font-semibold text-white shadow-lg shadow-red-900/20"
+                                >
+                                    <FileText className="w-4 h-4" /> Subscribe
+                                </Link>
+                            </div>
 
-                        <div className="space-y-4">
-                            {categories.map((category) => (
-                                <div key={category.id} className="border-b border-slate-100 pb-4 last:border-0">
-                                    <div className="flex items-center justify-between py-2">
+                            {/* Categories */}
+                            <div className="space-y-3">
+                                {categories.map((category, catIdx) => (
+                                    <div key={category.id} className="bg-slate-50/50 rounded-2xl overflow-hidden border border-slate-100">
+                                        {/* Category Header */}
                                         <a
                                             href={getCategoryUrl(category)}
                                             onClick={(e) => {
@@ -300,36 +358,61 @@ export default function Header() {
                                                 setIsMobileMenuOpen(false);
                                                 window.location.href = getCategoryUrl(category);
                                             }}
-                                            className="text-xl font-bold text-[#0a192f] font-serif cursor-pointer active:opacity-70"
+                                            className="flex items-center justify-between p-4 cursor-pointer active:bg-slate-100 transition-colors"
                                         >
-                                            {category.name}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-[#0a192f] rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                                                    {catIdx + 1}
+                                                </div>
+                                                <span className="text-lg font-bold text-[#0a192f] font-serif">
+                                                    {category.name}
+                                                </span>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-slate-400" />
                                         </a>
-                                    </div>
 
-                                    {hasChildren(category) && (
-                                        <div className="grid grid-cols-2 gap-2 pt-2">
-                                            {category.children!.map((child) => (
-                                                <a
-                                                    key={child.id}
-                                                    href={getCategoryUrl(child, category)}
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        setIsMobileMenuOpen(false);
-                                                        window.location.href = getCategoryUrl(child, category);
-                                                    }}
-                                                    className="pl-3 py-2 text-sm text-slate-600 border-l-2 border-slate-100 hover:border-[#ff2e63] hover:text-[#ff2e63] hover:bg-slate-50 transition-all rounded-r-md block cursor-pointer active:opacity-70"
-                                                >
-                                                    {child.name}
-                                                </a>
-                                            ))}
-                                        </div>
-                                    )}
+                                        {/* Sub Categories */}
+                                        {hasChildren(category) && (
+                                            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+                                                {category.children!.map((child) => (
+                                                    <a
+                                                        key={child.id}
+                                                        href={getCategoryUrl(child, category)}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setIsMobileMenuOpen(false);
+                                                            window.location.href = getCategoryUrl(child, category);
+                                                        }}
+                                                        className="px-3 py-2.5 text-sm text-slate-600 bg-white rounded-lg border border-slate-100 hover:border-[#A6121D]/30 hover:text-[#A6121D] transition-all text-center font-medium cursor-pointer active:scale-95"
+                                                    >
+                                                        {child.name}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Social Links */}
+                            <div className="pt-4 border-t border-slate-100">
+                                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3">Follow Us</p>
+                                <div className="flex items-center gap-3">
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#1DA1F2] hover:text-white transition-colors">
+                                        <Twitter className="w-4 h-4" />
+                                    </a>
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#4267B2] hover:text-white transition-colors">
+                                        <Facebook className="w-4 h-4" />
+                                    </a>
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors">
+                                        <Instagram className="w-4 h-4" />
+                                    </a>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 }

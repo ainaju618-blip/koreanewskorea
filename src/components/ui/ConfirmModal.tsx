@@ -77,7 +77,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     );
 }
 
-// 모달 컴포넌트
+// Modal Component - Modern Design
 function ConfirmModal({
     options,
     onConfirm,
@@ -91,72 +91,100 @@ function ConfirmModal({
         title,
         message,
         type = 'question',
-        confirmText = '확인',
-        cancelText = '취소',
+        confirmText = 'Confirm',
+        cancelText = 'Cancel',
     } = options;
 
-    const icons = {
-        danger: <Trash2 className="w-6 h-6 text-red-500" />,
-        warning: <AlertTriangle className="w-6 h-6 text-amber-500" />,
-        info: <Info className="w-6 h-6 text-blue-500" />,
-        question: <HelpCircle className="w-6 h-6 text-slate-500" />,
+    const styles = {
+        danger: {
+            iconBg: 'bg-red-100',
+            iconColor: 'text-red-600',
+            accent: 'bg-gradient-to-r from-red-500 to-red-400',
+            button: 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white shadow-lg shadow-red-500/25',
+        },
+        warning: {
+            iconBg: 'bg-amber-100',
+            iconColor: 'text-amber-600',
+            accent: 'bg-gradient-to-r from-amber-500 to-amber-400',
+            button: 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25',
+        },
+        info: {
+            iconBg: 'bg-blue-100',
+            iconColor: 'text-blue-600',
+            accent: 'bg-gradient-to-r from-blue-500 to-blue-400',
+            button: 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg shadow-blue-500/25',
+        },
+        question: {
+            iconBg: 'bg-slate-100',
+            iconColor: 'text-slate-600',
+            accent: 'bg-gradient-to-r from-slate-600 to-slate-500',
+            button: 'bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-900 hover:to-slate-800 text-white shadow-lg shadow-slate-500/25',
+        },
     };
 
-    const confirmButtonStyles = {
-        danger: 'bg-red-600 hover:bg-red-700 text-white',
-        warning: 'bg-amber-600 hover:bg-amber-700 text-white',
-        info: 'bg-blue-600 hover:bg-blue-700 text-white',
-        question: 'bg-slate-800 hover:bg-slate-900 text-white',
+    const icons = {
+        danger: <Trash2 className={`w-6 h-6 ${styles[type].iconColor}`} />,
+        warning: <AlertTriangle className={`w-6 h-6 ${styles[type].iconColor}`} />,
+        info: <Info className={`w-6 h-6 ${styles[type].iconColor}`} />,
+        question: <HelpCircle className={`w-6 h-6 ${styles[type].iconColor}`} />,
     };
+
+    const style = styles[type];
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
                 onClick={onCancel}
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 animate-scale-in">
+            <div className="relative bg-white rounded-2xl shadow-[0_25px_80px_-15px_rgba(0,0,0,0.3)] w-full max-w-md animate-scale-in overflow-hidden">
+                {/* Accent Bar */}
+                <div className={`h-1.5 ${style.accent}`} />
+
                 {/* Close Button */}
                 <button
                     onClick={onCancel}
-                    className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
                 {/* Content */}
-                <div className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 p-2 bg-gray-100 rounded-full">
+                <div className="p-6 pt-8">
+                    <div className="flex flex-col items-center text-center">
+                        {/* Icon */}
+                        <div className={`p-4 ${style.iconBg} rounded-2xl mb-5`}>
                             {icons[type]}
                         </div>
-                        <div className="flex-1 pt-1">
-                            {title && (
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                                    {title}
-                                </h3>
-                            )}
-                            <p className="text-gray-600 whitespace-pre-line">
-                                {message}
-                            </p>
-                        </div>
+
+                        {/* Title */}
+                        {title && (
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">
+                                {title}
+                            </h3>
+                        )}
+
+                        {/* Message */}
+                        <p className="text-slate-500 whitespace-pre-line leading-relaxed max-w-[280px]">
+                            {message}
+                        </p>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-100">
+                <div className="flex gap-3 p-5 pt-2">
                     <button
                         onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-5 py-3 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all"
                     >
                         {cancelText}
                     </button>
                     <button
                         onClick={onConfirm}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${confirmButtonStyles[type]}`}
+                        className={`flex-1 px-5 py-3 text-sm font-semibold rounded-xl transition-all ${style.button}`}
                     >
                         {confirmText}
                     </button>
