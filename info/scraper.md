@@ -9,7 +9,7 @@
 | 항목 | 값 |
 |------|-----|
 | **구현 완료** | 26개 / 26개 (100%) |
-| **이미지 저장** | 로컬 (`public/images/{region}/`) |
+| **이미지 저장** | **Cloudinary** (필수, 실패 시 에러) |
 | **가이드 문서** | `scrapers/SCRAPER_GUIDE.md` |
 
 ### 지역별 스크래퍼
@@ -75,14 +75,18 @@ IMAGE_SELECTORS = [
 
 #### 3.2 핫링크 방지 (403 에러)
 ```python
-# Referer 헤더 필요
-from utils.local_image_saver import download_and_save_locally
+# Referer 헤더 포함 - Cloudinary 업로드
+from utils.cloudinary_uploader import download_and_upload_image
 
-local_path = download_and_save_locally(
-    image_url,
-    BASE_URL,  # Referer로 사용
-    REGION_CODE
-)
+try:
+    cloudinary_url = download_and_upload_image(
+        image_url,
+        BASE_URL,  # Referer로 사용
+        folder=REGION_CODE
+    )
+except RuntimeError as e:
+    print(f"[에러] Cloudinary 업로드 실패: {e}")
+    raise  # 수집 중단
 ```
 
 #### 3.3 JavaScript 렌더링 필요

@@ -11,7 +11,7 @@
 | **API** | Next.js API Routes (App Router) |
 | **데이터베이스** | Supabase (PostgreSQL) |
 | **인증** | Supabase Auth |
-| **이미지** | 로컬 저장 + Cloudinary (레거시) |
+| **이미지** | **Cloudinary** (필수, 실패 시 에러) |
 
 ---
 
