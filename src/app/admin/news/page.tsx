@@ -29,7 +29,7 @@ interface Category {
 // Suspense 바운더리 내에서 useSearchParams를 사용하는 래퍼 컴포넌트
 export default function AdminNewsListPageWrapper() {
     return (
-        <Suspense fallback={<div className="p-12 text-center text-gray-400">로딩 중...</div>}>
+        <Suspense fallback={<div className="p-12 text-center text-[#8b949e]">로딩 중...</div>}>
             <AdminNewsListPage />
         </Suspense>
     );
@@ -39,7 +39,7 @@ function AdminNewsListPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const urlStatus = searchParams.get('status') || 'all';
-    const { showSuccess, showError, showWarning } = useToast();
+    const { showSuccess, showError, showWarning, showInfo } = useToast();
 
     const [articles, setArticles] = useState<any[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -52,6 +52,9 @@ function AdminNewsListPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const [totalPages, setTotalPages] = useState(1);
+
+    // Keyboard navigation state
+    const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
     // Preview & Edit State
     const [previewArticle, setPreviewArticle] = useState<any>(null);
@@ -142,6 +145,113 @@ function AdminNewsListPage() {
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Calculate current visible articles
+            const visibleArticles = articles.filter(article => {
+                const matchesCategory = filterCategory === "all" || article.category === filterCategory;
+                const matchesSearch = searchQuery === '' ||
+                    article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    article.content.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+
+            // Ignore when typing in input fields
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                // Only allow Escape in input fields
+                if (e.key === 'Escape' && isPanelOpen) {
+                    closePreview();
+                }
+                return;
+            }
+
+            // Panel open state shortcuts
+            if (isPanelOpen && previewArticle) {
+                switch (e.key) {
+                    case 'Escape':
+                        e.preventDefault();
+                        closePreview();
+                        break;
+                    case 'a':
+                    case 'A':
+                        // Approve (only for draft)
+                        if (previewArticle.status === 'draft' && !isApproving) {
+                            e.preventDefault();
+                            handleApprove();
+                        }
+                        break;
+                    case 'd':
+                    case 'D':
+                        // Delete
+                        e.preventDefault();
+                        handleDelete();
+                        break;
+                    case 's':
+                        // Save with Ctrl/Cmd+S
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            if (!isSaving) handleSave();
+                        }
+                        break;
+                }
+                return;
+            }
+
+            // List navigation shortcuts (when panel is closed)
+            switch (e.key) {
+                case 'j':
+                case 'J':
+                case 'ArrowDown':
+                    // Move down
+                    e.preventDefault();
+                    setFocusedIndex(prev => {
+                        const next = prev + 1;
+                        return next >= visibleArticles.length ? 0 : next;
+                    });
+                    break;
+                case 'k':
+                case 'K':
+                case 'ArrowUp':
+                    // Move up
+                    e.preventDefault();
+                    setFocusedIndex(prev => {
+                        const next = prev - 1;
+                        return next < 0 ? visibleArticles.length - 1 : next;
+                    });
+                    break;
+                case 'Enter':
+                    // Open focused article
+                    if (focusedIndex >= 0 && focusedIndex < visibleArticles.length) {
+                        e.preventDefault();
+                        openPreview(visibleArticles[focusedIndex]);
+                    }
+                    break;
+                case ' ':
+                    // Toggle selection with Space
+                    if (focusedIndex >= 0 && focusedIndex < visibleArticles.length) {
+                        e.preventDefault();
+                        toggleSelect(visibleArticles[focusedIndex].id);
+                    }
+                    break;
+                case '?':
+                    // Show keyboard shortcuts help
+                    e.preventDefault();
+                    showInfo('Keyboard Shortcuts: J/K (navigate), Enter (open), Space (select), A (approve), D (delete), Esc (close)');
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isPanelOpen, previewArticle, focusedIndex, articles, filterCategory, searchQuery, isApproving, isSaving]);
+
+    // Reset focused index when articles change
+    useEffect(() => {
+        setFocusedIndex(-1);
+    }, [filterStatus, currentPage]);
 
     // Open Preview
     const openPreview = (article: any) => {
@@ -673,7 +783,7 @@ function AdminNewsListPage() {
                                 disabled={isBulkProcessing || selectedIds.size === 0}
                                 className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
                                     ? 'bg-green-600 text-white hover:bg-green-700'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'bg-[#21262d] text-[#6e7681] cursor-not-allowed border border-[#30363d]'
                                     }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -686,7 +796,7 @@ function AdminNewsListPage() {
                                 disabled={isBulkProcessing || selectedIds.size === 0}
                                 className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
                                     ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'bg-[#21262d] text-[#6e7681] cursor-not-allowed border border-[#30363d]'
                                     }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -701,7 +811,7 @@ function AdminNewsListPage() {
                             disabled={isBulkProcessing || selectedIds.size === 0}
                             className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
                                 ? 'bg-red-600 text-white hover:bg-red-700'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-[#21262d] text-[#6e7681] cursor-not-allowed border border-[#30363d]'
                                 }`}
                         >
                             {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -741,20 +851,20 @@ function AdminNewsListPage() {
             />
 
             {/* Toolbar */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <input
                             type="text"
                             placeholder="제목 또는 내용 검색..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-10 pr-4 py-2 border border-[#30363d] rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-[#0d1117] text-[#e6edf3] placeholder-[#8b949e]"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <select
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        className="border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3]"
                         value={filterCategory}
                         onChange={(e) => setFilterCategory(e.target.value)}
                     >
@@ -790,11 +900,11 @@ function AdminNewsListPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex-1">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden flex-1">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="py-2 px-3 w-10 text-center text-xs font-semibold text-gray-500">No.</th>
+                        <tr className="bg-[#21262d] border-b border-[#30363d]">
+                            <th className="py-2 px-3 w-10 text-center text-xs font-semibold text-[#8b949e]">No.</th>
                             <th className="py-2 px-3 w-10">
                                 <input
                                     type="checkbox"
@@ -803,24 +913,27 @@ function AdminNewsListPage() {
                                         else setSelectedIds(new Set());
                                     }}
                                     checked={paginatedArticles.length > 0 && selectedIds.size === paginatedArticles.length}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                                    className="rounded border-[#30363d] bg-[#0d1117] text-blue-600 focus:ring-blue-500 h-4 w-4"
                                 />
                             </th>
-                            <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">상태</th>
-                            <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">제목</th>
-                            <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">카테고리</th>
-                            <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">작성자/출처</th>
-                            <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">작성일</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">상태</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">제목</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">카테고리</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">작성자/출처</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">원문작성일</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">수집일</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#21262d]">
                         {paginatedArticles.map((article, index) => (
                             <tr
                                 key={article.id}
-                                className="hover:bg-gray-50 transition cursor-pointer"
+                                className={`hover:bg-[#21262d] transition cursor-pointer ${
+                                    focusedIndex === index ? 'bg-[#1f6feb]/20 ring-1 ring-[#1f6feb]/50' : ''
+                                }`}
                                 onClick={() => openPreview(article)}
                             >
-                                <td className="py-1 px-3 text-center text-xs text-gray-400">
+                                <td className="py-1 px-3 text-center text-xs text-[#8b949e]">
                                     {(currentPage - 1) * 20 + index + 1}
                                 </td>
                                 <td className="py-1 px-3" onClick={(e) => e.stopPropagation()}>
@@ -828,7 +941,7 @@ function AdminNewsListPage() {
                                         type="checkbox"
                                         checked={selectedIds.has(article.id)}
                                         onChange={() => toggleSelect(article.id)}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                                        className="rounded border-[#30363d] bg-[#0d1117] text-blue-600 focus:ring-blue-500 h-4 w-4"
                                     />
                                 </td>
                                 <td className="py-1 px-3">
@@ -837,46 +950,36 @@ function AdminNewsListPage() {
                                 <td className="py-1 px-3">
                                     <div className="flex items-center gap-2">
                                         {article.is_focus && (
-                                            <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded">Focus</span>
+                                            <span className="px-1.5 py-0.5 bg-orange-900/40 text-orange-300 text-[10px] font-bold rounded border border-orange-700/50">Focus</span>
                                         )}
-                                        <p className="text-sm font-medium text-gray-900 line-clamp-1">{article.title}</p>
+                                        <p className="text-sm font-medium text-[#e6edf3] line-clamp-1">{article.title}</p>
                                     </div>
                                 </td>
                                 <td className="py-1 px-3">
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded textxs font-medium bg-gray-100 text-gray-600">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[#21262d] text-[#8b949e] border border-[#30363d]">
                                         {article.category}
                                     </span>
                                 </td>
                                 <td className="py-1 px-3">
                                     <div className="flex items-center text-xs">
-                                        <span className="text-gray-900 font-medium mr-1.5 truncate max-w-[80px]">{article.author}</span>
-                                        <span className="text-gray-400">| {article.source}</span>
+                                        <span className="text-[#e6edf3] font-medium mr-1.5 truncate max-w-[80px]">{article.author}</span>
+                                        <span className="text-[#8b949e]">| {article.source}</span>
                                     </div>
                                 </td>
-                                <td className="py-1 px-3 text-xs text-gray-500">
-                                    <div className="flex flex-col">
-                                        {/* 수집일 (Created) */}
-                                        <div className="flex items-center gap-1 text-gray-500 mb-0.5">
-                                            <span className="text-[10px] uppercase tracking-wider opacity-70">수집</span>
-                                            {/* 초단위(ss) 제거: 11-14 (slice) */}
-                                            <span>{new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                                        </div>
-                                        {/* 작성일 (Published) - 강조 */}
-                                        <div className="flex items-center gap-1 text-white font-medium">
-                                            <span className="text-[10px] uppercase tracking-wider text-blue-400 opacity-90">작성</span>
-                                            <span>{article.published_at
-                                                ? new Date(article.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
-                                                : '-'}
-                                            </span>
-                                        </div>
-                                    </div>
+                                <td className="py-1 px-3 text-xs text-[#e6edf3]">
+                                    {article.published_at
+                                        ? new Date(article.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+                                        : '-'}
+                                </td>
+                                <td className="py-1 px-3 text-xs text-[#8b949e]">
+                                    {new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
                 {paginatedArticles.length === 0 && (
-                    <div className="p-12 text-center text-gray-400">데이터가 없습니다.</div>
+                    <div className="p-12 text-center text-[#8b949e]">데이터가 없습니다.</div>
                 )}
             </div>
 
@@ -902,7 +1005,7 @@ function AdminNewsListPage() {
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             저장
                         </button>
-                        <button onClick={handleDelete} className="p-2 bg-white border border-gray-300 text-red-600 rounded-lg hover:bg-red-50 transition">
+                        <button onClick={handleDelete} className="p-2 bg-[#21262d] border border-[#30363d] text-[#f85149] rounded-lg hover:bg-[#30363d] transition">
                             <Trash2 className="w-4 h-4" />
                         </button>
                     </>
@@ -916,7 +1019,7 @@ function AdminNewsListPage() {
                                 href={previewArticle.original_link}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex items-center gap-2 text-sm text-blue-600 hover:underline p-2 bg-blue-50 rounded-lg"
+                                className="flex items-center gap-2 text-sm text-[#58a6ff] hover:underline p-2 bg-[#1f6feb]/10 rounded-lg border border-[#1f6feb]/30"
                             >
                                 <Globe className="w-4 h-4" />
                                 원문 보기 ({previewArticle.source})
@@ -924,56 +1027,56 @@ function AdminNewsListPage() {
                         )}
 
                         {/* Meta Info - 컴팩트하게 한 줄로 */}
-                        <div className="flex gap-4 p-2 bg-gray-50 rounded-lg border border-gray-100 text-sm">
+                        <div className="flex gap-4 p-2 bg-[#21262d] rounded-lg border border-[#30363d] text-sm">
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-500">상태:</span>
+                                <span className="text-[#8b949e]">상태:</span>
                                 <StatusBadge type="article" status={previewArticle.status} />
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-500">카테고리:</span>
-                                <span className="font-medium">{previewArticle.category}</span>
+                                <span className="text-[#8b949e]">카테고리:</span>
+                                <span className="font-medium text-[#e6edf3]">{previewArticle.category}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-500">조회수:</span>
-                                <span className="font-medium">{previewArticle.views}회</span>
+                                <span className="text-[#8b949e]">조회수:</span>
+                                <span className="font-medium text-[#e6edf3]">{previewArticle.views}회</span>
                             </div>
                         </div>
 
                         {/* Edit Fields - 제목 */}
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">제목</label>
+                            <label className="block text-xs font-medium text-[#8b949e] mb-1">제목</label>
                             <input
                                 type="text"
                                 value={editTitle}
                                 onChange={(e) => setEditTitle(e.target.value)}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-900 text-sm"
+                                className="w-full p-2 border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-[#e6edf3] bg-[#0d1117] text-sm"
                             />
                         </div>
 
                         {/* 부제목 입력 필드 */}
                         <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">부제목 (선택)</label>
+                            <label className="block text-xs font-medium text-[#8b949e] mb-1">부제목 (선택)</label>
                             <input
                                 type="text"
                                 value={editSubtitle}
                                 onChange={(e) => setEditSubtitle(e.target.value)}
                                 placeholder="기사의 부제목을 입력하세요"
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 text-sm"
+                                className="w-full p-2 border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#c9d1d9] bg-[#0d1117] text-sm placeholder-[#6e7681]"
                             />
                         </div>
 
                         {/* Focus 토글 - 컴팩트하게 */}
-                        <div className="flex items-center gap-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex items-center gap-2 p-2 bg-orange-900/20 rounded-lg border border-orange-700/50">
                             <input
                                 type="checkbox"
                                 id="is_focus"
                                 checked={editIsFocus}
                                 onChange={(e) => setEditIsFocus(e.target.checked)}
-                                className="w-4 h-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                                className="w-4 h-4 rounded border-orange-700 bg-[#0d1117] text-orange-500 focus:ring-orange-500"
                             />
                             <label htmlFor="is_focus" className="flex-1 text-sm">
-                                <span className="font-bold text-orange-800">🌟 Focus 기사</span>
-                                <span className="text-orange-600 ml-2">메인 페이지 '나주 Focus' 섹션 노출</span>
+                                <span className="font-bold text-orange-300">Focus 기사</span>
+                                <span className="text-orange-400/80 ml-2">메인 페이지 'Focus' 섹션 노출</span>
                             </label>
                         </div>
 
@@ -985,11 +1088,11 @@ function AdminNewsListPage() {
                         />
 
                         <div className="flex-1 flex flex-col">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">본문 내용</label>
+                            <label className="block text-xs font-medium text-[#8b949e] mb-1">본문 내용</label>
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className="w-full flex-1 min-h-[350px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm leading-relaxed text-gray-800 resize-none"
+                                className="w-full flex-1 min-h-[350px] p-3 border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm leading-relaxed text-[#c9d1d9] bg-[#0d1117] resize-none"
                             />
                         </div>
 
