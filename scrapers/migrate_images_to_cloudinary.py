@@ -91,7 +91,7 @@ def migrate_images():
                 overwrite=True,
                 resource_type="image",
                 transformation=[
-                    {"width": 800, "crop": "limit", "quality": 60}
+                    {"width": 800, "crop": "limit", "quality": 80}
                 ],
                 format="webp"
             )

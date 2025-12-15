@@ -117,14 +117,18 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
         temp_path = os.path.join(tempfile.gettempdir(), f"{file_hash}.jpg")
         img.save(temp_path, 'JPEG', quality=85, optimize=True)
         
-        # 5. Cloudinary 업로드 (★ 실패 시 에러 발생)
+        # 5. Cloudinary 업로드 (★ WebP 변환 + 품질 최적화)
         try:
             public_id = f"{folder}/{file_hash}"
             result = cloudinary.uploader.upload(
                 temp_path,
                 public_id=public_id,
                 overwrite=False,
-                resource_type="image"
+                resource_type="image",
+                transformation=[
+                    {"width": 800, "crop": "limit", "quality": 80}
+                ],
+                format="webp"
             )
             cloudinary_url = result.get('secure_url')
             print(f"[OK] Cloudinary 업로드: {cloudinary_url[:60]}...")
@@ -189,14 +193,18 @@ def upload_local_image(local_path: str, folder: str = "news", resize: bool = Tru
         temp_path = os.path.join(tempfile.gettempdir(), f"{file_hash}.jpg")
         img.save(temp_path, 'JPEG', quality=85, optimize=True)
         
-        # 4. Cloudinary 업로드
+        # 4. Cloudinary 업로드 (WebP 변환 + 품질 최적화)
         public_id = f"{folder}/{file_hash}"
-        
+
         result = cloudinary.uploader.upload(
             temp_path,
             public_id=public_id,
             overwrite=False,
-            resource_type="image"
+            resource_type="image",
+            transformation=[
+                {"width": 800, "crop": "limit", "quality": 80}
+            ],
+            format="webp"
         )
         
         # 5. 임시 파일 삭제

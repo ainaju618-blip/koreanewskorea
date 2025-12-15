@@ -1,6 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Cloudinary 설정
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Next.js 16+ 동적 라우트 타입 정의
 interface RouteParams {
@@ -63,18 +71,32 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
                 .eq('id', id)
                 .single();
 
-            // 로컬 이미지 삭제 (thumbnail_url이 /images/로 시작하는 경우)
-            if (post?.thumbnail_url?.startsWith('/images/')) {
+            // 이미지 삭제
+            if (post?.thumbnail_url) {
                 try {
-                    const fs = await import('fs');
-                    const path = await import('path');
-                    const filePath = path.join(process.cwd(), 'public', post.thumbnail_url);
-                    if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath);
-                        console.log(`[이미지 삭제] ${post.thumbnail_url}`);
+                    if (post.thumbnail_url.startsWith('/images/')) {
+                        // 로컬 이미지 삭제
+                        const fs = await import('fs');
+                        const path = await import('path');
+                        const filePath = path.join(process.cwd(), 'public', post.thumbnail_url);
+                        if (fs.existsSync(filePath)) {
+                            fs.unlinkSync(filePath);
+                            console.log(`[로컬 이미지 삭제] ${post.thumbnail_url}`);
+                        }
+                    } else if (post.thumbnail_url.includes('cloudinary.com')) {
+                        // Cloudinary 이미지 삭제
+                        // URL에서 public_id 추출: https://res.cloudinary.com/xxx/image/upload/v123/folder/filename.webp
+                        const urlParts = post.thumbnail_url.split('/upload/');
+                        if (urlParts[1]) {
+                            // v123/folder/filename.webp -> folder/filename (확장자와 버전 제거)
+                            const pathPart = urlParts[1].replace(/^v\d+\//, ''); // 버전 제거
+                            const publicId = pathPart.replace(/\.[^.]+$/, ''); // 확장자 제거
+                            await cloudinary.uploader.destroy(publicId);
+                            console.log(`[Cloudinary 이미지 삭제] ${publicId}`);
+                        }
                     }
-                } catch (fsError) {
-                    console.warn('[이미지 삭제 실패]', fsError);
+                } catch (imgError) {
+                    console.warn('[이미지 삭제 실패]', imgError);
                     // 이미지 삭제 실패해도 기사 삭제는 진행
                 }
             }
