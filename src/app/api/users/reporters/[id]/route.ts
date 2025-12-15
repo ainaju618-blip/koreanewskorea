@@ -109,6 +109,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
                 phone: body.phone || null,
                 email: body.email || null,
                 bio: body.bio || null,
+                profile_image: body.profile_image || null,  // 프로필 사진 URL
                 status: body.status || 'Active',
                 avatar_icon: '👤',
                 gemini_api_key: body.gemini_api_key || null,
@@ -118,11 +119,15 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Reporter update error:', JSON.stringify(error, null, 2));
+            throw error;
+        }
 
         return NextResponse.json(data);
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+        console.error('Reporter update catch error:', error);
+        const message = error instanceof Error ? error.message : (typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : '서버 오류가 발생했습니다.');
         return NextResponse.json({ message }, { status: 500 });
     }
 }

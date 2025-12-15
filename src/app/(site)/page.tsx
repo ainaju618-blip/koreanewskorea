@@ -1,5 +1,6 @@
-import NewsGrid from '@/components/NewsGrid';
-import Sidebar from '@/components/Sidebar';
+import { Suspense } from 'react';
+import NewsGrid, { NewsGridSkeleton } from '@/components/NewsGrid';
+import Sidebar, { SidebarSkeleton } from '@/components/Sidebar';
 import HomeHero from '@/components/home/HomeHero';
 
 /**
@@ -7,6 +8,9 @@ import HomeHero from '@/components/home/HomeHero';
  * ===================
  * Layout: 1400px Container (WebFrame Spec)
  * Style: Kangwon Ilbo Clone
+ * 
+ * [현대화] Suspense + Streaming 적용
+ * - 각 섹션이 독립적으로 로딩되어 사용자가 빠르게 콘텐츠를 볼 수 있음
  */
 
 export default function Home() {
@@ -24,30 +28,36 @@ export default function Home() {
           {/* LEFT COLUMN: Main Content (72%) */}
           <div className="w-full lg:w-[72%] space-y-0">
 
-            {/* 광주 Gwangju */}
-            <NewsGrid
-              categoryName="광주"
-              categoryNameEn="Gwangju"
-              categorySlug="gwangju"
-              limit={4}
-            />
+            {/* 광주 Gwangju - Streaming */}
+            <Suspense fallback={<NewsGridSkeleton />}>
+              <NewsGrid
+                categoryName="광주"
+                categoryNameEn="Gwangju"
+                categorySlug="gwangju"
+                limit={4}
+              />
+            </Suspense>
 
-            {/* 전남 Jeonnam */}
-            <NewsGrid
-              categoryName="전남"
-              categoryNameEn="Jeonnam"
-              categorySlug="jeonnam"
-              limit={4}
-            />
+            {/* 전남 Jeonnam - Streaming */}
+            <Suspense fallback={<NewsGridSkeleton />}>
+              <NewsGrid
+                categoryName="전남"
+                categoryNameEn="Jeonnam"
+                categorySlug="jeonnam"
+                limit={4}
+              />
+            </Suspense>
 
-            {/* 나주 Naju */}
-            <NewsGrid
-              categoryName="나주"
-              categoryNameEn="Naju"
-              categorySlug="jeonnam/naju"
-              regionCode="naju"
-              limit={4}
-            />
+            {/* 나주 Naju - Streaming */}
+            <Suspense fallback={<NewsGridSkeleton />}>
+              <NewsGrid
+                categoryName="나주"
+                categoryNameEn="Naju"
+                categorySlug="jeonnam/naju"
+                regionCode="naju"
+                limit={4}
+              />
+            </Suspense>
 
             {/* 광주/전남 지역 네트워크 (Special Section) */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-100 my-8">
@@ -58,27 +68,33 @@ export default function Home() {
                 </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <NewsGrid
-                  categoryName="광주"
-                  categoryNameEn="Gwangju"
-                  categorySlug="gwangju"
-                  limit={3}
-                />
-                <NewsGrid
-                  categoryName="전남"
-                  categoryNameEn="Jeonnam"
-                  categorySlug="jeonnam"
-                  limit={3}
-                />
+                <Suspense fallback={<NewsGridSkeleton />}>
+                  <NewsGrid
+                    categoryName="광주"
+                    categoryNameEn="Gwangju"
+                    categorySlug="gwangju"
+                    limit={3}
+                  />
+                </Suspense>
+                <Suspense fallback={<NewsGridSkeleton />}>
+                  <NewsGrid
+                    categoryName="전남"
+                    categoryNameEn="Jeonnam"
+                    categorySlug="jeonnam"
+                    limit={3}
+                  />
+                </Suspense>
               </div>
             </div>
 
           </div>
 
-          {/* RIGHT COLUMN: Sidebar (28%) */}
+          {/* RIGHT COLUMN: Sidebar (28%) - Streaming */}
           <div className="w-full lg:w-[28%]">
             <div className="sticky top-[120px]">
-              <Sidebar />
+              <Suspense fallback={<SidebarSkeleton />}>
+                <Sidebar />
+              </Suspense>
             </div>
           </div>
 

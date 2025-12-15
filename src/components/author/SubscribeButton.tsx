@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, BellOff, Loader2, Check } from "lucide-react";
+import { useState, useOptimistic, useTransition } from "react";
+import { Bell, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
 
@@ -9,19 +9,39 @@ interface SubscribeButtonProps {
     reporterId: string;
     initialIsSubscribed: boolean;
     initialSubscriberCount: number;
-    isLoggedIn?: boolean; // 로그인 여부를 prop으로 받거나 내부에서 체크
+    isLoggedIn?: boolean;
 }
 
+interface SubscribeState {
+    isSubscribed: boolean;
+    subscriberCount: number;
+}
+
+/**
+ * 구독 버튼 (React 19 useOptimistic 버전)
+ * =========================================
+ * - useOptimistic: 서버 응답 전 즉시 UI 업데이트
+ * - useTransition: 자연스러운 pending 상태 관리
+ */
 export default function SubscribeButton({
     reporterId,
     initialIsSubscribed,
     initialSubscriberCount,
     isLoggedIn = false,
 }: SubscribeButtonProps) {
-    const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed);
-    const [subscriberCount, setSubscriberCount] = useState(initialSubscriberCount);
-    const [isLoading, setIsLoading] = useState(false);
+    // 실제 서버 상태
+    const [actualState, setActualState] = useState<SubscribeState>({
+        isSubscribed: initialIsSubscribed,
+        subscriberCount: initialSubscriberCount,
+    });
 
+    // React 19 useOptimistic: 낙관적 UI 업데이트
+    const [optimisticState, addOptimistic] = useOptimistic(
+        actualState,
+        (current, optimisticValue: SubscribeState) => optimisticValue
+    );
+
+    const [isPending, startTransition] = useTransition();
     const { showSuccess, showError, showInfo } = useToast();
     const router = useRouter();
 
@@ -32,54 +52,56 @@ export default function SubscribeButton({
             return;
         }
 
-        if (isLoading) return;
+        // 낙관적 상태 계산
+        const newIsSubscribed = !actualState.isSubscribed;
+        const newCount = actualState.subscriberCount + (newIsSubscribed ? 1 : -1);
+        const optimisticNewState = {
+            isSubscribed: newIsSubscribed,
+            subscriberCount: newCount,
+        };
 
-        // Optimistic Update
-        const previousState = isSubscribed;
-        const previousCount = subscriberCount;
+        startTransition(async () => {
+            // 즉시 UI 업데이트 (React 19 useOptimistic)
+            addOptimistic(optimisticNewState);
 
-        setIsSubscribed(!isSubscribed);
-        setSubscriberCount((prev) => (isSubscribed ? prev - 1 : prev + 1));
-        setIsLoading(true);
+            try {
+                const res = await fetch("/api/author/subscribe", {
+                    method: actualState.isSubscribed ? "DELETE" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reporterId }),
+                });
 
-        try {
-            const endpoint = "/api/author/subscribe";
-            const method = isSubscribed ? "DELETE" : "POST"; // 현재 상태의 반대(취소 or 구독)
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || "요청 실패");
+                }
 
-            const res = await fetch(endpoint, {
-                method: method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ reporterId }),
-            });
+                const data = await res.json();
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "요청 실패");
+                // 서버 응답으로 실제 상태 업데이트
+                setActualState({
+                    isSubscribed: data.isSubscribed,
+                    subscriberCount: data.subscriberCount ?? newCount,
+                });
+
+                if (data.isSubscribed) {
+                    showSuccess("기자를 구독했습니다.\n새로운 소식을 알려드릴게요!");
+                } else {
+                    showInfo("구독이 취소되었습니다.");
+                }
+            } catch (error: any) {
+                // 실패 시 원래 상태 유지 (useOptimistic이 자동으로 롤백)
+                showError(error.message || "오류가 발생했습니다.");
             }
-
-            const data = await res.json();
-
-            // 성공 메시지
-            if (data.isSubscribed) {
-                showSuccess("기자를 구독했습니다.\n새로운 소식을 알려드릴게요!");
-            } else {
-                showInfo("구독이 취소되었습니다.");
-            }
-
-        } catch (error: any) {
-            // 롤백
-            setIsSubscribed(previousState);
-            setSubscriberCount(previousCount);
-            showError(error.message || "오류가 발생했습니다.");
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
+
+    const { isSubscribed, subscriberCount } = optimisticState;
 
     return (
         <button
             onClick={handleSubscribe}
-            disabled={isLoading}
+            disabled={isPending}
             className={`
                 flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all
                 ${isSubscribed
@@ -88,7 +110,7 @@ export default function SubscribeButton({
                 }
             `}
         >
-            {isLoading ? (
+            {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
             ) : isSubscribed ? (
                 <>

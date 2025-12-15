@@ -203,3 +203,179 @@ export async function PUT(
         return NextResponse.json({ message }, { status: 500 });
     }
 }
+
+/**
+ * DELETE /api/reporter/articles/[id]
+ * 기사 삭제 (Soft Delete - status를 'trash'로 변경)
+ */
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+            return NextResponse.json(
+                { message: '로그인이 필요합니다.' },
+                { status: 401 }
+            );
+        }
+
+        // 기자 정보 조회
+        const { data: reporter, error: reporterError } = await supabaseAdmin
+            .from('reporters')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (reporterError || !reporter) {
+            return NextResponse.json(
+                { message: '기자 정보를 찾을 수 없습니다.' },
+                { status: 404 }
+            );
+        }
+
+        // 기사 조회
+        const { data: article, error: articleError } = await supabaseAdmin
+            .from('posts')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (articleError || !article) {
+            return NextResponse.json(
+                { message: '기사를 찾을 수 없습니다.' },
+                { status: 404 }
+            );
+        }
+
+        // 삭제 권한 확인 (canEditArticle 재사용)
+        if (!canEditArticle(reporter, article)) {
+            return NextResponse.json(
+                { message: '삭제 권한이 없습니다.' },
+                { status: 403 }
+            );
+        }
+
+        // Soft Delete: status를 'trash'로 변경
+        const { error: deleteError } = await supabaseAdmin
+            .from('posts')
+            .update({ status: 'trash' })
+            .eq('id', id);
+
+        if (deleteError) {
+            console.error('Article delete error:', deleteError);
+            return NextResponse.json(
+                { message: '기사 삭제에 실패했습니다.' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({
+            message: '기사가 삭제되었습니다.',
+        });
+
+    } catch (error: unknown) {
+        console.error('Delete article error:', error);
+        const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+        return NextResponse.json({ message }, { status: 500 });
+    }
+}
+
+/**
+ * PATCH /api/reporter/articles/[id]
+ * 기자 변경 (author_id 업데이트)
+ * 권한: access_level >= 2 (지사장 이상)
+ */
+export async function PATCH(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+            return NextResponse.json(
+                { message: '로그인이 필요합니다.' },
+                { status: 401 }
+            );
+        }
+
+        // 기자 정보 조회
+        const { data: reporter, error: reporterError } = await supabaseAdmin
+            .from('reporters')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (reporterError || !reporter) {
+            return NextResponse.json(
+                { message: '기자 정보를 찾을 수 없습니다.' },
+                { status: 404 }
+            );
+        }
+
+        // 기자 변경 권한 확인 (access_level >= 2: 지사장 이상)
+        if (reporter.access_level < 2) {
+            return NextResponse.json(
+                { message: '기자 변경 권한이 없습니다. 지사장 이상의 권한이 필요합니다.' },
+                { status: 403 }
+            );
+        }
+
+        const body = await req.json();
+        const { author_id } = body;
+
+        if (!author_id) {
+            return NextResponse.json(
+                { message: '변경할 기자를 선택해주세요.' },
+                { status: 400 }
+            );
+        }
+
+        // 기사 조회
+        const { data: article, error: articleError } = await supabaseAdmin
+            .from('posts')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (articleError || !article) {
+            return NextResponse.json(
+                { message: '기사를 찾을 수 없습니다.' },
+                { status: 404 }
+            );
+        }
+
+        // 기자 변경
+        const { data: updatedArticle, error: updateError } = await supabaseAdmin
+            .from('posts')
+            .update({ author_id })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) {
+            console.error('Author change error:', updateError);
+            return NextResponse.json(
+                { message: '기자 변경에 실패했습니다.' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({
+            message: '기자가 변경되었습니다.',
+            article: updatedArticle,
+        });
+
+    } catch (error: unknown) {
+        console.error('Change author error:', error);
+        const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+        return NextResponse.json({ message }, { status: 500 });
+    }
+}

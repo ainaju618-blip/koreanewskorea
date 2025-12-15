@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
                 region: reporter.region,
                 regionGroup: regionGroupLabel,
                 accessibleRegions: accessibleRegions,
+                access_level: reporter.access_level,
             },
         });
 

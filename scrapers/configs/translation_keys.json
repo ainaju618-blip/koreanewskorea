@@ -1,0 +1,19 @@
+{
+    "projects": [
+        {
+            "name": "korea-news-ai",
+            "api_key": "YOUR_GOOGLE_API_KEY_1",
+            "limit": 500000
+        },
+        {
+            "name": "korea-news-backup",
+            "api_key": "YOUR_GOOGLE_API_KEY_2",
+            "limit": 500000
+        },
+        {
+            "name": "korea-news-reserve",
+            "api_key": "YOUR_GOOGLE_API_KEY_3",
+            "limit": 500000
+        }
+    ]
+}

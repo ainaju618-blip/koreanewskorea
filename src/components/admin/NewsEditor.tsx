@@ -5,8 +5,9 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import { Bold, Italic, List, ListOrdered, Image as ImageIcon, Heading1, Heading2, Quote, Upload, Loader2 } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Image as ImageIcon, Heading1, Heading2, Quote, Upload, Loader2, X, Link2 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface NewsEditorProps {
     content: string;
@@ -15,7 +16,10 @@ interface NewsEditorProps {
 
 export default function NewsEditor({ content, onChange }: NewsEditorProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [imageUrl, setImageUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { showError, showSuccess } = useToast();
 
     const editor = useEditor({
         immediatelyRender: false, // SSR hydration mismatch 방지
@@ -47,13 +51,13 @@ export default function NewsEditor({ content, onChange }: NewsEditorProps) {
 
         // 파일 타입 검증
         if (!file.type.startsWith('image/')) {
-            alert('이미지 파일만 업로드 가능합니다.');
+            showError('이미지 파일만 업로드 가능합니다.');
             return;
         }
 
         // 파일 크기 검증 (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('파일 크기가 5MB를 초과합니다.');
+            showError('파일 크기가 5MB를 초과합니다.');
             return;
         }
 
@@ -80,7 +84,7 @@ export default function NewsEditor({ content, onChange }: NewsEditorProps) {
 
         } catch (error) {
             console.error('Upload error:', error);
-            alert(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
+            showError(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
         } finally {
             setIsUploading(false);
             // input 초기화 (같은 파일 다시 선택 가능하도록)
@@ -92,9 +96,15 @@ export default function NewsEditor({ content, onChange }: NewsEditorProps) {
 
     // URL로 이미지 추가
     const handleImageUrl = () => {
-        const url = window.prompt('이미지 URL을 입력하세요:');
-        if (url && editor) {
-            editor.chain().focus().setImage({ src: url }).createParagraphNear().run();
+        setShowUrlInput(true);
+    };
+
+    const submitImageUrl = () => {
+        if (imageUrl && editor) {
+            editor.chain().focus().setImage({ src: imageUrl }).createParagraphNear().run();
+            setImageUrl('');
+            setShowUrlInput(false);
+            showSuccess('이미지가 추가되었습니다.');
         }
     };
 
@@ -179,10 +189,40 @@ export default function NewsEditor({ content, onChange }: NewsEditorProps) {
                 {/* URL로 이미지 추가 */}
                 <MenuButton
                     onClick={handleImageUrl}
-                    isActive={false}
+                    isActive={showUrlInput}
                     icon={ImageIcon}
                     title="이미지 URL"
                 />
+
+                {/* 인라인 URL 입력 (window.prompt 대체) */}
+                {showUrlInput && (
+                    <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-blue-50 rounded-lg border border-blue-200">
+                        <Link2 className="w-4 h-4 text-blue-500" />
+                        <input
+                            type="url"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="w-48 px-2 py-1 text-sm border-none bg-transparent focus:outline-none"
+                            onKeyDown={(e) => e.key === 'Enter' && submitImageUrl()}
+                            autoFocus
+                        />
+                        <button
+                            onClick={submitImageUrl}
+                            className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600"
+                            type="button"
+                        >
+                            추가
+                        </button>
+                        <button
+                            onClick={() => { setShowUrlInput(false); setImageUrl(''); }}
+                            className="p-1 text-slate-400 hover:text-slate-600"
+                            type="button"
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Editor Area */}

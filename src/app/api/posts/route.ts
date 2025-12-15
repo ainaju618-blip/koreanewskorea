@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
 
         const sort = searchParams.get('sort') || 'published_at';
         const sortField = sort === 'created_at' ? 'created_at' : 'published_at';
+        const category = searchParams.get('category'); // ★ 카테고리 필터
 
         // Calculate Range
         const start = (page - 1) * limit;
@@ -45,6 +46,11 @@ export async function GET(req: NextRequest) {
                 .not('thumbnail_url', 'is', null)  // null 제외
                 .neq('thumbnail_url', '')          // 빈 문자열 제외
                 .like('thumbnail_url', 'http%');   // http로 시작하는 URL만
+        }
+
+        // ★ 카테고리 필터 (관리자 GNB 메뉴용)
+        if (category) {
+            query = query.eq('category', category);
         }
 
         const { data, error, count } = await query;

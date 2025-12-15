@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { NewsItem } from '@/types/news';
+import { HeroImage } from '@/components/ui/OptimizedImage';
 
 interface HeroFeatureProps {
     news: NewsItem;
@@ -8,14 +9,19 @@ interface HeroFeatureProps {
 export default function HeroFeature({ news }: HeroFeatureProps) {
     return (
         <div className="flex flex-col mb-8">
-            {/* Large Image Area */}
+            {/* Large Image Area - LCP 최적화 (priority 로딩) */}
             <Link href={`/news/${news.id}`} className="block group">
                 <div className="w-full aspect-[16/9] relative overflow-hidden bg-slate-100 border border-slate-200">
                     {news.thumbnail_url ? (
-                        <img
+                        <HeroImage
                             src={news.thumbnail_url}
                             alt={news.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            width={1200}
+                            height={675}
+                            fill={true}
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            crop="fill"
+                            aspectRatio="16:9"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300">

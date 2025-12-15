@@ -61,6 +61,7 @@ interface Reporter {
     phone: string | null;
     email: string | null;
     bio: string | null;
+    profile_image: string | null;  // 프로필 사진 URL
     status: "Active" | "Inactive";
     avatar_icon: string;
     created_at: string;
@@ -85,6 +86,7 @@ export default function ReportersPage() {
     const [formBio, setFormBio] = useState("");
     const [formStatus, setFormStatus] = useState<"Active" | "Inactive">("Active");
     const [formGeminiApiKey, setFormGeminiApiKey] = useState("");
+    const [formProfileImage, setFormProfileImage] = useState("");  // 프로필 사진 URL
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 필터 상태
@@ -126,6 +128,7 @@ export default function ReportersPage() {
         setFormBio("");
         setFormStatus("Active");
         setFormGeminiApiKey("");
+        setFormProfileImage("");
         setSelectedReporter(null);
     };
 
@@ -146,6 +149,7 @@ export default function ReportersPage() {
         setFormBio(reporter.bio || "");
         setFormStatus(reporter.status);
         setFormGeminiApiKey(reporter.gemini_api_key || "");
+        setFormProfileImage(reporter.profile_image || "");
         setShowEditModal(true);
     };
 
@@ -183,6 +187,7 @@ export default function ReportersPage() {
                     email: formEmail || null,
                     password: formEmail ? (formPassword || null) : null,  // 이메일 있으면 비밀번호 설정
                     bio: formBio || null,
+                    profile_image: formProfileImage || null,
                     gemini_api_key: formGeminiApiKey || null,
                 })
             });
@@ -234,6 +239,7 @@ export default function ReportersPage() {
                     phone: formPhone || null,
                     email: formEmail || null,
                     bio: formBio || null,
+                    profile_image: formProfileImage || null,
                     status: formStatus,
                     password: formPassword || null,  // 비밀번호 변경 (빈 문자열이면 null)
                     gemini_api_key: formGeminiApiKey || null,
@@ -433,6 +439,8 @@ export default function ReportersPage() {
                         setFormPassword={setFormPassword}
                         formBio={formBio}
                         setFormBio={setFormBio}
+                        formProfileImage={formProfileImage}
+                        setFormProfileImage={setFormProfileImage}
                         formGeminiApiKey={formGeminiApiKey}
                         setFormGeminiApiKey={setFormGeminiApiKey}
                         isSubmitting={isSubmitting}
@@ -462,6 +470,8 @@ export default function ReportersPage() {
                         setFormPassword={setFormPassword}
                         formBio={formBio}
                         setFormBio={setFormBio}
+                        formProfileImage={formProfileImage}
+                        setFormProfileImage={setFormProfileImage}
                         formStatus={formStatus}
                         setFormStatus={setFormStatus}
                         formGeminiApiKey={formGeminiApiKey}
@@ -553,6 +563,8 @@ interface ReporterFormProps {
     setFormPassword?: (v: string) => void;
     formBio: string;
     setFormBio: (v: string) => void;
+    formProfileImage?: string;
+    setFormProfileImage?: (v: string) => void;
     formStatus?: "Active" | "Inactive";
     setFormStatus?: (v: "Active" | "Inactive") => void;
     formGeminiApiKey?: string;
@@ -574,6 +586,7 @@ function ReporterForm({
     formEmail, setFormEmail,
     formPassword, setFormPassword,
     formBio, setFormBio,
+    formProfileImage, setFormProfileImage,
     formStatus, setFormStatus,
     formGeminiApiKey, setFormGeminiApiKey,
     isSubmitting, onSubmit, onCancel, submitLabel, showStatus, isAddMode, isEditMode
@@ -685,6 +698,35 @@ function ReporterForm({
                         placeholder="간단한 소개 (선택사항)"
                     />
                 </div>
+                {setFormProfileImage && (
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            프로필 사진 URL <span className="text-gray-400">(이미지 주소)</span>
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="url"
+                                value={formProfileImage}
+                                onChange={(e) => setFormProfileImage(e.target.value)}
+                                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="https://example.com/photo.jpg"
+                            />
+                            {formProfileImage && (
+                                <img
+                                    src={formProfileImage}
+                                    alt="프로필 미리보기"
+                                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                            프로필 사진의 URL을 입력하세요. Cloudinary 등에 업로드된 이미지 주소를 사용하세요.
+                        </p>
+                    </div>
+                )}
                 {showStatus && setFormStatus && (
                     <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">상태</label>
@@ -795,8 +837,16 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
             onClick={onView}
         >
             <div className="flex items-start gap-3 mb-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${isBot ? 'bg-purple-100' : 'bg-gray-100'}`}>
-                    {reporter.avatar_icon || (isBot ? '🤖' : '👤')}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl overflow-hidden ${isBot ? 'bg-purple-100' : 'bg-gray-100'}`}>
+                    {reporter.profile_image ? (
+                        <img
+                            src={reporter.profile_image}
+                            alt={reporter.name}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        reporter.avatar_icon || (isBot ? '🤖' : '👤')
+                    )}
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

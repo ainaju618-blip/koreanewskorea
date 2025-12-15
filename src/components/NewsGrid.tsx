@@ -1,14 +1,13 @@
-'use client';
+// src/components/NewsGrid.tsx
+// Server Component 버전 - 클라이언트 사이드 데이터 fetching을 서버로 이동
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
-import { motion } from 'framer-motion';
 import { cleanContentPreview } from '@/lib/contentUtils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Post {
@@ -26,80 +25,58 @@ interface Post {
 interface NewsGridProps {
     categorySlug?: string;
     categoryName: string;
-    categoryNameEn?: string; // English name for subtitle
-    regionCode?: string; // ★ 지역 코드 필터 (naju, mokpo 등)
+    categoryNameEn?: string;
+    regionCode?: string;
     limit?: number;
 }
 
-export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, regionCode, limit = 5 }: NewsGridProps) {
-    const [posts, setPosts] = useState<Post[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+// Safe image helper
+function getImageUrl(post: Post): string | null {
+    let url = post.thumbnail_url || post.image_url || null;
+    if (!url || url.length <= 5) return null;
 
-    useEffect(() => {
-        const fetchPosts = async () => {
-            setIsLoading(true);
-            let query = supabase
-                .from('posts')
-                .select('*')
-                .in('status', ['approved', 'published'])
-                .not('thumbnail_url', 'is', null)  // ★ null 제외
-                .neq('thumbnail_url', '')          // ★ 빈 문자열 제외
-                .like('thumbnail_url', 'http%')    // ★ http로 시작하는 URL만
-                .order('created_at', { ascending: false })
-                .limit(limit);
-
-            // ★ 지역 코드로 필터링 (우선)
-            if (regionCode) {
-                query = query.eq('region', regionCode);
-            } else if (categorySlug) {
-                query = query.eq('category', categoryName);
-            }
-
-            const { data } = await query;
-            if (data) setPosts(data);
-            setIsLoading(false);
-        };
-
-        fetchPosts();
-    }, [categorySlug, categoryName, regionCode, limit]);
-
-    if (isLoading) {
-        return (
-            <section className="mb-16">
-                <div className="h-4 bg-slate-100 animate-pulse w-32 mb-8"></div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="h-80 bg-slate-100 animate-pulse rounded-lg"></div>
-                    <div className="space-y-4">
-                        <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
-                        <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
-                        <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
-                    </div>
-                </div>
-            </section>
-        );
+    // 잘못된 로컬 경로 필터링
+    if (url.includes(':\\\\') || url.includes('scrapers\\\\') || url.includes('scrapers/images')) {
+        return null;
     }
 
-    if (posts.length === 0) return null;
+    return url;
+}
+
+export default async function NewsGrid({
+    categorySlug,
+    categoryName,
+    categoryNameEn,
+    regionCode,
+    limit = 5
+}: NewsGridProps) {
+    // 서버에서 직접 데이터 조회
+    let query = supabase
+        .from('posts')
+        .select('*')
+        .in('status', ['approved', 'published'])
+        .not('thumbnail_url', 'is', null)
+        .neq('thumbnail_url', '')
+        .like('thumbnail_url', 'http%')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (regionCode) {
+        query = query.eq('region', regionCode);
+    } else if (categorySlug) {
+        query = query.eq('category', categoryName);
+    }
+
+    const { data: posts } = await query;
+
+    if (!posts || posts.length === 0) return null;
 
     const mainPost = posts[0];
     const subPosts = posts.slice(1, 5);
 
-    // Safe image helper
-    const getImageUrl = (post: Post) => {
-        let url = post.thumbnail_url || post.image_url || null;
-        if (!url || url.length <= 5) return null;
-
-        // 잘못된 로컬 경로 필터링 (d:\, C:\, scrapers\ 등)
-        if (url.includes(':\\') || url.includes('scrapers\\') || url.includes('scrapers/images')) {
-            return null;
-        }
-
-        return url;
-    };
-
     return (
         <section className="mb-16">
-            {/* Section Header - Modern Serif Style */}
+            {/* Section Header */}
             <div className="flex items-end gap-4 mb-8 pb-4 border-b border-slate-200">
                 <h3 className="text-3xl font-serif font-bold text-[#0a192f] leading-none">
                     {categoryName}
@@ -120,13 +97,7 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
             {/* Content: 1 Main (Left) + 4 Sub (Right) */}
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Main Article (Left - Large) */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="lg:w-1/2"
-                >
+                <div className="lg:w-1/2">
                     <Link href={`/news/${mainPost.id}`} className="group block h-full">
                         <div className="relative w-full aspect-[16/10] overflow-hidden rounded-lg mb-4 shadow-sm group-hover:shadow-lg transition-all duration-300">
                             {getImageUrl(mainPost) ? (
@@ -161,23 +132,17 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
                             </span>
                         </div>
                     </Link>
-                </motion.div>
+                </div>
 
                 {/* Sub Articles (Right - List) */}
                 <div className="lg:w-1/2 flex flex-col justify-between gap-6">
-                    {subPosts.map((post, index) => (
-                        <motion.div
-                            key={post.id}
-                            initial={{ opacity: 0, x: 20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                        >
+                    {subPosts.map((post) => (
+                        <div key={post.id}>
                             <Link
                                 href={`/news/${post.id}`}
                                 className="group flex gap-5 items-start p-4 -mx-4 rounded-xl hover:bg-slate-50 transition-colors"
                             >
-                                {/* Thumbnail - Fixed Size */}
+                                {/* Thumbnail */}
                                 <div className="relative w-32 h-20 flex-shrink-0 overflow-hidden rounded-md bg-slate-100 shadow-sm">
                                     {getImageUrl(post) ? (
                                         <Image
@@ -209,8 +174,25 @@ export default function NewsGrid({ categorySlug, categoryName, categoryNameEn, r
                                     </span>
                                 </div>
                             </Link>
-                        </motion.div>
+                        </div>
                     ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// Skeleton 컴포넌트 (Suspense fallback용)
+export function NewsGridSkeleton() {
+    return (
+        <section className="mb-16">
+            <div className="h-4 bg-slate-100 animate-pulse w-32 mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="h-80 bg-slate-100 animate-pulse rounded-lg"></div>
+                <div className="space-y-4">
+                    <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
+                    <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
+                    <div className="h-20 bg-slate-100 animate-pulse rounded-lg"></div>
                 </div>
             </div>
         </section>
