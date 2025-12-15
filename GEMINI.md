@@ -65,6 +65,30 @@ Claude: 검토 후 Git push & Vercel 배포
 작업 태그: [URGENT], [LOW] 로 우선순위 표시
 ```
 
+### 0.5.1 작업 유형별 필수 문서 참조 (Claude/Gemini 공통)
+
+> ⚠️ **작업 시작 전 반드시 해당 문서를 먼저 읽는다!**
+
+| 작업 유형 | 먼저 읽을 문서 | 추가 참조 |
+|----------|----------------|----------|
+| **스크래퍼 에러/수정** | `info/scraper.md` | `scrapers/[지역]/ALGORITHM.md` |
+| **새 스크래퍼 개발** | `scrapers/SCRAPER_GUIDE.md` | `info/scraper.md` |
+| **프론트엔드 수정** | `info/frontend.md` | - |
+| **백엔드/API 수정** | `info/backend.md` | - |
+| **DB/스키마 수정** | `info/database.md` | - |
+| **Git/배포 작업** | `info/git.md` | - |
+| **AI 협업 관련** | `info/collaboration.md` | `.ai-collab/` |
+
+**예시:**
+```
+주인님: "순천시 스크래퍼 에러야"
+    ↓
+1. info/scraper.md 읽기 (에러 유형별 해결 방법 확인)
+2. scrapers/suncheon/suncheon_scraper.py 확인
+3. 수정 및 테스트
+4. 주인님께 보고
+```
+
 ### 0.6 세션 시작 프로세스
 
 ```
