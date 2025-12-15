@@ -156,6 +156,157 @@
 }
 
 /* ===================================
+   Reporter Portal Design System
+   - Light Theme (Notion/Medium style)
+   - Warm off-white base for eye comfort
+   - Content-focused, clean UI
+   - Optimized for long writing sessions
+   =================================== */
+
+.reporter-layout {
+    color-scheme: light;
+
+    /* Background - Warm off-white */
+    --reporter-bg-base: #FAFAF9;
+    --reporter-bg-surface: #FFFFFF;
+    --reporter-bg-elevated: #F5F5F4;
+    --reporter-bg-hover: #F0F0EF;
+
+    /* Border colors */
+    --reporter-border-default: #E5E7EB;
+    --reporter-border-muted: #F3F4F6;
+    --reporter-border-emphasis: #D1D5DB;
+
+    /* Text colors */
+    --reporter-text-primary: #1F2937;
+    --reporter-text-secondary: #6B7280;
+    --reporter-text-tertiary: #9CA3AF;
+    --reporter-text-muted: #9CA3AF;
+
+    /* Accent colors */
+    --reporter-accent-blue: #3B82F6;
+    --reporter-accent-blue-muted: rgba(59, 130, 246, 0.1);
+    --reporter-accent-green: #10B981;
+    --reporter-accent-green-muted: rgba(16, 185, 129, 0.1);
+    --reporter-accent-amber: #F59E0B;
+    --reporter-accent-amber-muted: rgba(245, 158, 11, 0.1);
+    --reporter-accent-red: #EF4444;
+    --reporter-accent-red-muted: rgba(239, 68, 68, 0.1);
+
+    /* Typography */
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Reporter - Headings use sans-serif for modern feel */
+.reporter-layout h1,
+.reporter-layout h2,
+.reporter-layout h3,
+.reporter-layout h4,
+.reporter-layout h5,
+.reporter-layout h6 {
+    font-family: var(--font-sans);
+    color: var(--reporter-text-primary);
+}
+
+/* Reporter - Smooth transitions */
+.reporter-layout * {
+    transition-property: background-color, border-color, color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reporter - Card style */
+.reporter-card {
+    background-color: var(--reporter-bg-surface);
+    border: 1px solid var(--reporter-border-default);
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.reporter-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+}
+
+/* Reporter - Input fields */
+.reporter-layout input[type="text"],
+.reporter-layout input[type="email"],
+.reporter-layout input[type="password"],
+.reporter-layout input[type="search"],
+.reporter-layout textarea,
+.reporter-layout select {
+    background-color: var(--reporter-bg-surface);
+    border: 1px solid var(--reporter-border-default);
+    color: var(--reporter-text-primary);
+}
+
+.reporter-layout input:focus,
+.reporter-layout textarea:focus,
+.reporter-layout select:focus {
+    border-color: var(--reporter-accent-blue);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--reporter-accent-blue-muted);
+}
+
+/* Reporter - Buttons */
+.reporter-btn-primary {
+    background-color: var(--reporter-accent-blue);
+    color: white;
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.reporter-btn-primary:hover {
+    background-color: #2563EB;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.25);
+}
+
+.reporter-btn-secondary {
+    background-color: var(--reporter-bg-surface);
+    color: var(--reporter-text-secondary);
+    border: 1px solid var(--reporter-border-default);
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+}
+
+.reporter-btn-secondary:hover {
+    background-color: var(--reporter-bg-hover);
+    color: var(--reporter-text-primary);
+}
+
+/* Reporter - Status Badges (Light Mode) */
+.reporter-badge-pending {
+    background-color: var(--reporter-accent-amber-muted);
+    color: #B45309;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.reporter-badge-published {
+    background-color: var(--reporter-accent-green-muted);
+    color: #059669;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.reporter-badge-rejected {
+    background-color: var(--reporter-accent-red-muted);
+    color: #DC2626;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ===================================
    Admin Dashboard Design System v2.0
    - Modern Dark Theme (VS Code / Discord style)
    - Glassmorphism effects

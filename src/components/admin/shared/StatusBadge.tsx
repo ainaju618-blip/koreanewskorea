@@ -22,13 +22,13 @@ type StatusConfigMap = Record<string, StatusConfigItem>;
 
 // 상태 타입별 설정
 const STATUS_CONFIG: Record<string, StatusConfigMap> = {
-    // 기사 상태
+    // 기사 상태 (다크모드 친화적)
     article: {
-        draft: { label: "승인 대기", className: "bg-yellow-100 text-yellow-700" },
-        published: { label: "발행됨", className: "bg-green-100 text-green-700" },
-        limited: { label: "제한공개", className: "bg-orange-100 text-orange-700" },
-        rejected: { label: "노출불가", className: "bg-red-100 text-red-700" },
-        trash: { label: "휴지통", className: "bg-gray-100 text-gray-600" },
+        draft: { label: "승인 대기", className: "bg-amber-900/40 text-amber-300 border border-amber-700/50" },
+        published: { label: "발행됨", className: "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50" },
+        limited: { label: "제한공개", className: "bg-orange-900/40 text-orange-300 border border-orange-700/50" },
+        rejected: { label: "노출불가", className: "bg-red-900/40 text-red-300 border border-red-700/50" },
+        trash: { label: "휴지통", className: "bg-slate-800/60 text-slate-400 border border-slate-600/50" },
     },
     // 사용자 상태
     user: {

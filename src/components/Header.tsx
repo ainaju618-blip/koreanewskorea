@@ -214,7 +214,8 @@ export default function Header() {
                                     </Link>
 
                                     {/* MEGA MENU DROPDOWN - Modern Design with Animation */}
-                                    {hasChildren(category) && category.slug !== 'jeonnam' && (
+                                    {/* region(jeonnam-region) 메뉴는 드롭다운 비활성화 */}
+                                    {hasChildren(category) && category.slug !== 'jeonnam' && category.slug !== 'region' && (
                                         <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
                                             opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
                                         `}>

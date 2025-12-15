@@ -362,10 +362,15 @@ function AINewsPage() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <StatusBadge type="article" status={article.status} />
-                                                    <span className="text-xs text-gray-400">{article.source}</span>
-                                                    <span className="text-[10px] text-gray-500 ml-auto">
-                                                        {new Date(article.published_at || article.created_at).toLocaleDateString()}
-                                                    </span>
+                                                    <span className="text-xs text-[#8b949e]">{article.source}</span>
+                                                    <div className="ml-auto flex gap-3 text-[10px]">
+                                                        <span className="text-[#58a6ff]" title="원문작성일">
+                                                            {article.published_at ? new Date(article.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
+                                                        </span>
+                                                        <span className="text-[#6e7681]" title="수집일">
+                                                            {new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <h3 className="font-medium text-gray-900 truncate">{article.title}</h3>
                                                 <p className="text-sm text-gray-500 line-clamp-2 mt-1">
@@ -485,16 +490,16 @@ function AINewsPage() {
                                     <div>
                                         <span className="font-medium">상태:</span> <StatusBadge type="article" status={selectedArticle.status} />
                                     </div>
-                                    <div className="col-span-2 flex flex-col gap-1 mt-2 text-xs border-t border-gray-100 pt-2">
+                                    <div className="col-span-2 flex flex-col gap-1 mt-2 text-xs border-t border-[#30363d] pt-2">
                                         <div className="flex gap-2">
-                                            <span className="text-gray-400 w-16">수집일:</span>
-                                            <span>{new Date(selectedArticle.created_at).toLocaleString()}</span>
+                                            <span className="text-[#8b949e] w-20">원문작성일:</span>
+                                            <span className={selectedArticle.published_at ? "text-[#58a6ff] font-bold" : "text-[#6e7681]"}>
+                                                {selectedArticle.published_at ? new Date(selectedArticle.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
+                                            </span>
                                         </div>
                                         <div className="flex gap-2">
-                                            <span className="text-gray-400 w-16">작성일:</span>
-                                            <span className={selectedArticle.published_at ? "text-blue-600 font-bold" : "text-gray-300"}>
-                                                {selectedArticle.published_at ? new Date(selectedArticle.published_at).toLocaleString() : '-'}
-                                            </span>
+                                            <span className="text-[#8b949e] w-20">수집일:</span>
+                                            <span className="text-[#c9d1d9]">{new Date(selectedArticle.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                         </div>
                                     </div>
                                 </div>

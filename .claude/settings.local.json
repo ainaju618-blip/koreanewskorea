@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -Command \"[System.Media.SystemSounds]::Exclamation.Play()\""
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(*)",
@@ -30,7 +43,23 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
-      "Bash(taskkill /F /PID 20212)"
+      "Bash(taskkill /F /PID 20212)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(dir \"C:\\Users\\user\\OneDrive\\바탕 화면\")",
+      "Bash(dir \"C:\\Users\\user\\OneDrive\\Desktop\")",
+      "Bash(mkdir:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(claude config set:*)",
+      "Bash(git config:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Admin Bot Dashboard UI/UX Overhaul\n\nPhase 1 - Real-time Monitoring:\n- Add RegionHeatmap component showing 27 regions with health status\n- Add CollectionChart with daily stats and trend visualization\n- Add AlertBanner for error/warning notifications\n- Connect dashboard to real APIs (/api/bot/health, /api/bot/stats)\n- Implement 30s auto-refresh with toggle control\n\nPhase 2 - UX Improvements:\n- Improve log viewer with date range filters and pagination\n- Add keyboard shortcuts to article management (J/K navigate, Enter open, A approve, D delete, Space select, Esc close)\n\nPhase 3 - Scheduler Enhancement:\n- Visual hour selector (24-hour grid)\n- Quick preset buttons for common schedules\n- Next run times preview\n- Recent run history display\n- Human-readable cron expression display\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(vercel env add:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(vercel remove:*)",
+      "Bash(git push)"
     ]
   }
 }

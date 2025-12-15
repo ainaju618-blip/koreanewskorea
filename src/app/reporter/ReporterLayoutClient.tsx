@@ -18,6 +18,7 @@ import {
     Bell,
     Settings,
     HelpCircle,
+    Home,
 } from "lucide-react";
 
 interface Reporter {
@@ -127,11 +128,14 @@ export default function ReporterLayoutClient({
         return <>{children}</>;
     }
 
-    // 로딩 중
+    // 로딩 중 - Light Theme
     if (auth.isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9]">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+                    <p className="text-slate-500 text-sm">로딩 중...</p>
+                </div>
             </div>
         );
     }
@@ -144,50 +148,50 @@ export default function ReporterLayoutClient({
     const reporter = auth.reporter!;
 
     return (
-        <div className="min-h-screen bg-slate-100">
-            {/* Mobile Header */}
-            <header className="lg:hidden bg-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div className="reporter-layout min-h-screen bg-[#FAFAF9]">
+            {/* Mobile Header - Light Theme */}
+            <header className="lg:hidden bg-white px-4 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-slate-200 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
                         <Newspaper className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-bold text-white">Korea NEWS</span>
+                    <span className="font-bold text-slate-900">Korea NEWS</span>
                 </div>
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="p-2 hover:bg-slate-700 rounded-lg text-slate-300"
+                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition"
                 >
                     {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
             </header>
 
             <div className="flex">
-                {/* Premium Dark Sidebar */}
+                {/* Light Theme Sidebar */}
                 <aside
                     className={`
                         fixed lg:static inset-y-0 left-0 z-40
-                        w-72 bg-gradient-to-b from-slate-800 to-slate-900
+                        w-72 bg-white border-r border-slate-200
                         transform transition-transform duration-300 ease-out
                         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-                        flex flex-col
+                        flex flex-col shadow-sm
                     `}
                 >
                     {/* Logo */}
-                    <div className="hidden lg:flex items-center gap-3 px-6 py-5">
+                    <div className="hidden lg:flex items-center gap-3 px-6 py-5 border-b border-slate-100">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                             <Newspaper className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <span className="font-bold text-lg text-white">Korea NEWS</span>
-                            <p className="text-xs text-slate-400">Reporter Portal</p>
+                            <span className="font-bold text-lg text-slate-900">Korea NEWS</span>
+                            <p className="text-xs text-slate-500">Reporter Portal</p>
                         </div>
                     </div>
 
-                    {/* User Profile Section */}
-                    <div className="px-4 py-5 mx-3 mt-2 bg-slate-700/30 rounded-xl backdrop-blur">
+                    {/* User Profile Section - Light */}
+                    <div className="px-4 py-5 mx-3 mt-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-slate-100">
                         <div className="flex items-center gap-3">
                             <div className="relative">
-                                <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-2xl overflow-hidden ring-2 ring-slate-600">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-2xl overflow-hidden ring-2 ring-white shadow-md">
                                     {reporter.profile_image ? (
                                         <img
                                             src={reporter.profile_image}
@@ -199,21 +203,21 @@ export default function ReporterLayoutClient({
                                     )}
                                 </div>
                                 {/* Online Status */}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-800" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow-sm" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-white truncate">{reporter.name}</p>
-                                <p className="text-xs text-slate-400">{reporter.region} {getPositionLabel(reporter.position)}</p>
+                                <p className="font-semibold text-slate-900 truncate">{reporter.name}</p>
+                                <p className="text-xs text-slate-500">{reporter.region} {getPositionLabel(reporter.position)}</p>
                             </div>
-                            <button className="p-1.5 hover:bg-slate-600/50 rounded-lg transition">
-                                <Bell className="w-4 h-4 text-slate-400" />
+                            <button className="p-1.5 hover:bg-white/80 rounded-lg transition shadow-sm bg-white">
+                                <Bell className="w-4 h-4 text-slate-500" />
                             </button>
                         </div>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Navigation - Light Theme */}
                     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                        <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                             메뉴
                         </p>
                         {NAV_ITEMS.map((item) => {
@@ -228,16 +232,16 @@ export default function ReporterLayoutClient({
                                         group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
                                         ${isActive
                                             ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
-                                            : "text-slate-400 hover:bg-slate-700/50 hover:text-white"
+                                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                                         }
                                     `}
                                 >
-                                    <item.icon className={`w-5 h-5 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
+                                    <item.icon className={`w-5 h-5 ${isActive ? "" : "text-slate-400 group-hover:text-blue-500 group-hover:scale-110 transition-all"}`} />
                                     <span className="font-medium flex-1">{item.label}</span>
                                     {item.badge && (
                                         <span className={`
                                             px-2 py-0.5 text-xs font-semibold rounded-full
-                                            ${item.badgeColor || "bg-slate-600 text-slate-300"}
+                                            ${item.badgeColor || "bg-slate-100 text-slate-600"}
                                         `}>
                                             {item.badge}
                                         </span>
@@ -250,32 +254,39 @@ export default function ReporterLayoutClient({
                         })}
                     </nav>
 
-                    {/* Bottom Section */}
-                    <div className="px-3 py-4 border-t border-slate-700/50">
+                    {/* Bottom Section - Light Theme */}
+                    <div className="px-3 py-4 border-t border-slate-100">
                         <Link
                             href="/reporter/profile"
-                            className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition"
+                            className="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-xl transition"
                         >
-                            <Settings className="w-5 h-5" />
+                            <Settings className="w-5 h-5 text-slate-400" />
                             <span className="font-medium">설정</span>
                         </Link>
                         <Link
                             href="/"
-                            className="flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition"
+                            className="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-xl transition"
                         >
-                            <HelpCircle className="w-5 h-5" />
-                            <span className="font-medium">고객센터</span>
+                            <Home className="w-5 h-5 text-slate-400" />
+                            <span className="font-medium">메인 사이트</span>
+                        </Link>
+                        <Link
+                            href="/"
+                            className="flex items-center gap-3 px-4 py-2.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-xl transition"
+                        >
+                            <HelpCircle className="w-5 h-5 text-slate-400" />
+                            <span className="font-medium">도움말</span>
                         </Link>
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-3 px-4 py-2.5 w-full text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition mt-1"
+                            className="flex items-center gap-3 px-4 py-2.5 w-full text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition mt-1"
                         >
                             <LogOut className="w-5 h-5" />
                             <span className="font-medium">로그아웃</span>
                         </button>
 
                         {/* Version */}
-                        <p className="text-center text-xs text-slate-600 mt-4">
+                        <p className="text-center text-xs text-slate-400 mt-4">
                             Version 1.0.0
                         </p>
                     </div>
@@ -284,14 +295,14 @@ export default function ReporterLayoutClient({
                 {/* Overlay */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+                        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 lg:hidden"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
-                {/* Main Content */}
+                {/* Main Content - Light Theme */}
                 <main className="flex-1 min-h-screen lg:ml-0">
-                    {/* Top Bar */}
+                    {/* Top Bar - Light Theme */}
                     <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
                         <div>
                             <h1 className="text-xl font-bold text-slate-900">
@@ -308,11 +319,11 @@ export default function ReporterLayoutClient({
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="relative p-2 hover:bg-slate-100 rounded-lg transition">
-                                <Bell className="w-5 h-5 text-slate-600" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                            <button className="relative p-2 hover:bg-slate-100 rounded-xl transition">
+                                <Bell className="w-5 h-5 text-slate-500" />
+                                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
                             </button>
-                            <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center overflow-hidden ring-2 ring-slate-100 shadow-sm">
                                 {reporter.profile_image ? (
                                     <img
                                         src={reporter.profile_image}
@@ -326,8 +337,8 @@ export default function ReporterLayoutClient({
                         </div>
                     </div>
 
-                    {/* Content Area */}
-                    <div className="p-6 lg:p-8">
+                    {/* Content Area - More Padding for Readability */}
+                    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
                         {children}
                     </div>
                 </main>

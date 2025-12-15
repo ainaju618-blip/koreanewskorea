@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -135,9 +135,50 @@ const MENU_ITEMS: MenuGroup[] = [
 ];
 
 
+// 승인대기 기사 수 타입
+interface PendingCounts {
+    news: number;      // 기사 승인대기
+    aiNews: number;    // AI 뉴스 승인대기
+    drafts: number;    // 기사 초안
+}
+
 export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
     const [expandedMenus, setExpandedMenus] = useState<string[]>(['기사 관리', '봇 관리 센터']);
     const pathname = usePathname();
+    const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ news: 0, aiNews: 0, drafts: 0 });
+
+    // 승인대기 기사 수 조회
+    useEffect(() => {
+        const fetchPendingCounts = async () => {
+            try {
+                // 병렬로 3개 API 호출
+                const [newsRes, aiNewsRes, draftsRes] = await Promise.all([
+                    fetch('/api/posts?status=draft&limit=1'),
+                    fetch('/api/ai-news?status=draft&limit=1'),
+                    fetch('/api/drafts?limit=1')
+                ]);
+
+                const [newsData, aiNewsData, draftsData] = await Promise.all([
+                    newsRes.json(),
+                    aiNewsRes.json(),
+                    draftsRes.json()
+                ]);
+
+                setPendingCounts({
+                    news: newsData.totalCount || 0,
+                    aiNews: aiNewsData.totalCount || 0,
+                    drafts: draftsData.totalCount || 0
+                });
+            } catch (error) {
+                console.error('Failed to fetch pending counts:', error);
+            }
+        };
+
+        fetchPendingCounts();
+        // 30초마다 새로고침
+        const interval = setInterval(fetchPendingCounts, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const toggleMenu = (label: string) => {
         if (expandedMenus.includes(label)) {
@@ -145,6 +186,27 @@ export default function AdminSidebarLayout({ children }: { children: React.React
         } else {
             setExpandedMenus([...expandedMenus, label]);
         }
+    };
+
+    // 메뉴별 배지 카운트 가져오기
+    const getBadgeCount = (href: string, label: string): number => {
+        if (href === '/admin/news?status=draft' || label === '승인 대기' && href.includes('/admin/news')) {
+            return pendingCounts.news;
+        }
+        if (href === '/admin/ai-news?status=draft' || (label === '승인 대기' && href.includes('/admin/ai-news'))) {
+            return pendingCounts.aiNews;
+        }
+        if (href === '/admin/drafts') {
+            return pendingCounts.drafts;
+        }
+        return 0;
+    };
+
+    // 부모 메뉴 배지 카운트 (서브메뉴 합계)
+    const getParentBadgeCount = (label: string): number => {
+        if (label === '기사 관리') return pendingCounts.news;
+        if (label === 'AI 뉴스 관리') return pendingCounts.aiNews;
+        return 0;
     };
 
     return (
@@ -197,6 +259,12 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                                                         <div className="flex items-center gap-2.5">
                                                             <Icon className={`w-4 h-4 ${isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
                                                             <span>{item.label}</span>
+                                                            {/* 부모 메뉴 배지 */}
+                                                            {getParentBadgeCount(item.label) > 0 && (
+                                                                <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+                                                                    {getParentBadgeCount(item.label)}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <ChevronRight className={`w-3.5 h-3.5 text-[#6e7681] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                                     </button>
@@ -217,7 +285,13 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                                                                             `}
                                                                         >
                                                                             {sub.icon && <sub.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-[#58a6ff]' : 'text-[#6e7681]'}`} />}
-                                                                            <span>{sub.label}</span>
+                                                                            <span className="flex-1">{sub.label}</span>
+                                                                            {/* 서브메뉴 배지 */}
+                                                                            {getBadgeCount(sub.href, sub.label) > 0 && (
+                                                                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+                                                                                    {getBadgeCount(sub.href, sub.label)}
+                                                                                </span>
+                                                                            )}
                                                                         </Link>
                                                                     </li>
                                                                 );
@@ -231,7 +305,13 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                             ${pathname === item.href ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
                         `}>
                                                     <Icon className={`w-4 h-4 ${pathname === item.href ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
-                                                    <span>{item.label}</span>
+                                                    <span className="flex-1">{item.label}</span>
+                                                    {/* 단일 메뉴 배지 */}
+                                                    {getBadgeCount(item.href, item.label) > 0 && (
+                                                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+                                                            {getBadgeCount(item.href, item.label)}
+                                                        </span>
+                                                    )}
                                                 </Link>
                                             )}
                                         </li>
@@ -259,7 +339,7 @@ export default function AdminSidebarLayout({ children }: { children: React.React
 
             {/* --- Main Content Layout (Modern Dark Mode) --- */}
             <main className="flex-1 ml-64 min-h-screen bg-[#0d1117]">
-                <div className="p-6 max-w-[1600px] mx-auto">
+                <div className="p-6 pb-12 max-w-[1600px] mx-auto">
                     {children}
                 </div>
             </main>

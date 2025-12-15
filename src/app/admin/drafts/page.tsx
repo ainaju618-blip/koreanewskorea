@@ -291,35 +291,35 @@ export default function AdminDraftsPage() {
             />
 
             {/* Toolbar */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+            <div className="bg-[#161b22] p-4 rounded-xl border border-[#30363d] flex items-center justify-between">
                 <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6e7681] w-4 h-4" />
                     <input
                         type="text"
                         placeholder="제목 또는 내용 검색..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2 border border-[#30363d] rounded-lg text-sm bg-[#0d1117] text-[#e6edf3] placeholder-[#6e7681] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[#8b949e]">
                     전체 {filteredDrafts.length}개
                 </div>
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
+                        <Loader2 className="w-8 h-8 animate-spin text-[#6e7681]" />
                     </div>
                 ) : paginatedDrafts.length === 0 ? (
-                    <div className="p-12 text-center text-gray-400">
+                    <div className="p-12 text-center text-[#8b949e]">
                         <FileEdit className="w-16 h-16 mx-auto mb-4 opacity-30" />
                         <p className="mb-4">저장된 기사 초안이 없습니다</p>
                         <button
                             onClick={openCreatePanel}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                            className="px-4 py-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043] transition"
                         >
                             첫 초안 작성하기
                         </button>
@@ -327,8 +327,8 @@ export default function AdminDraftsPage() {
                 ) : (
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="py-2 px-3 w-10 text-center text-xs font-semibold text-gray-500">No.</th>
+                            <tr className="bg-[#21262d] border-b border-[#30363d]">
+                                <th className="py-2 px-3 w-10 text-center text-xs font-semibold text-[#8b949e]">No.</th>
                                 <th className="py-2 px-3 w-10">
                                     <input
                                         type="checkbox"
@@ -337,22 +337,22 @@ export default function AdminDraftsPage() {
                                             else setSelectedIds(new Set());
                                         }}
                                         checked={paginatedDrafts.length > 0 && selectedIds.size === paginatedDrafts.length}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                                        className="rounded border-[#30363d] bg-[#0d1117] text-blue-600 focus:ring-blue-500 h-4 w-4"
                                     />
                                 </th>
-                                <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">제목</th>
-                                <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase w-40">작성일</th>
-                                <th className="py-2 px-3 text-xs font-semibold text-gray-500 uppercase w-40">수정일</th>
+                                <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">제목</th>
+                                <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase w-40">작성일</th>
+                                <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase w-40">수정일</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#21262d]">
                             {paginatedDrafts.map((draft, index) => (
                                 <tr
                                     key={draft.id}
-                                    className="hover:bg-gray-50 transition cursor-pointer"
+                                    className="hover:bg-[#21262d] transition cursor-pointer"
                                     onClick={() => openPanel(draft)}
                                 >
-                                    <td className="py-3 px-3 text-center text-xs text-gray-400">
+                                    <td className="py-3 px-3 text-center text-xs text-[#8b949e]">
                                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                     </td>
                                     <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
@@ -360,19 +360,19 @@ export default function AdminDraftsPage() {
                                             type="checkbox"
                                             checked={selectedIds.has(draft.id)}
                                             onChange={() => toggleSelect(draft.id)}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                                            className="rounded border-[#30363d] bg-[#0d1117] text-blue-600 focus:ring-blue-500 h-4 w-4"
                                         />
                                     </td>
                                     <td className="py-3 px-3">
-                                        <p className="text-sm font-medium text-gray-900 line-clamp-1">{draft.title}</p>
-                                        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                                        <p className="text-sm font-medium text-[#e6edf3] line-clamp-1">{draft.title}</p>
+                                        <p className="text-xs text-[#8b949e] line-clamp-1 mt-0.5">
                                             {stripHtml(draft.content) || "(내용 없음)"}
                                         </p>
                                     </td>
-                                    <td className="py-3 px-3 text-xs text-gray-500">
+                                    <td className="py-3 px-3 text-xs text-[#e6edf3]">
                                         {formatDate(draft.created_at)}
                                     </td>
-                                    <td className="py-3 px-3 text-xs text-gray-500">
+                                    <td className="py-3 px-3 text-xs text-[#8b949e]">
                                         {formatDate(draft.updated_at)}
                                     </td>
                                 </tr>
@@ -393,12 +393,12 @@ export default function AdminDraftsPage() {
 
             {/* Full Screen Edit Modal */}
             {isPanelOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#161b22] rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-[#30363d]">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                        <div className="flex items-center justify-between p-4 border-b border-[#30363d] bg-[#21262d] rounded-t-xl">
                             <div>
-                                <h2 className="font-bold text-lg text-gray-900">
+                                <h2 className="font-bold text-lg text-[#e6edf3]">
                                     {isCreateMode ? "새 초안 작성" : "초안 편집"}
                                 </h2>
                             </div>
@@ -407,18 +407,18 @@ export default function AdminDraftsPage() {
                                     <>
                                         <button
                                             onClick={handleCopy}
-                                            className="p-2 bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition"
+                                            className="p-2 bg-[#0d1117] border border-[#30363d] text-[#8b949e] rounded-lg hover:bg-[#21262d] hover:text-[#e6edf3] transition"
                                             title="HTML 복사"
                                         >
                                             {copiedId === selectedDraft.id ? (
-                                                <Check className="w-4 h-4 text-green-500" />
+                                                <Check className="w-4 h-4 text-[#3fb950]" />
                                             ) : (
                                                 <Copy className="w-4 h-4" />
                                             )}
                                         </button>
                                         <button
                                             onClick={openDeleteModal}
-                                            className="p-2 bg-white border border-gray-300 text-red-600 rounded-lg hover:bg-red-50 transition"
+                                            className="p-2 bg-[#0d1117] border border-[#30363d] text-[#f85149] rounded-lg hover:bg-[#21262d] transition"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -426,7 +426,7 @@ export default function AdminDraftsPage() {
                                 )}
                                 <button
                                     onClick={closePanel}
-                                    className="p-2 text-gray-400 hover:text-gray-600 transition"
+                                    className="p-2 text-[#8b949e] hover:text-[#e6edf3] transition"
                                 >
                                     <span className="text-xl">&times;</span>
                                 </button>
@@ -434,24 +434,24 @@ export default function AdminDraftsPage() {
                         </div>
 
                         {/* Modal Content */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#0d1117]">
                             {/* 제목 */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">
-                                    제목 <span className="text-red-500">*</span>
+                                <label className="block text-xs font-medium text-[#8b949e] mb-1">
+                                    제목 <span className="text-[#f85149]">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={editTitle}
                                     onChange={(e) => setEditTitle(e.target.value)}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-900"
+                                    className="w-full p-3 border border-[#30363d] rounded-lg focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none font-bold text-[#e6edf3] bg-[#161b22] placeholder-[#6e7681]"
                                     placeholder="기사 제목을 입력하세요"
                                 />
                             </div>
 
                             {/* 본문 에디터 */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">본문</label>
+                                <label className="block text-xs font-medium text-[#8b949e] mb-1">본문</label>
                                 <NewsEditor
                                     content={editContent}
                                     onChange={setEditContent}
@@ -460,31 +460,31 @@ export default function AdminDraftsPage() {
 
                             {/* 메타 정보 (수정 모드일 때만) */}
                             {!isCreateMode && selectedDraft && (
-                                <div className="flex gap-4 p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm">
+                                <div className="flex gap-4 p-3 bg-[#161b22] rounded-lg border border-[#30363d] text-sm">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-500">작성일:</span>
-                                        <span className="font-medium">{formatDate(selectedDraft.created_at)}</span>
+                                        <span className="text-[#8b949e]">작성일:</span>
+                                        <span className="font-medium text-[#e6edf3]">{formatDate(selectedDraft.created_at)}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-gray-500">수정일:</span>
-                                        <span className="font-medium">{formatDate(selectedDraft.updated_at)}</span>
+                                        <span className="text-[#8b949e]">수정일:</span>
+                                        <span className="font-medium text-[#e6edf3]">{formatDate(selectedDraft.updated_at)}</span>
                                     </div>
                                 </div>
                             )}
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-[#30363d] bg-[#21262d] rounded-b-xl">
                             <button
                                 onClick={closePanel}
-                                className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition"
+                                className="px-4 py-2 border border-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#30363d] transition"
                             >
                                 취소
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium disabled:opacity-50"
+                                className="px-4 py-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043] transition flex items-center gap-2 font-medium disabled:opacity-50"
                             >
                                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 저장
