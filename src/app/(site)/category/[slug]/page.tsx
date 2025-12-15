@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
 import Pagination from '@/components/ui/Pagination';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,17 +114,14 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                 {/* 첫 번째 기사 - 큰 썸네일 (1페이지일 때만) */}
                                 {currentPage === 1 && news[0] && (
                                     <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
-                                        {news[0].thumbnail_url ? (
-                                            <img
-                                                src={news[0].thumbnail_url}
-                                                alt={news[0].title}
-                                                className="w-96 h-40 object-cover shrink-0 bg-slate-200"
-                                            />
-                                        ) : (
-                                            <div className="w-96 h-40 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400">
-                                                No Image
-                                            </div>
-                                        )}
+                                        <OptimizedImage
+                                            src={news[0].thumbnail_url}
+                                            alt={news[0].title}
+                                            width={384}
+                                            height={160}
+                                            className="w-96 h-40 object-cover shrink-0 bg-slate-200"
+                                            priority={true}
+                                        />
                                         <div className="flex-1 flex flex-col justify-start">
                                             <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:underline line-clamp-2 leading-snug">
                                                 {news[0].title}
@@ -140,17 +138,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                 {/* 나머지 기사 목록 */}
                                 {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
                                     <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
-                                        {item.thumbnail_url ? (
-                                            <img
-                                                src={item.thumbnail_url}
-                                                alt={item.title}
-                                                className="w-40 h-24 object-cover shrink-0 bg-slate-200"
-                                            />
-                                        ) : (
-                                            <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs">
-                                                No Image
-                                            </div>
-                                        )}
+                                        <OptimizedImage
+                                            src={item.thumbnail_url}
+                                            alt={item.title}
+                                            width={160}
+                                            height={96}
+                                            className="w-40 h-24 object-cover shrink-0 bg-slate-200"
+                                        />
                                         <div className="flex-1 flex flex-col justify-start">
                                             <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">
                                                 {item.title}

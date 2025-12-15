@@ -64,7 +64,11 @@
       "Bash(scrapers/suncheon/suncheon_scraper.py )",
       "Bash(scrapers/utils/content_cleaner.py )",
       "Bash(scrapers/utils/content_validator.py )",
-      "Bash(.ai-collab/DONE.md)"
+      "Bash(.ai-collab/DONE.md)",
+      "Bash(gh api:*)",
+      "Bash(cmd /c \"rmdir /s /q d:\\cbt\\koreanews\\gitinfo\")",
+      "Bash(cmd /c \"dir /s /b d:\\cbt\\koreanews\\*info* 2>nul\")",
+      "Bash(cmd /c \"dir /ad /b d:\\cbt\\koreanews\")"
     ]
   }
 }
