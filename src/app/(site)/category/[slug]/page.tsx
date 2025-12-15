@@ -5,7 +5,8 @@ import CategoryHeader from '@/components/category/CategoryHeader';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 
-export const dynamic = 'force-dynamic';
+// ISR: 60초마다 재생성 (서버 응답 시간 최적화)
+export const revalidate = 60;
 
 // 카테고리별 기사 가져오기
 async function getCategoryNews(slug: string, categoryName: string, page: number = 1) {
@@ -15,9 +16,10 @@ async function getCategoryNews(slug: string, categoryName: string, page: number 
         const start = (page - 1) * limit;
         const end = start + limit - 1;
 
+        // 필요한 필드만 선택 (성능 최적화)
         let query = supabase
             .from('posts')
-            .select('*', { count: 'exact' })
+            .select('id, title, content, ai_summary, thumbnail_url, published_at', { count: 'exact' })
             .eq('status', 'published')
             .order('published_at', { ascending: false })
             .range(start, end);
