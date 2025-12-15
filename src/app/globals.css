@@ -635,6 +635,200 @@
     backdrop-filter: blur(4px) !important;
 }
 
+/* ===================================
+   Additional Dark Mode Overrides
+   - Nested elements deep conversion
+   =================================== */
+
+/* Labels with checkbox inside */
+.admin-layout label {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Label containers for checkboxes */
+.admin-layout label.bg-white,
+.admin-layout label[class*="bg-white"] {
+    background-color: var(--admin-bg-elevated) !important;
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout label:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+/* Selected checkbox labels (blue theme) */
+.admin-layout label.bg-blue-100,
+.admin-layout label[class*="bg-blue-100"] {
+    background-color: var(--admin-accent-blue-muted) !important;
+    border-color: rgba(88, 166, 255, 0.4) !important;
+    color: var(--admin-accent-blue) !important;
+}
+
+/* Selected checkbox labels (red theme) */
+.admin-layout label.bg-red-100,
+.admin-layout label[class*="bg-red-100"] {
+    background-color: var(--admin-accent-red-muted) !important;
+    border-color: rgba(248, 81, 73, 0.4) !important;
+    color: var(--admin-accent-red) !important;
+}
+
+/* Region checkbox text */
+.admin-layout label span.text-gray-900,
+.admin-layout label span[class*="text-gray-900"] {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Date inputs specifically */
+.admin-layout input[type="date"] {
+    background-color: var(--admin-bg-base) !important;
+    color: var(--admin-text-primary) !important;
+    border: 1px solid var(--admin-border-default) !important;
+}
+
+.admin-layout input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) !important;
+}
+
+/* Progress bar backgrounds */
+.admin-layout .bg-gray-200,
+.admin-layout [class*="bg-gray-200"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+/* Preset buttons (date presets) */
+.admin-layout button.bg-blue-50,
+.admin-layout button[class*="bg-blue-50"] {
+    background-color: var(--admin-accent-blue-muted) !important;
+    border-color: rgba(88, 166, 255, 0.3) !important;
+    color: var(--admin-accent-blue) !important;
+}
+
+.admin-layout button.bg-blue-600,
+.admin-layout button[class*="bg-blue-600"] {
+    background-color: var(--admin-accent-blue) !important;
+    border-color: var(--admin-accent-blue) !important;
+    color: white !important;
+}
+
+/* Status badges in running panel */
+.admin-layout .bg-blue-50.border-blue-100,
+.admin-layout [class*="bg-blue-50"][class*="border-blue-100"] {
+    background-color: var(--admin-accent-blue-muted) !important;
+    border-color: rgba(88, 166, 255, 0.3) !important;
+}
+
+.admin-layout .bg-green-50.border-green-100,
+.admin-layout [class*="bg-green-50"][class*="border-green-100"] {
+    background-color: var(--admin-accent-green-muted) !important;
+    border-color: rgba(63, 185, 80, 0.3) !important;
+}
+
+.admin-layout .bg-red-50.border-red-100,
+.admin-layout [class*="bg-red-50"][class*="border-red-100"] {
+    background-color: var(--admin-accent-red-muted) !important;
+    border-color: rgba(248, 81, 73, 0.3) !important;
+}
+
+.admin-layout .bg-orange-50.border-orange-100,
+.admin-layout [class*="bg-orange-50"][class*="border-orange-100"] {
+    background-color: var(--admin-accent-orange-muted) !important;
+    border-color: rgba(210, 153, 34, 0.3) !important;
+}
+
+/* Text colors in status panels */
+.admin-layout .text-blue-900 {
+    color: #93c5fd !important;
+}
+
+.admin-layout .text-blue-700 {
+    color: #60a5fa !important;
+}
+
+.admin-layout .text-green-800 {
+    color: #86efac !important;
+}
+
+.admin-layout .text-red-800 {
+    color: #fca5a5 !important;
+}
+
+/* Section headers with bg-blue-50/50 */
+.admin-layout .bg-blue-50\/50,
+.admin-layout [class*="bg-blue-50/50"] {
+    background-color: rgba(88, 166, 255, 0.08) !important;
+}
+
+/* Border bottom for sections */
+.admin-layout .border-blue-100,
+.admin-layout [class*="border-blue-100"] {
+    border-color: rgba(88, 166, 255, 0.2) !important;
+}
+
+/* Checkbox container with gray backgrounds */
+.admin-layout div.bg-gray-50,
+.admin-layout div[class*="bg-gray-50"] {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+/* Nested text in checkbox areas */
+.admin-layout .text-xs.text-gray-500,
+.admin-layout span[class*="text-gray-500"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Border for checkbox containers */
+.admin-layout .border-gray-100 {
+    border-color: var(--admin-border-muted) !important;
+}
+
+/* Active checkbox styles - ensure visibility */
+.admin-layout input[type="checkbox"] {
+    appearance: none !important;
+    width: 16px !important;
+    height: 16px !important;
+    background-color: var(--admin-bg-base) !important;
+    border: 2px solid var(--admin-border-emphasis) !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    position: relative !important;
+}
+
+.admin-layout input[type="checkbox"]:checked {
+    background-color: var(--admin-accent-blue) !important;
+    border-color: var(--admin-accent-blue) !important;
+}
+
+.admin-layout input[type="checkbox"]:checked::after {
+    content: '' !important;
+    position: absolute !important;
+    left: 4px !important;
+    top: 1px !important;
+    width: 5px !important;
+    height: 9px !important;
+    border: solid white !important;
+    border-width: 0 2px 2px 0 !important;
+    transform: rotate(45deg) !important;
+}
+
+.admin-layout input[type="checkbox"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px var(--admin-accent-blue-muted) !important;
+}
+
+/* Selection control buttons */
+.admin-layout button.text-blue-600 {
+    color: var(--admin-accent-blue) !important;
+}
+
+.admin-layout button.text-gray-500 {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Region count text */
+.admin-layout span.text-gray-400 {
+    color: var(--admin-text-muted) !important;
+}
+
 @layer components {
 
     /* --- Admin Color Tokens --- */
