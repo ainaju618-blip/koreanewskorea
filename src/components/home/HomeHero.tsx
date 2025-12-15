@@ -131,7 +131,7 @@ export default function HomeHero() {
 
                     {/* Content Overlay */}
                     <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8 flex flex-col justify-end h-full">
-                        <span className="inline-block px-3 py-1 mb-3 text-xs font-bold text-white bg-[#ff2e63] rounded-full w-fit shadow-md">
+                        <span className="inline-block px-3 py-1 mb-3 text-xs font-bold text-white bg-[#A6121D] rounded-full w-fit shadow-md">
                             Headlines
                         </span>
 
@@ -178,13 +178,13 @@ export default function HomeHero() {
                 <div className="flex-1 p-3 flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#ff2e63]"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#A6121D]"></span>
                             <span className="text-[11px] font-bold text-[#0a192f] uppercase tracking-wider opacity-80">
                                 {displayCategory(article.category)}
                             </span>
                         </div>
 
-                        <h3 className="text-lg font-serif font-bold text-slate-900 leading-[1.25] mb-1 group-hover:text-[#ff2e63] transition-colors line-clamp-2">
+                        <h3 className="text-lg font-serif font-bold text-slate-900 leading-[1.25] mb-1 group-hover:text-[#A6121D] transition-colors line-clamp-2">
                             {article.title}
                         </h3>
                     </div>

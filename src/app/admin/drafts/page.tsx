@@ -76,8 +76,9 @@ export default function AdminDraftsPage() {
     };
 
     // 날짜 포맷
+    // 날짜 포맷
     const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString("ko-KR");
+        return new Date(dateStr).toLocaleString("ko-KR", { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
     // 패널 열기 (보기/편집)

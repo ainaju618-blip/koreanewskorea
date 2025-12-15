@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FolderTree, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Loader2, X, Check, GripVertical, Eye, EyeOff, Menu } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 import {
     DndContext,
     closestCenter,
@@ -78,6 +79,7 @@ function SortableItem({ category, renderContent }: { category: Category; renderC
 }
 
 export default function CategoriesPage() {
+    const { showSuccess, showError } = useToast();
     const [categories, setCategories] = useState<Category[]>([]);
     const [flatCategories, setFlatCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -198,7 +200,7 @@ export default function CategoriesPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.name || !formData.slug) {
-            alert('이름과 슬러그는 필수입니다.');
+            showError('이름과 슬러그는 필수입니다.');
             return;
         }
 
@@ -224,9 +226,10 @@ export default function CategoriesPage() {
             }
 
             setShowModal(false);
+            showSuccess('저장되었습니다.');
             fetchCategories();
         } catch (err: any) {
-            alert(err.message || '저장 실패');
+            showError(err.message || '저장 실패');
         } finally {
             setSaving(false);
         }
@@ -250,9 +253,10 @@ export default function CategoriesPage() {
                 const error = await res.json();
                 throw new Error(error.message);
             }
+            showSuccess('삭제되었습니다.');
             fetchCategories();
         } catch (err: any) {
-            alert(err.message || '삭제 실패');
+            showError(err.message || '삭제 실패');
         }
     };
 
@@ -308,7 +312,7 @@ export default function CategoriesPage() {
                     body: JSON.stringify({ items: reorderedItems }),
                 }).catch(err => {
                     console.error('순서 저장 실패:', err);
-                    alert('순서 저장에 실패했습니다.');
+                    showError('순서 저장에 실패했습니다.');
                 });
 
                 return newItems;

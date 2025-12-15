@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { Settings, Globe, Mail, Phone, MapPin, Save, Loader2, Image, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 export default function GeneralSettingsPage() {
+    const { showSuccess } = useToast();
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         siteName: 'Korea NEWS',
@@ -25,7 +27,7 @@ export default function GeneralSettingsPage() {
         // TODO: API 연동 시 실제 저장 로직 추가
         setTimeout(() => {
             setSaving(false);
-            alert('설정이 저장되었습니다.');
+            showSuccess('설정이 저장되었습니다.');
         }, 1000);
     };
 

@@ -18,6 +18,7 @@ import {
     UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import { useToast } from '@/components/ui/Toast';
 
 interface Article {
     id: string;
@@ -38,6 +39,7 @@ interface Reporter {
 }
 
 export default function EditArticlePage({ params }: { params: Promise<{ id: string }> }) {
+    const { showSuccess, showError } = useToast();
     const { id } = use(params);
     const router = useRouter();
 
@@ -129,7 +131,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
 
             if (res.ok) {
                 const selectedReporter = reporters.find(r => r.id === selectedAuthorId);
-                alert(`기자가 ${selectedReporter?.name}으로 지정되었습니다.`);
+                showSuccess(`기자가 ${selectedReporter?.name}으로 지정되었습니다.`);
             } else {
                 const data = await res.json();
                 setError(data.message || '기자 지정에 실패했습니다.');

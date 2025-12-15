@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ message: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 });
         }
 
-        const DEFAULT_PASSWORD = 'a1234567!';  // 기본 비밀번호
+        const DEFAULT_PASSWORD = process.env.DEFAULT_REPORTER_PASSWORD || 'temp123!';
 
         // 기존 기자 정보 조회 (user_id, email 확인용)
         const { data: existingReporter } = await supabaseAdmin

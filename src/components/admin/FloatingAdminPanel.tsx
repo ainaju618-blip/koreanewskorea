@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Settings, Pencil, Trash2, Copy, Check, X, ChevronUp } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 /**
  * 플로팅 관리자 패널
@@ -13,6 +14,7 @@ import { Settings, Pencil, Trash2, Copy, Check, X, ChevronUp } from 'lucide-reac
 export default function FloatingAdminPanel() {
     const pathname = usePathname();
     const router = useRouter();
+    const { showSuccess, showError } = useToast();
 
     const [isAdmin, setIsAdmin] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -91,11 +93,11 @@ export default function FloatingAdminPanel() {
                 router.push('/');
                 router.refresh();
             } else {
-                alert(data.error || '삭제 실패');
+                showError(data.error || '삭제 실패');
             }
         } catch (err) {
             console.error('Delete error:', err);
-            alert('삭제 중 오류가 발생했습니다.');
+            showError('삭제 중 오류가 발생했습니다.');
         } finally {
             setIsDeleting(false);
         }

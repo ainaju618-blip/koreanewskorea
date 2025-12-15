@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import {
     X, Save, Eye, Send, Languages, Sparkles, ImagePlus, Loader2, Upload, Trash2
 } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 // 타입 정의
 interface NewsItem {
@@ -33,6 +34,8 @@ export default function ArticleEditor({
     onSave,
     onPublish,
 }: ArticleEditorProps) {
+    const { showSuccess, showError } = useToast();
+
     // 편집 상태
     const [title, setTitle] = useState(article.title);
     const [content, setContent] = useState(article.content);
@@ -71,10 +74,10 @@ export default function ArticleEditor({
                 const data = await res.json();
                 setContent(data.translated);
             } else {
-                alert('번역 실패');
+                showError('번역 실패');
             }
         } catch (error) {
-            alert('번역 중 오류 발생');
+            showError('번역 중 오류 발생');
         } finally {
             setIsTranslating(false);
         }
@@ -93,10 +96,10 @@ export default function ArticleEditor({
                 const data = await res.json();
                 setContent(data.rewritten);
             } else {
-                alert('재작성 실패');
+                showError('재작성 실패');
             }
         } catch (error) {
-            alert('재작성 중 오류 발생');
+            showError('재작성 중 오류 발생');
         } finally {
             setIsRewriting(false);
         }

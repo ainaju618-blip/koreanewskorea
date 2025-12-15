@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, Plus, Edit2, Trash2, Loader2, X, Check, GripVertical, ExternalLink, ChevronDown, Eye } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 interface MenuItem {
     id: string;
@@ -29,6 +30,7 @@ interface Category {
 }
 
 export default function MenusPage() {
+    const { showSuccess, showError } = useToast();
     const [menus, setMenus] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function MenusPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.name) {
-            alert('메뉴 이름을 입력하세요.');
+            showError('메뉴 이름을 입력하세요.');
             return;
         }
 
@@ -130,24 +132,37 @@ export default function MenusPage() {
             }
 
             setShowModal(false);
+            showSuccess('저장되었습니다.');
             fetchData();
         } catch (err: any) {
-            alert(err.message || '저장 실패');
+            showError(err.message || '저장 실패');
         } finally {
             setSaving(false);
         }
     };
 
-    // 삭제
-    const handleDelete = async (menu: MenuItem) => {
-        if (!confirm(`"${menu.name}" 메뉴를 삭제하시겠습니까?`)) return;
+    // 삭제 확인 모달 상태 추가
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; menu: MenuItem | null }>({ isOpen: false, menu: null });
+
+    // 삭제 모달 열기
+    const handleDelete = (menu: MenuItem) => {
+        setDeleteModal({ isOpen: true, menu });
+    };
+
+    // 실제 삭제 실행
+    const confirmDelete = async () => {
+        const menu = deleteModal.menu;
+        if (!menu) return;
+
+        setDeleteModal({ isOpen: false, menu: null });
 
         try {
             const res = await fetch(`/api/menus/${menu.id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('삭제 실패');
+            showSuccess('삭제되었습니다.');
             fetchData();
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         }
     };
 
@@ -454,6 +469,32 @@ export default function MenusPage() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* 삭제 확인 모달 */}
+            {deleteModal.isOpen && deleteModal.menu && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">메뉴 삭제</h3>
+                        <p className="text-gray-600 mb-6">
+                            "{deleteModal.menu.name}" 메뉴를 삭제하시겠습니까?
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setDeleteModal({ isOpen: false, menu: null })}
+                                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 font-medium"
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -10,6 +10,7 @@ import {
     FilterTabs,
     PageHeader,
 } from "@/components/admin/shared";
+import { useToast } from '@/components/ui/Toast';
 
 interface UserType {
     id: string;
@@ -24,6 +25,7 @@ interface UserType {
 }
 
 export default function MembersPage() {
+    const { showSuccess, showError } = useToast();
     const [users, setUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -98,7 +100,7 @@ export default function MembersPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.email) {
-            alert('이메일은 필수입니다.');
+            showError('이메일은 필수입니다.');
             return;
         }
 
@@ -115,7 +117,7 @@ export default function MembersPage() {
             });
 
             if (res.ok) {
-                alert(editingUser ? '수정되었습니다.' : '등록되었습니다.');
+                showSuccess(editingUser ? '수정되었습니다.' : '등록되었습니다.');
                 setShowModal(false);
                 fetchUsers();
             } else {
@@ -123,7 +125,7 @@ export default function MembersPage() {
                 throw new Error(err.message);
             }
         } catch (error: any) {
-            alert('저장 실패: ' + error.message);
+            showError('저장 실패: ' + error.message);
         } finally {
             setSaving(false);
         }
@@ -143,13 +145,13 @@ export default function MembersPage() {
         try {
             const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
             if (res.ok) {
-                alert('삭제되었습니다.');
+                showSuccess('삭제되었습니다.');
                 fetchUsers();
             } else {
                 throw new Error('삭제 실패');
             }
         } catch (error) {
-            alert('삭제에 실패했습니다.');
+            showError('삭제에 실패했습니다.');
         }
     };
 
@@ -164,7 +166,7 @@ export default function MembersPage() {
             });
             fetchUsers();
         } catch (error) {
-            alert('상태 변경 실패');
+            showError('상태 변경 실패');
         }
     };
 

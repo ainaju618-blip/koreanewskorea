@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { Play, Clock, Loader2 } from "lucide-react";
 import { ScraperPanel, DbManagerPanel } from "./components";
+import { useToast } from '@/components/ui/Toast';
 
 export default function BotRunPage() {
+    const { showSuccess, showError } = useToast();
     // Scheduler State
     const [schedulerEnabled, setSchedulerEnabled] = useState(false);
     const [schedulerLoading, setSchedulerLoading] = useState(true);
@@ -39,10 +41,10 @@ export default function BotRunPage() {
             if (data.success) {
                 setSchedulerEnabled(newState);
             } else {
-                alert('설정 저장 실패: ' + data.message);
+                showError('설정 저장 실패: ' + data.message);
             }
         } catch (e) {
-            alert('설정 저장 중 오류 발생');
+            showError('설정 저장 중 오류 발생');
         } finally {
             setSchedulerLoading(false);
         }

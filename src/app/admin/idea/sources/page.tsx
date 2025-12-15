@@ -17,6 +17,8 @@ import {
     X
 } from 'lucide-react';
 import { PageHeader } from '@/components/admin/shared/PageHeader';
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 // AI 뉴스 수집처 타입
 interface AISource {
@@ -412,6 +414,8 @@ function SourceModal({
 }
 
 export default function AISourcesPage() {
+    const { showSuccess, showError } = useToast();
+    const { confirm } = useConfirm();
     const [sources, setSources] = useState<AISource[]>(INITIAL_SOURCES);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'rss' | 'scraping' | 'api'>('all');
@@ -434,8 +438,9 @@ export default function AISourcesPage() {
     };
 
     // 수집처 삭제
-    const deleteSource = (id: string) => {
-        if (confirm('이 수집처를 삭제하시겠습니까?')) {
+    const deleteSource = async (id: string) => {
+        const confirmed = await confirm({ message: '이 수집처를 삭제하시겠습니까?' });
+        if (confirmed) {
             setSources(sources.filter(s => s.id !== id));
         }
     };

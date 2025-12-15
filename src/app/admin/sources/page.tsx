@@ -27,6 +27,7 @@ import {
     SlidePanel,
     FilterTabs
 } from "@/components/admin/shared";
+import { useToast } from '@/components/ui/Toast';
 
 // 수집처 타입 정의
 interface NewsSource {
@@ -76,6 +77,7 @@ const ScraperStatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function SourcesManagementPage() {
+    const { showSuccess, showError } = useToast();
     const [sources, setSources] = useState<NewsSource[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -216,7 +218,7 @@ export default function SourcesManagementPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.name || !formData.code) {
-            alert('기관명과 영문 코드는 필수입니다.');
+            showError('기관명과 영문 코드는 필수입니다.');
             return;
         }
 
@@ -233,7 +235,7 @@ export default function SourcesManagementPage() {
             });
 
             if (res.ok) {
-                alert(editingSource ? '수정되었습니다.' : '추가되었습니다.');
+                showSuccess(editingSource ? '수정되었습니다.' : '추가되었습니다.');
                 setIsPanelOpen(false);
                 fetchSources();
             } else {
@@ -241,7 +243,7 @@ export default function SourcesManagementPage() {
                 throw new Error(err.message || '저장 실패');
             }
         } catch (error: any) {
-            alert('저장 실패: ' + error.message);
+            showError('저장 실패: ' + error.message);
         } finally {
             setSaving(false);
         }
@@ -262,13 +264,13 @@ export default function SourcesManagementPage() {
             });
 
             if (res.ok) {
-                alert('삭제되었습니다.');
+                showSuccess('삭제되었습니다.');
                 fetchSources();
             } else {
                 throw new Error('삭제 실패');
             }
         } catch (error) {
-            alert('삭제에 실패했습니다.');
+            showError('삭제에 실패했습니다.');
         } finally {
             setConfirmModal({ isOpen: false, source: null });
         }

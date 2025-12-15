@@ -6,6 +6,7 @@ import NewsEditor from '@/components/admin/NewsEditor';
 import { Save, Send, Image as ImageIcon, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client'; // Client-side Supabase
+import { useToast } from '@/components/ui/Toast';
 
 // Mock Categories (To be replaced with DB data)
 const CATEGORIES = [
@@ -19,6 +20,7 @@ const CATEGORIES = [
 
 export default function WriteNewsPage() {
     const router = useRouter();
+    const { showSuccess, showError } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [title, setTitle] = useState('');
     const [subtitle, setSubtitle] = useState('');
@@ -52,11 +54,11 @@ export default function WriteNewsPage() {
 
             if (error) throw error;
 
-            alert('임시 저장되었습니다.');
+            showSuccess('임시 저장되었습니다.');
             router.push('/admin/my-articles');
         } catch (e: any) {
             console.error(e);
-            alert('저장 중 오류가 발생했습니다: ' + e.message);
+            showError('저장 중 오류가 발생했습니다: ' + e.message);
         } finally {
             setIsLoading(false);
         }
@@ -65,7 +67,7 @@ export default function WriteNewsPage() {
     // 송고 모달 열기
     const handleSubmit = () => {
         if (!title || !content || !category) {
-            alert('필수 항목을 모두 입력해주세요 (제목, 카테고리, 본문)');
+            showError('필수 항목을 모두 입력해주세요 (제목, 카테고리, 본문)');
             return;
         }
         setShowSubmitConfirm(true);
@@ -96,11 +98,11 @@ export default function WriteNewsPage() {
 
             if (error) throw error;
 
-            alert('기사가 송고되었습니다. 승인 대기 목록으로 이동합니다.');
+            showSuccess('기사가 송고되었습니다. 승인 대기 목록으로 이동합니다.');
             router.push('/admin/my-articles');
         } catch (e: any) {
             console.error(e);
-            alert('송고 중 오류가 발생했습니다: ' + e.message);
+            showError('송고 중 오류가 발생했습니다: ' + e.message);
         } finally {
             setIsLoading(false);
         }

@@ -23,26 +23,38 @@ def run_audit(target_scrapers: List[str] = None, days: int = 1):
     }
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    all_files = [f for f in os.listdir(base_dir) if f.endswith('_scraper.py') and f != 'universal_scraper.py']
     
-    # Filter if targets provided
-    if target_scrapers:
-        files_to_run = [f for f in all_files if any(t in f for t in target_scrapers)]
-    else:
-        files_to_run = all_files
+    # Recursively find scrapers
+    files_to_run = []
+    for root, dirs, files in os.walk(base_dir):
+        if 'utils' in root or 'docs' in root or '__pycache__' in root:
+            continue
+        for f in files:
+            if f.endswith('_scraper.py') and f != 'universal_scraper.py' and f != 'audit_scrapers.py':
+                # full path
+                full_path = os.path.join(root, f)
+                # relative path components
+                rel_path = os.path.relpath(full_path, base_dir)
+                # module path conversion (e.g. naju\naju_scraper.py -> scrapers.naju.naju_scraper)
+                module_path = "scrapers." + rel_path.replace(os.path.sep, ".")[:-3]
+                
+                # Filter if targets provided
+                if target_scrapers and not any(t in f for t in target_scrapers):
+                    continue
+                    
+                files_to_run.append((f, module_path))
 
     print(f"🔍 Starting Audit for {len(files_to_run)} scrapers...")
 
-    for filename in sorted(files_to_run):
-        print(f"\nExample: Auditing {filename}...")
-        module_name = filename[:-3]
+    for filename, module_name in sorted(files_to_run):
+        print(f"\nExample: Auditing {filename} ({module_name})...")
         
         try:
             # Dynamic import
             if module_name in sys.modules:
                 module = importlib.reload(sys.modules[module_name])
             else:
-                module = importlib.import_module(f"scrapers.{module_name}")
+                module = importlib.import_module(module_name)
             
             # Check for collect_articles
             if hasattr(module, 'collect_articles'):
@@ -54,10 +66,13 @@ def run_audit(target_scrapers: List[str] = None, days: int = 1):
                 try:
                     # Run scraper
                     print(f"   🏃 Running collect_articles(days={days})...")
+                    kwargs = {}
                     if 'days' in sig.parameters:
-                        articles = func(days=days)
-                    else:
-                        articles = func()
+                        kwargs['days'] = days
+                    if 'max_articles' in sig.parameters:
+                        kwargs['max_articles'] = 1  # 1개만 수집해서 빠르게 검증
+
+                    articles = func(**kwargs)
                     
                     duration = time.time() - start_time
                     

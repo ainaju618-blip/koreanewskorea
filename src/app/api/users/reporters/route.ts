@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         const position = body.position || body.type || 'reporter';
 
         let userId: string | null = null;
-        const DEFAULT_PASSWORD = 'a1234567!';  // 기본 비밀번호
+        const DEFAULT_PASSWORD = process.env.DEFAULT_REPORTER_PASSWORD || 'temp123!';
 
         // 이메일이 있으면 Supabase Auth 계정 생성 (로그인 가능)
         if (body.email) {

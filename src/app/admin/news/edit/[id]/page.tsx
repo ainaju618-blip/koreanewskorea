@@ -6,13 +6,15 @@ import { createClient } from '@/lib/supabase-client';
 import NewsEditor from '@/components/admin/NewsEditor';
 import { Save, Send, Trash2, ArrowLeft, CheckCircle, XCircle, Globe } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/Toast';
 
 export default function EditNewsPage() {
     const params = useParams(); // params is a Promise in Next.js 15+, but in 13/14 it's direct. Assuming standard behavior or unwrapping.
     const router = useRouter();
     const id = params?.id as string;
+    const { showSuccess, showError } = useToast();
 
-    // In Next.js 15, params is generic and might need `use` or await. 
+    // In Next.js 15, params is generic and might need `use` or await.
     // For safety in this prompt environment, let's treat it as directly accessible or handle the async nature if needed.
     // If id is undefined initially, we wait.
 
@@ -38,7 +40,7 @@ export default function EditNewsPage() {
                 .single();
 
             if (error) {
-                alert('기사를 불러오지 못했습니다.');
+                showError('기사를 불러오지 못했습니다.');
                 router.push('/admin/news');
                 return;
             }
@@ -85,9 +87,9 @@ export default function EditNewsPage() {
             .eq('id', id);
 
         if (error) {
-            alert('저장 실패: ' + error.message);
+            showError('저장 실패: ' + error.message);
         } else {
-            alert(newStatus === 'published' ? '기사가 발행되었습니다.' : '저장되었습니다.');
+            showSuccess(newStatus === 'published' ? '기사가 발행되었습니다.' : '저장되었습니다.');
             if (newStatus === 'published') router.push('/admin/news');
         }
         setIsSaving(false);
@@ -105,9 +107,9 @@ export default function EditNewsPage() {
         const supabase = createClient();
         const { error } = await supabase.from('posts').delete().eq('id', id);
 
-        if (error) alert('삭제 실패: ' + error.message);
+        if (error) showError('삭제 실패: ' + error.message);
         else {
-            alert('삭제되었습니다.');
+            showSuccess('삭제되었습니다.');
             router.push('/admin/news');
         }
         setIsSaving(false);

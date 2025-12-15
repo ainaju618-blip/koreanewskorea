@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle } from "lucide-react";
+import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
 import { useConfirm } from '@/components/ui/ConfirmModal';
@@ -223,6 +223,36 @@ export function ScraperPanel() {
         }
     };
 
+    // 상태 강제 리셋 핸들러 (DB에서 running 상태 초기화)
+    const handleReset = async () => {
+        const confirmed = await confirm({
+            title: '상태 강제 리셋',
+            message: 'DB에서 실행 중(running) 상태인 모든 로그를 강제로 초기화합니다.\n\n서버 재부팅, 크래시 등으로 인해 상태가 정상적으로 업데이트되지 않은 경우에 사용하세요.',
+            type: 'warning',
+            confirmText: '리셋',
+            cancelText: '취소'
+        });
+        if (!confirmed) return;
+
+        try {
+            setStatusMessage('상태 리셋 중...');
+            const res = await fetch('/api/bot/reset', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                setIsRunning(false);
+                setActiveJobIds([]);
+                setCurrentJobs([]);
+                setProgress({ total: 0, completed: 0 });
+                setStatusMessage(data.message);
+            } else {
+                setStatusMessage(`리셋 실패: ${data.message}`);
+            }
+        } catch (error: any) {
+            setStatusMessage(`리셋 오류: ${error.message}`);
+        }
+    };
+
     // 개별 지역 중지 핸들러
     const handleStopSingle = async (jobId: number, region: string) => {
         const regionLabel = getRegionLabel(region);
@@ -326,13 +356,23 @@ export function ScraperPanel() {
                                 <p className="text-sm text-blue-700 font-mono whitespace-pre-wrap">{statusMessage}</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleStop}
-                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-colors"
-                        >
-                            <StopCircle className="w-4 h-4" />
-                            중지
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleStop}
+                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                            >
+                                <StopCircle className="w-4 h-4" />
+                                중지
+                            </button>
+                            <button
+                                onClick={handleReset}
+                                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                                title="서버 크래시 등으로 상태가 멈춘 경우 강제 리셋"
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                                리셋
+                            </button>
+                        </div>
                     </div>
 
                     {/* 진행률 바 */}

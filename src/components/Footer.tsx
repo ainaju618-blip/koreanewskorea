@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, ExternalLink, Lock, Eye, EyeOff, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 export default function Footer() {
     const pathname = usePathname();
     const router = useRouter();
+    const { showSuccess, showError } = useToast();
 
     // Admin Edit 모달 상태
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -99,11 +101,11 @@ export default function Footer() {
                 router.push('/');
                 router.refresh();
             } else {
-                alert(data.error || '삭제 실패');
+                showError(data.error || '삭제 실패');
             }
         } catch (err) {
             console.error('Delete error:', err);
-            alert('삭제 중 오류가 발생했습니다.');
+            showError('삭제 중 오류가 발생했습니다.');
         } finally {
             setIsDeleting(false);
         }

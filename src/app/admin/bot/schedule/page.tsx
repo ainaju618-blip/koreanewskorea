@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, Save, CheckCircle2, Loader2, Power } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 interface ScheduleConfig {
     enabled: boolean;
@@ -10,6 +11,7 @@ interface ScheduleConfig {
 }
 
 export default function BotSchedulePage() {
+    const { showSuccess, showError } = useToast();
     const [config, setConfig] = useState<ScheduleConfig>({
         enabled: false,
         cronExpression: "0 9,13,17 * * *",
@@ -58,7 +60,7 @@ export default function BotSchedulePage() {
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
-            alert('저장 중 오류가 발생했습니다.');
+            showError('저장 중 오류가 발생했습니다.');
         } finally {
             setIsSaving(false);
         }

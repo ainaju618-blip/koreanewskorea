@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Region, hasScraperAvailable, regionIdToLabel } from "./regionData";
+import { Region } from "./regionData";
 
 interface RegionCheckboxGroupProps {
     title: string;
@@ -57,33 +57,12 @@ export function RegionCheckboxGroup({
     const getValue = (region: Region) => selectionKey === 'id' ? region.id : region.label;
     const isSelected = (region: Region) => selectedRegions.includes(getValue(region));
 
-    // 스크래퍼 존재 여부 확인 (동적 조회된 목록 우선, 없으면 기존 하드코딩 목록 사용)
-    const checkScraperAvailable = (regionId: string) => {
-        if (activeScraperIds.length > 0) {
-            return activeScraperIds.includes(regionId);
-        }
-        // 폴백: 기존 하드코딩된 목록
-        return hasScraperAvailable(regionId);
-    };
-
-    // 스크래퍼 존재 시 녹색 표시, 없으면 회색
-    const getScraperStatusClass = (region: Region) => {
-        if (!showScraperStatus) return '';
-        return checkScraperAvailable(region.id)
-            ? 'text-emerald-700 font-semibold'
-            : 'text-gray-400';
-    };
 
     return (
         <div>
             <p className={`text-xs font-bold ${theme.title} mb-1 flex items-center gap-1`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`}></span>
                 {title}
-                {showScraperStatus && (
-                    <span className="ml-2 text-[10px] font-normal text-gray-500">
-                        (🟢 스크래퍼 활성)
-                    </span>
-                )}
             </p>
             <div
                 className={`grid ${compact ? 'grid-cols-4' : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-5'} gap-1.5 bg-gray-50 p-2 rounded-lg border border-gray-100 ${maxHeight ? 'overflow-y-auto' : ''}`}
@@ -93,20 +72,14 @@ export function RegionCheckboxGroup({
                     // regionInfo는 label 키 또는 id 키로 검색  (API가 source=label로 반환)
                     const info = regionInfo?.[region.label] || regionInfo?.[region.id];
                     const selected = isSelected(region);
-                    const hasScraper = checkScraperAvailable(region.id);
-                    const scraperClass = getScraperStatusClass(region);
 
                     return (
                         <label
                             key={region.id}
                             className={`flex items-center gap-2 cursor-pointer p-2 rounded border transition text-sm ${selected
                                 ? `${theme.selected} font-medium shadow-sm`
-                                : `bg-white border-transparent hover:bg-gray-100 ${showScraperStatus && !hasScraper ? 'opacity-60' : ''}`
+                                : `bg-white border-transparent hover:bg-gray-100`
                                 }`}
-                            title={showScraperStatus
-                                ? (hasScraper ? '스크래퍼 활성화' : '스크래퍼 미구현')
-                                : undefined
-                            }
                         >
                             <input
                                 type="checkbox"
@@ -114,8 +87,7 @@ export function RegionCheckboxGroup({
                                 onChange={() => onToggle(getValue(region))}
                                 className={`rounded border-gray-300 ${theme.checkbox}`}
                             />
-                            <span className={`flex-1 text-sm whitespace-nowrap ${scraperClass}`}>
-                                {showScraperStatus && hasScraper && <span className="mr-1">🟢</span>}
+                            <span className="flex-1 text-sm whitespace-nowrap text-gray-900">
                                 {region.label}
                             </span>
                             {info && info.count !== undefined && (

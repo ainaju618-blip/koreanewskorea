@@ -216,6 +216,25 @@ def scrape_and_translate(feed_key: str, max_articles: int = 3, api_key: str = No
                         print(f"      [ERROR] 번역 오류: {e}")
                     time.sleep(2)  # Rate limit 방지
             
+            # 날짜 처리 (RSS 원본 시간 사용)
+            pub_date = datetime.now()
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                try:
+                    # struct_time -> datetime
+                    pub_date = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                except:
+                    pass
+            elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                try:
+                    pub_date = datetime.fromtimestamp(time.mktime(entry.updated_parsed))
+                except:
+                    pass
+            
+            # ISO 8601 포맷 (TimeZone 정보 포함)
+            published_at_str = pub_date.astimezone().isoformat()
+            
+            print(f"      [DATE] RSS Original: {published_at_str}")
+
             article = {
                 'title': title_ko,
                 'original_title': title,
@@ -226,7 +245,7 @@ def scrape_and_translate(feed_key: str, max_articles: int = 3, api_key: str = No
                 'region': 'global',
                 'ai_source': feed_key,
                 'key_points': key_points,
-                'published_at': datetime.now().isoformat()
+                'published_at': published_at_str
             }
             
             articles.append(article)

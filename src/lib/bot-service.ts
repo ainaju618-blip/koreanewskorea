@@ -1,5 +1,5 @@
 
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -10,6 +10,56 @@ export const ALL_REGIONS = [
     "jangseong", "wando", "jindo", "shinan",
     "gwangju_edu", "jeonnam_edu"
 ];
+
+/**
+ * 실행 중인 스크래퍼 프로세스 관리
+ * - Key: jobId (logId)
+ * - Value: ChildProcess
+ */
+const runningProcesses = new Map<number, ChildProcess>();
+
+/**
+ * 실행 중인 프로세스 목록 조회
+ */
+export function getRunningProcesses(): number[] {
+    return Array.from(runningProcesses.keys());
+}
+
+/**
+ * 특정 프로세스 중지 (개별 중지)
+ * @returns true if process was killed, false if not found
+ */
+export function killProcess(jobId: number): boolean {
+    const proc = runningProcesses.get(jobId);
+    if (proc) {
+        console.log(`[bot-service] Killing process for jobId=${jobId}`);
+        proc.kill('SIGTERM');
+        runningProcesses.delete(jobId);
+        return true;
+    }
+    console.log(`[bot-service] Process not found for jobId=${jobId}`);
+    return false;
+}
+
+/**
+ * 모든 프로세스 중지 (전체 중지)
+ * @returns 중지된 프로세스 수
+ */
+export function killAllProcesses(): number {
+    const count = runningProcesses.size;
+    console.log(`[bot-service] Killing all ${count} processes`);
+
+    for (const [jobId, proc] of runningProcesses) {
+        try {
+            proc.kill('SIGTERM');
+            console.log(`[bot-service] Killed process jobId=${jobId}`);
+        } catch (e) {
+            console.error(`[bot-service] Failed to kill jobId=${jobId}:`, e);
+        }
+    }
+    runningProcesses.clear();
+    return count;
+}
 
 /**
  * 봇 실행 로그를 먼저 생성하고 ID를 반환합니다.
@@ -121,6 +171,10 @@ export async function executeScraper(
         }
     });
 
+    // ★ 프로세스를 글로벌 Map에 저장 (중지 기능용)
+    runningProcesses.set(logId, child);
+    console.log(`[${region}] Process registered: jobId=${logId}, total running=${runningProcesses.size}`);
+
     let stdoutData = '';
     let stderrData = '';
 
@@ -142,11 +196,14 @@ export async function executeScraper(
     });
 
     return new Promise<void>((resolve) => {
-        child.on('close', async (code: number | null) => {
-            console.log(`[${region}] 프로세스 종료 (Exit Code: ${code})`);
+        child.on('close', async (code: number | null, signal: string | null) => {
+            // 프로세스 종료 시 Map에서 제거
+            runningProcesses.delete(logId);
+            console.log(`[${region}] 프로세스 종료 (Exit Code: ${code}, Signal: ${signal}), remaining=${runningProcesses.size}`);
 
-            const isSuccess = code === 0;
-            let status = isSuccess ? 'success' : 'failed';
+            const isKilled = signal === 'SIGTERM' || signal === 'SIGKILL';
+            const isSuccess = code === 0 && !isKilled;
+            let status = isKilled ? 'stopped' : (isSuccess ? 'success' : 'failed');
             let articlesCount = 0;
 
             try {
@@ -157,9 +214,14 @@ export async function executeScraper(
                 }
             } catch (e) { }
 
-            const finalMessage = isSuccess
-                ? (articlesCount > 0 ? `${articlesCount}건 수집 완료` : '수집된 기사 없음')
-                : `프로세스 에러 (Code ${code})`;
+            let finalMessage: string;
+            if (isKilled) {
+                finalMessage = '사용자에 의해 중지됨';
+            } else if (isSuccess) {
+                finalMessage = articlesCount > 0 ? `${articlesCount}건 수집 완료` : '수집된 기사 없음';
+            } else {
+                finalMessage = `프로세스 에러 (Code ${code})`;
+            }
 
             const fullLog = stdoutData + (stderrData ? `\n[STDERR]\n${stderrData}` : '');
 

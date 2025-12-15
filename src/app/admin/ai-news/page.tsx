@@ -33,6 +33,7 @@ interface AIArticle {
     thumbnail_url?: string;
     ai_source?: string;
     region?: string;
+    created_at: string; // 추가
 }
 
 interface UsageStats {
@@ -193,13 +194,15 @@ function AINewsPage() {
     const handleApprove = async () => {
         if (!selectedArticle) return;
         try {
+            const bodyData: any = { status: 'published' };
+            if (!selectedArticle.published_at) {
+                bodyData.published_at = new Date().toISOString();
+            }
+
             const res = await fetch(`/api/posts/${selectedArticle.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    status: 'published',
-                    published_at: new Date().toISOString()
-                })
+                body: JSON.stringify(bodyData)
             });
 
             if (res.ok) {
@@ -360,6 +363,9 @@ function AINewsPage() {
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <StatusBadge type="article" status={article.status} />
                                                     <span className="text-xs text-gray-400">{article.source}</span>
+                                                    <span className="text-[10px] text-gray-500 ml-auto">
+                                                        {new Date(article.published_at || article.created_at).toLocaleDateString()}
+                                                    </span>
                                                 </div>
                                                 <h3 className="font-medium text-gray-900 truncate">{article.title}</h3>
                                                 <p className="text-sm text-gray-500 line-clamp-2 mt-1">
@@ -478,6 +484,18 @@ function AINewsPage() {
                                     </div>
                                     <div>
                                         <span className="font-medium">상태:</span> <StatusBadge type="article" status={selectedArticle.status} />
+                                    </div>
+                                    <div className="col-span-2 flex flex-col gap-1 mt-2 text-xs border-t border-gray-100 pt-2">
+                                        <div className="flex gap-2">
+                                            <span className="text-gray-400 w-16">수집일:</span>
+                                            <span>{new Date(selectedArticle.created_at).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <span className="text-gray-400 w-16">작성일:</span>
+                                            <span className={selectedArticle.published_at ? "text-blue-600 font-bold" : "text-gray-300"}>
+                                                {selectedArticle.published_at ? new Date(selectedArticle.published_at).toLocaleString() : '-'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

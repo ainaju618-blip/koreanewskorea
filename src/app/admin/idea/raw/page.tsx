@@ -16,6 +16,8 @@ import {
     Loader2
 } from 'lucide-react';
 import { PageHeader } from '@/components/admin/shared/PageHeader';
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 // 원문 기사 타입
 interface RawArticle {
@@ -184,6 +186,8 @@ function ArticleDetailModal({
 }
 
 export default function RawArticlesPage() {
+    const { showSuccess, showError } = useToast();
+    const { confirm } = useConfirm();
     const [articles, setArticles] = useState<RawArticle[]>([]);
     const [sources, setSources] = useState<AISource[]>([]);
     const [loading, setLoading] = useState(true);
@@ -225,14 +229,14 @@ export default function RawArticlesPage() {
             const data = await res.json();
 
             if (data.success) {
-                alert(`${data.totalCollected}개의 새 기사를 수집했습니다.`);
+                showSuccess(`${data.totalCollected}개의 새 기사를 수집했습니다.`);
                 loadArticles();
             } else {
-                alert(data.message || '수집 실패');
+                showError(data.message || '수집 실패');
             }
         } catch (error) {
             console.error('Collect failed:', error);
-            alert('수집 중 오류가 발생했습니다.');
+            showError('수집 중 오류가 발생했습니다.');
         } finally {
             setCollecting(false);
         }
@@ -240,7 +244,8 @@ export default function RawArticlesPage() {
 
     // 전체 삭제
     const handleClearAll = async () => {
-        if (!confirm('모든 수집된 기사를 삭제하시겠습니까?')) return;
+        const confirmed = await confirm({ message: '모든 수집된 기사를 삭제하시겠습니까?' });
+        if (!confirmed) return;
 
         try {
             await fetch('/api/idea/collect', { method: 'DELETE' });

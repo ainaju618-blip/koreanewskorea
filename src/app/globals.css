@@ -829,6 +829,412 @@
     color: var(--admin-text-muted) !important;
 }
 
+/* ===================================
+   Extended Dark Mode Conversion
+   - Full coverage for all admin pages
+   =================================== */
+
+/* Background colors - comprehensive */
+.admin-layout .bg-gray-300,
+.admin-layout [class*="bg-gray-300"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .bg-slate-200,
+.admin-layout [class*="bg-slate-200"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .bg-slate-300,
+.admin-layout [class*="bg-slate-300"] {
+    background-color: var(--admin-border-emphasis) !important;
+}
+
+/* Hover states - extended */
+.admin-layout .hover\:bg-gray-200:hover,
+.admin-layout .hover\:bg-slate-200:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .hover\:text-gray-600:hover,
+.admin-layout .hover\:text-slate-600:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .hover\:text-gray-700:hover,
+.admin-layout .hover\:text-slate-700:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .hover\:text-gray-900:hover,
+.admin-layout .hover\:text-slate-900:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Border hover states */
+.admin-layout .hover\:border-gray-300:hover,
+.admin-layout .hover\:border-slate-300:hover {
+    border-color: var(--admin-border-emphasis) !important;
+}
+
+/* All text variants - deep conversion */
+.admin-layout .text-gray-300,
+.admin-layout .text-slate-300 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .text-gray-200,
+.admin-layout .text-slate-200 {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Border colors - extended coverage */
+.admin-layout .border-gray-400,
+.admin-layout .border-slate-400 {
+    border-color: var(--admin-border-emphasis) !important;
+}
+
+/* Ring colors for focus states */
+.admin-layout .ring-gray-300,
+.admin-layout .ring-slate-300 {
+    --tw-ring-color: var(--admin-border-default) !important;
+}
+
+/* Divide colors */
+.admin-layout .divide-gray-100 > * + *,
+.admin-layout .divide-slate-100 > * + * {
+    border-color: var(--admin-border-muted) !important;
+}
+
+.admin-layout .divide-gray-200 > * + *,
+.admin-layout .divide-slate-200 > * + * {
+    border-color: var(--admin-border-default) !important;
+}
+
+/* Placeholder text */
+.admin-layout .placeholder-gray-400::placeholder,
+.admin-layout .placeholder-slate-400::placeholder {
+    color: var(--admin-text-placeholder) !important;
+}
+
+/* Icon colors in buttons */
+.admin-layout button .text-gray-400,
+.admin-layout button .text-slate-400 {
+    color: var(--admin-text-muted) !important;
+}
+
+.admin-layout button:hover .text-gray-400,
+.admin-layout button:hover .text-slate-400 {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Gradient text support */
+.admin-layout .from-gray-400,
+.admin-layout .from-slate-400 {
+    --tw-gradient-from: var(--admin-text-muted) !important;
+}
+
+.admin-layout .to-gray-600,
+.admin-layout .to-slate-600 {
+    --tw-gradient-to: var(--admin-text-secondary) !important;
+}
+
+/* Status Badge specific - comprehensive */
+.admin-layout span.bg-gray-100,
+.admin-layout span[class*="bg-gray-100"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout span.text-gray-600,
+.admin-layout span[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout span.text-gray-700,
+.admin-layout span[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout span.text-gray-800,
+.admin-layout span[class*="text-gray-800"] {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Modal/Dialog text and backgrounds */
+.admin-layout [role="dialog"] .text-gray-400,
+.admin-layout .modal .text-gray-400 {
+    color: var(--admin-text-muted) !important;
+}
+
+.admin-layout [role="dialog"] .text-gray-500,
+.admin-layout .modal .text-gray-500 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout [role="dialog"] .text-gray-600,
+.admin-layout .modal .text-gray-600 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout [role="dialog"] .text-gray-700,
+.admin-layout .modal .text-gray-700 {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout [role="dialog"] .bg-gray-50,
+.admin-layout .modal .bg-gray-50 {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+/* Form labels and helper text */
+.admin-layout label.text-gray-700,
+.admin-layout label[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout .text-sm.text-gray-500,
+.admin-layout .text-sm.text-gray-600 {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Section titles */
+.admin-layout h2.text-gray-800,
+.admin-layout h3.text-gray-800,
+.admin-layout h4.text-gray-800 {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout h2.text-gray-700,
+.admin-layout h3.text-gray-700,
+.admin-layout h4.text-gray-700 {
+    color: #c9d1d9 !important;
+}
+
+/* Buttons - secondary/outline variants */
+.admin-layout button.border-gray-300,
+.admin-layout button[class*="border-gray-300"] {
+    border-color: var(--admin-border-emphasis) !important;
+}
+
+.admin-layout button.text-gray-700,
+.admin-layout button[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout button.text-gray-600,
+.admin-layout button[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout button.hover\:bg-gray-50:hover,
+.admin-layout button[class*="hover:bg-gray-50"]:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout button.hover\:bg-gray-100:hover,
+.admin-layout button[class*="hover:bg-gray-100"]:hover {
+    background-color: var(--admin-bg-elevated) !important;
+}
+
+/* Table specific text */
+.admin-layout td.text-gray-600,
+.admin-layout td[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout td.text-gray-700,
+.admin-layout td[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+/* Links in admin */
+.admin-layout a.text-gray-600,
+.admin-layout a[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout a.text-gray-700,
+.admin-layout a[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+.admin-layout a.hover\:text-gray-900:hover,
+.admin-layout a[class*="hover:text-gray-900"]:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Textarea backgrounds */
+.admin-layout textarea.bg-gray-50,
+.admin-layout textarea[class*="bg-gray-50"] {
+    background-color: var(--admin-bg-base) !important;
+}
+
+/* Pre and code blocks */
+.admin-layout pre.bg-gray-50,
+.admin-layout pre[class*="bg-gray-50"] {
+    background-color: var(--admin-bg-base) !important;
+}
+
+.admin-layout code.text-gray-800,
+.admin-layout code[class*="text-gray-800"] {
+    color: var(--admin-text-primary) !important;
+}
+
+/* List items text */
+.admin-layout li.text-gray-600,
+.admin-layout li[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout li.text-gray-700,
+.admin-layout li[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+/* Paragraphs */
+.admin-layout p.text-gray-600,
+.admin-layout p[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout p.text-gray-700,
+.admin-layout p[class*="text-gray-700"] {
+    color: #c9d1d9 !important;
+}
+
+/* Icons within containers */
+.admin-layout svg.text-gray-400,
+.admin-layout svg[class*="text-gray-400"] {
+    color: var(--admin-text-muted) !important;
+}
+
+.admin-layout svg.text-gray-500,
+.admin-layout svg[class*="text-gray-500"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout svg.text-gray-600,
+.admin-layout svg[class*="text-gray-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Filtered tabs component */
+.admin-layout .bg-gray-100.text-gray-600 {
+    background-color: var(--admin-bg-overlay) !important;
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .hover\:bg-gray-200.text-gray-600:hover {
+    background-color: var(--admin-bg-elevated) !important;
+    color: var(--admin-text-primary) !important;
+}
+
+/* Image thumbnail placeholder */
+.admin-layout .bg-gray-50.border-gray-200,
+.admin-layout [class*="bg-gray-50"][class*="border-gray-200"] {
+    background-color: var(--admin-bg-elevated) !important;
+    border-color: var(--admin-border-default) !important;
+}
+
+/* Card headers with gray background */
+.admin-layout .bg-gray-50.border-b,
+.admin-layout [class*="bg-gray-50"][class*="border-b"] {
+    background-color: var(--admin-bg-elevated) !important;
+    border-color: var(--admin-border-default) !important;
+}
+
+/* Pagination buttons */
+.admin-layout .border-gray-300.text-gray-700,
+.admin-layout [class*="border-gray-300"][class*="text-gray-700"] {
+    border-color: var(--admin-border-emphasis) !important;
+    color: #c9d1d9 !important;
+}
+
+/* Disabled states */
+.admin-layout .disabled\:bg-gray-100:disabled,
+.admin-layout .disabled\:text-gray-400:disabled {
+    background-color: var(--admin-bg-overlay) !important;
+    color: var(--admin-text-muted) !important;
+}
+
+/* Select dropdown options */
+.admin-layout select option {
+    background-color: var(--admin-bg-surface) !important;
+    color: var(--admin-text-primary) !important;
+}
+
+/* Slider/Range input */
+.admin-layout input[type="range"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout input[type="range"]::-webkit-slider-thumb {
+    background-color: var(--admin-accent-blue) !important;
+}
+
+/* File input */
+.admin-layout input[type="file"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout input[type="file"]::file-selector-button {
+    background-color: var(--admin-bg-overlay) !important;
+    color: var(--admin-text-primary) !important;
+    border: 1px solid var(--admin-border-default) !important;
+}
+
+/* Search results highlight */
+.admin-layout mark,
+.admin-layout .highlight {
+    background-color: rgba(210, 153, 34, 0.3) !important;
+    color: var(--admin-text-primary) !important;
+}
+
+/* Tooltips */
+.admin-layout [data-tooltip],
+.admin-layout .tooltip {
+    background-color: var(--admin-bg-surface) !important;
+    color: var(--admin-text-primary) !important;
+    border: 1px solid var(--admin-border-default) !important;
+}
+
+/* Dropdown menus */
+.admin-layout [role="menu"],
+.admin-layout [role="listbox"] {
+    background-color: var(--admin-bg-surface) !important;
+    border: 1px solid var(--admin-border-default) !important;
+}
+
+.admin-layout [role="menuitem"],
+.admin-layout [role="option"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout [role="menuitem"]:hover,
+.admin-layout [role="option"]:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+/* Breadcrumbs */
+.admin-layout nav[aria-label="breadcrumb"] a {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout nav[aria-label="breadcrumb"] a:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Empty state messages */
+.admin-layout .text-center.text-gray-500 {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Loading spinner container */
+.admin-layout .animate-spin + .text-gray-500,
+.admin-layout .animate-spin + .text-gray-600 {
+    color: var(--admin-text-secondary) !important;
+}
+
 @layer components {
 
     /* --- Admin Color Tokens --- */

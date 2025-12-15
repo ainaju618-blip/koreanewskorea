@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { LayoutGrid, Plus, Edit2, Trash2, Loader2, X, Check, GripVertical, Eye, Image, List, Grid3X3, Newspaper, TrendingUp } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
 
 interface LayoutSection {
     id: string;
@@ -42,6 +43,7 @@ const SOURCE_TYPES = [
 ];
 
 export default function LayoutsPage() {
+    const { showSuccess, showError } = useToast();
     const [layouts, setLayouts] = useState<LayoutSection[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function LayoutsPage() {
     // 저장
     const handleSave = async () => {
         if (!formData.section_name) {
-            alert('섹션 이름을 입력하세요.');
+            showError('섹션 이름을 입력하세요.');
             return;
         }
 
@@ -147,9 +149,10 @@ export default function LayoutsPage() {
             }
 
             setShowModal(false);
+            showSuccess('저장되었습니다.');
             fetchData();
         } catch (err: any) {
-            alert(err.message || '저장 실패');
+            showError(err.message || '저장 실패');
         } finally {
             setSaving(false);
         }
@@ -169,9 +172,10 @@ export default function LayoutsPage() {
         try {
             const res = await fetch(`/api/layouts/${layout.id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('삭제 실패');
+            showSuccess('삭제되었습니다.');
             fetchData();
         } catch (err: any) {
-            alert(err.message);
+            showError(err.message);
         }
     };
 

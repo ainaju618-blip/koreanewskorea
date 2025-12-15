@@ -18,6 +18,7 @@ interface Post {
     thumbnail_url?: string;
     image_url?: string;
     created_at: string;
+    published_at?: string; // 추가
     category: string;
     author?: string;
 }
@@ -88,7 +89,7 @@ export default async function NewsGrid({
                 )}
                 <Link
                     href={categorySlug ? `/category/${categorySlug}` : '/'}
-                    className="ml-auto text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-[#ff2e63] transition-colors"
+                    className="ml-auto text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-[#A6121D] transition-colors"
                 >
                     View All
                 </Link>
@@ -116,7 +117,7 @@ export default async function NewsGrid({
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-[#ff2e63]"></span>
+                                <span className="w-2 h-2 rounded-full bg-[#A6121D]"></span>
                                 <span className="text-xs font-bold text-[#0a192f] uppercase tracking-wide">Headline</span>
                             </div>
                             <h4 className="text-2xl font-serif font-bold text-[#0a192f] leading-tight group-hover:text-blue-900 transition-colors">
@@ -128,7 +129,7 @@ export default async function NewsGrid({
                                     : cleanContentPreview(mainPost.content, 120)}...
                             </p>
                             <span className="text-xs text-slate-400 font-sans block pt-2">
-                                {new Date(mainPost.created_at).toLocaleDateString('ko-KR')}
+                                {new Date(mainPost.published_at || mainPost.created_at).toLocaleDateString('ko-KR')}
                             </span>
                         </div>
                     </Link>
@@ -170,7 +171,7 @@ export default async function NewsGrid({
                                     </p>
                                     <span className="text-xs text-slate-400 flex items-center gap-1">
                                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                                        {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                                        {new Date(post.published_at || post.created_at).toLocaleDateString('ko-KR')}
                                     </span>
                                 </div>
                             </Link>

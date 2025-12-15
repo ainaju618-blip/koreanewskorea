@@ -18,7 +18,7 @@ interface LogEntry {
     ended_at: string | null;
 }
 
-const GROQ_API_KEY = "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";
+// GROQ_API_KEY is now in .env.local (server-side only)
 
 export default function AiNewsPage() {
     const [feeds, setFeeds] = useState<Feed[]>([]);
@@ -57,8 +57,7 @@ export default function AiNewsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     feed: selectedFeed,
-                    maxArticles: maxArticles,
-                    apiKey: GROQ_API_KEY
+                    maxArticles: maxArticles
                 })
             });
 

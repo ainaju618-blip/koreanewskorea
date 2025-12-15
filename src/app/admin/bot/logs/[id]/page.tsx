@@ -19,6 +19,8 @@ import {
     Check,
     StopCircle
 } from "lucide-react";
+import { useToast } from '@/components/ui/Toast';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 interface LogDetail {
     id: number;
@@ -32,6 +34,8 @@ interface LogDetail {
 }
 
 export default function LogDetailPage() {
+    const { showSuccess, showError } = useToast();
+    const { confirm } = useConfirm();
     const params = useParams();
     const router = useRouter();
     const [log, setLog] = useState<LogDetail | null>(null);
@@ -81,7 +85,8 @@ export default function LogDetailPage() {
 
     const handleStop = async () => {
         if (!log || log.status !== 'running') return;
-        if (!confirm(`${log.region.toUpperCase()} 스크래퍼를 중지하시겠습니까?`)) return;
+        const confirmed = await confirm({ message: `${log.region.toUpperCase()} 스크래퍼를 중지하시겠습니까?` });
+        if (!confirmed) return;
 
         setIsStopping(true);
         try {
@@ -92,12 +97,12 @@ export default function LogDetailPage() {
             if (data.success) {
                 // 로그 다시 불러오기
                 await fetchLog();
-                alert('스크래퍼가 중지되었습니다.');
+                showSuccess('스크래퍼가 중지되었습니다.');
             } else {
-                alert(`중지 실패: ${data.message}`);
+                showError(`중지 실패: ${data.message}`);
             }
         } catch (err: any) {
-            alert(`중지 오류: ${err.message}`);
+            showError(`중지 오류: ${err.message}`);
         } finally {
             setIsStopping(false);
         }
