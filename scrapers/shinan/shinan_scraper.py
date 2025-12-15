@@ -33,7 +33,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
@@ -243,20 +243,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
             y, m, d = date_match.groups()
             pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     
-    # 본문 정리 (혹시 남아있을 수 있는 메뉴 텍스트 제거)
-    if content:
-        lines = content.split('\n')
-        clean_lines = []
-        skip_keywords = [
-            '신안군소개', '전자민원창구', '열린군정', '참여마당', '분야별정보',
-            '사이트맵', '개인정보', 'COPYRIGHT', '저작권', '찾아오시는',
-            '읍면안내', '통계연보', '공공데이터', '정보공개', '지방세'
-        ]
-        for line in lines:
-            line = line.strip()
-            if line and not any(kw in line for kw in skip_keywords):
-                clean_lines.append(line)
-        content = '\n'.join(clean_lines)[:5000]
+    # 본문 정리 - clean_article_content 함수 사용
+    content = clean_article_content(content)
     
     # 이미지 처리
     thumbnail_url = None

@@ -36,7 +36,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
@@ -188,34 +188,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = page.evaluate(js_code)
             
         if content:
-            # 메타정보 제거 (v4.2: 패턴 대폭 강화)
-            patterns_to_remove = [
-                # 기본 메타데이터
-                r'조회수?\s*[:：]?\s*\d+',
-                r'조회\s*[:：]\s*\d+',
-                r'추천수?\s*[:：]?\s*\d+',
-                r'작성일\s*[:：]?\s*[\d\-\.]+',
-                r'등록일\s*[:：]?\s*[\d\-\.]+',
-                r'작성자\s*[:：]?\s*[^\s\n]+',
-                r'\d{4}-\d{2}-\d{2}',  # 날짜 형식
-                # 기관/담당자 정보
-                r'기관명\s*[:：]\s*[^\n]+',
-                r'기관주소\s*[:：]\s*[^\n]+',
-                r'담당자\s*[:：]\s*[^\n]+',
-                r'전화번호\s*[:：]?\s*[\d\-]+',
-                # 첨부파일 관련
-                r'첨부파일\s*\(?\d*\)?',
-                r'▲\s*\d+\.\s*\[[^\]]*\][^\n]*',  # ▲ 1.[사진1] 형태
-                r'\[\s*사진\d*\s*\][^\n]*',  # [사진1] 형태
-                # 기타
-                r'개인정보처리방침.*',
-            ]
-            for pattern in patterns_to_remove:
-                content = re.sub(pattern, '', content, flags=re.IGNORECASE)
-            # 연속 공백/줄바꿈 정리 (2줄 이상을 1줄로)
-            content = re.sub(r'\n{2,}', '\n', content)
-            content = re.sub(r'[ \t]+', ' ', content)  # 연속 공백도 정리
-            content = content.strip()[:5000]
+            # 공통 본문 정제 함수 사용 (v4.3)
+            content = clean_article_content(content)
             
     except Exception as e:
         print(f"      ⚠️ 본문 추출 실패: {e}")

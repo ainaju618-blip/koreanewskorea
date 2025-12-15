@@ -34,7 +34,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.image_extractor import extract_thumbnail
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -223,10 +223,10 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
         """
         content = page.evaluate(js_code)
         if content:
-            content = content[:5000]
+            content = clean_article_content(content)[:5000]
     except Exception as e:
         print(f"      ⚠️ JS 본문 추출 실패: {e}")
-    
+
     # 전략 2: 일반 셀렉터 fallback
     if not content or len(content) < 50:
         for sel in CONTENT_SELECTORS:
@@ -235,7 +235,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
                 if content_elem.count() > 0:
                     text = safe_get_text(content_elem)
                     if text and len(text) > 50:
-                        content = text[:5000]
+                        content = clean_article_content(text)[:5000]
                         break
             except:
                 continue

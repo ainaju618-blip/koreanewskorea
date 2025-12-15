@@ -22,6 +22,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.text_cleaner import clean_article_content
 
 # ============================================
 # 상수 정의
@@ -239,6 +240,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
         content = page.evaluate(js_code, title)
         if content:
             content = clean_content_v3(content)
+            content = clean_article_content(content)
             content = content[:5000]
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")

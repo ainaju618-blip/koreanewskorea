@@ -36,7 +36,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
@@ -292,7 +292,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         if data.get('department'):
             department = data['department']
         if data.get('content'):
-            content = data['content'][:5000]
+            content = clean_article_content(data['content'][:5000])
         if data.get('title'):
             detail_title = data['title']
     except Exception as e:
@@ -304,7 +304,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             body_text = page.locator('body').inner_text()
             # 본문 영역 찾기 시도
             if body_text:
-                content = body_text[:5000]
+                content = clean_article_content(body_text[:5000])
         except:
             pass
     

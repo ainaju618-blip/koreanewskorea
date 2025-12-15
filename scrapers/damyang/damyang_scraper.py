@@ -23,7 +23,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
-    safe_goto, wait_and_find, safe_get_text, safe_get_attr
+    safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 )
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -194,6 +194,8 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
             if raw_content and len(raw_content) > 50:
                 # 본문 정제: 제목 중복 제거, 부제목 추출, 푸터 제거
                 content, subtitle = clean_content(raw_content, title)
+                # clean_article_content 적용 (추가 정제)
+                content = clean_article_content(content)
                 break
     
     # 3. 이미지 추출 - 담양군 패턴: button.downBtn + expect_download

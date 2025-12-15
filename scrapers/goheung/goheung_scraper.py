@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.clean_content import clean_article_content
 
 # ============================================================
 # 4. 상수 정의
@@ -262,7 +263,11 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
                         break
             except:
                 continue
-    
+
+    # 본문 클린업 적용
+    if content:
+        content = clean_article_content(content)
+
     # 4. 이미지 추출 (첨부파일 우선)
     thumbnail_url = None
     

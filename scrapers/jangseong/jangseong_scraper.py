@@ -19,6 +19,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.text_cleaner import clean_article_content
 
 # ============================================
 # 상수 정의
@@ -75,60 +76,6 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
     return True, "[검증 통과]"
 
 
-def clean_content(content: str) -> str:
-    """본문에서 메타 정보 및 불필요한 텍스트 제거"""
-    if not content:
-        return ""
-    
-    lines = content.split('\n')
-    cleaned_lines = []
-    
-    for line in lines:
-        line_stripped = line.strip()
-        
-        # 빈 줄은 유지
-        if not line_stripped:
-            cleaned_lines.append(line)
-            continue
-        
-        # 제거할 패턴들
-        skip_patterns = [
-            # 날짜 및 담당부서 패턴 (예: "2025-12-11   |   기획실")
-            re.match(r'^\d{4}-\d{2}-\d{2}\s*\|\s*\S+', line_stripped),
-            # 조회수 패턴 (예: "조회수 : 78")
-            re.match(r'^조회수\s*[:\s]\s*\d+', line_stripped),
-            # 저작권/공공누리 문구
-            '공공누리' in line_stripped,
-            '출처표시' in line_stripped and '이용할 수 있습니다' in line_stripped,
-            '저작물은' in line_stripped and '조건에 따라' in line_stripped,
-            # 담당자 정보 패턴
-            re.match(r'^담당자\s*[:\s]', line_stripped),
-            re.match(r'^연락처\s*[:\s]', line_stripped),
-            re.match(r'^전화번호\s*[:\s]', line_stripped),
-            # 첨부파일 안내
-            line_stripped.startswith('첨부파일'),
-            # 날짜만 있는 줄
-            re.match(r'^\d{4}[-./]\d{2}[-./]\d{2}$', line_stripped),
-        ]
-        
-        # 패턴 중 하나라도 매칭되면 제거
-        should_skip = False
-        for pattern in skip_patterns:
-            if pattern:  # bool 또는 Match 객체
-                should_skip = True
-                break
-        
-        if not should_skip:
-            cleaned_lines.append(line)
-    
-    # 정리된 본문 합치기
-    result = '\n'.join(cleaned_lines).strip()
-    
-    # 연속된 빈 줄 정리 (3개 이상 → 2개)
-    while '\n\n\n' in result:
-        result = result.replace('\n\n\n', '\n\n')
-    
-    return result
 
 
 def safe_get_text(locator) -> str:
@@ -172,7 +119,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
                     break
 
         # 메타 정보 제거 (날짜, 조회수, 저작권 문구 등)
-        content = clean_content(content)
+        content = clean_article_content(content)
         content = content[:5000]  # 최대 5000자
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")

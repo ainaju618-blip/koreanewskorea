@@ -32,7 +32,8 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
-    safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result
+    safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result,
+    clean_article_content
 )
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -75,38 +76,6 @@ def normalize_date(date_str: str) -> str:
     except:
         pass
     return datetime.now().strftime('%Y-%m-%d')
-
-
-def clean_content(content: str) -> str:
-    """본문에서 불필요한 메타 정보 제거"""
-    if not content:
-        return content
-
-    # 제거할 패턴들
-    patterns_to_remove = [
-        r'작성자\s*:\s*[^\n]+',
-        r'작성일\s*:\s*[^\n]+',
-        r'조회수\s*:\s*\d+',
-        r'담당부서\s*전화번호\s*:\s*[^\n]+',
-        r'담당부서\s*:\s*[^\n]+',
-        r'전화번호\s*:\s*[^\n]+',
-        r'등록일\s*:\s*[^\n]+',
-        r'수정일\s*:\s*[^\n]+',
-        r'첨부파일\s*:\s*[^\n]*',
-        r'파일\s*:\s*[^\n]*',
-        r'\[jpg,[^\]]+\]',  # [jpg,11.46 MB] 형태
-        r'\[png,[^\]]+\]',
-        r'\[jpeg,[^\]]+\]',
-    ]
-
-    for pattern in patterns_to_remove:
-        content = re.sub(pattern, '', content, flags=re.IGNORECASE)
-
-    # 연속된 공백/줄바꿈 정리
-    content = re.sub(r'\n{3,}', '\n\n', content)
-    content = re.sub(r'^\s+', '', content)
-
-    return content.strip()
 
 
 # ============================================================
@@ -244,7 +213,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[Optional[str], Optional[str], st
         return None, None, None, None
 
     # 본문 정리 (메타정보 제거)
-    content = clean_content(content)
+    content = clean_article_content(content)
 
     return content, thumbnail_url, pub_date, department
 

@@ -213,3 +213,140 @@ COMMON_IMAGE_SELECTORS = [
     'article img',
     '.content_view img',
 ]
+
+
+# ============================================================
+# 본문 정제 유틸리티 (v1.0)
+# ============================================================
+import re
+
+def clean_article_content(content: str, max_length: int = 5000) -> str:
+    """
+    기사 본문에서 불필요한 메타데이터, 첨부파일 정보 등을 제거
+
+    제거 대상:
+    - 첨부파일 목록 (1.[사진1], 2.[홍보물], *.jpg, *.hwp 등)
+    - 메타데이터 (조회수, 작성일, 작성자, 담당자 등)
+    - 파일 크기/다운로드 정보 (123.45 KB, Hit: 0 등)
+    - 기관 정보 (기관명, 전화번호 등)
+    - 불필요한 공백/줄바꿈
+
+    Args:
+        content: 원본 본문 텍스트
+        max_length: 최대 문자 수 (기본 5000자)
+
+    Returns:
+        정제된 본문 텍스트
+    """
+    if not content:
+        return ""
+
+    # 1. 첨부파일 관련 패턴 제거
+    attachment_patterns = [
+        # 번호.[파일명].확장자 (파일크기) Hit: N 형태
+        r'^\d+\.\s*\[[^\]]*\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]*\)\s*Hit:\s*\d+',
+        r'\d+\.\s*\[[^\]]*\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]*\)\s*Hit:\s*\d+',
+        # 번호.[파일명] 형태 (한 줄 전체)
+        r'^\d+\.\s*\[[^\]]*\]\s*[^\n]*$',
+        # 파일명 (크기) Hit: N 형태
+        r'[^\s]+\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit:\s*\d+',
+        # 단순 파일 정보
+        r'\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit:\s*\d+',
+        # 첨부파일 (N개) 형태
+        r'첨부파일\s*\(?\d*\)?',
+        # [사진], [사진1], [홍보물] 등 캡션
+        r'\[\s*사진\d*\s*\][^\n]*',
+        r'\[\s*홍보물\d*\s*\][^\n]*',
+        r'\[\s*보도자료\s*\][^\n]*',
+        r'\[\s*포스터\s*\][^\n]*',
+    ]
+
+    # 2. 메타데이터 패턴 제거
+    metadata_patterns = [
+        # 조회/추천 정보
+        r'조회수?\s*[:]\s*\d+',
+        r'조회\s*[:]\s*\d+',
+        r'추천수?\s*[:]\s*\d+',
+        r'추천\s*[:]\s*\d+',
+        # 날짜/작성자 정보
+        r'작성일\s*[:]\s*[\d\-\.\/]+',
+        r'등록일\s*[:]\s*[\d\-\.\/]+',
+        r'수정일\s*[:]\s*[\d\-\.\/]+',
+        r'작성자\s*[:]\s*[^\s\n]+',
+        r'담당자\s*[:]\s*[^\n]+',
+        # 기관 정보
+        r'기관명\s*[:]\s*[^\n]+',
+        r'기관주소\s*[:]\s*[^\n]+',
+        r'전화번호\s*[:]\s*[\d\-]+',
+        r'팩스\s*[:]\s*[\d\-]+',
+        r'문의\s*[:]\s*[^\n]+',
+        # 업무담당자 정보 (예: 업무담당자 창평면사무소 조경화 061-380-3801)
+        r'업무담당자\s*[^\n]+',
+        r'\([업업무무담담당당자자]?\s*[가-힣]+\s*[가-힣]+\s*[\d\-]+\)',
+    ]
+
+    # 3. 기타 불필요한 패턴
+    misc_patterns = [
+        # 사진 캡션 패턴
+        r'사진\s*[:]\s*[^\n]+',
+        r'▲\s*[^\n]+',  # ▲ 로 시작하는 사진 캡션
+        r'△\s*[^\n]+',  # △ 로 시작하는 사진 캡션
+        # 저작권/면책 문구
+        r'개인정보처리방침.*',
+        r'Copyright.*',
+        r'저작권.*',
+        # 빈 번호만 있는 줄
+        r'^\d+\.\s*$',
+    ]
+
+    # 모든 패턴 적용 (MULTILINE 모드)
+    all_patterns = attachment_patterns + metadata_patterns + misc_patterns
+    for pattern in all_patterns:
+        content = re.sub(pattern, '', content, flags=re.MULTILINE | re.IGNORECASE)
+
+    # 4. 공백/줄바꿈 정리
+    # 3줄 이상 연속 줄바꿈 -> 2줄로
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    # 연속 공백 정리
+    content = re.sub(r'[ \t]+', ' ', content)
+    # 각 줄 앞뒤 공백 제거
+    lines = [line.strip() for line in content.split('\n')]
+    content = '\n'.join(lines)
+    # 빈 줄만 있는 경우 제거
+    content = re.sub(r'\n\s*\n', '\n\n', content)
+
+    # 5. 앞뒤 공백 제거 및 길이 제한
+    content = content.strip()
+    if len(content) > max_length:
+        content = content[:max_length]
+
+    return content
+
+
+def extract_clean_text_from_html(html_content: str) -> str:
+    """
+    HTML에서 텍스트만 추출하고 정제
+
+    Args:
+        html_content: HTML 문자열
+
+    Returns:
+        정제된 텍스트
+    """
+    if not html_content:
+        return ""
+
+    # HTML 태그 제거 (간단한 방식)
+    text = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', ' ', text)
+
+    # HTML 엔티티 변환
+    text = text.replace('&nbsp;', ' ')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    text = text.replace('&amp;', '&')
+    text = text.replace('&quot;', '"')
+
+    # 본문 정제 적용
+    return clean_article_content(text)

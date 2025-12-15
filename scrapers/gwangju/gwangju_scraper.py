@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 
 REGION_CODE = 'gwangju'
 REGION_NAME = '광주광역시'
@@ -61,6 +61,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
         content_elem = wait_and_find(page, ['div.board_view_body', 'div.view_content', 'div#boardView'], timeout=5000)
         if content_elem:
             content = safe_get_text(content_elem)
+            content = clean_article_content(content)
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")
 

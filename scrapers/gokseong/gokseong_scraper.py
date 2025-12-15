@@ -32,7 +32,8 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
-    safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result
+    safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result,
+    clean_article_content
 )
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -236,7 +237,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         return None, None, None, None
 
     # 본문에서 불필요한 메타 정보 제거
-    content = clean_content(content)
+    content = clean_article_content(content)
 
     return content, thumbnail_url, pub_date, department
 

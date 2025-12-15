@@ -33,7 +33,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
@@ -219,11 +219,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         """
         content = page.evaluate(js_code)
         if content:
-            # 메타정보 제거
-            content = re.sub(r'작성일\s*[:\s]*[^\n]+', '', content)
-            content = re.sub(r'조회수\s*[:\s]*\d+', '', content)
-            content = re.sub(r'첨부파일[^\n]*', '', content)
-            content = content.strip()[:5000]
+            # clean_article_content 함수로 정제
+            content = clean_article_content(content)
     except Exception as e:
         print(f"      ⚠️ JS 본문 추출 실패: {e}")
     
@@ -235,7 +232,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 if content_elem.count() > 0:
                     text = safe_get_text(content_elem)
                     if text and len(text) > 50:
-                        content = text[:5000]
+                        content = clean_article_content(text)
                         break
             except:
                 continue

@@ -18,6 +18,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.scraper_utils import clean_article_content
 
 # ============================================
 # 상수 정의
@@ -119,7 +120,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
             if not content or len(content) < 50:
                 content = content_elem.inner_text().strip()
 
-            content = content[:5000]  # 최대 5000자
+            # 공통 본문 정제 함수 적용
+            content = clean_article_content(content)
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")
 

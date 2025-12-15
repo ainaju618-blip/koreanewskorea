@@ -36,7 +36,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
 from utils.cloudinary_uploader import download_and_upload_image
 
 # ============================================================
@@ -240,26 +240,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         """
         content = page.evaluate(js_code)
         if content:
-            # 메타정보 제거 (v1.1: 담당부서/연락처 패턴 추가)
-            patterns_to_remove = [
-                r'등록일[^\n]+',
-                r'작성자[^\n]+',
-                r'조회수[^\n]+',
-                r'첨부파일[^\n]+',
-                # 담당부서/연락처 패턴 (Claude 작업 지시)
-                r'담당부서\s*[:：]?\s*[^\n]+',
-                r'담당자\s*[:：]?\s*[^\n]+',
-                r'부서명\s*[:：]?\s*[^\n]+',
-                r'연락처\s*[:：]?\s*[\d\-\s]+',
-                r'전화번호\s*[:：]?\s*[\d\-\s]+',
-                r'팩스\s*[:：]?\s*[\d\-\s]+',
-                r'\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}',  # 전화번호 형식
-            ]
-            for pattern in patterns_to_remove:
-                content = re.sub(pattern, '', content)
-            # 연속 공백/줄바꿈 정리
-            content = re.sub(r'\n{3,}', '\n\n', content)
-            content = content.strip()[:5000]
+            # clean_article_content 함수로 본문 정제
+            content = clean_article_content(content)
     except Exception as e:
         print(f"      ⚠️ JS 본문 추출 실패: {e}")
     
@@ -271,7 +253,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 if content_elem.count() > 0:
                     text = safe_get_text(content_elem)
                     if text and len(text) > 50:
-                        content = text[:5000]
+                        content = clean_article_content(text)
                         break
             except:
                 continue
