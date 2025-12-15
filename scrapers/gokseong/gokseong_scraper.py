@@ -241,7 +241,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     content = clean_article_content(content)
 
     # 부제목 추출
-    subtitle, content = extract_subtitle(content)
+    subtitle, content = extract_subtitle(content, title)
 
     return content, thumbnail_url, pub_date, department, subtitle
 

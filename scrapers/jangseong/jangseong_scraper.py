@@ -289,7 +289,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             content, thumbnail_url, pub_date, department = fetch_detail(page, url)
 
             # 부제목 추출
-            subtitle, content = extract_subtitle(content)
+            subtitle, content = extract_subtitle(content, title)
 
             # 날짜 결정 (상세 페이지 > 목록 페이지)
             final_date = pub_date if pub_date else list_date

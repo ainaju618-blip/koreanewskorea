@@ -473,7 +473,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
                 # 부제목 추출
-                subtitle, content = extract_subtitle(content)
+                subtitle, content = extract_subtitle(content, title)
 
                 # 카테고리 자동 분류
                 cat_code, cat_name = detect_category(title, content)

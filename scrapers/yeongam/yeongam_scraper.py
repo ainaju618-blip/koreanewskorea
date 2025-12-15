@@ -231,7 +231,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
         content = clean_article_content(content)
 
     # 부제목 추출
-    subtitle, content = extract_subtitle(content)
+    subtitle, content = extract_subtitle(content, title)
 
     # 4. 이미지 추출 (본문 내 직접 삽입 방식 - 영암군은 이미지가 없음)
     thumbnail_url = None

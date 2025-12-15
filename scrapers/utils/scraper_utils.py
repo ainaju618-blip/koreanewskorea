@@ -216,7 +216,7 @@ COMMON_IMAGE_SELECTORS = [
 
 
 # ============================================================
-# 본문 정제 유틸리티 (v1.1)
+# 본문 정제 유틸리티 (v1.2)
 # ============================================================
 import re
 
@@ -229,6 +229,10 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
     - 메타데이터 (조회수, 작성일, 작성자, 담당자 등)
     - 파일 크기/다운로드 정보 (123.45 KB, Hit: 0 등)
     - 기관 정보 (기관명, 전화번호 등)
+    - 담당자 정보 (【과장 홍길동 123-4567】 형태)
+    - 사진 설명 섹션 전체
+    - 저작권/공공누리 문구
+    - 네비게이션 (다음글, 이전글, 인쇄, 목록)
     - 불필요한 공백/줄바꿈
     - 빈 번호 (1. 2. 3. 등)
 
@@ -241,6 +245,14 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
     """
     if not content:
         return ""
+
+    # 0. 사진 설명 섹션 이후 전체 제거 (가장 먼저 처리)
+    section_cutoff_patterns = [
+        r'[\u25C7\u25C6\u25CB\u25CF]\s*사진\s*설명.*',  # ◇◆○● 사진 설명 이후
+        r'사진\s*설명\s*[:.]?.*',  # 사진 설명 이후
+    ]
+    for pattern in section_cutoff_patterns:
+        content = re.sub(pattern, '', content, flags=re.DOTALL | re.IGNORECASE)
 
     # 1. 첨부파일 관련 패턴 제거
     attachment_patterns = [
@@ -260,6 +272,8 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         r'\[\s*홍보물\d*\s*\][^\n]*',
         r'\[\s*보도자료\s*\][^\n]*',
         r'\[\s*포스터\s*\][^\n]*',
+        # (사진 N장 첨부) 형태
+        r'\([^)]*사진[^)]*\d*[^)]*장?[^)]*첨부[^)]*\)',
     ]
 
     # 2. 메타데이터 패턴 제거
@@ -284,18 +298,29 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         # 업무담당자 정보 (예: 업무담당자 창평면사무소 조경화 061-380-3801)
         r'업무담당자\s*[^\n]+',
         r'\([업업무무담담당당자자]?\s*[가-힣]+\s*[가-힣]+\s*[\d\-]+\)',
+        # 【담당자 정보】 형태 (예: 【친환경수산과장 전창우 286-6910, ...】)
+        r'[\u3010\u3011【】\[\]][^【】\[\]\u3010\u3011]*?(?:과장|팀장|담당|주무관)[^【】\[\]\u3010\u3011]*?[\d\-]{7,}[^【】\[\]\u3010\u3011]*[\u3010\u3011【】\[\]]',
     ]
 
     # 3. 기타 불필요한 패턴
     misc_patterns = [
         # 사진 캡션 패턴
         r'사진\s*[:]\s*[^\n]+',
-        r'▲\s*[^\n]+',  # ▲ 로 시작하는 사진 캡션
-        r'△\s*[^\n]+',  # △ 로 시작하는 사진 캡션
+        r'[\u25B2\u25BC\u25C0\u25B6]\s*[^\n]+',  # ▲▼◀▶ 로 시작하는 캡션
+        r'[\u25B3\u25BD]\s*[^\n]+',  # △▽ 로 시작하는 캡션
         # 저작권/면책 문구
         r'개인정보처리방침.*',
         r'Copyright.*',
         r'저작권.*',
+        # 공공누리 문구
+        r'본\s*저작물은\s*[""\']?공공누리[""\']?[^\n]*',
+        # 네비게이션
+        r'^다음글\s*$',
+        r'^이전글\s*$',
+        r'^인쇄\s*$',
+        r'^목록\s*$',
+        r'다음글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
+        r'이전글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
     ]
 
     # 모든 패턴 적용 (MULTILINE 모드)
@@ -492,20 +517,22 @@ def get_category_name(category_code: str) -> str:
 
 
 # ============================================================
-# 부제목 추출 유틸리티 (v1.0)
+# 부제목 추출 유틸리티 (v1.1)
 # ============================================================
 
-def extract_subtitle(content: str) -> tuple:
+def extract_subtitle(content: str, title: str = '') -> tuple:
     """
     본문에서 부제목을 추출하고 본문에서 제거
+    제목이 본문에 반복되는 경우도 제거
 
     부제목 패턴:
-    - "- 부제목 내용"         (앞에 - 만)
-    - "- 부제목 내용 -"       (앞뒤 -)
+    - "- 부제목 내용 -"       (앞뒤 -, 공백 허용)
     - "-- 부제목 내용 --"     (앞뒤 --)
+    - "- 부제목 내용"         (앞에 - 만)
 
     Args:
         content: 원본 본문 텍스트
+        title: 기사 제목 (본문에서 중복 제거용)
 
     Returns:
         tuple: (subtitle, cleaned_content)
@@ -517,50 +544,72 @@ def extract_subtitle(content: str) -> tuple:
 
     lines = content.strip().split('\n')
     subtitle = None
-    subtitle_line_index = None
+    lines_to_remove = []
 
-    # 처음 5줄 내에서 부제목 패턴 검색
+    # 1. 제목이 본문에 반복되는 경우 제거 (처음 3줄 내에서)
+    if title:
+        title_normalized = title.strip()
+        for i, line in enumerate(lines[:3]):
+            line_stripped = line.strip()
+            # 제목과 동일하거나 매우 유사한 경우
+            if line_stripped and (
+                line_stripped == title_normalized or
+                line_stripped.replace(' ', '') == title_normalized.replace(' ', '')
+            ):
+                lines_to_remove.append(i)
+                break
+
+    # 2. 부제목 패턴 검색 (처음 5줄 내에서)
+    subtitle_line_index = None
     for i, line in enumerate(lines[:5]):
-        line = line.strip()
-        if not line:
+        if i in lines_to_remove:
+            continue
+        line_stripped = line.strip()
+        if not line_stripped:
             continue
 
-        # 패턴 1: "- 부제목 내용 -" (앞뒤 -)
-        match = re.match(r'^-+\s*(.+?)\s*-+$', line)
+        # 패턴 1: "- 부제목 내용 -" (앞뒤 -, 끝에 공백 허용)
+        match = re.match(r'^-+\s*(.+?)\s*-+\s*$', line_stripped)
         if match:
             subtitle = match.group(1).strip()
             subtitle_line_index = i
             break
 
         # 패턴 2: "- 부제목 내용" (앞에 - 만, 최소 5자 이상)
-        match = re.match(r'^-\s+(.{5,})$', line)
+        match = re.match(r'^-\s+(.{5,})$', line_stripped)
         if match:
-            # 본문 첫 문장이 아닌 경우만 (보통 부제목은 본문보다 짧음)
             potential_subtitle = match.group(1).strip()
-            # 부제목 특성: 보통 한 문장이고 마침표로 안 끝남
+            # 부제목 특성: 보통 100자 미만이고 마침표로 안 끝남
             if len(potential_subtitle) < 100 and not potential_subtitle.endswith('.'):
                 subtitle = potential_subtitle
                 subtitle_line_index = i
                 break
 
-    # 부제목이 발견되면 해당 줄 제거
+    # 제거할 줄 목록에 부제목 줄 추가
     if subtitle_line_index is not None:
-        lines.pop(subtitle_line_index)
-        # 빈 줄 정리
-        while lines and not lines[0].strip():
-            lines.pop(0)
+        lines_to_remove.append(subtitle_line_index)
+
+    # 3. 줄 제거 (역순으로 제거해야 인덱스 꼬이지 않음)
+    for idx in sorted(lines_to_remove, reverse=True):
+        if idx < len(lines):
+            lines.pop(idx)
+
+    # 4. 앞쪽 빈 줄 정리
+    while lines and not lines[0].strip():
+        lines.pop(0)
 
     cleaned_content = '\n'.join(lines)
 
     return subtitle, cleaned_content
 
 
-def extract_subtitle_and_clean(content: str) -> dict:
+def extract_subtitle_and_clean(content: str, title: str = '') -> dict:
     """
     본문에서 부제목을 추출하고 본문을 정제하여 반환
 
     Args:
         content: 원본 본문 텍스트
+        title: 기사 제목 (본문에서 중복 제거용)
 
     Returns:
         dict: {
@@ -568,8 +617,8 @@ def extract_subtitle_and_clean(content: str) -> dict:
             'content': 정제된 본문
         }
     """
-    # 1. 부제목 추출
-    subtitle, content_without_subtitle = extract_subtitle(content)
+    # 1. 부제목 추출 (제목 중복 제거 포함)
+    subtitle, content_without_subtitle = extract_subtitle(content, title)
 
     # 2. 본문 정제
     cleaned_content = clean_article_content(content_without_subtitle)
