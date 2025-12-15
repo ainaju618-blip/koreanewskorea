@@ -135,7 +135,7 @@ export default async function NewsGrid({
                 </div>
 
                 {/* Sub Articles (Right - List) */}
-                <div className="lg:w-1/2 flex flex-col justify-between gap-6">
+                <div className="lg:w-1/2 flex flex-col justify-start gap-3">
                     {subPosts.map((post) => (
                         <div key={post.id}>
                             <Link
