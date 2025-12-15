@@ -23,7 +23,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
-    safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
+    safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category
 )
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -353,6 +353,9 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 # 날짜 우선순위: 상세 > 목록
                 pub_at = final_date if final_date else item['date']
                 
+                # 카테고리 자동 분류
+                cat_code, cat_name = detect_category(item['title'], content)
+
                 article = {
                     'title': item['title'],
                     'subtitle': subtitle,  # 부제목 추가
@@ -360,7 +363,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     'published_at': f"{pub_at}T09:00:00+09:00",
                     'original_link': item['url'],
                     'source': REGION_NAME,
-                    'category': CATEGORY_NAME,
+                    'category': cat_name,  # 자동 분류된 카테고리
                     'region': REGION_CODE,
                     'thumbnail_url': thumb
                 }

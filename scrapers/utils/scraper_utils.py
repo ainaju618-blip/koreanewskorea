@@ -350,3 +350,137 @@ def extract_clean_text_from_html(html_content: str) -> str:
 
     # 본문 정제 적용
     return clean_article_content(text)
+
+
+# ============================================================
+# 카테고리 자동 분류 (v1.0)
+# ============================================================
+
+# 카테고리 키워드 매핑
+CATEGORY_KEYWORDS = {
+    'education': {
+        'name': '교육',
+        'keywords': [
+            '학교', '학생', '교육', '장학', '입학', '졸업', '수업', '교사', '선생',
+            '유치원', '초등', '중학', '고등', '대학', '학부모', '교원', '교직',
+            '학력', '진학', '입시', '수능', '학원', '방과후', '돌봄', '급식',
+            '특수교육', '영재', '학습', '교과', '체험학습', '수학여행'
+        ]
+    },
+    'welfare': {
+        'name': '복지',
+        'keywords': [
+            '복지', '지원금', '수당', '어르신', '노인', '장애인', '보육', '돌봄',
+            '기초생활', '저소득', '취약계층', '아동', '청소년', '여성', '다문화',
+            '의료', '건강', '요양', '연금', '급여', '바우처', '사회서비스',
+            '자립', '재활', '상담', '쉼터', '보호', '양육'
+        ]
+    },
+    'culture': {
+        'name': '문화',
+        'keywords': [
+            '축제', '공연', '전시', '문화', '행사', '예술', '음악', '미술',
+            '박물관', '도서관', '문화재', '유적', '관광', '체육', '스포츠',
+            '레저', '여가', '동아리', '문화센터', '공원', '휴양', '페스티벌',
+            '콘서트', '연극', '영화', '국악', '전통', '문화원'
+        ]
+    },
+    'economy': {
+        'name': '경제',
+        'keywords': [
+            '일자리', '취업', '창업', '기업', '투자', '경제', '산업', '상권',
+            '농업', '어업', '축산', '농산물', '특산물', '시장', '상인',
+            '소상공인', '자영업', '무역', '수출', '수입', '공장', '제조',
+            '벤처', '스타트업', '고용', '실업', '구인', '구직', '직업훈련'
+        ]
+    },
+    'environment': {
+        'name': '환경',
+        'keywords': [
+            '환경', '쓰레기', '재활용', '분리수거', '청소', '미세먼지', '대기',
+            '수질', '하천', '녹지', '공원', '생태', '자연', '산림', '숲',
+            '탄소', '에너지', '태양광', '신재생', '기후', '온실가스',
+            '폐기물', '오염', '정화', '보전', '생물', '야생동물'
+        ]
+    },
+    'safety': {
+        'name': '안전',
+        'keywords': [
+            '안전', '재난', '화재', '소방', '구조', '구급', '응급', '사고',
+            '교통', '도로', '신호등', '횡단보도', 'CCTV', '방범', '치안',
+            '경찰', '범죄', '예방', '대피', '훈련', '비상', '홍수', '태풍',
+            '지진', '폭염', '한파', '재해', '복구', '긴급'
+        ]
+    },
+    'construction': {
+        'name': '건설',
+        'keywords': [
+            '건설', '공사', '도로', '교량', '터널', '건물', '시설', '인프라',
+            '개발', '정비', '재개발', '재건축', '주택', '아파트', '주거',
+            '상하수도', '하수처리', '배수', '포장', '보수', '신축', '증축',
+            '리모델링', '설계', '착공', '준공', '입찰'
+        ]
+    },
+    'administration': {
+        'name': '행정',
+        'keywords': [
+            '조례', '의회', '예산', '인사', '공고', '민원', '행정', '정책',
+            '계획', '사업', '추진', '시행', '공무원', '청사', '기관',
+            '위원회', '협의회', '간담회', '회의', '보고', '감사', '평가',
+            '선거', '투표', '지방자치', '자치단체', '군수', '시장', '도지사'
+        ]
+    }
+}
+
+# 기본 카테고리 (매칭 안될 경우)
+DEFAULT_CATEGORY = 'general'
+DEFAULT_CATEGORY_NAME = '일반'
+
+
+def detect_category(title: str, content: str = '') -> tuple:
+    """
+    제목과 본문을 분석하여 카테고리를 자동 분류
+
+    Args:
+        title: 기사 제목
+        content: 기사 본문 (선택)
+
+    Returns:
+        tuple: (category_code, category_name)
+               예: ('education', '교육')
+    """
+    if not title:
+        return DEFAULT_CATEGORY, DEFAULT_CATEGORY_NAME
+
+    # 제목 + 본문 앞부분(500자) 결합하여 분석
+    text = title.lower()
+    if content:
+        text += ' ' + content[:500].lower()
+
+    # 각 카테고리별 매칭 점수 계산
+    scores = {}
+    for cat_code, cat_data in CATEGORY_KEYWORDS.items():
+        score = 0
+        for keyword in cat_data['keywords']:
+            # 제목에 있으면 가중치 3배
+            if keyword in title:
+                score += 3
+            # 본문에 있으면 가중치 1배
+            elif keyword in text:
+                score += 1
+        scores[cat_code] = score
+
+    # 최고 점수 카테고리 선택
+    if scores:
+        best_category = max(scores, key=scores.get)
+        if scores[best_category] > 0:
+            return best_category, CATEGORY_KEYWORDS[best_category]['name']
+
+    return DEFAULT_CATEGORY, DEFAULT_CATEGORY_NAME
+
+
+def get_category_name(category_code: str) -> str:
+    """카테고리 코드로 한글 이름 반환"""
+    if category_code in CATEGORY_KEYWORDS:
+        return CATEGORY_KEYWORDS[category_code]['name']
+    return DEFAULT_CATEGORY_NAME

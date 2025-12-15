@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category
 
 REGION_CODE = 'gwangju'
 REGION_NAME = '광주광역시'
@@ -166,10 +166,13 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
             print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
             
             content, thumbnail_url, pub_date = fetch_detail(page, url)
-            
+
             if not pub_date:
                 pub_date = datetime.now().strftime('%Y-%m-%d')
-            
+
+            # 카테고리 자동 분류
+            cat_code, cat_name = detect_category(title, content)
+
             # 데이터 객체 생성
             article_data = {
                 'title': title,
@@ -177,7 +180,7 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
                 'published_at': f"{pub_date}T09:00:00+09:00",
                 'original_link': url,
                 'source': REGION_NAME,
-                'category': CATEGORY_NAME,
+                'category': cat_name,
                 'region': REGION_CODE,
                 'thumbnail_url': thumbnail_url,
             }

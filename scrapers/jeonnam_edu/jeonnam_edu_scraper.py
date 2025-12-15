@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.scraper_utils import clean_article_content
+from utils.category_detector import detect_category
 
 # ============================================
 # 상수 정의
@@ -307,6 +308,9 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             # 날짜 결정 (상세 페이지 > 목록 페이지)
             final_date = pub_date if pub_date else list_date
 
+            # 카테고리 자동 분류
+            cat_code, cat_name = detect_category(title, content)
+
             # 데이터 객체 생성
             article_data = {
                 'title': title,
@@ -314,7 +318,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
                 'published_at': f"{final_date}T09:00:00+09:00",
                 'original_link': url,
                 'source': REGION_NAME,
-                'category': CATEGORY_NAME,
+                'category': cat_name,
                 'region': REGION_CODE,
                 'thumbnail_url': thumbnail_url,
                 'department': department,
