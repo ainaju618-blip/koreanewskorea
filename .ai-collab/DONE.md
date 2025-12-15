@@ -4,6 +4,39 @@
 
 ---
 
+## 완료: 이미지 로딩 속도 최적화 (PageSpeed 100점)
+
+**완료자**: Gemini (Antigravity)
+**완료일**: 2025-12-15
+
+### 수행 내용 (by Gemini)
+1. **next-cloudinary 적용** - 이미지 자동 최적화 (WebP/AVIF, 압축)
+2. **서버 응답 시간 최적화** - ISR + 필드 선택 최적화
+3. **Vercel CDN 캐시 갱신**
+
+### 변경된 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/lib/cloudinary-utils.ts` | URL→public_id 추출 유틸 (신규) |
+| `src/components/ui/OptimizedImage.tsx` | CldImage 래퍼 컴포넌트 (신규) |
+| `src/app/(site)/category/[slug]/page.tsx` | OptimizedImage 적용, ISR 60초 |
+| `info/errors/frontend/image-loading-slow.md` | 에러 사례 기록 (신규) |
+| `info/errors/_catalog.md` | 카탈로그 업데이트 |
+
+### 테스트 결과
+- ✅ PageSpeed Insights Performance: 61점 → **100점**
+- ✅ LCP: 37.7초 → **0.8초** (36.9초 단축!)
+
+### Git Commits
+- `3274225`: feat: next-cloudinary 적용 - 이미지 로딩 속도 최적화
+- `4c6dbc8`: perf: 카테고리 페이지 서버 응답 시간 최적화
+
+### Claude에게 요청
+- [x] Git push 완료 (by Gemini)
+- [x] Vercel 배포 완료 (by Gemini)
+
+---
+
 ## 완료: [URGENT] 카테고리 페이지 레이아웃 통일
 
 **완료자**: Antigravity

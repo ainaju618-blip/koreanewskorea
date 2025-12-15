@@ -8,6 +8,7 @@ export async function createClient() {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            cookieEncoding: 'raw', // UTF-8/ByteString 에러 방지
             cookies: {
                 getAll() {
                     return cookieStore.getAll()

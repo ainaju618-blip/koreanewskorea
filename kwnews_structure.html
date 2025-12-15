@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>강원일보 (kwnews.co.kr) 웹사이트 구조 분석</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { background: #1a1a1a; color: #fff; padding: 20px; text-align: center; margin-bottom: 20px; }
+        h2 { background: #2c3e50; color: #fff; padding: 15px; margin: 20px 0 10px; border-radius: 5px; }
+        h3 { background: #34495e; color: #fff; padding: 10px 15px; margin: 15px 0 10px; border-radius: 3px; }
+        h4 { background: #7f8c8d; color: #fff; padding: 8px 12px; margin: 10px 0 8px; border-radius: 3px; font-size: 14px; }
+        .section { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .url-box { background: #ecf0f1; padding: 10px 15px; border-left: 4px solid #3498db; margin: 10px 0; font-family: monospace; }
+        .menu-tree { margin-left: 20px; }
+        .menu-item { padding: 5px 0; border-bottom: 1px dashed #ddd; }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item a { color: #2980b9; text-decoration: none; }
+        .menu-item a:hover { text-decoration: underline; }
+        .sub-menu { margin-left: 30px; background: #f9f9f9; padding: 10px; border-radius: 5px; margin-top: 5px; }
+        .badge { display: inline-block; background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-left: 10px; }
+        .badge.green { background: #27ae60; }
+        .badge.blue { background: #3498db; }
+        .badge.orange { background: #e67e22; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #34495e; color: #fff; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .card { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 15px; }
+        .card-title { font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        code { background: #2c3e50; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+        .highlight { background: #fffde7; padding: 15px; border: 1px solid #ffd54f; border-radius: 5px; margin: 10px 0; }
+        .structure-box { background: #1a1a1a; color: #0f0; padding: 20px; border-radius: 5px; font-family: 'Consolas', monospace; white-space: pre-wrap; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗞️ 강원일보 (kwnews.co.kr) 웹사이트 구조 분석서</h1>
+
+        <div class="section">
+            <h2>📋 기본 정보</h2>
+            <table>
+                <tr><th width="200">항목</th><th>내용</th></tr>
+                <tr><td>사이트명</td><td>강원일보</td></tr>
+                <tr><td>URL</td><td><a href="https://kwnews.co.kr" target="_blank">https://kwnews.co.kr</a></td></tr>
+                <tr><td>창간</td><td>80주년 (1945년 창간)</td></tr>
+                <tr><td>발행인</td><td>(주)강원일보 박진오</td></tr>
+                <tr><td>주소</td><td>강원특별자치도 춘천시 중앙로 23</td></tr>
+                <tr><td>전화</td><td>033-258-1000</td></tr>
+                <tr><td>등록번호</td><td>강원,아00094 (2011.09.06)</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ 전체 사이트맵 구조</h2>
+            <div class="structure-box">
+kwnews.co.kr/
+│
+├── 🏠 메인페이지 (/)
+│
+├── 📺 강원일보TV (/news_tv)
+├── 👤 기자브랜드 (/brand)
+├── 📊 인터렉티브 (/story)
+│
+├── 🏛️ 정치 (/politics)
+│   ├── 정치일반 (/politics/all)
+│   ├── 대통령실 (/politics/bluehouse)
+│   ├── 강원특별자치도청 (/politics/gwd)
+│   ├── 국회 (/politics/parliament)
+│   ├── 도의회 (/politics/provincial)
+│   ├── 시군의회 (/politics/council)
+│   └── 의정소식 (/politics/congress)
+│
+├── 💰 경제 (/economy)
+│   ├── 경제일반 (/economy/all)
+│   ├── 금융/증권 (/economy/finance)
+│   ├── 부동산 (/economy/realty)
+│   └── 이코노미 플러스 (/economy/plus)
+│
+├── 👥 사회 (/society)
+│   ├── 사회일반 (/society/all)
+│   ├── 교육 (/society/education)
+│   ├── 사건/사고 (/society/incident)
+│   ├── 지역 (/area)
+│   ├── 광부엄마 (/society/minemom)
+│   ├── 라떼는말이야 (/society/latte)
+│   ├── 터치강원 (/society/touchkw)
+│   └── 혁신도시는지금 (/society/hyeogsin)
+│
+├── 📍 지역 (/area)
+│   ├── 춘천 (/area/chuncheon?area=W100000800001)
+│   ├── 원주 (/area/wonju?area=W100000800002)
+│   ├── 강릉 (/area/gangneung?area=W100000800003)
+│   ├── 동해 (/area/donghae?area=W100000800004)
+│   ├── 태백 (/area/taebaek?area=W100000800005)
+│   ├── 속초 (/area/sokcho?area=W100000800006)
+│   ├── 삼척 (/area/samcheok?area=W100000800007)
+│   ├── 홍천 (/area/hongcheon?area=W100000800008)
+│   ├── 횡성 (/area/hoengseong?area=W100000800009)
+│   ├── 영월 (/area/yeongwol?area=W100000800010)
+│   ├── 평창 (/area/pyeongchang?area=W100000800011)
+│   ├── 정선 (/area/jeongsun?area=W100000800012)
+│   ├── 철원 (/area/cheorwon?area=W100000800013)
+│   ├── 화천 (/area/hwacheon?area=W100000800014)
+│   ├── 양구 (/area/yanggu?area=W100000800015)
+│   ├── 인제 (/area/inje?area=W100000800016)
+│   ├── 고성 (/area/goseong?area=W100000800017)
+│   └── 양양 (/area/yangyang?area=W100000800018)
+│
+├── 🎭 문화 (/culture)
+│   ├── 문화일반 (/culture/all)
+│   ├── 건강 (/culture/health)
+│   ├── 여성 (/culture/woman)
+│   ├── 공연/전시 (/culture/performance)
+│   ├── 책 (/culture/book)
+│   ├── 영화 (/culture/movie)
+│   ├── 종교 (/culture/religion)
+│   ├── 생물이야기 (/culture/story)
+│   ├── 강원의점선면 (/culture/dotline)
+│   └── 강원의역사展 (/culture/kwhistory)
+│
+├── ⚽ 스포츠 (/sports)
+│   ├── 스포츠일반 (/sports/all)
+│   ├── 축구 (/sports/soccer)
+│   ├── 해외축구 (/sports/overseassoccer)
+│   ├── 야구 (/sports/baseball)
+│   ├── 농구/배구 (/sports/basketvolley)
+│   └── 골프 (/sports/golf)
+│
+├── 👤 인물 (/person)
+│   ├── 인물일반 (/person/all)
+│   ├── 인사 (/person/personnel)
+│   ├── 동정 (/person/movements)
+│   ├── 부고 (/person/obituary)
+│   ├── 결혼 (/person/marriage)
+│   ├── 새얼굴 (/person/accession)
+│   ├── 인터뷰 (/person/interview)
+│   └── 피플&피플 (/person/peoplenpeople)
+│
+├── 📝 오피니언 (/opinion)
+│   ├── 여론마당 (/opinion/public_opinion)
+│   ├── 기고 (/opinion/contribution)
+│   ├── 칼럼 (/opinion/column)
+│   ├── 사설 (/editorial/editorial)
+│   ├── 언중언 (/editorial/words)
+│   ├── 강원포럼 (/opinion/kwforum)
+│   ├── 월요칼럼 (/opinion/monday)
+│   ├── 대청봉 (/opinion/daecheongbong)
+│   ├── 발언대 (/opinion/speaking)
+│   ├── 신호등 (/opinion/Trafficlight)
+│   ├── 권혁순칼럼 (/opinion/Kwoncolumn)
+│   └── 유병욱의정치칼럼 (/opinion/youcolumn)
+│
+├── 📰 기사상세 (/page/view/{article_id})
+│
+├── 🔐 회원 시스템
+│   ├── 로그인 (/login, /member/login_form)
+│   ├── 회원가입 (/member/join)
+│   ├── 구독신청 (/subscription)
+│   └── PDF 지면보기 (/pdf_list)
+│
+├── 📢 광고
+│   ├── 신문지면 광고 (/adinfo1)
+│   ├── 전광판 광고 (/adinfo2)
+│   ├── 홈페이지 배너광고 (/adinfo3)
+│   └── 광고국 조직 (/adinfo4)
+│
+├── ℹ️ 회사정보
+│   ├── 회사소개 (http://news.kwnews.co.kr/company)
+│   ├── 윤리강령 (/resolve)
+│   ├── 편집규약 (/ethics)
+│   ├── 독자위원회 (/readernews)
+│   ├── 고충처리인 (/ombudsman)
+│   ├── 이용약관 (/service)
+│   ├── 개인정보취급방침 (/privacy)
+│   ├── 청소년보호정책 (/teen)
+│   └── 영상정보처리기기 운영방침 (/kwcctv)
+│
+└── 🔗 외부 연계사이트
+    ├── 어린이강원일보 (http://www.kidkangwon.co.kr/)
+    ├── 함께사는 강원세상 (http://www.hamgang.or.kr/)
+    ├── 모바일 웹 (http://m.kwnews.co.kr/)
+    └── 강원일보 복지몰 (http://imembers.co.kr)
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎨 메인페이지 레이아웃 구조</h2>
+
+            <h3>1. 상단 헤더 영역</h3>
+            <table>
+                <tr><th>구성요소</th><th>설명</th><th>URL</th></tr>
+                <tr><td>SNS 링크</td><td>트위터, 페이스북, 인스타그램</td><td>외부 링크</td></tr>
+                <tr><td>구독신청</td><td>신문 구독 신청</td><td>/subscription</td></tr>
+                <tr><td>로그인/회원가입</td><td>회원 시스템</td><td>/login, /member/join</td></tr>
+                <tr><td>최종편집 날짜</td><td>2025-12-14 형식</td><td>-</td></tr>
+                <tr><td>좌우 배너광고</td><td>상단 광고 영역</td><td>/wcms_ad.php?ads_idx=4,5</td></tr>
+                <tr><td>로고</td><td>강원일보 메인 로고</td><td>/</td></tr>
+            </table>
+
+            <h3>2. 메인 네비게이션 (GNB)</h3>
+            <div class="highlight">
+                <strong>메뉴 순서:</strong><br>
+                강원일보TV → 기자브랜드 → 인터렉티브 → 정치 → 경제 → 사회 → 지역 → 문화 → 스포츠 → 인물 → 오피니언
+            </div>
+
+            <h3>3. 메인 콘텐츠 영역</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">속보 영역</div>
+                    <p>실시간 뉴스 슬라이더</p>
+                    <p>자동 롤링 (listbox 형태)</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">알립니다</div>
+                    <p>공지사항 슬라이더</p>
+                    <p>이벤트, 행사 안내</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">메인 뉴스 리스트</div>
+                    <p>썸네일 + 제목 + 요약</p>
+                    <p>최신 기사 30여개 표시</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">인사/동정/부고/결혼</div>
+                    <p>탭 형식 UI</p>
+                    <p>/person 카테고리 연결</p>
+                </div>
+            </div>
+
+            <h3>4. 사이드바 영역</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">오피니언</div>
+                    <p>신호등, 더초점, 발언대 등</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">사설/언중언</div>
+                    <p>사설, 언중언 기사</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">창간 80주년 축하인사</div>
+                    <p>대통령, 국회의장, 지사 등</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">심층기획</div>
+                    <p>특집 기사 모음</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">포토뉴스</div>
+                    <p>사진 뉴스 갤러리</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">가장 많이 본 뉴스</div>
+                    <p>조회수 기준 TOP 10</p>
+                </div>
+            </div>
+
+            <h3>5. 강원일보TV 영역</h3>
+            <p>동영상 뉴스 섹션 (2개 영역)</p>
+
+            <h3>6. 기자브랜드 영역</h3>
+            <p>기자별 칼럼/기획 시리즈 (권혁순칼럼, 이코노미플러스, 월요칼럼 등)</p>
+
+            <h3>7. 지역별 뉴스 탭</h3>
+            <p>18개 시군 탭 선택 형식</p>
+
+            <h3>8. 지역 뉴스 그리드</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-title">춘천 홍천</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">원주 횡성</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">강릉 양양</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">동해 삼척 태백</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">속초 고성 인제</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">철원 화천 양구</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">영월 평창 정선</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📁 카테고리별 상세 URL 구조</h2>
+
+            <h3>정치 (/politics)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th><th>설명</th></tr>
+                <tr><td>정치일반</td><td>/politics/all</td><td>전체 정치 뉴스</td></tr>
+                <tr><td>대통령실</td><td>/politics/bluehouse</td><td>청와대/대통령실 관련</td></tr>
+                <tr><td>강원특별자치도청</td><td>/politics/gwd</td><td>도청 관련 뉴스</td></tr>
+                <tr><td>국회</td><td>/politics/parliament</td><td>국회 관련 뉴스</td></tr>
+                <tr><td>도의회</td><td>/politics/provincial</td><td>강원도의회</td></tr>
+                <tr><td>시군의회</td><td>/politics/council</td><td>각 시군 의회</td></tr>
+                <tr><td>의정소식</td><td>/politics/congress</td><td>의정 활동 소식</td></tr>
+            </table>
+
+            <h3>경제 (/economy)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th><th>설명</th></tr>
+                <tr><td>경제일반</td><td>/economy/all</td><td>전체 경제 뉴스</td></tr>
+                <tr><td>금융/증권</td><td>/economy/finance</td><td>금융권, 주식시장</td></tr>
+                <tr><td>부동산</td><td>/economy/realty</td><td>부동산 시장</td></tr>
+                <tr><td>이코노미 플러스</td><td>/economy/plus</td><td>심층 경제 기획</td></tr>
+            </table>
+
+            <h3>사회 (/society)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th><th>설명</th></tr>
+                <tr><td>사회일반</td><td>/society/all</td><td>전체 사회 뉴스</td></tr>
+                <tr><td>교육</td><td>/society/education</td><td>교육 관련</td></tr>
+                <tr><td>사건/사고</td><td>/society/incident</td><td>사건사고</td></tr>
+                <tr><td>광부엄마</td><td>/society/minemom</td><td>특별 기획</td></tr>
+                <tr><td>라떼는말이야</td><td>/society/latte</td><td>추억 기획</td></tr>
+                <tr><td>터치강원</td><td>/society/touchkw</td><td>강원 특집</td></tr>
+                <tr><td>혁신도시는지금</td><td>/society/hyeogsin</td><td>혁신도시 기획</td></tr>
+            </table>
+
+            <h3>지역 (/area) - 18개 시군</h3>
+            <table>
+                <tr><th>지역</th><th>URL</th><th>지역코드</th></tr>
+                <tr><td>춘천</td><td>/area/chuncheon</td><td>W100000800001</td></tr>
+                <tr><td>원주</td><td>/area/wonju</td><td>W100000800002</td></tr>
+                <tr><td>강릉</td><td>/area/gangneung</td><td>W100000800003</td></tr>
+                <tr><td>동해</td><td>/area/donghae</td><td>W100000800004</td></tr>
+                <tr><td>태백</td><td>/area/taebaek</td><td>W100000800005</td></tr>
+                <tr><td>속초</td><td>/area/sokcho</td><td>W100000800006</td></tr>
+                <tr><td>삼척</td><td>/area/samcheok</td><td>W100000800007</td></tr>
+                <tr><td>홍천</td><td>/area/hongcheon</td><td>W100000800008</td></tr>
+                <tr><td>횡성</td><td>/area/hoengseong</td><td>W100000800009</td></tr>
+                <tr><td>영월</td><td>/area/yeongwol</td><td>W100000800010</td></tr>
+                <tr><td>평창</td><td>/area/pyeongchang</td><td>W100000800011</td></tr>
+                <tr><td>정선</td><td>/area/jeongsun</td><td>W100000800012</td></tr>
+                <tr><td>철원</td><td>/area/cheorwon</td><td>W100000800013</td></tr>
+                <tr><td>화천</td><td>/area/hwacheon</td><td>W100000800014</td></tr>
+                <tr><td>양구</td><td>/area/yanggu</td><td>W100000800015</td></tr>
+                <tr><td>인제</td><td>/area/inje</td><td>W100000800016</td></tr>
+                <tr><td>고성</td><td>/area/goseong</td><td>W100000800017</td></tr>
+                <tr><td>양양</td><td>/area/yangyang</td><td>W100000800018</td></tr>
+            </table>
+
+            <h3>문화 (/culture)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th></tr>
+                <tr><td>문화일반</td><td>/culture/all</td></tr>
+                <tr><td>건강</td><td>/culture/health</td></tr>
+                <tr><td>여성</td><td>/culture/woman</td></tr>
+                <tr><td>공연/전시</td><td>/culture/performance</td></tr>
+                <tr><td>책</td><td>/culture/book</td></tr>
+                <tr><td>영화</td><td>/culture/movie</td></tr>
+                <tr><td>종교</td><td>/culture/religion</td></tr>
+                <tr><td>생물이야기</td><td>/culture/story</td></tr>
+                <tr><td>강원의점선면</td><td>/culture/dotline</td></tr>
+                <tr><td>강원의역사展</td><td>/culture/kwhistory</td></tr>
+            </table>
+
+            <h3>스포츠 (/sports)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th></tr>
+                <tr><td>스포츠일반</td><td>/sports/all</td></tr>
+                <tr><td>축구</td><td>/sports/soccer</td></tr>
+                <tr><td>해외축구</td><td>/sports/overseassoccer</td></tr>
+                <tr><td>야구</td><td>/sports/baseball</td></tr>
+                <tr><td>농구/배구</td><td>/sports/basketvolley</td></tr>
+                <tr><td>골프</td><td>/sports/golf</td></tr>
+            </table>
+
+            <h3>인물 (/person)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th></tr>
+                <tr><td>인물일반</td><td>/person/all</td></tr>
+                <tr><td>인사</td><td>/person/personnel</td></tr>
+                <tr><td>동정</td><td>/person/movements</td></tr>
+                <tr><td>부고</td><td>/person/obituary</td></tr>
+                <tr><td>결혼</td><td>/person/marriage</td></tr>
+                <tr><td>새얼굴</td><td>/person/accession</td></tr>
+                <tr><td>인터뷰</td><td>/person/interview</td></tr>
+                <tr><td>피플&피플</td><td>/person/peoplenpeople</td></tr>
+            </table>
+
+            <h3>오피니언 (/opinion, /editorial)</h3>
+            <table>
+                <tr><th>서브카테고리</th><th>URL</th></tr>
+                <tr><td>여론마당</td><td>/opinion/public_opinion</td></tr>
+                <tr><td>기고</td><td>/opinion/contribution</td></tr>
+                <tr><td>칼럼</td><td>/opinion/column</td></tr>
+                <tr><td>사설</td><td>/editorial/editorial</td></tr>
+                <tr><td>언중언</td><td>/editorial/words</td></tr>
+                <tr><td>강원포럼</td><td>/opinion/kwforum</td></tr>
+                <tr><td>월요칼럼</td><td>/opinion/monday</td></tr>
+                <tr><td>대청봉</td><td>/opinion/daecheongbong</td></tr>
+                <tr><td>발언대</td><td>/opinion/speaking</td></tr>
+                <tr><td>신호등</td><td>/opinion/Trafficlight</td></tr>
+                <tr><td>권혁순칼럼</td><td>/opinion/Kwoncolumn</td></tr>
+                <tr><td>유병욱의정치칼럼</td><td>/opinion/youcolumn</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🔗 기사 URL 패턴</h2>
+            <div class="url-box">
+                <strong>기사 상세페이지:</strong> /page/view/{article_id}<br>
+                <strong>예시:</strong> /page/view/2025121407440195829<br><br>
+                <strong>article_id 구조:</strong> YYYYMMDDHHMMSS + 5자리 고유번호
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📱 기타 페이지</h2>
+            <table>
+                <tr><th>페이지</th><th>URL</th></tr>
+                <tr><td>모바일 앱 안내</td><td>/mobile/app</td></tr>
+                <tr><td>PDF 지면보기</td><td>/pdf_list</td></tr>
+                <tr><td>기자 브랜드</td><td>/brand</td></tr>
+                <tr><td>기자 브랜드 상세</td><td>/brand/detail?idx={id}</td></tr>
+                <tr><td>인터렉티브</td><td>/story</td></tr>
+                <tr><td>광고 리다이렉트</td><td>/wcms_ad.php?ads_idx={id}</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>🤝 제휴 언론사 (한국지방신문협회)</h2>
+            <table>
+                <tr><th>언론사</th><th>URL</th></tr>
+                <tr><td>한국지방신문협회</td><td>http://www.lpk.kr/</td></tr>
+                <tr><td>경남신문</td><td>http://www.knnews.co.kr/</td></tr>
+                <tr><td>경인일보</td><td>http://www.kyeongin.com/</td></tr>
+                <tr><td>광주일보</td><td>http://www.kwangju.co.kr/</td></tr>
+                <tr><td>대전일보</td><td>http://www.daejonilbo.com/</td></tr>
+                <tr><td>매일신문</td><td>https://www.imaeil.com/</td></tr>
+                <tr><td>부산일보</td><td>http://www.busan.com/</td></tr>
+                <tr><td>전북일보</td><td>http://www.jjan.kr/</td></tr>
+                <tr><td>제주일보</td><td>http://www.jejunews.com/</td></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📊 기술적 특징</h2>
+            <ul style="margin-left: 20px;">
+                <li><strong>속보/알립니다:</strong> listbox 기반 자동 롤링 슬라이더</li>
+                <li><strong>지역 탭:</strong> 클릭 시 해당 지역 뉴스 필터링</li>
+                <li><strong>광고 시스템:</strong> /wcms_ad.php 통한 배너 관리</li>
+                <li><strong>검색:</strong> 상단 GNB에 검색창 위치</li>
+                <li><strong>SNS 연동:</strong> 트위터, 페이스북, 인스타그램</li>
+                <li><strong>모바일:</strong> 별도 모바일 웹 (m.kwnews.co.kr) 운영</li>
+            </ul>
+        </div>
+
+        <div class="section" style="background: #2c3e50; color: #fff;">
+            <h2 style="background: transparent; padding: 0; margin-bottom: 15px;">📌 분석 요약</h2>
+            <ul style="margin-left: 20px;">
+                <li>총 <strong>8개 대분류</strong> 카테고리 (정치/경제/사회/지역/문화/스포츠/인물/오피니언)</li>
+                <li><strong>18개 지역</strong> (강원도 전 시군)</li>
+                <li><strong>50+ 서브카테고리</strong></li>
+                <li>기사 URL 패턴: <code>/page/view/{timestamp+unique_id}</code></li>
+                <li>지역 URL 패턴: <code>/area/{region_name}?area={region_code}</code></li>
+            </ul>
+        </div>
+
+        <footer style="text-align: center; padding: 20px; color: #666; margin-top: 20px;">
+            분석일: 2025-12-14 | 분석 대상: https://kwnews.co.kr
+        </footer>
+    </div>
+</body>
+</html>

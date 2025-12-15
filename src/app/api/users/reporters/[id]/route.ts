@@ -111,6 +111,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
                 bio: body.bio || null,
                 status: body.status || 'Active',
                 avatar_icon: '👤',
+                gemini_api_key: body.gemini_api_key || null,
                 ...userIdUpdate,
             })
             .eq('id', id)

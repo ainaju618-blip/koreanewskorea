@@ -5,6 +5,49 @@
 
 ---
 
+## [2025-12-15 11:54] 세션 #9 by Gemini
+
+### 주인님 의도
+1. 이미지 로딩 속도 느림 문제 해결
+2. PageSpeed Insights로 성능 측정 및 최적화
+
+### 수행 작업 (Gemini)
+1. **next-cloudinary 적용**
+   - `npm install next-cloudinary`
+   - `src/lib/cloudinary-utils.ts` - URL → public_id 추출 유틸
+   - `src/components/ui/OptimizedImage.tsx` - CldImage 래퍼 컴포넌트
+   - `category/[slug]/page.tsx` - OptimizedImage 적용
+   - Vercel 환경변수 `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` 추가
+
+2. **서버 응답 시간 최적화**
+   - `force-dynamic` → `revalidate=60` (ISR 적용)
+   - `select('*')` → 필요한 6개 필드만 선택
+
+3. **Vercel 배포 캐시 갱신 문제 해결**
+   - `vercel --prod` 수동 재배포로 CDN 캐시 갱신
+
+### 결과
+- **Performance**: 61점 → 100점
+- **LCP**: 37.7초 → 0.8초 (36.9초 단축)
+
+### 에러 사례 기록
+- `info/errors/frontend/image-loading-slow.md` 생성 (by Gemini)
+
+### Git Commits
+- `3274225`: feat: next-cloudinary 적용 - 이미지 로딩 속도 최적화
+- `4c6dbc8`: perf: 카테고리 페이지 서버 응답 시간 최적화
+
+### 주요 생성/수정 파일
+```
+src/lib/cloudinary-utils.ts (신규)
+src/components/ui/OptimizedImage.tsx (신규)
+src/app/(site)/category/[slug]/page.tsx (수정)
+info/errors/frontend/image-loading-slow.md (신규)
+info/errors/_catalog.md (수정)
+```
+
+---
+
 ## [2025-12-15] 세션 #8
 
 ### 주인님 의도

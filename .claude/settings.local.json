@@ -68,7 +68,12 @@
       "Bash(gh api:*)",
       "Bash(cmd /c \"rmdir /s /q d:\\cbt\\koreanews\\gitinfo\")",
       "Bash(cmd /c \"dir /s /b d:\\cbt\\koreanews\\*info* 2>nul\")",
-      "Bash(cmd /c \"dir /ad /b d:\\cbt\\koreanews\")"
+      "Bash(cmd /c \"dir /ad /b d:\\cbt\\koreanews\")",
+      "Bash(echo.)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(npx next build)",
+      "Bash(timeout /t 20 /nobreak)",
+      "Bash(npm view:*)"
     ]
   }
 }

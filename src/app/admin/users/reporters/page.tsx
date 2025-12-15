@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Users, Bot, CheckCircle, Edit2, Trash2, Loader2, X, RefreshCcw, Phone, Mail, Briefcase, Crown, User } from "lucide-react";
+import { UserPlus, Users, Bot, CheckCircle, Edit2, Trash2, Loader2, X, RefreshCcw, Phone, Mail, Briefcase, Crown, User, Key } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
 // 직위 데이터
@@ -64,6 +64,7 @@ interface Reporter {
     status: "Active" | "Inactive";
     avatar_icon: string;
     created_at: string;
+    gemini_api_key: string | null;
 }
 
 export default function ReportersPage() {
@@ -83,6 +84,7 @@ export default function ReportersPage() {
     const [formPassword, setFormPassword] = useState("");
     const [formBio, setFormBio] = useState("");
     const [formStatus, setFormStatus] = useState<"Active" | "Inactive">("Active");
+    const [formGeminiApiKey, setFormGeminiApiKey] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 필터 상태
@@ -123,6 +125,7 @@ export default function ReportersPage() {
         setFormPassword("");
         setFormBio("");
         setFormStatus("Active");
+        setFormGeminiApiKey("");
         setSelectedReporter(null);
     };
 
@@ -142,6 +145,7 @@ export default function ReportersPage() {
         setFormEmail(reporter.email || "");
         setFormBio(reporter.bio || "");
         setFormStatus(reporter.status);
+        setFormGeminiApiKey(reporter.gemini_api_key || "");
         setShowEditModal(true);
     };
 
@@ -179,6 +183,7 @@ export default function ReportersPage() {
                     email: formEmail || null,
                     password: formEmail ? (formPassword || null) : null,  // 이메일 있으면 비밀번호 설정
                     bio: formBio || null,
+                    gemini_api_key: formGeminiApiKey || null,
                 })
             });
 
@@ -230,7 +235,8 @@ export default function ReportersPage() {
                     email: formEmail || null,
                     bio: formBio || null,
                     status: formStatus,
-                    password: formPassword || null  // 비밀번호 변경 (빈 문자열이면 null)
+                    password: formPassword || null,  // 비밀번호 변경 (빈 문자열이면 null)
+                    gemini_api_key: formGeminiApiKey || null,
                 })
             });
 
@@ -427,6 +433,8 @@ export default function ReportersPage() {
                         setFormPassword={setFormPassword}
                         formBio={formBio}
                         setFormBio={setFormBio}
+                        formGeminiApiKey={formGeminiApiKey}
+                        setFormGeminiApiKey={setFormGeminiApiKey}
                         isSubmitting={isSubmitting}
                         onSubmit={handleAddReporter}
                         onCancel={() => setShowAddModal(false)}
@@ -456,6 +464,8 @@ export default function ReportersPage() {
                         setFormBio={setFormBio}
                         formStatus={formStatus}
                         setFormStatus={setFormStatus}
+                        formGeminiApiKey={formGeminiApiKey}
+                        setFormGeminiApiKey={setFormGeminiApiKey}
                         isSubmitting={isSubmitting}
                         onSubmit={handleUpdateReporter}
                         onCancel={() => setShowEditModal(false)}
@@ -545,6 +555,8 @@ interface ReporterFormProps {
     setFormBio: (v: string) => void;
     formStatus?: "Active" | "Inactive";
     setFormStatus?: (v: "Active" | "Inactive") => void;
+    formGeminiApiKey?: string;
+    setFormGeminiApiKey?: (v: string) => void;
     isSubmitting: boolean;
     onSubmit: () => void;
     onCancel: () => void;
@@ -563,6 +575,7 @@ function ReporterForm({
     formPassword, setFormPassword,
     formBio, setFormBio,
     formStatus, setFormStatus,
+    formGeminiApiKey, setFormGeminiApiKey,
     isSubmitting, onSubmit, onCancel, submitLabel, showStatus, isAddMode, isEditMode
 }: ReporterFormProps) {
     return (
@@ -686,6 +699,34 @@ function ReporterForm({
                     </div>
                 )}
             </div>
+
+            {/* 섹션 5: AI 설정 */}
+            {setFormGeminiApiKey && (
+                <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b pb-2 flex items-center gap-2">
+                        <Key className="w-4 h-4 text-purple-600" />
+                        AI 설정
+                    </h3>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Gemini API 키 <span className="text-gray-400">(Google AI Studio에서 발급)</span>
+                        </label>
+                        <input
+                            type="password"
+                            value={formGeminiApiKey}
+                            onChange={(e) => setFormGeminiApiKey(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none font-mono"
+                            placeholder="AIzaSy..."
+                            autoComplete="off"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                                Google AI Studio
+                            </a>에서 API 키를 발급받으세요.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* 버튼 */}
             <div className="flex gap-3 pt-4 border-t">
