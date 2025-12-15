@@ -20,6 +20,51 @@
 | **Context7 미활용** (새 기술/라이브러리 도입 시) | 코드 리뷰 **REJECT** |
 | **코드에 이모지 사용** | 코드 리뷰 **REJECT** (ASCII만 사용) |
 | **반복 작업에 서브에이전트 미활용** | 속도 저하로 **경고** |
+| **Vercel 프로젝트 신규 생성 금지** | 작업 즉시 **중단** |
+
+---
+
+# 🔐 Vercel 배포 규칙 (P0 - 절대 준수)
+
+> **⛔ 새 프로젝트 생성 절대 금지! 기존 프로젝트에만 배포한다.**
+
+## 프로젝트 정보
+
+| 항목 | 값 |
+|------|-----|
+| **Vercel 프로젝트명** | `koreanewsone` |
+| **Vercel Team** | `koreanews-projects` |
+| **프로덕션 도메인** | `www.koreanewsone.com` |
+| **GitHub 레포** | `korea-news/koreanewsone` |
+
+## 배포 전 필수 확인
+
+```bash
+# 1. 현재 연결된 프로젝트 확인 (MUST)
+cat .vercel/project.json
+
+# 올바른 결과:
+# {"projectId":"prj_jGcGSBPpRihw9W4RVNHTAGJXwCMr","orgId":"team_tJHjAZNcQHsga5azoDPrGhPg"}
+
+# 2. 잘못 연결된 경우 재연결
+vercel link --yes --project koreanewsone
+```
+
+## 금지 행위
+
+- ❌ `vercel link` 시 새 프로젝트 생성 선택
+- ❌ `vercel` 명령어로 임의 배포 (새 프로젝트 생성됨)
+- ❌ 프로젝트명 오타 (`koreanews` 등)
+
+## 올바른 배포 방법
+
+```bash
+# Git push 후 자동 배포 (권장)
+git push
+
+# 또는 수동 배포 (프로젝트 확인 후)
+vercel --prod
+```
 
 ---
 
