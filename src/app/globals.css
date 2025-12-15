@@ -1235,6 +1235,276 @@
     color: var(--admin-text-secondary) !important;
 }
 
+/* ============================================
+   DASHBOARD PAGE - DARK MODE OVERRIDES
+   Specific styles for /admin dashboard page
+   ============================================ */
+
+/* Dashboard page background */
+.admin-layout .min-h-screen[class*="bg-gradient"] {
+    background: var(--admin-bg-base) !important;
+}
+
+.admin-layout [class*="from-slate-50"],
+.admin-layout [class*="to-slate-100"] {
+    --tw-gradient-from: var(--admin-bg-base) !important;
+    --tw-gradient-to: var(--admin-bg-surface) !important;
+}
+
+/* Dashboard header */
+.admin-layout header h1.text-slate-900,
+.admin-layout h1[class*="text-slate-900"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .text-slate-500,
+.admin-layout [class*="text-slate-500"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Refresh button */
+.admin-layout button[class*="bg-white"][class*="border-slate"] {
+    background-color: var(--admin-bg-surface) !important;
+    border-color: var(--admin-border-default) !important;
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout button[class*="bg-white"][class*="border-slate"]:hover {
+    background-color: var(--admin-bg-overlay) !important;
+    border-color: var(--admin-border-muted) !important;
+}
+
+/* Status badge (active indicator) */
+.admin-layout span[class*="bg-emerald-100"][class*="text-emerald-700"] {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+/* StatCard specific text colors */
+.admin-layout .admin-stat-card p[class*="text-slate-800"],
+.admin-layout .admin-stat-card p.text-3xl {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .admin-stat-card p[class*="text-red-700"] {
+    color: #f87171 !important;
+}
+
+.admin-layout .admin-stat-card p[class*="text-slate-500"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .admin-stat-card .text-slate-400 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* Region section headers */
+.admin-layout h3[class*="text-red-600"] {
+    color: #f87171 !important;
+}
+
+/* RegionCard component */
+.admin-layout div[class*="px-3"][class*="py-2.5"][class*="rounded-lg"][class*="border"] {
+    background-color: var(--admin-bg-surface) !important;
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout div[class*="px-3"][class*="py-2.5"][class*="bg-white"] {
+    background-color: var(--admin-bg-surface) !important;
+}
+
+.admin-layout div[class*="px-3"][class*="py-2.5"][class*="bg-slate-50"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout div[class*="px-3"][class*="py-2.5"] span[class*="text-slate-800"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout div[class*="px-3"][class*="py-2.5"] span[class*="text-slate-400"],
+.admin-layout div[class*="px-3"][class*="py-2.5"] span[class*="text-slate-300"] {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* Bot activity log items */
+.admin-layout .admin-activity-item span[class*="text-slate-700"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .admin-activity-item span[class*="text-slate-400"] {
+    color: var(--admin-text-tertiary) !important;
+}
+
+.admin-layout .admin-activity-item span[class*="bg-emerald-100"] {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+
+/* Empty state in activity section */
+.admin-layout .text-slate-400.text-center,
+.admin-layout div.text-center .text-slate-400 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* ActionButton text */
+.admin-layout .admin-action-btn span[class*="text-slate-700"] {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .admin-action-btn span[class*="text-slate-500"],
+.admin-layout .admin-action-btn .text-slate-500 {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Usage bar component */
+.admin-layout [class*="bg-slate-100"][class*="rounded-full"][class*="h-2"] {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout span[class*="text-slate-600"][class*="w-20"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout span[class*="text-slate-600"][class*="text-xs"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Test scheduler section */
+.admin-layout section[class*="ring-red-200"][class*="bg-red-50"] {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    ring-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.admin-layout .text-xs.text-slate-500 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* Test progress box */
+.admin-layout div[class*="bg-blue-50"][class*="border-blue-200"] {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.admin-layout .text-blue-700 {
+    color: #60a5fa !important;
+}
+
+.admin-layout .text-blue-600 {
+    color: #3b82f6 !important;
+}
+
+.admin-layout [class*="bg-blue-200"] {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Test result section */
+.admin-layout .border-t.border-slate-100 {
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout div[class*="bg-red-100"][class*="rounded-lg"] {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.admin-layout .text-red-700 {
+    color: #f87171 !important;
+}
+
+.admin-layout .text-red-600 {
+    color: #ef4444 !important;
+}
+
+/* NavLink component */
+.admin-layout a[class*="px-4"][class*="py-3"][class*="rounded-xl"][class*="text-slate-600"] {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout a[class*="px-4"][class*="py-3"][class*="rounded-xl"]:hover {
+    background-color: var(--admin-bg-overlay) !important;
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout a[class*="px-4"][class*="py-3"] .text-slate-400 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+.admin-layout a[class*="px-4"][class*="py-3"] .text-slate-300 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* Loading state */
+.admin-layout .h-screen[class*="bg-slate-50"] {
+    background-color: var(--admin-bg-base) !important;
+}
+
+/* General slate color overrides for dashboard */
+.admin-layout .text-slate-900 {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .text-slate-800 {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .text-slate-700 {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .text-slate-600 {
+    color: var(--admin-text-secondary) !important;
+}
+
+.admin-layout .text-slate-400 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+.admin-layout .text-slate-300 {
+    color: var(--admin-text-tertiary) !important;
+}
+
+/* Background colors */
+.admin-layout .bg-slate-50 {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .bg-slate-100 {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .bg-white {
+    background-color: var(--admin-bg-surface) !important;
+}
+
+/* Border colors */
+.admin-layout .border-slate-100 {
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout .border-slate-200 {
+    border-color: var(--admin-border-default) !important;
+}
+
+.admin-layout .border-slate-300 {
+    border-color: var(--admin-border-muted) !important;
+}
+
+/* Hover states */
+.admin-layout .hover\:bg-slate-50:hover {
+    background-color: var(--admin-bg-overlay) !important;
+}
+
+.admin-layout .hover\:border-slate-300:hover {
+    border-color: var(--admin-border-muted) !important;
+}
+
+.admin-layout .hover\:text-slate-900:hover {
+    color: var(--admin-text-primary) !important;
+}
+
+.admin-layout .hover\:text-slate-600:hover {
+    color: var(--admin-text-secondary) !important;
+}
+
 @layer components {
 
     /* --- Admin Color Tokens --- */
@@ -1294,13 +1564,16 @@
 
     /* --- Admin Card Base --- */
     .admin-card {
-        @apply bg-white rounded-2xl border border-slate-100;
+        @apply rounded-2xl border;
+        background-color: var(--admin-bg-surface);
+        border-color: var(--admin-border-default);
         box-shadow: var(--admin-shadow-sm);
         transition: box-shadow var(--admin-transition-base), transform var(--admin-transition-base);
     }
 
     .admin-card:hover {
         box-shadow: var(--admin-shadow-md);
+        border-color: var(--admin-border-muted);
     }
 
     .admin-card-interactive:hover {
@@ -1310,33 +1583,39 @@
 
     /* --- Admin Stat Card --- */
     .admin-stat-card {
-        @apply bg-white rounded-2xl p-6 border border-slate-100;
+        @apply rounded-2xl p-6 border;
+        background-color: var(--admin-bg-surface);
+        border-color: var(--admin-border-default);
         box-shadow: var(--admin-shadow-sm);
         transition: all var(--admin-transition-base);
     }
 
     .admin-stat-card:hover {
         box-shadow: var(--admin-shadow-md);
-        border-color: rgb(var(--admin-neutral-200));
+        border-color: var(--admin-border-muted);
     }
 
     .admin-stat-card.accent {
-        @apply bg-red-50 border-red-100;
+        background-color: rgba(185, 28, 28, 0.1);
+        border-color: rgba(185, 28, 28, 0.2);
     }
 
     .admin-stat-card.accent:hover {
-        @apply border-red-200;
+        border-color: rgba(185, 28, 28, 0.3);
         box-shadow: 0 4px 12px -2px rgb(var(--admin-primary) / 0.12);
     }
 
     /* --- Admin Action Button --- */
     .admin-action-btn {
-        @apply relative flex flex-col items-center justify-center p-5 rounded-2xl bg-white border border-slate-100;
+        @apply relative flex flex-col items-center justify-center p-5 rounded-2xl border;
+        background-color: var(--admin-bg-surface);
+        border-color: var(--admin-border-default);
         transition: all var(--admin-transition-base);
     }
 
     .admin-action-btn:hover {
-        @apply border-slate-200 bg-slate-50;
+        background-color: var(--admin-bg-overlay);
+        border-color: var(--admin-border-muted);
         box-shadow: var(--admin-shadow-md);
         transform: translateY(-2px);
     }
@@ -1360,21 +1639,30 @@
     }
 
     .admin-section-title {
-        @apply text-base font-bold text-slate-800 tracking-tight;
+        @apply text-base font-bold tracking-tight;
+        color: var(--admin-text-primary);
     }
 
     .admin-section-link {
-        @apply text-sm text-slate-400 hover:text-slate-600 transition-colors;
+        @apply text-sm transition-colors;
+        color: var(--admin-text-tertiary);
+    }
+
+    .admin-section-link:hover {
+        color: var(--admin-text-secondary);
     }
 
     /* --- Admin Activity Item (Stripe-style) --- */
     .admin-activity-item {
-        @apply relative flex items-center justify-between py-3.5 px-4 bg-white rounded-xl border border-slate-100;
+        @apply relative flex items-center justify-between py-3.5 px-4 rounded-xl border;
+        background-color: var(--admin-bg-surface);
+        border-color: var(--admin-border-default);
         transition: all var(--admin-transition-fast);
     }
 
     .admin-activity-item:hover {
-        @apply bg-slate-50 border-slate-200;
+        background-color: var(--admin-bg-overlay);
+        border-color: var(--admin-border-muted);
     }
 
     .admin-activity-item::before {
@@ -1414,7 +1702,7 @@
     }
 
     .admin-toggle.off {
-        @apply bg-slate-200;
+        background-color: var(--admin-bg-overlay);
     }
 
     .admin-toggle.on {

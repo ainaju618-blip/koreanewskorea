@@ -24,7 +24,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: UI/UX design overhaul - modern components and interactions\n\n- Admin dark mode: GitHub-style theme with semantic color tokens\n- NewsCard: All 5 variants updated with modern shadows and animations\n- HeroCarousel: Crossfade transitions, progress bar, play/pause control\n- Sidebar: Gradient headers, improved visual hierarchy\n- Header mega menu: Slide-down animation, modern dropdown design\n- Mobile menu: Slide-in panel with backdrop blur\n- Toast: Accent bar, rounded design, improved icon styling\n- ConfirmModal: Centered layout, gradient buttons, modern appearance\n\nGenerated with Claude Code\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }
