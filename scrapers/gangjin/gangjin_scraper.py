@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result,
-    clean_article_content
+    clean_article_content, extract_subtitle
 )
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
@@ -333,11 +333,15 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
+                # 부제목 추출
+                subtitle, content = extract_subtitle(content)
+
                 # 카테고리 자동 분류
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
                     'title': title,
+                    'subtitle': subtitle,
                     'content': content,
                     'published_at': f"{n_date}T09:00:00+09:00",
                     'original_link': full_url,

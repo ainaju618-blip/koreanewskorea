@@ -21,6 +21,7 @@ from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.text_cleaner import clean_article_content
 from utils.category_classifier import detect_category
+from utils.scraper_utils import extract_subtitle
 
 # ============================================
 # 상수 정의
@@ -287,6 +288,9 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
 
             content, thumbnail_url, pub_date, department = fetch_detail(page, url)
 
+            # 부제목 추출
+            subtitle, content = extract_subtitle(content)
+
             # 날짜 결정 (상세 페이지 > 목록 페이지)
             final_date = pub_date if pub_date else list_date
 
@@ -296,6 +300,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             # 데이터 객체 생성
             article_data = {
                 'title': title,
+                'subtitle': subtitle,
                 'content': content,
                 'published_at': f"{final_date}T09:00:00+09:00",
                 'original_link': url,

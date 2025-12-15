@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
 from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr, log_scraper_result,
-    clean_article_content
+    clean_article_content, extract_subtitle
 )
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_classifier import detect_category
@@ -110,12 +110,12 @@ def clean_content(content: str) -> str:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출합니다.
+    상세 페이지에서 본문, 이미지, 날짜, 담당부서, 부제목을 추출합니다.
     """
     if not safe_goto(page, url, timeout=20000):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
 
     time.sleep(1)
 
@@ -235,12 +235,15 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     # 이미지 없으면 스킵
     if not thumbnail_url:
         print(f"      [스킵] 이미지 없음")
-        return None, None, None, None
+        return None, None, None, None, None
 
     # 본문에서 불필요한 메타 정보 제거
     content = clean_article_content(content)
 
-    return content, thumbnail_url, pub_date, department
+    # 부제목 추출
+    subtitle, content = extract_subtitle(content)
+
+    return content, thumbnail_url, pub_date, department, subtitle
 
 
 # ============================================================
@@ -385,7 +388,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 print(f"      > {title[:30]}... ({n_date})")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
-                content, thumbnail_url, pub_date, department = fetch_detail(page, full_url)
+                content, thumbnail_url, pub_date, department, subtitle = fetch_detail(page, full_url)
 
                 # 이미지 없는 기사 스킵
                 if content is None:
@@ -404,6 +407,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
 
                 article_data = {
                     'title': title,
+                    'subtitle': subtitle,
                     'content': content,
                     'published_at': f"{n_date}T09:00:00+09:00",
                     'original_link': full_url,

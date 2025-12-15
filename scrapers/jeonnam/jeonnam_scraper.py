@@ -18,7 +18,7 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
 
@@ -234,6 +234,9 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
 
             content, thumbnail_url, pub_date = fetch_detail(page, url)
 
+            # 부제목 추출
+            subtitle, content = extract_subtitle(content)
+
             # 날짜 결정 (상세 페이지 > 목록 페이지)
             final_date = pub_date if pub_date else list_date
 
@@ -243,6 +246,7 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
             # 데이터 객체 생성
             article_data = {
                 'title': title,
+                'subtitle': subtitle,
                 'content': content,
                 'published_at': f"{final_date}T09:00:00+09:00",
                 'original_link': url,

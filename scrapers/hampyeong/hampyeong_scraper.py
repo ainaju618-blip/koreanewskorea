@@ -33,7 +33,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_classifier import detect_category
 
@@ -484,11 +484,15 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
+                # 부제목 추출
+                subtitle, content = extract_subtitle(content)
+
                 # 카테고리 자동 분류
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
                     'title': title,
+                    'subtitle': subtitle,
                     'content': content,
                     'published_at': f"{final_date}T09:00:00+09:00",
                     'original_link': full_url,

@@ -33,7 +33,7 @@ from playwright.sync_api import sync_playwright, Page
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
 
@@ -125,15 +125,15 @@ def build_list_url(page: int = 1) -> str:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    상세 페이지에서 본문, 부제목, 이미지, 날짜, 담당부서를 추출
 
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (본문 텍스트, 부제목, 썸네일 URL, 날짜, 담당부서)
     """
     if not safe_goto(page, url, timeout=20000):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None
+        return "", None, None, datetime.now().strftime('%Y-%m-%d'), None
     
     time.sleep(1.5)  # 페이지 안정화
     
@@ -230,6 +230,9 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     if content:
         content = clean_article_content(content)
 
+    # 부제목 추출
+    subtitle, content = extract_subtitle(content)
+
     # 4. 이미지 추출 (본문 내 직접 삽입 방식 - 영암군은 이미지가 없음)
     thumbnail_url = None
     
@@ -266,8 +269,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                             break
         except Exception as e:
             print(f"      ⚠️ 일반 이미지 추출 실패: {e}")
-    
-    return content, thumbnail_url, pub_date, department
+
+    return content, subtitle, thumbnail_url, pub_date, department
 
 
 # ============================================================
@@ -430,8 +433,8 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 
                 print(f"      📰 {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
-                
-                content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
+
+                content, subtitle, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
                 
                 # 날짜 결정 (상세 > 목록 > 현재)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
@@ -458,6 +461,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
 
                 article_data = {
                     'title': title,
+                    'subtitle': subtitle,
                     'content': content,
                     'published_at': f"{final_date}T09:00:00+09:00",
                     'original_link': full_url,

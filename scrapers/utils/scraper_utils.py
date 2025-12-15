@@ -216,7 +216,7 @@ COMMON_IMAGE_SELECTORS = [
 
 
 # ============================================================
-# 본문 정제 유틸리티 (v1.0)
+# 본문 정제 유틸리티 (v1.1)
 # ============================================================
 import re
 
@@ -230,6 +230,7 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
     - 파일 크기/다운로드 정보 (123.45 KB, Hit: 0 등)
     - 기관 정보 (기관명, 전화번호 등)
     - 불필요한 공백/줄바꿈
+    - 빈 번호 (1. 2. 3. 등)
 
     Args:
         content: 원본 본문 텍스트
@@ -295,8 +296,6 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         r'개인정보처리방침.*',
         r'Copyright.*',
         r'저작권.*',
-        # 빈 번호만 있는 줄
-        r'^\d+\.\s*$',
     ]
 
     # 모든 패턴 적용 (MULTILINE 모드)
@@ -304,18 +303,24 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
     for pattern in all_patterns:
         content = re.sub(pattern, '', content, flags=re.MULTILINE | re.IGNORECASE)
 
-    # 4. 공백/줄바꿈 정리
+    # 4. 빈 번호만 있는 줄 제거 (1. 2. 3. 등) - 여러 번 반복 적용
+    for _ in range(3):
+        content = re.sub(r'^\d+\.\s*$', '', content, flags=re.MULTILINE)
+
+    # 5. 공백/줄바꿈 정리
     # 3줄 이상 연속 줄바꿈 -> 2줄로
     content = re.sub(r'\n{3,}', '\n\n', content)
     # 연속 공백 정리
     content = re.sub(r'[ \t]+', ' ', content)
     # 각 줄 앞뒤 공백 제거
     lines = [line.strip() for line in content.split('\n')]
+    # 빈 줄 또는 번호만 있는 줄 필터링
+    lines = [line for line in lines if line and not re.match(r'^\d+\.\s*$', line)]
     content = '\n'.join(lines)
     # 빈 줄만 있는 경우 제거
     content = re.sub(r'\n\s*\n', '\n\n', content)
 
-    # 5. 앞뒤 공백 제거 및 길이 제한
+    # 6. 앞뒤 공백 제거 및 길이 제한
     content = content.strip()
     if len(content) > max_length:
         content = content[:max_length]
@@ -484,3 +489,92 @@ def get_category_name(category_code: str) -> str:
     if category_code in CATEGORY_KEYWORDS:
         return CATEGORY_KEYWORDS[category_code]['name']
     return DEFAULT_CATEGORY_NAME
+
+
+# ============================================================
+# 부제목 추출 유틸리티 (v1.0)
+# ============================================================
+
+def extract_subtitle(content: str) -> tuple:
+    """
+    본문에서 부제목을 추출하고 본문에서 제거
+
+    부제목 패턴:
+    - "- 부제목 내용"         (앞에 - 만)
+    - "- 부제목 내용 -"       (앞뒤 -)
+    - "-- 부제목 내용 --"     (앞뒤 --)
+
+    Args:
+        content: 원본 본문 텍스트
+
+    Returns:
+        tuple: (subtitle, cleaned_content)
+               - subtitle: 추출된 부제목 (없으면 None)
+               - cleaned_content: 부제목이 제거된 본문
+    """
+    if not content:
+        return None, ""
+
+    lines = content.strip().split('\n')
+    subtitle = None
+    subtitle_line_index = None
+
+    # 처음 5줄 내에서 부제목 패턴 검색
+    for i, line in enumerate(lines[:5]):
+        line = line.strip()
+        if not line:
+            continue
+
+        # 패턴 1: "- 부제목 내용 -" (앞뒤 -)
+        match = re.match(r'^-+\s*(.+?)\s*-+$', line)
+        if match:
+            subtitle = match.group(1).strip()
+            subtitle_line_index = i
+            break
+
+        # 패턴 2: "- 부제목 내용" (앞에 - 만, 최소 5자 이상)
+        match = re.match(r'^-\s+(.{5,})$', line)
+        if match:
+            # 본문 첫 문장이 아닌 경우만 (보통 부제목은 본문보다 짧음)
+            potential_subtitle = match.group(1).strip()
+            # 부제목 특성: 보통 한 문장이고 마침표로 안 끝남
+            if len(potential_subtitle) < 100 and not potential_subtitle.endswith('.'):
+                subtitle = potential_subtitle
+                subtitle_line_index = i
+                break
+
+    # 부제목이 발견되면 해당 줄 제거
+    if subtitle_line_index is not None:
+        lines.pop(subtitle_line_index)
+        # 빈 줄 정리
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+    cleaned_content = '\n'.join(lines)
+
+    return subtitle, cleaned_content
+
+
+def extract_subtitle_and_clean(content: str) -> dict:
+    """
+    본문에서 부제목을 추출하고 본문을 정제하여 반환
+
+    Args:
+        content: 원본 본문 텍스트
+
+    Returns:
+        dict: {
+            'subtitle': 추출된 부제목 (없으면 None),
+            'content': 정제된 본문
+        }
+    """
+    # 1. 부제목 추출
+    subtitle, content_without_subtitle = extract_subtitle(content)
+
+    # 2. 본문 정제
+    cleaned_content = clean_article_content(content_without_subtitle)
+
+    return {
+        'subtitle': subtitle,
+        'content': cleaned_content
+    }

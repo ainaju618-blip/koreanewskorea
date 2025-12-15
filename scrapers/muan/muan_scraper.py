@@ -24,6 +24,7 @@ from utils.api_client import send_article_to_server, log_to_server
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.text_cleaner import clean_article_content
 from utils.category_detector import detect_category
+from utils.scraper_utils import extract_subtitle
 
 # ============================================
 # 상수 정의
@@ -408,11 +409,15 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             content, thumbnail_url, pub_date = fetch_detail(page, url, title)
             final_date = pub_date or list_date
 
+            # 부제목 추출
+            subtitle, content = extract_subtitle(content)
+
             # 카테고리 자동 분류
             cat_code, cat_name = detect_category(title, content)
 
             article_data = {
                 'title': title,
+                'subtitle': subtitle,
                 'content': content,
                 'published_at': f"{final_date}T09:00:00+09:00",
                 'original_link': url,
