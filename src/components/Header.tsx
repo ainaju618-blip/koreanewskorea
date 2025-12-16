@@ -24,7 +24,7 @@ const COSMOS_CATEGORIES = [
     { name: 'AI Content', slug: 'ai-content', icon: Bot },
 ];
 
-// 카테고리 ?�???�의
+// 카테고리 정의
 interface Category {
     id: string;
     name: string;
@@ -45,26 +45,26 @@ export default function Header() {
     const megaMenuRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
 
-    // ?�재 경로가 ?�당 카테고리???�하?��? ?�인
+    // 현재 경로가 해당 카테고리에 해당하는지 확인
     const isActiveCategory = (category: Category): boolean => {
         if (pathname === '/' && category.slug === 'home') return true;
-        // ?�남지??region)?� jeonnam-region 경로?�서 ?�성??
+        // 전남지역(region)은 jeonnam-region 경로에서 활성화
         if (category.slug === 'region' && pathname.startsWith('/category/jeonnam-region')) {
             return true;
         }
-        // ?�확??경로 매칭 (?? /category/jeonnam �?/category/jeonnam-region 구분)
+        // 정확한 경로 매칭 (예: /category/jeonnam vs /category/jeonnam-region 구분)
         const categoryPath = `/category/${category.slug}`;
         if (pathname === categoryPath || pathname.startsWith(`${categoryPath}/`) || pathname.startsWith(`${categoryPath}?`)) {
             return true;
         }
-        // ?�위 카테고리 ?�인
+        // 하위 카테고리 확인
         if (category.children) {
             return category.children.some(child => pathname.includes(`/${child.slug}`));
         }
         return false;
     };
 
-    // ?�짜 ?�정
+    // 날짜 설정
     useEffect(() => {
         const date = new Date();
         const formatted = date.toLocaleDateString('ko-KR', {
@@ -76,7 +76,7 @@ export default function Header() {
         setCurrentDate(formatted);
     }, []);
 
-    // 카테고리 ?�이??로딩
+    // 카테고리 데이터 로딩
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -86,14 +86,14 @@ export default function Header() {
                     setCategories(data.categories || []);
                 }
             } catch (err) {
-                console.error('카테고리 로딩 ?�패:', err);
+                console.error('카테고리 로딩 실패:', err);
                 setCategories([]);
             }
         };
         fetchCategories();
     }, []);
 
-    // ?��? ?�릭 ??메�?메뉴 ?�기
+    // 외부 클릭 시 메가 메뉴 닫기
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (megaMenuRef.current && !megaMenuRef.current.contains(event.target as Node)) {
@@ -106,7 +106,7 @@ export default function Header() {
 
     const getCategoryUrl = (category: Category, parent?: Category): string => {
         if (category.custom_url) return category.custom_url;
-        // ?�남지??region)?� jeonnam-region ?�이지�??�동
+        // 전남지역(region)은 jeonnam-region 페이지로 이동
         if (category.slug === 'region') return '/category/jeonnam-region';
         if (parent) return `/category/${parent.slug}/${category.slug}`;
         return `/category/${category.slug}`;
@@ -133,10 +133,10 @@ export default function Header() {
                     </div>
 
                     <div className="flex items-center gap-4 font-medium tracking-wide opacity-90">
-                        <Link href="/subscribe" className="hover:text-primary transition-colors">구독?�청</Link>
+                        <Link href="/subscribe" className="hover:text-primary transition-colors">구독신청</Link>
                         <span className="w-[1px] h-2.5 bg-white/20"></span>
                         <Link href="/reporter/login" className="flex items-center gap-1 hover:text-primary transition-colors">
-                            <User className="w-3 h-3" /> 기자로그??
+                            <User className="w-3 h-3" /> 기자로그인
                         </Link>
                     </div>
                 </div>
@@ -164,7 +164,7 @@ export default function Header() {
                     <div className="flex flex-col items-center justify-center flex-1">
                         <Link href="/" className="group flex items-center gap-1.5">
                             <span className="text-4xl md:text-5xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
-                                코리??span className="text-primary">NEWS</span>
+                                코리아<span className="text-primary">NEWS</span>
                             </span>
                         </Link>
                     </div>
@@ -174,7 +174,7 @@ export default function Header() {
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="p-2 text-secondary"
-                            aria-label={isMobileMenuOpen ? "메뉴 ?�기" : "메뉴 ?�기"}
+                            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
                             aria-expanded={isMobileMenuOpen}
                         >
                             {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
@@ -195,7 +195,7 @@ export default function Header() {
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full relative">
 
                     <nav className="hidden md:flex items-center justify-center h-full">
-                        {/* 메뉴 가?�데 ?�렬 */}
+                        {/* 메뉴 가운데 정렬 */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
                             <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative
                                 ${pathname === '/' ? 'text-primary' : 'text-secondary hover:text-primary'}
@@ -209,7 +209,7 @@ export default function Header() {
                             <Link href="/news/network" className={`h-full flex items-center transition-colors relative
                                 ${pathname.startsWith('/news') ? 'text-primary' : 'text-slate-800 hover:text-primary'}
                             `}>
-                                <span>?�스TV</span>
+                                <span>뉴스TV</span>
                                 {pathname.startsWith('/news') ? (
                                     <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary"></span>
                                 ) : (
@@ -240,7 +240,7 @@ export default function Header() {
                                     </Link>
 
                                     {/* MEGA MENU DROPDOWN - Modern Design with Animation */}
-                                    {/* region(jeonnam-region) 메뉴???�롭?�운 비활?�화 */}
+                                    {/* region(jeonnam-region) 메뉴는 드롭다운 비활성화 */}
                                     {hasChildren(category) && category.slug !== 'jeonnam' && category.slug !== 'region' && (
                                         <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
                                             opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
@@ -368,9 +368,9 @@ export default function Header() {
                     {/* Mobile Only Header Content */}
                     <div className="md:hidden flex items-center justify-between h-full">
                         <span className="font-bold text-lg text-secondary">
-                            ?�체메뉴
+                            전체메뉴
                         </span>
-                        <button className="p-2" aria-label="기사 검??>
+                        <button className="p-2" aria-label="기사 검색">
                             <Search className="w-6 h-6 text-secondary" />
                         </button>
                     </div>
@@ -409,7 +409,7 @@ export default function Header() {
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-                            aria-label="메뉴 ?�기"
+                            aria-label="메뉴 닫기"
                         >
                             <X className="w-5 h-5" />
                         </button>
