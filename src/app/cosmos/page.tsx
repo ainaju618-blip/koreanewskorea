@@ -24,27 +24,27 @@ function LandingContent() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <span className="inline-block px-4 py-1.5 mb-6 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-sm font-medium tracking-wider uppercase">
-                            Welcome to the Future
+                        <span className="inline-block px-4 py-1.5 mb-6 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-sm font-medium tracking-wider">
+                            CosmicPulse
                         </span>
-                        <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+                        <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-purple-400">
-                                Explore the Universe
+                                무한한 우주로
                             </span>
                             <br />
-                            <span className="text-4xl md:text-6xl text-white/50">One Pulse at a Time</span>
+                            <span className="text-2xl md:text-4xl text-white/50 font-medium">당신의 호기심이 닿는 곳까지</span>
                         </h1>
                         <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-300 mb-10 leading-relaxed">
-                            Your gateway to space science, sci-fi entertainment, and future technology.
-                            Powered by artificial intelligence, curated for the cosmos.
+                            우주 과학, SF 엔터테인먼트, 미래 기술의 관문.
+                            AI가 큐레이션하는 코스믹 콘텐츠.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link href="/cosmos/space-science" className="group bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
-                                Start Reading
+                                탐험 시작하기
                                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                             </Link>
                             <button className="px-8 py-4 rounded-full font-bold text-lg text-white border border-white/20 hover:bg-white/10 transition-colors backdrop-blur-sm">
-                                Join Newsletter
+                                뉴스레터 구독
                             </button>
                         </div>
                     </motion.div>
@@ -71,7 +71,7 @@ function LandingContent() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-end justify-between mb-12">
                         <div>
-                            <h2 className="text-3xl font-bold text-white mb-2">Explore Categories</h2>
+                            <h2 className="text-3xl font-bold text-white mb-2">카테고리 탐색</h2>
                             <div className="h-1 w-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
                         </div>
                     </div>
@@ -87,9 +87,9 @@ function LandingContent() {
             <section className="py-20 relative bg-gradient-to-b from-transparent to-purple-900/10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between mb-12">
-                        <h2 className="text-3xl font-bold text-white">Latest Transmissions</h2>
+                        <h2 className="text-3xl font-bold text-white">최신 포스트</h2>
                         <Link href="/cosmos/all" className="text-purple-400 hover:text-white transition-colors flex items-center gap-1">
-                            View All <ArrowRight className="h-4 w-4" />
+                            전체보기 <ArrowRight className="h-4 w-4" />
                         </Link>
                     </div>
 
@@ -116,7 +116,7 @@ function LandingContent() {
                                             {CATEGORIES.find(c => c.slug === post.categorySlug)?.name}
                                         </span>
                                         <span className="text-xs text-gray-300 flex items-center gap-1">
-                                            <Star className="h-3 w-3 fill-current text-yellow-500" /> {post.viewCount} views
+                                            <Star className="h-3 w-3 fill-current text-yellow-500" /> {post.viewCount.toLocaleString()}
                                         </span>
                                     </div>
                                     <h3 className="text-2xl font-bold text-white mb-2 leading-tight group-hover:text-purple-300 transition-colors">
@@ -137,19 +137,19 @@ function LandingContent() {
                         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-500/30 rounded-full blur-[60px]"></div>
                         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-purple-500/30 rounded-full blur-[60px]"></div>
 
-                        <h2 className="text-3xl font-bold text-white mb-4 relative z-10">Join the Cosmic Voyage</h2>
+                        <h2 className="text-3xl font-bold text-white mb-4 relative z-10">코스믹 뉴스레터</h2>
                         <p className="text-gray-400 mb-8 max-w-lg mx-auto relative z-10">
-                            Get the latest space science news, SF reviews, and future tech insights delivered directly to your inbox.
+                            우주 과학 뉴스, SF 리뷰, 미래 기술 인사이트를 이메일로 받아보세요.
                         </p>
 
                         <form className="relative z-10 max-w-md mx-auto flex flex-col sm:flex-row gap-4">
                             <input
                                 type="email"
-                                placeholder="Enter your email"
+                                placeholder="이메일 주소 입력"
                                 className="flex-grow bg-black/50 border border-white/20 rounded-full px-6 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                             />
                             <button type="submit" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-shadow">
-                                Subscribe
+                                구독하기
                             </button>
                         </form>
                     </div>
