@@ -121,6 +121,7 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "사이트 정보", href: "/admin/settings/general" },
                     { label: "카테고리 관리", href: "/admin/settings/categories" },
                     { label: "레이아웃 관리", href: "/admin/settings/layouts" },
+                    { label: "히어로 슬라이더", href: "/admin/settings/hero-slider" },
                     { label: "API 키 설정", href: "/admin/settings/api" },
                 ]
             }

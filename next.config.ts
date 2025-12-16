@@ -34,8 +34,9 @@ const nextConfig: NextConfig = {
   },
   
   // 패키지 임포트 최적화 (번들 크기 감소)
+  // Note: @supabase/supabase-js removed due to Next.js 15 compatibility issues
   experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion', '@supabase/supabase-js'],
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
 };
 
