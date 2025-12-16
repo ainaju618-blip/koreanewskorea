@@ -145,6 +145,45 @@ export const MOCK_POSTS: BlogPost[] = [
         viewCount: 1500,
         createdAt: '2025-12-01',
         tags: ['AI', 'Philosophy', 'Tech']
+    },
+    {
+        id: '106',
+        title: 'Geminid Meteor Shower 2025: When and Where to Watch',
+        slug: 'geminid-meteor-shower-2025',
+        excerpt: 'The annual Geminid meteor shower peaks this week. Here is your complete guide to catching the celestial fireworks.',
+        content: 'Full content...',
+        thumbnailUrl: 'https://picsum.photos/seed/meteor/800/600',
+        categorySlug: 'astronomy',
+        author: 'StarGazer',
+        viewCount: 4520,
+        createdAt: '2025-12-13',
+        tags: ['Meteor Shower', 'Stargazing', 'Events']
+    },
+    {
+        id: '107',
+        title: 'Black Holes: The Universe\'s Ultimate Mystery',
+        slug: 'black-holes-ultimate-mystery',
+        excerpt: 'From event horizons to singularities, diving deep into the most enigmatic objects in the cosmos.',
+        content: 'Full content...',
+        thumbnailUrl: 'https://picsum.photos/seed/blackhole/800/600',
+        categorySlug: 'astronomy',
+        author: 'Dr. Hawking Fan',
+        viewCount: 7830,
+        createdAt: '2025-12-11',
+        tags: ['Black Holes', 'Physics', 'Space']
+    },
+    {
+        id: '108',
+        title: 'James Webb Captures New Exoplanet Images',
+        slug: 'jwst-exoplanet-images',
+        excerpt: 'The James Webb Space Telescope reveals stunning details of planets orbiting distant stars.',
+        content: 'Full content...',
+        thumbnailUrl: 'https://picsum.photos/seed/jwst/800/600',
+        categorySlug: 'astronomy',
+        author: 'NASA Watcher',
+        viewCount: 6100,
+        createdAt: '2025-12-09',
+        tags: ['JWST', 'Exoplanets', 'NASA']
     }
 ];
 
