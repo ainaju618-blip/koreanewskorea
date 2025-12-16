@@ -141,10 +141,14 @@ export default function Header() {
             <div className="h-[70px] bg-white border-b border-slate-100">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex flex-row items-center justify-between">
 
-                    {/* Left Ear Ad */}
-                    <div className="hidden lg:flex w-[180px] h-[50px] bg-slate-50 items-center justify-center text-slate-300 text-xs rounded border border-slate-100 font-sans">
-                        <span>Advertisement</span>
-                    </div>
+                    {/* Left Logo Image */}
+                    <Link href="/" className="hidden lg:flex items-center">
+                        <img
+                            src="/logo-koreanews.png"
+                            alt="Korea NEWS Logo"
+                            className="h-[50px] max-w-[90px] object-contain mt-5"
+                        />
+                    </Link>
 
                     {/* Center Logo branding */}
                     <div className="flex flex-col items-center justify-center flex-1">
