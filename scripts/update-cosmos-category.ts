@@ -45,13 +45,13 @@ async function updateCosmosCategory() {
     console.log('Found categories:', categories.map(c => c.name));
 
     for (const cat of categories) {
-        console.log(`Updating "${cat.name}" to open /blog in new tab...`);
+        console.log(`Updating "${cat.name}" to open /cosmos landing page...`);
 
         const { error: updateError } = await supabase
             .from('categories')
             .update({
-                custom_url: '/blog',
-                link_target: '_blank'
+                custom_url: '/cosmos',
+                link_target: '_self'
             })
             .eq('id', cat.id);
 
