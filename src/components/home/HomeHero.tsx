@@ -109,14 +109,20 @@ async function getHeroData() {
 
     // 5. Fetch side articles (different from slider)
     const sliderIds = sliderArticles.map(a => a.id);
-    const { data: sideData } = await supabase
+    let sideQuery = supabase
         .from('posts')
         .select('id, title, content, summary, thumbnail_url, category, published_at')
         .eq('status', 'published')
         .not('thumbnail_url', 'is', null)
         .neq('thumbnail_url', '')
-        .like('thumbnail_url', 'http%')
-        .not('id', 'in', `(${sliderIds.join(',')})`)
+        .like('thumbnail_url', 'http%');
+
+    // Exclude slider articles if there are any
+    if (sliderIds.length > 0) {
+        sideQuery = sideQuery.not('id', 'in', `(${sliderIds.join(',')})`);
+    }
+
+    const { data: sideData } = await sideQuery
         .order('published_at', { ascending: false })
         .limit(2);
 
