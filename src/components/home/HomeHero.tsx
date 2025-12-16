@@ -164,7 +164,7 @@ function SideArticle({ article, priority = false }: { article: Article; priority
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                        <span className="text-[11px] font-bold text-secondary uppercase tracking-wider opacity-80">
+                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                             {displayCategory(article.category)}
                         </span>
                     </div>
@@ -174,7 +174,7 @@ function SideArticle({ article, priority = false }: { article: Article; priority
                     </h3>
                 </div>
 
-                <p className="text-slate-600 text-sm line-clamp-2 leading-snug font-normal">
+                <p className="text-slate-700 text-sm line-clamp-2 leading-snug font-normal">
                     {(!article.content || article.content.includes('Error'))
                         ? (article.summary || '')
                         : cleanContentPreview(article.content, 60)}...

@@ -81,7 +81,9 @@
       "Bash(npm view:*)",
       "Bash(npm audit:*)",
       "Bash(npm outdated:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nsecurity: Upgrade packages to fix critical vulnerabilities\n\n- React/React-DOM 19.2.0 -> 19.2.3 (CVE-2025-55184 DoS, CVE-2025-55182 RCE)\n- @supabase/supabase-js 2.49.1 -> 2.88.0 (GHSA-8r88-6cj9-9fh5)\n- @supabase/ssr 0.5.2 -> 0.8.0\n- undici 6.19.7 -> 6.22.0 (DoS vulnerability)\n\nAll vulnerabilities resolved: npm audit shows 0 vulnerabilities\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nsecurity: Upgrade packages to fix critical vulnerabilities\n\n- React/React-DOM 19.2.0 -> 19.2.3 (CVE-2025-55184 DoS, CVE-2025-55182 RCE)\n- @supabase/supabase-js 2.49.1 -> 2.88.0 (GHSA-8r88-6cj9-9fh5)\n- @supabase/ssr 0.5.2 -> 0.8.0\n- undici 6.19.7 -> 6.22.0 (DoS vulnerability)\n\nAll vulnerabilities resolved: npm audit shows 0 vulnerabilities\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npx supabase login)",
+      "Bash(node:*)"
     ]
   }
 }

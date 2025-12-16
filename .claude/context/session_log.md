@@ -5,6 +5,65 @@
 
 ---
 
+## [2025-12-17 17:00] 세션 #13 - HomeHero Server Component 최적화 by Claude
+
+### 주인님 의도
+- PageSpeed Performance 점수 56 → 100 달성
+- LCP 13.7초 → 2.5초 이하로 개선
+- "응..전부다 진행해" - 모든 최적화 단계 완료 요청
+
+### 수행 작업
+
+1. **Phase 1-1: HomeHero Server Component 변환** (핵심)
+   - `'use client'` 제거 → Server Component로 전환
+   - Client-side fetch (useEffect) → Server-side data fetching
+   - Supabase 직접 조회로 4-6초 client fetch 지연 제거
+   - HeroSlider에 props로 데이터 전달
+
+2. **Phase 1-2: Three.js 번들 분리 확인**
+   - 이미 dynamic import 사용 중 (확인 완료)
+   - 추가 작업 불필요
+
+3. **Phase 2-1: Hero 이미지 최적화**
+   - HeroSlider: 현재 + 인접 슬라이드만 렌더링 (메모리 최적화)
+   - Next.js Image 컴포넌트 사용 (background-image 대체)
+   - 첫 슬라이드에 priority 속성 적용
+
+4. **Phase 2-2: 폰트 로딩 최적화**
+   - 이미 preload + crossOrigin="anonymous" 설정됨
+   - 추가 작업 불필요
+
+5. **Phase 3: 빌드 테스트 및 배포**
+   - `npm run build` 성공
+   - 홈페이지 dynamic으로 변경: `f /` (서버 데이터 fetch 때문)
+   - Git commit & push 완료
+
+### 사용 도구
+- 서브에이전트: 성능 병목 분석
+- 직접 구현: HomeHero, HeroSlider 최적화
+
+### 결과
+- Commit: `0011307` "perf: Convert HomeHero to Server Component for LCP optimization"
+- 2 files changed, 230 insertions, 168 deletions
+- Vercel 자동 배포 트리거됨
+
+### 주요 수정 파일
+```
+src/components/home/HomeHero.tsx - Server Component 변환
+src/components/home/HeroSlider.tsx - Props 기반 데이터, 이미지 최적화
+```
+
+### 예상 효과
+- LCP: 13.7초 → ~4-5초 (client fetch 제거)
+- 추가 최적화 후: ~2.5초 목표
+
+### 다음 단계
+1. 배포 완료 후 PageSpeed Insights로 실제 측정
+2. 측정 결과를 PageSpeed 관리 대시보드에 기록
+3. 필요시 추가 최적화 (이미지 압축, 캐싱 등)
+
+---
+
 ## [2025-12-17 14:00] 세션 #12 - PageSpeed 관리 대시보드 by Claude
 
 ### 주인님 의도

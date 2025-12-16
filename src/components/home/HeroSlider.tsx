@@ -177,7 +177,7 @@ export default function HeroSlider({
                     <span className="inline-flex items-center px-3 py-1.5 bg-primary text-white text-[11px] font-bold uppercase tracking-wider rounded-full shadow-lg shadow-red-900/30">
                         {currentArticle.regionName}
                     </span>
-                    <span className="inline-flex items-center px-3 py-1.5 bg-white/15 backdrop-blur-md text-white text-[11px] font-semibold rounded-full border border-white/20">
+                    <span className="inline-flex items-center px-3 py-1.5 bg-black/40 backdrop-blur-md text-white text-[11px] font-semibold rounded-full border border-white/20">
                         {currentArticle.regionNameEn}
                     </span>
                 </div>
@@ -222,28 +222,32 @@ export default function HeroSlider({
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 </button>
 
-                {/* Progress Indicators (Dots) */}
-                <div className="flex items-center gap-2">
+                {/* Progress Indicators (Dots) - 44px touch target for accessibility */}
+                <div className="flex items-center gap-1">
                     {articles.map((_, idx) => (
                         <button
                             key={idx}
                             onClick={(e) => { e.preventDefault(); goToSlide(idx); }}
-                            className="relative h-1.5 rounded-full overflow-hidden transition-all duration-300 hover:opacity-80"
-                            style={{ width: idx === currentIndex ? '40px' : '20px' }}
-                            aria-label={`Go to slide ${idx + 1}`}
+                            className="relative min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            aria-label={`Go to slide ${idx + 1} of ${articles.length}`}
                         >
-                            {/* Background */}
-                            <div className="absolute inset-0 bg-white/30 rounded-full" />
-                            {/* Progress Fill */}
-                            {idx === currentIndex && (
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-white rounded-full transition-none"
-                                    style={{ width: `${progress}%` }}
-                                />
-                            )}
-                            {idx < currentIndex && (
-                                <div className="absolute inset-0 bg-white rounded-full" />
-                            )}
+                            <div
+                                className="relative h-1.5 rounded-full overflow-hidden transition-all duration-300"
+                                style={{ width: idx === currentIndex ? '32px' : '16px' }}
+                            >
+                                {/* Background */}
+                                <div className="absolute inset-0 bg-white/30 rounded-full" />
+                                {/* Progress Fill */}
+                                {idx === currentIndex && (
+                                    <div
+                                        className="absolute inset-y-0 left-0 bg-white rounded-full transition-none"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                )}
+                                {idx < currentIndex && (
+                                    <div className="absolute inset-0 bg-white rounded-full" />
+                                )}
+                            </div>
                         </button>
                     ))}
                 </div>
@@ -258,7 +262,7 @@ export default function HeroSlider({
 
             {/* Hover indicator */}
             {isHovered && isPlaying && (
-                <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-white/80 text-xs z-30 flex items-center gap-1.5">
+                <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs z-30 flex items-center gap-1.5">
                     <Pause className="w-3 h-3" />
                     <span>Paused</span>
                 </div>

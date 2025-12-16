@@ -79,17 +79,18 @@ export default async function NewsGrid({
         <section className="mb-16">
             {/* Section Header */}
             <div className="flex items-end gap-4 mb-8 pb-4 border-b border-slate-200">
-                <h3 className="text-3xl font-serif font-bold text-secondary leading-none">
+                <h2 className="text-3xl font-serif font-bold text-secondary leading-none">
                     {categoryName}
-                </h3>
+                </h2>
                 {categoryNameEn && (
-                    <span className="text-sm font-serif italic text-slate-400 mb-1">
+                    <span className="text-sm font-serif italic text-slate-500 mb-1">
                         {categoryNameEn}
                     </span>
                 )}
                 <Link
                     href={categorySlug ? `/category/${categorySlug}` : '/'}
-                    className="ml-auto text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors"
+                    className="ml-auto text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-primary transition-colors"
+                    aria-label={`View all ${categoryName} news`}
                 >
                     View All
                 </Link>
@@ -120,10 +121,10 @@ export default async function NewsGrid({
                                 <span className="w-2 h-2 rounded-full bg-primary"></span>
                                 <span className="text-xs font-bold text-secondary uppercase tracking-wide">Headline</span>
                             </div>
-                            <h4 className="text-2xl font-serif font-bold text-secondary leading-tight group-hover:text-blue-900 transition-colors">
+                            <h3 className="text-2xl font-serif font-bold text-secondary leading-tight group-hover:text-blue-900 transition-colors">
                                 {mainPost.title}
-                            </h4>
-                            <p className="text-base text-slate-600 line-clamp-2 font-light leading-relaxed">
+                            </h3>
+                            <p className="text-base text-slate-700 line-clamp-2 font-light leading-relaxed">
                                 {(!mainPost.content || mainPost.content.includes('본문 내용을 가져올 수 없습니다'))
                                     ? (mainPost.summary || '')
                                     : cleanContentPreview(mainPost.content, 120)}...
@@ -161,10 +162,10 @@ export default async function NewsGrid({
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                    <h5 className="text-lg font-serif font-bold text-slate-800 leading-snug group-hover:text-secondary transition-colors mb-1 line-clamp-2">
+                                    <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug group-hover:text-secondary transition-colors mb-1 line-clamp-2">
                                         {post.title}
-                                    </h5>
-                                    <p className="text-sm text-slate-500 line-clamp-1 mb-2 font-light">
+                                    </h4>
+                                    <p className="text-sm text-slate-700 line-clamp-1 mb-2 font-light">
                                         {(!post.content || post.content.includes('본문 내용을 가져올 수 없습니다'))
                                             ? (post.summary || '')
                                             : cleanContentPreview(post.content, 50)}...
