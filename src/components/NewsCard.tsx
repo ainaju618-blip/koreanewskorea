@@ -36,7 +36,7 @@ export function NewsCard({
                             className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-300 bg-gradient-to-br from-slate-100 to-slate-200">
+                        <div className="w-full h-full flex items-center justify-center text-slate-600 bg-gradient-to-br from-slate-100 to-slate-200">
                             <span className="font-serif font-bold text-sm tracking-tight">Korea News</span>
                         </div>
                     )}
@@ -58,10 +58,10 @@ export function NewsCard({
                     <h3 className="text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary line-clamp-2 mb-2.5 transition-colors">
                         {news.title}
                     </h3>
-                    <p className="text-[14px] text-slate-500 line-clamp-2 leading-relaxed flex-1 font-sans">
+                    <p className="text-[14px] text-slate-600 line-clamp-2 leading-relaxed flex-1 font-sans">
                         {news.ai_summary || cleanContentPreview(news.content, 100)}
                     </p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-sans">
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-sans">
                         <span className="flex items-center gap-1.5">
                             <Clock className="w-3 h-3" />
                             {news.published_at?.split('T')[0]}
@@ -129,12 +129,12 @@ export function NewsCard({
                         {showCategory && news.category && (
                             <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                         )}
-                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{news.category || 'News'}</span>
+                        <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">{news.category || 'News'}</span>
                     </div>
                     <h3 className="text-[14px] font-serif font-bold text-slate-800 leading-snug group-hover:text-secondary line-clamp-2 transition-colors">
                         {news.title}
                     </h3>
-                    <span className="text-[11px] text-slate-400 mt-1.5 block">{news.published_at?.split('T')[0]}</span>
+                    <span className="text-[11px] text-slate-600 mt-1.5 block">{news.published_at?.split('T')[0]}</span>
                 </div>
                 {news.thumbnail_url && (
                     <div className="w-16 h-16 shrink-0 bg-slate-100 rounded-lg overflow-hidden relative">
@@ -166,7 +166,7 @@ export function NewsCard({
                                 {news.category}
                             </span>
                         )}
-                        <span className="text-[11px] text-slate-400 font-medium">{news.published_at?.split('T')[0]}</span>
+                        <span className="text-[11px] text-slate-600 font-medium">{news.published_at?.split('T')[0]}</span>
                     </div>
 
                     <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary transition-colors">
@@ -174,12 +174,12 @@ export function NewsCard({
                     </h3>
 
                     {news.subtitle && (
-                        <div className="text-base text-slate-600 font-medium pl-3 border-l-2 border-primary">
+                        <div className="text-base text-slate-700 font-medium pl-3 border-l-2 border-primary">
                             {news.subtitle}
                         </div>
                     )}
 
-                    <p className="text-[15px] text-slate-500 leading-relaxed font-light line-clamp-2 mt-1">
+                    <p className="text-[15px] text-slate-600 leading-relaxed font-light line-clamp-2 mt-1">
                         {news.ai_summary || cleanContentPreview(news.content, 160)}...
                     </p>
 
@@ -233,10 +233,10 @@ export function NewsCard({
                     <h3 className="text-base md:text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary mb-1.5 transition-colors line-clamp-2">
                         {news.title}
                     </h3>
-                    <p className="text-[13px] text-slate-500 leading-relaxed font-light line-clamp-2 mb-2">
+                    <p className="text-[13px] text-slate-600 leading-relaxed font-light line-clamp-2 mb-2">
                         {news.ai_summary || cleanContentPreview(news.content, 120)}...
                     </p>
-                    <div className="mt-auto text-[11px] text-slate-400 flex items-center gap-1.5">
+                    <div className="mt-auto text-[11px] text-slate-600 flex items-center gap-1.5">
                         <Clock className="w-3 h-3" />
                         <span>{news.published_at?.split('T')[0]}</span>
                     </div>

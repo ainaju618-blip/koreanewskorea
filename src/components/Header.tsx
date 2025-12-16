@@ -121,12 +121,12 @@ export default function Header() {
             <div className="h-[32px] bg-secondary text-white/90 hidden md:block">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex justify-between items-center text-xs">
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 opacity-80">
-                            <a href="#" className="hover:text-primary transition-colors" aria-label="Twitter"><Twitter className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors" aria-label="Facebook"><Facebook className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors" aria-label="Instagram"><Instagram className="w-3.5 h-3.5" /></a>
+                        <div className="flex items-center gap-3">
+                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Facebook"><Facebook className="w-5 h-5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
                         </div>
-                        <span className="opacity-60 font-medium">
+                        <span className="text-white/95 font-medium">
                             {currentDate}
                         </span>
                     </div>
@@ -529,16 +529,16 @@ export default function Header() {
 
                             {/* Social Links */}
                             <div className="pt-4 border-t border-slate-100">
-                                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3">Follow Us</p>
+                                <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider mb-3">Follow Us</p>
                                 <div className="flex items-center gap-3">
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#1DA1F2] hover:text-white transition-colors" aria-label="Twitter">
-                                        <Twitter className="w-4 h-4" />
+                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#1DA1F2] hover:text-white transition-colors" aria-label="Twitter">
+                                        <Twitter className="w-5 h-5" />
                                     </a>
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#4267B2] hover:text-white transition-colors" aria-label="Facebook">
-                                        <Facebook className="w-4 h-4" />
+                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#4267B2] hover:text-white transition-colors" aria-label="Facebook">
+                                        <Facebook className="w-5 h-5" />
                                     </a>
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors" aria-label="Instagram">
-                                        <Instagram className="w-4 h-4" />
+                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors" aria-label="Instagram">
+                                        <Instagram className="w-5 h-5" />
                                     </a>
                                 </div>
                             </div>

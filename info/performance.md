@@ -234,6 +234,44 @@ const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
 
 ---
 
+## Next Actions (For Other Agents)
+
+> **Priority:** P1 items that can be done independently
+
+### Task 1: Color Contrast Fix (Accessibility)
+```
+Location: PageSpeed shows "Background and foreground colors do not have sufficient contrast ratio"
+Action: Find elements with low contrast and fix colors
+Impact: Accessibility score improvement
+Files: Likely in globals.css or component styles
+```
+
+### Task 2: Touch Target Size Fix (Accessibility)
+```
+Location: PageSpeed shows "Touch targets do not have sufficient size or spacing"
+Action: Increase button/link sizes to minimum 48x48px with 8px spacing
+Impact: Accessibility score improvement
+Files: Header.tsx, NewsCard.tsx, other interactive elements
+```
+
+### Task 3: Heading Hierarchy Fix (Accessibility)
+```
+Location: PageSpeed shows "Heading elements are not in sequentially-descending order"
+Action: Ensure h1 -> h2 -> h3 order without skipping levels
+Impact: Accessibility + SEO
+Files: Check all page components for heading structure
+```
+
+### Task 4: Unused JavaScript Audit
+```
+Action: Run build and check for unused code warnings
+Command: npm run build
+Look for: "X modules are unused" warnings
+Impact: -57KB expected savings
+```
+
+---
+
 ## References
 
 - [Core Web Vitals](https://web.dev/vitals/)

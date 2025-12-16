@@ -62,10 +62,10 @@ export default function Home() {
             {/* 광주/전남 지역 네트워크 (Special Section) */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-100 my-8">
               <div className="border-t-4 border-[#A6121D] pt-3 mb-5">
-                <h3 className="text-xl font-serif font-black text-slate-900 flex items-baseline gap-2">
+                <h2 className="text-xl font-serif font-black text-slate-900 flex items-baseline gap-2">
                   지역 네트워크
-                  <span className="text-sm text-slate-400 font-sans font-medium">Region</span>
-                </h3>
+                  <span className="text-sm text-slate-600 font-sans font-medium">Region</span>
+                </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Suspense fallback={<NewsGridSkeleton />}>

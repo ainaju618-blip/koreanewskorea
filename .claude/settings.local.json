@@ -80,7 +80,8 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nperf: Optimize PageSpeed performance (LCP, bundle size, accessibility)\n\n- Three.js: Dynamic import for StarField (~1.4MB bundle reduction)\n- NewsCard: Convert all img tags to next/Image with proper sizes\n- TipTap: Dynamic import for editor (~400KB bundle reduction)\n- Fonts: Reduce Pretendard weights from 8 to 3 (~120KB savings)\n- Remove unused GSAP dependency\n- Accessibility: Remove viewport zoom restrictions, add aria-labels\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npm view:*)",
       "Bash(npm audit:*)",
-      "Bash(npm outdated:*)"
+      "Bash(npm outdated:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nsecurity: Upgrade packages to fix critical vulnerabilities\n\n- React/React-DOM 19.2.0 -> 19.2.3 (CVE-2025-55184 DoS, CVE-2025-55182 RCE)\n- @supabase/supabase-js 2.49.1 -> 2.88.0 (GHSA-8r88-6cj9-9fh5)\n- @supabase/ssr 0.5.2 -> 0.8.0\n- undici 6.19.7 -> 6.22.0 (DoS vulnerability)\n\nAll vulnerabilities resolved: npm audit shows 0 vulnerabilities\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }
