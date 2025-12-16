@@ -3,9 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot } from 'lucide-react';
-import NewsTicker from './NewsTicker';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
+
+// Dynamic import for NewsTicker (reduces initial bundle, loads after header)
+const NewsTicker = dynamic(() => import('./NewsTicker'), {
+    ssr: false,
+    loading: () => <div className="h-[45px] bg-slate-50 animate-pulse" />
+});
 
 // CosmicPulse categories
 const COSMOS_CATEGORIES = [

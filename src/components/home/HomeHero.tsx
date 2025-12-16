@@ -55,7 +55,7 @@ export default function HomeHero() {
     }, []);
 
     // Helper for Side Articles
-    const SideArticle = ({ article }: { article: Article }) => {
+    const SideArticle = ({ article, priority = false }: { article: Article; priority?: boolean }) => {
         const displayCategory = (cat?: string) => {
             if (!cat) return 'News';
             const lowerCat = cat.toLowerCase().trim();
@@ -75,6 +75,8 @@ export default function HomeHero() {
                             src={article.thumbnail_url}
                             alt={article.title}
                             fill
+                            priority={priority}
+                            sizes="(max-width: 1024px) 100vw, 400px"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                     ) : (
@@ -126,9 +128,9 @@ export default function HomeHero() {
                         </>
                     ) : (
                         <>
-                            {textArticles.map((article) => (
+                            {textArticles.map((article, idx) => (
                                 <div key={article.id} className="flex-1 min-h-[140px]">
-                                    <SideArticle article={article} />
+                                    <SideArticle article={article} priority={idx === 0} />
                                 </div>
                             ))}
                             {textArticles.length < 2 && Array.from({ length: 2 - textArticles.length }).map((_, i) => (
