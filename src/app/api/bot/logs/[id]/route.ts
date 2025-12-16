@@ -5,14 +5,17 @@ export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
-    const logId = parseInt(id);
-
-    if (isNaN(logId)) {
-        return NextResponse.json({ message: 'Invalid log ID' }, { status: 400 });
-    }
-
     try {
+        const { id } = await params;
+        const logId = parseInt(id, 10);
+
+        if (isNaN(logId)) {
+            return NextResponse.json(
+                { message: 'Invalid log ID' },
+                { status: 400 }
+            );
+        }
+
         const { data, error } = await supabaseAdmin
             .from('bot_logs')
             .select('*')
@@ -21,7 +24,10 @@ export async function GET(
 
         if (error) {
             if (error.code === 'PGRST116') {
-                return NextResponse.json({ message: 'Log not found' }, { status: 404 });
+                return NextResponse.json(
+                    { message: 'Log not found' },
+                    { status: 404 }
+                );
             }
             throw error;
         }
@@ -29,6 +35,10 @@ export async function GET(
         return NextResponse.json({ log: data });
 
     } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        console.error('[API] Log detail error:', error);
+        return NextResponse.json(
+            { message: error.message || 'Server error' },
+            { status: 500 }
+        );
     }
 }
