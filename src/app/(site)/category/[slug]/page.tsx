@@ -8,6 +8,20 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 // ISR: 60초마다 재생성 (서버 응답 시간 최적화)
 export const revalidate = 60;
 
+// Extract first image URL from content (fallback when thumbnail_url is null)
+function extractFirstImageUrl(content: string | null | undefined): string | null {
+    if (!content) return null;
+    // Pattern: [이미지 N]: URL or [이미지]: URL
+    const imagePattern = /\[이미지[^\]]*\]:\s*(https?:\/\/[^\s\n]+)/;
+    const match = content.match(imagePattern);
+    return match ? match[1] : null;
+}
+
+// Get thumbnail URL with fallback to content image
+function getThumbnailUrl(item: { thumbnail_url?: string | null; content?: string | null }): string | null {
+    return item.thumbnail_url || extractFirstImageUrl(item.content);
+}
+
 // 카테고리별 기사 가져오기
 async function getCategoryNews(slug: string, categoryName: string, page: number = 1) {
     try {
@@ -117,7 +131,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                 {currentPage === 1 && news[0] && (
                                     <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
                                         <OptimizedImage
-                                            src={news[0].thumbnail_url}
+                                            src={getThumbnailUrl(news[0])}
                                             alt={news[0].title}
                                             width={384}
                                             height={160}
@@ -141,7 +155,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                 {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
                                     <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
                                         <OptimizedImage
-                                            src={item.thumbnail_url}
+                                            src={getThumbnailUrl(item)}
                                             alt={item.title}
                                             width={160}
                                             height={96}

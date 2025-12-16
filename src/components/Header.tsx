@@ -202,6 +202,8 @@ export default function Header() {
                                 >
                                     <Link
                                         href={getCategoryUrl(category)}
+                                        target={category.link_target || undefined}
+                                        rel={category.link_target === '_blank' ? 'noopener noreferrer' : undefined}
                                         className={`h-full flex items-center transition-colors relative
                                             ${isActiveCategory(category) || activeMegaMenu === category.id ? 'text-primary' : 'text-slate-900'}
                                             hover:text-primary
@@ -354,7 +356,13 @@ export default function Header() {
                                         {/* Category Header */}
                                         <a
                                             href={getCategoryUrl(category)}
+                                            target={category.link_target || undefined}
+                                            rel={category.link_target === '_blank' ? 'noopener noreferrer' : undefined}
                                             onClick={(e) => {
+                                                if (category.link_target === '_blank') {
+                                                    setIsMobileMenuOpen(false);
+                                                    return; // Allow default behavior for new tab
+                                                }
                                                 e.preventDefault();
                                                 setIsMobileMenuOpen(false);
                                                 window.location.href = getCategoryUrl(category);
