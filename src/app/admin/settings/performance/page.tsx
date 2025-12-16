@@ -195,21 +195,23 @@ export default function PerformancePage() {
                                 href="https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.koreanewsone.com%2F"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 text-sm bg-[#21262d] border border-[#30363d] rounded-lg text-slate-300 hover:bg-[#30363d] transition-colors"
+                                className="flex items-center gap-2 px-4 py-2.5 text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg text-white font-medium hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
                             >
-                                <ExternalLink className="w-4 h-4" />
-                                Measure
+                                <Activity className="w-4 h-4" />
+                                분석하기
+                                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                             </a>
                             <button
                                 onClick={() => setShowForm(true)}
                                 className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Record
+                                기록 추가
                             </button>
                             <button
                                 onClick={fetchLogs}
                                 className="p-2 bg-[#21262d] border border-[#30363d] rounded-lg text-slate-400 hover:text-white hover:bg-[#30363d] transition-colors"
+                                title="새로고침"
                             >
                                 <RefreshCw className="w-4 h-4" />
                             </button>
