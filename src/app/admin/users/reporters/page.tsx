@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Users, Bot, CheckCircle, Edit2, Trash2, Loader2, X, RefreshCcw, Phone, Mail, Briefcase, Crown, User, Key } from "lucide-react";
+import { UserPlus, Users, Bot, CheckCircle, Edit2, Trash2, Loader2, X, RefreshCcw, Phone, Mail, Briefcase, Crown, User, Key, type LucideIcon } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
 // 직위 데이터
@@ -790,15 +790,17 @@ function ReporterForm({
     );
 }
 
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
-    const colors: Record<string, string> = {
+type StatCardColor = 'blue' | 'purple' | 'green' | 'orange';
+
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: LucideIcon; color: StatCardColor }) {
+    const colors: Record<StatCardColor, string> = {
         blue: "bg-blue-50 border-blue-200",
         purple: "bg-purple-50 border-purple-200",
         green: "bg-green-50 border-green-200",
         orange: "bg-orange-50 border-orange-200",
     };
 
-    const iconColors: Record<string, string> = {
+    const iconColors: Record<StatCardColor, string> = {
         blue: "text-blue-600",
         purple: "text-purple-600",
         green: "text-green-600",
@@ -995,7 +997,7 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
     );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
     return (
         <div className="flex items-center gap-3">
             <Icon className="w-4 h-4 text-gray-400" />
