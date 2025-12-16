@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+// Lazy initialization to avoid build-time errors
+function getOpenAIClient() {
+    if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    return new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+    });
+}
 
 interface GenerateRequest {
     topic: string;
@@ -76,6 +82,7 @@ Important:
 - The content should be original and insightful`;
 
         // Call OpenAI API
+        const openai = getOpenAIClient();
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
