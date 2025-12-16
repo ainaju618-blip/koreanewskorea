@@ -48,9 +48,10 @@ export default function OptimizedImage({
     placeholder = 'blur',
 }: OptimizedImageProps) {
     const [hasError, setHasError] = useState(false);
+    const [useFallback, setUseFallback] = useState(false);  // CldImage 에러 시 원본 URL 사용
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // 이미지가 없거나 에러인 경우
+    // 이미지가 없거나 완전 에러인 경우
     if (!src || hasError) {
         return (
             <div
@@ -62,8 +63,8 @@ export default function OptimizedImage({
         );
     }
 
-    // Cloudinary URL인 경우 - 최적화된 CldImage 사용
-    if (isCloudinaryUrl(src)) {
+    // Cloudinary URL인 경우 - CldImage 사용 시도 (에러 시 원본 URL로 폴백)
+    if (isCloudinaryUrl(src) && !useFallback) {
         const publicId = extractPublicId(src);
 
         if (publicId) {
@@ -85,7 +86,7 @@ export default function OptimizedImage({
                         crop={crop}
                         {...(aspectRatio && { aspectRatio })}
                         onLoad={() => setIsLoaded(true)}
-                        onError={() => setHasError(true)}
+                        onError={() => setUseFallback(true)}  // CldImage 실패 시 원본 URL로 폴백
                     />
                 </div>
             );

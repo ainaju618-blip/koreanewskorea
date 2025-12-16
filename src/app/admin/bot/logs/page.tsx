@@ -414,7 +414,7 @@ function StatCard({ label, value, color, icon: Icon }: StatCardProps) {
         gray: "bg-gray-50 text-gray-700 border-gray-200",
     };
 
-    const iconColors = {
+    const iconColors: Record<string, string> = {
         blue: "text-blue-600",
         green: "text-green-600",
         amber: "text-amber-600",
@@ -425,7 +425,7 @@ function StatCard({ label, value, color, icon: Icon }: StatCardProps) {
     return (
         <div className={`rounded-lg border p-4 ${colors[color]}`}>
             <div className="flex items-center gap-2 mb-1">
-                <Icon className={`w-4 h-4 ${iconColors[color]}`} />
+                <Icon className={`w-4 h-4 ${iconColors[color] || ''}`} />
                 <p className="text-sm font-medium opacity-80">{label}</p>
             </div>
             <p className="text-2xl font-bold">{value}</p>
