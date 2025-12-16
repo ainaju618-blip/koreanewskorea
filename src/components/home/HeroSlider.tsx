@@ -35,7 +35,7 @@ export default function HeroSlider({
     const [isPlaying, setIsPlaying] = useState(true);
     const [progress, setProgress] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+    // imageLoaded state removed - was unused and caused unnecessary re-renders
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Touch handling for mobile swipe
@@ -43,6 +43,7 @@ export default function HeroSlider({
     const touchEndX = useRef<number | null>(null);
 
     // Auto-slide with progress bar (paused on hover)
+    // Optimized: 100ms interval instead of 50ms (halves re-renders while staying smooth)
     useEffect(() => {
         if (!isPlaying || isHovered || articles.length === 0) return;
 
@@ -52,9 +53,9 @@ export default function HeroSlider({
                     setCurrentIndex((idx) => (idx + 1) % articles.length);
                     return 0;
                 }
-                return prev + (100 / (initialInterval / 50));
+                return prev + (100 / (initialInterval / 100));
             });
-        }, 50);
+        }, 100);
 
         return () => clearInterval(progressInterval);
     }, [articles.length, isPlaying, isHovered, initialInterval]);
@@ -150,11 +151,10 @@ export default function HeroSlider({
                                 alt={article.title}
                                 fill
                                 priority={idx === 0}
-                                sizes="(max-width: 1024px) 100vw, 66vw"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 66vw"
                                 className={`object-cover transition-transform duration-[8000ms] ease-out ${
                                     idx === currentIndex ? 'scale-110' : 'scale-100'
                                 }`}
-                                onLoad={() => setImageLoaded(prev => ({ ...prev, [idx]: true }))}
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
@@ -163,9 +163,13 @@ export default function HeroSlider({
                 );
             })}
 
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 z-20" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent z-20" />
+            {/* Gradient Overlay - Combined for performance */}
+            <div
+                className="absolute inset-0 z-20"
+                style={{
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%), linear-gradient(to right, rgba(0,0,0,0.5) 0%, transparent 50%)'
+                }}
+            />
 
             {/* Content */}
             <Link

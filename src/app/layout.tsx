@@ -114,7 +114,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
 
-        {/* Font Preload - Only 2 weights for performance */}
+        {/* Font Preload - Critical fonts for LCP */}
         <link
           rel="preload"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2"
@@ -127,6 +127,14 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2"
           as="font"
           type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        {/* Serif font preload for headlines - prevents FOUT */}
+        <link
+          rel="preload"
+          href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Chosunilbo_myungjo.woff"
+          as="font"
+          type="font/woff"
           crossOrigin="anonymous"
         />
       </head>
