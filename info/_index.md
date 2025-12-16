@@ -9,10 +9,11 @@
 
 | 상황 | 경로 |
 |------|------|
-| **에러 발생** | `errors/_catalog.md` → 키워드 검색 |
-| **개발 방법** | `guides/_catalog.md` → 주제 검색 |
+| **에러 발생** | `errors/_catalog.md` -> 키워드 검색 |
+| **개발 방법** | `guides/_catalog.md` -> 주제 검색 |
 | **계정/설정** | `config/accounts.md` |
 | **AI 협업** | `ai-collab/_index.md` |
+| **성능 최적화** | `performance.md` -> PageSpeed 관리 |
 
 ---
 
@@ -45,6 +46,7 @@
 ```
 info/
 ├── _index.md           # 이 파일 (1차 진입점)
+├── performance.md      # PageSpeed 성능 관리 (NEW)
 ├── errors/             # 에러 해결
 │   ├── _catalog.md     # 에러 카탈로그 (키워드 검색)
 │   ├── deploy/         # 배포 관련
@@ -86,4 +88,4 @@ info/
 
 ---
 
-*최종 업데이트: 2025-12-15*
+*최종 업데이트: 2025-12-17*
