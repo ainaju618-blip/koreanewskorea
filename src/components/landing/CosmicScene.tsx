@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars, Float, Sparkles, useScroll, ScrollControls, Scroll } from '@react-three/drei';
+import { Stars, Float, Sparkles, ScrollControls, Scroll } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Floating Particles Component

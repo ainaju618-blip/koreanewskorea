@@ -11,7 +11,8 @@ import {
     CheckCircle,
     AlertCircle,
     ArrowRight,
-    Sparkles
+    Sparkles,
+    type LucideIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader } from '@/components/admin/shared/PageHeader';
@@ -27,7 +28,7 @@ function StatCard({
 }: {
     title: string;
     value: string | number;
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     trend?: string;
     href?: string;

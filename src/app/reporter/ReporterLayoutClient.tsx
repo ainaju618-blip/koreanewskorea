@@ -19,6 +19,7 @@ import {
     Settings,
     HelpCircle,
     Home,
+    type LucideIcon,
 } from "lucide-react";
 
 interface Reporter {
@@ -55,7 +56,7 @@ interface AuthState {
 interface NavItem {
     href: string;
     label: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     badge?: number | string;
     badgeColor?: string;
 }

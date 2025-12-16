@@ -15,6 +15,7 @@ import {
     BarChart3,
     Sparkles,
     ChevronRight,
+    type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -275,7 +276,7 @@ function StatCard({
 }: {
     label: string;
     value: number;
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     trend?: number;
     trendUp?: boolean;
@@ -317,7 +318,7 @@ function QuickActionCard({
     featured,
 }: {
     href: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     title: string;
     description: string;
     color: string;

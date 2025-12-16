@@ -72,7 +72,10 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add CosmicPulse AI Blog System (Phase 1)\n\n- Add blog database schema (6 tables: posts, categories, sources, ai_logs, settings, trending)\n- Create /blogadmin management pages (dashboard, posts, AI generator)\n- Create /blog frontend with cosmic space theme\n- Add blog API endpoints (stats, posts CRUD, AI generation, trending)\n- Integrate OpenAI GPT-4o-mini for Korean SF/Space content generation\n- Add cosmic animations (stars, nebula, floating particles)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npx ts-node:*)",
       "Bash(npx tsx:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(vercel ls:*)",
+      "Bash(vercel logs:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add cosmic landing page with 3D space scene\n\n- Add Three.js/R3F cosmic scene with stars, nebulae, and orbiting planets\n- Create responsive landing page at /cosmos with Hero, Features, Posts sections\n- Fix TypeScript errors: LucideIcon type for icon props across multiple files\n- Add ESLint ignore during builds for cleaner CI/CD\n- Fix BufferAttribute args syntax for R3F compatibility\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }

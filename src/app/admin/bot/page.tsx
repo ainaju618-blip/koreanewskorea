@@ -13,7 +13,8 @@ import {
     Clock,
     RefreshCw,
     TrendingUp,
-    Zap
+    Zap,
+    type LucideIcon
 } from "lucide-react";
 import { RegionHeatmap, CollectionChart, AlertBanner } from "@/components/admin/bot";
 import type { RegionHealthData, DailyStat, Alert } from "@/components/admin/bot";
@@ -294,7 +295,7 @@ export default function BotDashboardPage() {
 // --- Components ---
 
 interface StatCardProps {
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     value: string | number;
     subValue?: string;
@@ -334,7 +335,7 @@ function StatCard({ icon: Icon, label, value, subValue, trend, trendColor, bgCol
 }
 
 interface ActionButtonProps {
-    icon: React.ElementType;
+    icon: LucideIcon;
     label: string;
     description: string;
     href: string;

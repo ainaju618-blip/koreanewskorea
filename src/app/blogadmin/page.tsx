@@ -14,7 +14,8 @@ import {
     Globe,
     Bot,
     Rocket,
-    Star
+    Star,
+    type LucideIcon
 } from 'lucide-react';
 
 // Stat Card Component
@@ -31,7 +32,7 @@ function StatCard({
     value: string | number;
     change?: string;
     changeType?: 'up' | 'down' | 'neutral';
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     href?: string;
 }) {
@@ -84,7 +85,7 @@ function QuickAction({
 }: {
     title: string;
     description: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     href: string;
     color: string;
 }) {

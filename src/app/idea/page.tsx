@@ -12,7 +12,8 @@ import {
     AlertCircle,
     ArrowRight,
     Sparkles,
-    RefreshCw
+    RefreshCw,
+    type LucideIcon
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,7 +28,7 @@ function StatCard({
 }: {
     title: string;
     value: string | number;
-    icon: React.ElementType;
+    icon: LucideIcon;
     color: string;
     trend?: string;
     href?: string;
