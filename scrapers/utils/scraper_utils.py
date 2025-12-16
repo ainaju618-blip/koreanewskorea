@@ -256,22 +256,23 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
 
     # 1. 첨부파일 관련 패턴 제거
     attachment_patterns = [
-        # 번호.[파일명].확장자 (파일크기) Hit: N 형태
-        r'^\d+\.\s*\[[^\]]*\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]*\)\s*Hit:\s*\d+',
-        r'\d+\.\s*\[[^\]]*\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]*\)\s*Hit:\s*\d+',
-        # 번호.[파일명] 형태 (한 줄 전체)
-        r'^\d+\.\s*\[[^\]]*\]\s*[^\n]*$',
-        # 파일명 (크기) Hit: N 형태
-        r'[^\s]+\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit:\s*\d+',
-        # 단순 파일 정보
-        r'\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit:\s*\d+',
+        # 광주교육청 등 특수 형식: N.[태그] 파일명.확장자 (크기) Hit: N
+        # 예: 2.[홍보물1] 광주시교육청, 제77주년 세계인권선언 기념주간 운영.jpg (530.66 Kb) Hit: 0
+        r'^\d+\s*\.\s*\[[^\]]+\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]+\)\s*Hit\s*:\s*\d+',
+        r'\d+\s*\.\s*\[[^\]]+\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]+\)\s*Hit\s*:\s*\d+',
+        # 일반 파일명.확장자 (크기) Hit: N 형태 (파일명에 공백/한글 포함)
+        r'^[^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit\s*:\s*\d+',
+        # 번호.[파일명] 형태 (한 줄 전체) - 확장자 없어도 제거
+        r'^\d+\s*\.\s*\[[^\]]+\][^\n]*$',
+        # 단순 파일 정보 (크기) Hit: N
+        r'\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit\s*:\s*\d+',
         # 첨부파일 (N개) 형태
         r'첨부파일\s*\(?\d*\)?',
-        # [사진], [사진1], [홍보물] 등 캡션
-        r'\[\s*사진\d*\s*\][^\n]*',
-        r'\[\s*홍보물\d*\s*\][^\n]*',
-        r'\[\s*보도자료\s*\][^\n]*',
-        r'\[\s*포스터\s*\][^\n]*',
+        # [사진], [사진1], [홍보물] 등 캡션 (한 줄 전체)
+        r'^\s*\[\s*사진\d*\s*\][^\n]*$',
+        r'^\s*\[\s*홍보물\d*\s*\][^\n]*$',
+        r'^\s*\[\s*보도자료\s*\][^\n]*$',
+        r'^\s*\[\s*포스터\s*\][^\n]*$',
         # (사진 N장 첨부) 형태
         r'\([^)]*사진[^)]*\d*[^)]*장?[^)]*첨부[^)]*\)',
     ]
