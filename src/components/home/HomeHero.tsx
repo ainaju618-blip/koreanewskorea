@@ -88,13 +88,13 @@ export default function HomeHero() {
                 <div className="flex-1 p-3 flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#A6121D]"></span>
-                            <span className="text-[11px] font-bold text-[#0a192f] uppercase tracking-wider opacity-80">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider opacity-80">
                                 {displayCategory(article.category)}
                             </span>
                         </div>
 
-                        <h3 className="text-lg font-serif font-bold text-slate-900 leading-[1.25] mb-1 group-hover:text-[#A6121D] transition-colors line-clamp-2">
+                        <h3 className="text-lg font-serif font-bold text-slate-900 leading-[1.25] mb-1 group-hover:text-primary transition-colors line-clamp-2">
                             {article.title}
                         </h3>
                     </div>

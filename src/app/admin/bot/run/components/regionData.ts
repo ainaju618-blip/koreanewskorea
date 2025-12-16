@@ -38,8 +38,8 @@ export const localRegions: Region[] = [
 
 // 교육기관 목록 (2개)
 export const agencyRegions: Region[] = [
-    { id: "gwangju_edu", label: "광주광역시교육청" },
-    { id: "jeonnam_edu", label: "전라남도교육청" },
+    { id: "gwangju_edu", label: "광주시교육청" },
+    { id: "jeonnam_edu", label: "전남교육청" },
 ];
 
 // 전체 지역 목록

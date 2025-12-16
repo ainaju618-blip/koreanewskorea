@@ -188,7 +188,7 @@ export default function HeroSlider({ className = '' }: HeroSliderProps) {
             >
                 {/* Region Badge (Dynamic) */}
                 <div className="flex items-center gap-3 mb-4">
-                    <span className="inline-flex items-center px-3 py-1.5 bg-[#A6121D] text-white text-[11px] font-bold uppercase tracking-wider rounded-full shadow-lg shadow-red-900/30">
+                    <span className="inline-flex items-center px-3 py-1.5 bg-primary text-white text-[11px] font-bold uppercase tracking-wider rounded-full shadow-lg shadow-red-900/30">
                         {currentArticle.regionName}
                     </span>
                     <span className="inline-flex items-center px-3 py-1.5 bg-white/15 backdrop-blur-md text-white text-[11px] font-semibold rounded-full border border-white/20">

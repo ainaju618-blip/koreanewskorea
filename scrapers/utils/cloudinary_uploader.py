@@ -45,12 +45,12 @@ try:
             secure=True
         )
         CLOUDINARY_CONFIGURED = True
-        print("☁️ Cloudinary 설정 완료")
+        print("[OK] Cloudinary 설정 완료")
     else:
         CLOUDINARY_CONFIGURED = False
 except ImportError:
     CLOUDINARY_CONFIGURED = False
-    print("⚠️ cloudinary 패키지가 설치되지 않았습니다.")
+    print("[WARN] cloudinary 패키지가 설치되지 않았습니다.")
 
 # 이미지 리사이즈 설정
 TARGET_WIDTH = 800
@@ -169,11 +169,11 @@ def upload_local_image(local_path: str, folder: str = "news", resize: bool = Tru
         Cloudinary 이미지 URL 또는 None (실패 시)
     """
     if not CLOUDINARY_CONFIGURED:
-        print(f"⚠️ Cloudinary 미설정")
+        print(f"[WARN] Cloudinary 미설정")
         return None
-    
+
     if not os.path.exists(local_path):
-        print(f"❌ 파일이 존재하지 않음: {local_path}")
+        print(f"[ERROR] 파일이 존재하지 않음: {local_path}")
         return None
     
     try:
@@ -211,11 +211,11 @@ def upload_local_image(local_path: str, folder: str = "news", resize: bool = Tru
         os.remove(temp_path)
         
         cloudinary_url = result.get('secure_url')
-        print(f"☁️ Cloudinary 업로드: {cloudinary_url[:60]}...")
+        print(f"[OK] Cloudinary 업로드: {cloudinary_url[:60]}...")
         return cloudinary_url
-        
+
     except Exception as e:
-        print(f"❌ Cloudinary 업로드 오류: {str(e)[:50]}")
+        print(f"[ERROR] Cloudinary 업로드 오류: {str(e)[:50]}")
         return None
 
 

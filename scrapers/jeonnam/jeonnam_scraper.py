@@ -18,9 +18,8 @@ from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server
-from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle, detect_category
 from utils.cloudinary_uploader import download_and_upload_image
-from utils.category_detector import detect_category
 
 REGION_CODE = 'jeonnam'
 REGION_NAME = '전라남도'

@@ -41,7 +41,7 @@ export default async function Sidebar() {
         <aside className="space-y-5">
             {/* ===== Hot Issue Widget ===== */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80">
-                <div className="bg-gradient-to-r from-[#A6121D] to-[#c41e2a] px-5 py-4 flex items-center gap-2.5">
+                <div className="bg-gradient-to-r from-primary to-primary-light px-5 py-4 flex items-center gap-2.5">
                     <div className="p-1.5 bg-white/20 rounded-lg">
                         <Flame className="w-4 h-4 text-white" />
                     </div>
@@ -56,12 +56,12 @@ export default async function Sidebar() {
                             >
                                 <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-[11px] font-black transition-colors
                                     ${idx < 3
-                                        ? 'bg-gradient-to-br from-[#A6121D] to-[#c41e2a] text-white shadow-sm shadow-red-200'
+                                        ? 'bg-gradient-to-br from-primary to-primary-light text-white shadow-sm shadow-red-200'
                                         : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
                                     }`}>
                                     {idx + 1}
                                 </span>
-                                <span className="text-[14px] text-slate-700 leading-snug group-hover:text-[#A6121D] line-clamp-2 transition-colors font-medium">
+                                <span className="text-[14px] text-slate-700 leading-snug group-hover:text-primary line-clamp-2 transition-colors font-medium">
                                     {post.title}
                                 </span>
                             </Link>
@@ -100,22 +100,22 @@ export default async function Sidebar() {
             {/* ===== Quick Links ===== */}
             <div className="bg-white rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80 p-5">
                 <h3 className="font-bold text-slate-800 text-[15px] mb-4 flex items-center gap-2">
-                    <ArrowRight className="w-4 h-4 text-[#A6121D]" />
+                    <ArrowRight className="w-4 h-4 text-primary" />
                     Quick Links
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
                     <Link
                         href="/map"
-                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-[#A6121D] hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-[#A6121D] hover:shadow-lg hover:shadow-red-900/10"
+                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10"
                     >
-                        <MapPin className="w-4 h-4 text-[#A6121D] group-hover:text-white transition-colors" />
+                        <MapPin className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
                         <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">Namdo Daiso</span>
                     </Link>
                     <Link
                         href="/news/network"
-                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-[#A6121D] hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-[#A6121D] hover:shadow-lg hover:shadow-red-900/10"
+                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10"
                     >
-                        <Video className="w-4 h-4 text-[#A6121D] group-hover:text-white transition-colors" />
+                        <Video className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
                         <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">News TV</span>
                     </Link>
                 </div>

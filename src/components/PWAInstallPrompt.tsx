@@ -87,7 +87,7 @@ function IOSGuideModal({ show, onClose }: { show: boolean; onClose: () => void }
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-[#0a192f]">홈 화면에 추가</h3>
+          <h3 className="text-lg font-bold text-secondary">홈 화면에 추가</h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full">
             <X className="w-5 h-5 text-slate-500" />
           </button>
@@ -95,7 +95,7 @@ function IOSGuideModal({ show, onClose }: { show: boolean; onClose: () => void }
 
         <div className="space-y-4 text-sm text-slate-600">
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
+            <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
             <p>Safari 하단의 <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 rounded text-slate-700">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -104,19 +104,19 @@ function IOSGuideModal({ show, onClose }: { show: boolean; onClose: () => void }
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
+            <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
             <p><strong>&quot;홈 화면에 추가&quot;</strong>를 선택하세요</p>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
+            <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
             <p>오른쪽 상단의 <strong>&quot;추가&quot;</strong>를 탭하세요</p>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="w-full mt-6 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 text-white font-medium rounded-xl transition-colors"
+          className="w-full mt-6 py-3 bg-secondary hover:bg-secondary/90 text-white font-medium rounded-xl transition-colors"
         >
           확인
         </button>
@@ -135,7 +135,7 @@ export function PWAInstallButton() {
     <>
       <button
         onClick={handleInstallClick}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#A6121D] hover:bg-[#e02555] text-white text-sm font-medium rounded-full transition-colors shadow-sm"
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-light text-white text-sm font-medium rounded-full transition-colors shadow-sm"
         title="앱 설치"
       >
         <Download className="w-4 h-4" />
@@ -179,7 +179,7 @@ export function PWAInstallMenuItem({ onMenuClose }: { onMenuClose?: () => void }
     <>
       <button
         onClick={handleClick}
-        className="flex items-center justify-center gap-2 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 rounded-xl font-bold text-white border border-[#0a192f] shadow-sm w-full col-span-2 transition-colors"
+        className="flex items-center justify-center gap-2 py-3 bg-secondary hover:bg-secondary/90 rounded-xl font-bold text-white border border-secondary shadow-sm w-full col-span-2 transition-colors"
       >
         <Download className="w-5 h-5" />
         <span>홈 화면에 추가</span>
@@ -264,12 +264,12 @@ export function PWAInstallBanner() {
       <div className="fixed bottom-0 left-0 right-0 z-[150] md:hidden animate-slide-up">
         <div className="bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#0a192f] rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center shrink-0">
               <Smartphone className="w-6 h-6 text-white" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[#0a192f] text-sm">코리아NEWS 앱 설치</p>
+              <p className="font-bold text-secondary text-sm">코리아NEWS 앱 설치</p>
               <p className="text-xs text-slate-500 truncate">홈 화면에 추가하고 빠르게 접속하세요</p>
             </div>
 
@@ -282,7 +282,7 @@ export function PWAInstallBanner() {
               </button>
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-[#A6121D] hover:bg-[#e02555] text-white text-sm font-bold rounded-lg transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-primary-light text-white text-sm font-bold rounded-lg transition-colors"
               >
                 설치
               </button>
@@ -296,7 +296,7 @@ export function PWAInstallBanner() {
         <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4">
           <div className="bg-white rounded-t-2xl max-w-lg w-full p-6 shadow-2xl animate-slide-up">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-[#0a192f]">홈 화면에 추가하기</h3>
+              <h3 className="text-lg font-bold text-secondary">홈 화면에 추가하기</h3>
               <button onClick={() => setShowIOSGuide(false)} className="p-1 hover:bg-slate-100 rounded-full">
                 <X className="w-5 h-5 text-slate-500" />
               </button>
@@ -304,7 +304,7 @@ export function PWAInstallBanner() {
 
             <div className="space-y-4 text-sm text-slate-600">
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
+                <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
                 <p>Safari 하단의 <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 mx-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -313,19 +313,19 @@ export function PWAInstallBanner() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
+                <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
                 <p>스크롤 후 <strong>"홈 화면에 추가"</strong>를 선택하세요</p>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 bg-[#0a192f] text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
+                <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
                 <p>오른쪽 상단의 <strong>"추가"</strong>를 탭하면 완료!</p>
               </div>
             </div>
 
             <button
               onClick={() => setShowIOSGuide(false)}
-              className="w-full mt-6 py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 text-white font-medium rounded-xl transition-colors"
+              className="w-full mt-6 py-3 bg-secondary hover:bg-secondary/90 text-white font-medium rounded-xl transition-colors"
             >
               확인했어요
             </button>

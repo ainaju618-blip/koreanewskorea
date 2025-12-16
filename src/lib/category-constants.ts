@@ -143,3 +143,42 @@ export const JEONNAM_ZONES = [
         regions: ['나주', '화순', '장성', '함평', '영광', '장흥', '강진']
     }
 ];
+
+// Category styling for No Image cards
+export const CATEGORY_STYLES: Record<string, { gradient: string; iconName: string }> = {
+    // Main categories
+    'politics': { gradient: 'from-slate-600 to-slate-800', iconName: 'Building2' },
+    'economy': { gradient: 'from-blue-500 to-blue-700', iconName: 'TrendingUp' },
+    'society': { gradient: 'from-orange-500 to-orange-700', iconName: 'Users' },
+    'culture': { gradient: 'from-purple-500 to-purple-700', iconName: 'Palette' },
+    'sports': { gradient: 'from-green-500 to-green-700', iconName: 'Trophy' },
+    'people': { gradient: 'from-pink-500 to-pink-700', iconName: 'User' },
+    'opinion': { gradient: 'from-amber-500 to-amber-700', iconName: 'MessageSquare' },
+    'ai': { gradient: 'from-cyan-500 to-cyan-700', iconName: 'Cpu' },
+    'edu': { gradient: 'from-indigo-500 to-indigo-700', iconName: 'GraduationCap' },
+    // Korean category names
+    '정치': { gradient: 'from-slate-600 to-slate-800', iconName: 'Building2' },
+    '경제': { gradient: 'from-blue-500 to-blue-700', iconName: 'TrendingUp' },
+    '사회': { gradient: 'from-orange-500 to-orange-700', iconName: 'Users' },
+    '문화': { gradient: 'from-purple-500 to-purple-700', iconName: 'Palette' },
+    '스포츠': { gradient: 'from-green-500 to-green-700', iconName: 'Trophy' },
+    '인물': { gradient: 'from-pink-500 to-pink-700', iconName: 'User' },
+    '오피니언': { gradient: 'from-amber-500 to-amber-700', iconName: 'MessageSquare' },
+    '교육': { gradient: 'from-indigo-500 to-indigo-700', iconName: 'GraduationCap' },
+    // Regional categories
+    '전남': { gradient: 'from-emerald-500 to-emerald-700', iconName: 'MapPin' },
+    '전라남도': { gradient: 'from-emerald-500 to-emerald-700', iconName: 'MapPin' },
+    '광주': { gradient: 'from-teal-500 to-teal-700', iconName: 'Building' },
+    '광주광역시': { gradient: 'from-teal-500 to-teal-700', iconName: 'Building' },
+    '나주': { gradient: 'from-lime-500 to-lime-700', iconName: 'Sprout' },
+    // Education offices
+    '광주교육청': { gradient: 'from-sky-500 to-sky-700', iconName: 'School' },
+    '전남교육청': { gradient: 'from-emerald-500 to-teal-700', iconName: 'School' },
+    // Default
+    'default': { gradient: 'from-gray-500 to-gray-700', iconName: 'Newspaper' }
+};
+
+export function getCategoryStyle(category: string | null | undefined): { gradient: string; iconName: string } {
+    if (!category) return CATEGORY_STYLES['default'];
+    return CATEGORY_STYLES[category] || CATEGORY_STYLES['default'];
+}

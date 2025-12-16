@@ -52,7 +52,7 @@ export function NewsCard({
 
                 {/* Content */}
                 <div className="p-5 flex flex-col flex-1">
-                    <h3 className="text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-[#0a192f] line-clamp-2 mb-2.5 transition-colors">
+                    <h3 className="text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary line-clamp-2 mb-2.5 transition-colors">
                         {news.title}
                     </h3>
                     <p className="text-[14px] text-slate-500 line-clamp-2 leading-relaxed flex-1 font-sans">
@@ -63,7 +63,7 @@ export function NewsCard({
                             <Clock className="w-3 h-3" />
                             {news.published_at?.split('T')[0]}
                         </span>
-                        <span className="flex items-center gap-1 font-medium text-[#A6121D] opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                        <span className="flex items-center gap-1 font-medium text-primary opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                             Read <ArrowRight className="w-3 h-3" />
                         </span>
                     </div>
@@ -121,11 +121,11 @@ export function NewsCard({
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         {showCategory && news.category && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#A6121D]"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                         )}
                         <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{news.category || 'News'}</span>
                     </div>
-                    <h3 className="text-[14px] font-serif font-bold text-slate-800 leading-snug group-hover:text-[#0a192f] line-clamp-2 transition-colors">
+                    <h3 className="text-[14px] font-serif font-bold text-slate-800 leading-snug group-hover:text-secondary line-clamp-2 transition-colors">
                         {news.title}
                     </h3>
                     <span className="text-[11px] text-slate-400 mt-1.5 block">{news.published_at?.split('T')[0]}</span>
@@ -157,12 +157,12 @@ export function NewsCard({
                         <span className="text-[11px] text-slate-400 font-medium">{news.published_at?.split('T')[0]}</span>
                     </div>
 
-                    <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-900 leading-snug group-hover:text-[#0a192f] transition-colors">
+                    <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary transition-colors">
                         {news.title}
                     </h3>
 
                     {news.subtitle && (
-                        <div className="text-base text-slate-600 font-medium pl-3 border-l-2 border-[#A6121D]">
+                        <div className="text-base text-slate-600 font-medium pl-3 border-l-2 border-primary">
                             {news.subtitle}
                         </div>
                     )}
@@ -171,7 +171,7 @@ export function NewsCard({
                         {news.ai_summary || cleanContentPreview(news.content, 160)}...
                     </p>
 
-                    <div className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-[#A6121D] opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <span>Continue reading</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
@@ -214,7 +214,7 @@ export function NewsCard({
                 )}
 
                 <div className="flex-1 flex flex-col min-w-0">
-                    <h3 className="text-base md:text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-[#0a192f] mb-1.5 transition-colors line-clamp-2">
+                    <h3 className="text-base md:text-lg font-serif font-bold text-slate-900 leading-snug group-hover:text-secondary mb-1.5 transition-colors line-clamp-2">
                         {news.title}
                     </h3>
                     <p className="text-[13px] text-slate-500 leading-relaxed font-light line-clamp-2 mb-2">

@@ -122,7 +122,7 @@ export default function Footer() {
 
     return (
         <>
-            <footer className="bg-[#0a192f] text-slate-400 border-t-4 border-[#A6121D]">
+            <footer className="bg-secondary text-slate-400 border-t-4 border-primary">
                 <div className="max-w-[1400px] mx-auto px-6 py-16">
 
                     {/* Top Section: Brand & Navigation */}
@@ -132,7 +132,7 @@ export default function Footer() {
                         <div className="lg:col-span-4 space-y-6">
                             <Link href="/" className="inline-block group">
                                 <span className="text-4xl font-black text-white tracking-tighter">
-                                    코리아<span className="text-[#A6121D]">NEWS</span>
+                                    코리아<span className="text-primary">NEWS</span>
                                 </span>
                             </Link>
                             <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
@@ -220,7 +220,7 @@ export default function Footer() {
                             <div className="flex items-center gap-3 mt-2 justify-start md:justify-end">
                                 <button
                                     onClick={handleAdminEditClick}
-                                    className="text-[11px] text-slate-600 hover:text-[#A6121D] transition-colors border-b border-transparent hover:border-[#A6121D]"
+                                    className="text-[11px] text-slate-600 hover:text-primary transition-colors border-b border-transparent hover:border-primary"
                                 >
                                     {isNewsPage ? 'Admin Edit' : 'Admin'}
                                 </button>
@@ -229,7 +229,7 @@ export default function Footer() {
                                     href="/admin"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[11px] text-slate-600 hover:text-[#A6121D] transition-colors border-b border-transparent hover:border-[#A6121D]"
+                                    className="text-[11px] text-slate-600 hover:text-primary transition-colors border-b border-transparent hover:border-primary"
                                 >
                                     Admin Mode
                                 </Link>
@@ -244,7 +244,7 @@ export default function Footer() {
             {showLoginModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
                     <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
-                        <div className="bg-[#0a192f] text-white px-6 py-4 flex items-center justify-between">
+                        <div className="bg-secondary text-white px-6 py-4 flex items-center justify-between">
                             <h3 className="font-bold text-lg">관리자 인증</h3>
                             <button onClick={closeModals} className="p-1 hover:bg-white/10 rounded-full transition">
                                 <X className="w-5 h-5" />
@@ -267,7 +267,7 @@ export default function Footer() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="관리자 비밀번호"
-                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a192f] focus:border-transparent"
+                                        className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent"
                                         autoFocus
                                         required
                                     />
@@ -283,7 +283,7 @@ export default function Footer() {
                             <button
                                 type="submit"
                                 disabled={isLoading || !password}
-                                className="w-full py-3 bg-[#0a192f] hover:bg-[#0a192f]/90 disabled:bg-gray-300 text-white font-medium rounded-lg transition flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-secondary hover:bg-secondary/90 disabled:bg-gray-300 text-white font-medium rounded-lg transition flex items-center justify-center gap-2"
                             >
                                 {isLoading ? (
                                     <>
@@ -303,7 +303,7 @@ export default function Footer() {
             {showEditModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
                     <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
-                        <div className="bg-[#0a192f] text-white px-6 py-4 flex items-center justify-between">
+                        <div className="bg-secondary text-white px-6 py-4 flex items-center justify-between">
                             <h3 className="font-bold text-lg">기사 관리</h3>
                             <button onClick={closeModals} className="p-1 hover:bg-white/10 rounded-full transition">
                                 <X className="w-5 h-5" />
@@ -404,7 +404,7 @@ function SocialLink({ icon, href, label }: { icon: React.ReactNode; href: string
         <a
             href={href}
             aria-label={label}
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#A6121D] hover:text-white transition-all duration-300 group"
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 group"
         >
             <div className="opacity-70 group-hover:opacity-100 transition-opacity">
                 {icon}

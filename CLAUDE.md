@@ -152,6 +152,7 @@ Step 3: 진행 중 작업 파악 → 주인님께 현황 보고
 | 프론트엔드 | `info/frontend.md` | - |
 | 백엔드/API | `info/backend.md` | - |
 | DB/스키마 | `info/database.md` | - |
+| 디자인/색상 변경 | `info/design-system.md` | `globals.css @theme` |
 
 ## B.3 작업 흐름 (속도 중심)
 

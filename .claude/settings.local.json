@@ -65,7 +65,12 @@
       "Bash(npm ls:*)",
       "Bash(rm:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add dynamic Hero Slider with admin-configurable regions\n\n- Add HeroSlider component with auto-rotation (4s default), hover pause, mobile swipe\n- Add admin settings page for hero slider configuration at /admin/settings/hero-slider\n- Add /api/hero-slider endpoint for fetching region-based articles\n- Add /api/site-settings endpoint for managing site configuration\n- Add site_settings.sql for DB schema (needs manual execution on Supabase)\n- Support duplicate regions (e.g., showing 1st and 2nd gwangju articles)\n- Ken Burns zoom effect and progress indicators for enhanced UX\n- Fix: Remove @supabase/supabase-js from optimizePackageImports (Next.js 15 compatibility)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(set PYTHONIOENCODING=utf-8:*)",
+      "Bash(npx supabase:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add CosmicPulse AI Blog System (Phase 1)\n\n- Add blog database schema (6 tables: posts, categories, sources, ai_logs, settings, trending)\n- Create /blogadmin management pages (dashboard, posts, AI generator)\n- Create /blog frontend with cosmic space theme\n- Add blog API endpoints (stats, posts CRUD, AI generation, trending)\n- Integrate OpenAI GPT-4o-mini for Korean SF/Space content generation\n- Add cosmic animations (stars, nebula, floating particles)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npx ts-node:*)"
     ]
   }
 }
