@@ -43,6 +43,7 @@ interface MenuItem {
     icon: LucideIcon;
     href: string;
     highlight?: boolean;
+    external?: boolean;
     subItems?: SubMenuItem[];
 }
 
@@ -130,7 +131,8 @@ const MENU_ITEMS: MenuGroup[] = [
     {
         category: "바로가기",
         items: [
-            { label: "기자 페이지", icon: UserCircle, href: "/reporter" }
+            { label: "기자 페이지", icon: UserCircle, href: "/reporter" },
+            { label: "클로드사용량보기", icon: ExternalLink, href: "https://claude.ai/settings/usage", external: true }
         ]
     }
 ];
@@ -300,6 +302,18 @@ export default function AdminSidebarLayout({ children }: { children: React.React
                                                         </ul>
                                                     </div>
                                                 </div>
+                                            ) : item.external ? (
+                                                /* External Link */
+                                                <a
+                                                    href={item.href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]"
+                                                >
+                                                    <Icon className="w-4 h-4 text-[#8b949e]" />
+                                                    <span className="flex-1">{item.label}</span>
+                                                    <ExternalLink className="w-3 h-3 text-[#6e7681]" />
+                                                </a>
                                             ) : (
                                                 /* Single Menu Item */
                                                 <Link href={item.href} className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200
