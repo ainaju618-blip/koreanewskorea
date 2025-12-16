@@ -5,6 +5,51 @@
 
 ---
 
+## [2025-12-17 15:30] 세션 #15 - Header.tsx 인코딩 복구 by Claude
+
+### 주인님 의도
+- 다른 세션에서 발생한 Header.tsx 인코딩 손상 문제 해결
+- 반복 방지를 위한 문서화
+
+### 수행 작업
+
+1. **Header.tsx 인코딩 복구**
+   - 손상된 한글 텍스트 11개 수정
+   - 주석: `카테고리 정의`, `현재 경로 확인`, `날짜 설정` 등
+   - UI 텍스트: `구독신청`, `기자로그인`, `코리아NEWS`, `뉴스TV`, `전체메뉴`
+   - aria-label: `메뉴 열기/닫기`, `기사 검색`
+
+2. **에러 문서화** (재발 방지)
+   - `info/errors/frontend/powershell-encoding.md` 생성
+   - 원인: PowerShell의 기본 인코딩(cp949)이 UTF-8 파일 손상
+   - 해결: git checkout 또는 수동 수정
+   - 예방: 한글 파일 편집 후 결과 확인 필수
+
+3. **에러 카탈로그 업데이트**
+   - `info/errors/_catalog.md`에 항목 추가
+   - 키워드: powershell, encoding, 한글, 깨짐, 인코딩
+
+### 사용 도구
+- Read: Header.tsx 손상 확인
+- Edit: 한글 텍스트 복구 (11회)
+- Write: 에러 문서 생성
+
+### 결과
+- ✅ Header.tsx 완전 복구 (커밋 325ce66)
+- ✅ 에러 문서화 완료
+- ✅ Git 푸시 완료
+
+### 배포
+- git commit: "fix: Restore corrupted Korean text encoding in Header.tsx"
+- Vercel 자동 배포 완료
+
+### 교훈
+- PowerShell 기반 편집 시 한글 인코딩 손상 가능
+- 한글 포함 파일 편집 후 즉시 git diff로 확인 필요
+- 손상 발생 시 git checkout으로 즉시 복구
+
+---
+
 ## [2025-12-17 21:30] 세션 #14 - PageSpeed 자동 체크 시스템 by Claude
 
 ### 주인님 의도

@@ -37,6 +37,7 @@
 | image, 404, 경로, 이미지 | `image-404.md` | 이미지 경로 못찾음 |
 | params, dynamic, route, 라우트 | `nextjs-params.md` | Next.js 동적 라우트 |
 | image, loading, slow, LCP, 느림, 이미지 | `image-loading-slow.md` | 이미지 로딩 속도 느림 |
+| powershell, encoding, 한글, 깨짐, 인코딩 | `powershell-encoding.md` | PowerShell 한글 인코딩 손상 |
 
 ---
 
