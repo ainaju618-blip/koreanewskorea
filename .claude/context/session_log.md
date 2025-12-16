@@ -5,6 +5,70 @@
 
 ---
 
+## [2025-12-17 14:00] 세션 #12 - PageSpeed 관리 대시보드 by Claude
+
+### 주인님 의도
+- PageSpeed 성능 측정 결과를 누적 관리할 수 있는 관리자 페이지 구축
+- 주기적으로 체크하여 성능 최적화 노하우 축적
+- 다른 AI 에이전트들이 참고할 수 있도록 기록 관리
+
+### 수행 작업
+
+1. **DB 스키마 생성**
+   - `performance_logs` 테이블 설계
+   - 점수: performance, accessibility, best_practices, seo (0-100)
+   - Core Web Vitals: lcp_ms, fcp_ms, tbt_ms, cls, si_ms
+   - 메모, 생성자, 측정일시
+
+2. **API 엔드포인트**
+   - `GET /api/admin/performance` - 측정 기록 목록 조회
+   - `POST /api/admin/performance` - 새 측정 기록 추가
+   - `DELETE /api/admin/performance/[id]` - 측정 기록 삭제
+
+3. **대시보드 페이지** (`/admin/settings/performance`)
+   - Score Cards: Performance, Accessibility, Best Practices, SEO
+   - Core Web Vitals 표시: LCP, FCP, TBT, CLS, SI
+   - 측정 히스토리 테이블 (최신순 정렬)
+   - 새 측정 기록 추가 모달
+   - 기록 삭제 기능
+
+4. **사이드바 메뉴 추가**
+   - AdminSidebar.tsx > 시스템 설정 > "PageSpeed 관리" 추가
+
+5. **서브에이전트 활용 (병렬 작업)**
+   - 접근성 개선 작업 위임 (Color Contrast, Touch Target, Heading Hierarchy)
+   - 커밋: `1d4bb5d` "fix: Improve accessibility"
+
+### 사용 도구
+- 직접 구현: 대시보드 페이지, API, 사이드바 메뉴
+- 서브에이전트(Task): 접근성 최적화
+
+### 결과
+- Commit: `315b307` "feat: Add PageSpeed performance management dashboard"
+- 2 files changed, 442 insertions
+- 빌드 성공, Vercel 자동 배포 완료
+
+### 주요 생성/수정 파일
+```
+src/app/admin/settings/performance/page.tsx (신규)
+src/app/api/admin/performance/route.ts (신규)
+src/app/api/admin/performance/[id]/route.ts (신규)
+src/components/admin/AdminSidebar.tsx (수정)
+supabase/migrations/20251217_performance_logs.sql (신규)
+info/performance.md (신규)
+```
+
+### 대시보드 접속
+- URL: `/admin/settings/performance`
+- 메뉴: 관리 > 시스템 설정 > PageSpeed 관리
+
+### 다음 단계
+1. Supabase에서 `performance_logs` 테이블 생성 (마이그레이션 SQL 실행)
+2. PageSpeed Insights로 실제 측정 후 기록 추가
+3. 점수 변화 추이 모니터링
+
+---
+
 ## [2025-12-16 16:00] 세션 #10 - CosmicPulse Blog System by Claude
 
 ### 주인님 의도
