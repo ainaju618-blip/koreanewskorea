@@ -1,0 +1,205 @@
+# CosmicPulse Blog System PRD
+
+> **Product Requirements Document**
+> Version: 1.0
+> Date: 2025-12-16
+> Author: Claude (AI Agent)
+
+---
+
+## 1. Overview
+
+### 1.1 Product Name
+**CosmicPulse** - AI-Powered Space & SF Blog Platform
+
+### 1.2 Vision
+Create an immersive, visually stunning blog platform dedicated to space science, SF entertainment, and future technology content, powered by AI content generation.
+
+### 1.3 Target Audience
+- Space enthusiasts and astronomy hobbyists
+- SF movie/book/game fans
+- Tech-forward readers interested in future technology
+- General audience curious about the cosmos
+
+---
+
+## 2. Features
+
+### 2.1 Landing Page (`/cosmos`)
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| 3D Cosmic Background | Interactive Three.js scene with stars, nebulae, planets | Done |
+| Hero Section | Animated title, tagline, CTA buttons | Done |
+| Stats Counter | Animated statistics (posts, categories, views) | Done |
+| Category Cards | 6 featured categories with hover effects | Done |
+| Latest Posts | Dynamic post grid from API | Done |
+| Newsletter CTA | Email subscription form | Done |
+| Footer | Links, social icons, branding | Done |
+
+### 2.2 Category Pages (`/cosmos/[category]`)
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Naver Blog Layout | Left sidebar + main content grid | Done |
+| Profile Widget | Blog identity, stats | Done |
+| Category Navigation | All 6 categories with active state | Done |
+| Popular Posts Widget | Top 5 by view count | Done |
+| Post Cards | Thumbnail, title, excerpt, meta | Done |
+| Social Actions | Like, Comment, Share, Save buttons | Done |
+| Search | Category-specific search | Done |
+
+### 2.3 Categories
+
+| Slug | Name | Icon | Color |
+|------|------|------|-------|
+| `space-science` | Space Science | Telescope | Blue |
+| `sf-entertainment` | SF Entertainment | Sparkles | Purple |
+| `astronomy` | Astronomy | Atom | Violet |
+| `future-tech` | Future Tech | Cpu | Emerald |
+| `space-economy` | Space Economy | TrendingUp | Amber |
+| `ai-content` | AI Content | Bot | Pink |
+
+---
+
+## 3. Technical Stack
+
+### 3.1 Frontend
+- **Framework**: Next.js 15 (App Router)
+- **UI**: React 19, Tailwind CSS 4
+- **3D Graphics**: Three.js, React Three Fiber, Drei
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+
+### 3.2 Backend
+- **Database**: Supabase (PostgreSQL)
+- **API**: Next.js API Routes
+- **Image CDN**: Cloudinary
+
+### 3.3 AI Integration
+- **Content Generation**: Claude API
+- **Blog Post Generation**: `/api/blog/generate`
+
+---
+
+## 4. Database Schema
+
+### 4.1 Categories Table
+```sql
+categories (
+  id UUID PRIMARY KEY,
+  name VARCHAR,
+  slug VARCHAR UNIQUE,
+  description TEXT,
+  parent_id UUID REFERENCES categories(id),
+  icon VARCHAR,
+  color VARCHAR,
+  custom_url VARCHAR,
+  show_in_gnb BOOLEAN,
+  order_index INTEGER
+)
+```
+
+### 4.2 Blog Posts Table
+```sql
+blog_posts (
+  id UUID PRIMARY KEY,
+  title VARCHAR,
+  slug VARCHAR UNIQUE,
+  excerpt TEXT,
+  content TEXT,
+  thumbnail_url VARCHAR,
+  category VARCHAR,
+  status VARCHAR, -- draft, published
+  view_count INTEGER,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+```
+
+---
+
+## 5. URL Structure
+
+```
+/cosmos                      Landing page
+/cosmos/space-science        Space Science category
+/cosmos/sf-entertainment     SF Entertainment category
+/cosmos/astronomy            Astronomy category
+/cosmos/future-tech          Future Tech category
+/cosmos/space-economy        Space Economy category
+/cosmos/ai-content           AI Content category
+/blog/[slug]                 Individual post page
+/blogadmin                   Admin dashboard
+/blogadmin/ai-generator      AI content generator
+```
+
+---
+
+## 6. Design System
+
+### 6.1 Color Palette
+| Name | Hex | Usage |
+|------|-----|-------|
+| Background | `#000000` | Page background |
+| Purple Primary | `#8B5CF6` | Accents, buttons |
+| Pink Secondary | `#EC4899` | Gradients, highlights |
+| Blue Accent | `#3B82F6` | Links, info |
+
+### 6.2 Typography
+- **Headings**: Bold, gradient text
+- **Body**: Gray-300 to Gray-500
+- **Links**: Purple-400
+
+### 6.3 Effects
+- Glass morphism (`backdrop-blur-md`)
+- Gradient borders
+- Glow effects (`blur-[100px]`)
+- Hover animations (scale, translate)
+
+---
+
+## 7. Future Roadmap
+
+### Phase 2 (Planned)
+- [ ] AI auto-generation scheduler
+- [ ] Multi-language support (EN/KO)
+- [ ] User comments system
+- [ ] Social sharing integration
+- [ ] RSS feed
+
+### Phase 3 (Future)
+- [ ] User accounts & favorites
+- [ ] Personalized recommendations
+- [ ] Dark/Light theme toggle
+- [ ] Mobile app (PWA)
+
+---
+
+## 8. Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Page Load Time | < 3s |
+| Monthly Posts | 50+ |
+| Monthly Views | 10K+ |
+| User Engagement | 2+ min avg session |
+| SEO Score | 90+ |
+
+---
+
+## 9. Dependencies
+
+```json
+{
+  "@react-three/fiber": "^8.x",
+  "@react-three/drei": "^9.x",
+  "three": "^0.170.x",
+  "framer-motion": "^11.x",
+  "lucide-react": "^0.468.x"
+}
+```
+
+---
+
+*Document generated by Claude AI Agent for Korea NEWS Project*
