@@ -2,6 +2,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createBotLog, executeScraper } from '@/lib/bot-service';
 
+// GitHub Actions 트리거 함수
+async function triggerGitHubAction(region: string, days: number, logId: number): Promise<boolean> {
+    const token = process.env.GITHUB_TOKEN;
+    const owner = process.env.GITHUB_OWNER || 'koreanews';
+    const repo = process.env.GITHUB_REPO || 'koreanewsone';
+    const workflowId = 'daily_scrape.yml';
+
+    if (!token) {
+        console.error('[GitHub] GITHUB_TOKEN not configured');
+        return false;
+    }
+
+    try {
+        const response = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`,
+            {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ref: 'master',
+                    inputs: {
+                        region: region,
+                        days: String(days),
+                        log_id: String(logId)
+                    }
+                })
+            }
+        );
+
+        if (response.status === 204) {
+            console.log(`[GitHub] Workflow dispatched successfully for ${region}`);
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error(`[GitHub] Workflow dispatch failed: ${response.status} - ${errorText}`);
+            return false;
+        }
+    } catch (error: any) {
+        console.error('[GitHub] Error triggering workflow:', error.message);
+        return false;
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -28,19 +75,49 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 2. 비동기 실행 (Fire and Forget)
-        // 클라이언트에게는 jobIds만 먼저 반환하고, 실제 작업은 백그라운드에서 순차 수행
-        (async () => {
-            for (const job of jobs) {
-                await executeScraper(job.id, job.region, startDate, endDate, dryRun);
+        // 2. 실행 모드 결정
+        // - VERCEL 환경 또는 USE_GITHUB_ACTIONS=true인 경우: GitHub Actions 사용
+        // - 로컬 개발 환경: 직접 Python 실행
+        const useGitHubActions = process.env.VERCEL === '1' || process.env.USE_GITHUB_ACTIONS === 'true';
+
+        if (useGitHubActions) {
+            // GitHub Actions 트리거 (Vercel 프로덕션)
+            console.log('[API] GitHub Actions 모드로 실행');
+
+            // 여러 지역이면 각각 트리거
+            if (regions.length === 1) {
+                // 단일 지역: 해당 지역만 트리거
+                const success = await triggerGitHubAction(regions[0], diffDays, jobs[0].id);
+                if (!success) {
+                    console.error('[API] GitHub Actions 트리거 실패');
+                }
+            } else {
+                // 다중 지역: 각 지역별로 트리거
+                for (const job of jobs) {
+                    await triggerGitHubAction(job.region, diffDays, job.id);
+                    // Rate limiting 방지를 위한 딜레이
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
             }
-        })();
+        } else {
+            // 로컬 개발: 직접 Python 실행 (Fire and Forget)
+            console.log('[API] 로컬 Python 실행 모드');
+
+            (async () => {
+                for (const job of jobs) {
+                    await executeScraper(job.id, job.region, startDate, endDate, dryRun);
+                }
+            })();
+        }
 
         // 3. 응답 (생성된 Job ID 목록 반환 -> 클라이언트 폴링용)
         return NextResponse.json({
-            message: '수집 작업이 시작되었습니다.',
+            message: useGitHubActions
+                ? 'GitHub Actions에서 수집 작업이 시작되었습니다.'
+                : '수집 작업이 시작되었습니다.',
             jobIds: jobs.map(j => j.id),
-            jobCount: jobs.length
+            jobCount: jobs.length,
+            mode: useGitHubActions ? 'github-actions' : 'local'
         });
 
     } catch (error: any) {

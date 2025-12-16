@@ -2,53 +2,206 @@ name: Daily News Scrape
 
 on:
   schedule:
-    # 매일 09:00, 13:00, 17:00 (KST = UTC+9, 즉 UTC 00:00, 04:00, 08:00)
+    # 매일 09:00, 13:00, 17:00 (KST = UTC+9)
     - cron: '0 0 * * *'   # 09:00 KST
     - cron: '0 4 * * *'   # 13:00 KST
     - cron: '0 8 * * *'   # 17:00 KST
-  workflow_dispatch:  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      region:
+        description: 'Region to scrape (all, gwangju, jeonnam, naju, etc.)'
+        required: false
+        default: 'all'
+      days:
+        description: 'Days to scrape (1-7)'
+        required: false
+        default: '1'
+      log_id:
+        description: 'Bot log ID for status updates (optional)'
+        required: false
+        default: ''
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 60
+
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       BOT_API_KEY: ${{ secrets.BOT_API_KEY }}
       BOT_API_URL: ${{ secrets.BOT_API_URL }}
-    
+      BOT_LOG_API_URL: ${{ secrets.BOT_LOG_API_URL }}
+      BOT_LOG_ID: ${{ github.event.inputs.log_id }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           python -m playwright install chromium
-      
-      - name: Run Naju Scraper
-        run: python scrapers/naju_scraper.py api
+
+      # ============================================================
+      # 광역시/도 (2)
+      # ============================================================
+      - name: Scrape - Gwangju (광주광역시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gwangju' || github.event_name == 'schedule' }}
+        run: python scrapers/gwangju/gwangju_scraper.py --days ${{ github.event.inputs.days || '1' }}
         continue-on-error: true
-      
-      - name: Run Gwangju Scraper
-        run: python scrapers/universal_scraper.py --region gwangju --days 1
+
+      - name: Scrape - Jeonnam (전라남도)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'jeonnam' || github.event_name == 'schedule' }}
+        run: python scrapers/jeonnam/jeonnam_scraper.py --days ${{ github.event.inputs.days || '1' }}
         continue-on-error: true
-      
-      - name: Run Jeonnam Scraper (Playwright)
-        run: python scrapers/jeonnam_scraper.py --days 1 api
+
+      # ============================================================
+      # 시 (5)
+      # ============================================================
+      - name: Scrape - Mokpo (목포시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'mokpo' || github.event_name == 'schedule' }}
+        run: python scrapers/mokpo/mokpo_scraper.py --days ${{ github.event.inputs.days || '1' }}
         continue-on-error: true
-      
-      - name: Run RSS Collector
-        run: python scrapers/rss_collector.py api
+
+      - name: Scrape - Yeosu (여수시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'yeosu' || github.event_name == 'schedule' }}
+        run: python scrapers/yeosu/yeosu_scraper.py --days ${{ github.event.inputs.days || '1' }}
         continue-on-error: true
-      
+
+      - name: Scrape - Suncheon (순천시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'suncheon' || github.event_name == 'schedule' }}
+        run: python scrapers/suncheon/suncheon_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Naju (나주시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'naju' || github.event_name == 'schedule' }}
+        run: python scrapers/naju/naju_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Gwangyang (광양시)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gwangyang' || github.event_name == 'schedule' }}
+        run: python scrapers/gwangyang/gwangyang_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      # ============================================================
+      # 군 (17)
+      # ============================================================
+      - name: Scrape - Damyang (담양군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'damyang' || github.event_name == 'schedule' }}
+        run: python scrapers/damyang/damyang_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Gokseong (곡성군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gokseong' || github.event_name == 'schedule' }}
+        run: python scrapers/gokseong/gokseong_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Gurye (구례군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gurye' || github.event_name == 'schedule' }}
+        run: python scrapers/gurye/gurye_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Goheung (고흥군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'goheung' || github.event_name == 'schedule' }}
+        run: python scrapers/goheung/goheung_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Boseong (보성군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'boseong' || github.event_name == 'schedule' }}
+        run: python scrapers/boseong/boseong_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Hwasun (화순군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'hwasun' || github.event_name == 'schedule' }}
+        run: python scrapers/hwasun/hwasun_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Jangheung (장흥군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'jangheung' || github.event_name == 'schedule' }}
+        run: python scrapers/jangheung/jangheung_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Gangjin (강진군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gangjin' || github.event_name == 'schedule' }}
+        run: python scrapers/gangjin/gangjin_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Haenam (해남군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'haenam' || github.event_name == 'schedule' }}
+        run: python scrapers/haenam/haenam_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Yeongam (영암군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'yeongam' || github.event_name == 'schedule' }}
+        run: python scrapers/yeongam/yeongam_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Muan (무안군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'muan' || github.event_name == 'schedule' }}
+        run: python scrapers/muan/muan_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Hampyeong (함평군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'hampyeong' || github.event_name == 'schedule' }}
+        run: python scrapers/hampyeong/hampyeong_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Yeonggwang (영광군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'yeonggwang' || github.event_name == 'schedule' }}
+        run: python scrapers/yeonggwang/yeonggwang_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Jangseong (장성군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'jangseong' || github.event_name == 'schedule' }}
+        run: python scrapers/jangseong/jangseong_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Wando (완도군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'wando' || github.event_name == 'schedule' }}
+        run: python scrapers/wando/wando_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Jindo (진도군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'jindo' || github.event_name == 'schedule' }}
+        run: python scrapers/jindo/jindo_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Shinan (신안군)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'shinan' || github.event_name == 'schedule' }}
+        run: python scrapers/shinan/shinan_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      # ============================================================
+      # 교육청 (2)
+      # ============================================================
+      - name: Scrape - Gwangju Education (광주교육청)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'gwangju_edu' || github.event_name == 'schedule' }}
+        run: python scrapers/gwangju_edu/gwangju_edu_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      - name: Scrape - Jeonnam Education (전남교육청)
+        if: ${{ github.event.inputs.region == 'all' || github.event.inputs.region == 'jeonnam_edu' || github.event_name == 'schedule' }}
+        run: python scrapers/jeonnam_edu/jeonnam_edu_scraper.py --days ${{ github.event.inputs.days || '1' }}
+        continue-on-error: true
+
+      # ============================================================
+      # 완료
+      # ============================================================
       - name: Finish
-        run: echo "Daily scrape completed at $(date)"
+        run: |
+          echo "=============================================="
+          echo "Daily scrape completed at $(date)"
+          echo "Region: ${{ github.event.inputs.region || 'all (scheduled)' }}"
+          echo "Days: ${{ github.event.inputs.days || '1' }}"
+          echo "=============================================="

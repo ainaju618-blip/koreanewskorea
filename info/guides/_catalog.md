@@ -46,4 +46,12 @@
 
 ---
 
-*최종 업데이트: 2025-12-15*
+## DevOps (devops/)
+
+| 주제 | 파일 | 설명 |
+|------|------|------|
+| GitHub Secrets | `github-secrets.md` | GitHub Actions 환경변수 설정 |
+
+---
+
+*최종 업데이트: 2025-12-17*
