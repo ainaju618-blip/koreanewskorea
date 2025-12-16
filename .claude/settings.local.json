@@ -93,7 +93,8 @@
       "Bash(powershell -Command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut(''C:\\Users\\user\\OneDrive\\바탕 화면\\Claude Hub.lnk''); $Shortcut.TargetPath = ''pythonw''; $Shortcut.Arguments = ''d:\\cbt\\claude-hub\\gui.py''; $Shortcut.WorkingDirectory = ''d:\\cbt\\claude-hub''; $Shortcut.IconLocation = ''shell32.dll,21''; $Shortcut.Save()\")",
       "Bash(cscript:*)",
       "Bash(python3:*)",
-      "Bash(identify:*)"
+      "Bash(identify:*)",
+      "Bash(powershell -Command:*)"
     ]
   }
 }

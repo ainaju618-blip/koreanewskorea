@@ -129,14 +129,7 @@ export default function RootLayout({
           type="font/woff2"
           crossOrigin="anonymous"
         />
-        {/* Serif font preload for headlines - prevents FOUT */}
-        <link
-          rel="preload"
-          href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Chosunilbo_myungjo.woff"
-          as="font"
-          type="font/woff"
-          crossOrigin="anonymous"
-        />
+        {/* Serif font - NOT preloaded (433KB is too heavy, use font-display:swap instead) */}
       </head>
       <body className="font-sans min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white" suppressHydrationWarning>
         <Providers>
