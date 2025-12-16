@@ -197,6 +197,26 @@ function HeroSection() {
     );
 }
 
+// Stat Item Component (hooks must be called at top level)
+function StatItem({ label, value, suffix, index }: { label: string; value: number; suffix: string; index: number }) {
+    const { count, ref } = useCounter(value);
+    return (
+        <motion.div
+            ref={ref}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center"
+        >
+            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                {count}{suffix}
+            </div>
+            <div className="text-gray-500 font-medium">{label}</div>
+        </motion.div>
+    );
+}
+
 // Stats Section
 function StatsSection() {
     const stats = [
@@ -209,25 +229,9 @@ function StatsSection() {
     return (
         <section className="py-20 px-4">
             <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-                {stats.map((stat, index) => {
-                    const { count, ref } = useCounter(stat.value);
-                    return (
-                        <motion.div
-                            key={stat.label}
-                            ref={ref}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1, duration: 0.5 }}
-                            viewport={{ once: true }}
-                            className="text-center"
-                        >
-                            <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                                {count}{stat.suffix}
-                            </div>
-                            <div className="text-gray-500 font-medium">{stat.label}</div>
-                        </motion.div>
-                    );
-                })}
+                {stats.map((stat, index) => (
+                    <StatItem key={stat.label} {...stat} index={index} />
+                ))}
             </div>
         </section>
     );
