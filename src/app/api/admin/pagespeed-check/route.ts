@@ -112,13 +112,13 @@ export async function POST(request: NextRequest) {
       fcp_ms: Math.round(mobileResult.fcp),
       tbt_ms: Math.round(mobileResult.tbt),
       cls: mobileResult.cls,
-      speed_index_ms: Math.round(mobileResult.si),
+      si_ms: Math.round(mobileResult.si),
       notes: `Auto-check (${source}) - Mobile`,
-      device: 'mobile',
+      created_by: 'auto',
     };
 
     const { data: inserted, error: insertError } = await supabase
-      .from('pagespeed_logs')
+      .from('performance_logs')
       .insert(logEntry)
       .select()
       .single();
@@ -206,13 +206,13 @@ export async function GET(request: NextRequest) {
     fcp_ms: Math.round(mobileResult.fcp),
     tbt_ms: Math.round(mobileResult.tbt),
     cls: mobileResult.cls,
-    speed_index_ms: Math.round(mobileResult.si),
+    si_ms: Math.round(mobileResult.si),
     notes: 'Auto-check (cron) - Mobile',
-    device: 'mobile',
+    created_by: 'auto',
   };
 
   const { error: insertError } = await supabase
-    .from('pagespeed_logs')
+    .from('performance_logs')
     .insert(logEntry);
 
   if (insertError) {
