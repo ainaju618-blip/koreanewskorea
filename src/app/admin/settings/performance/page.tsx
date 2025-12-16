@@ -13,7 +13,12 @@ import {
     TrendingUp,
     TrendingDown,
     Minus,
-    X
+    X,
+    Zap,
+    Clock,
+    Settings,
+    CheckCircle,
+    AlertCircle
 } from 'lucide-react';
 
 interface PerformanceLog {
@@ -37,6 +42,10 @@ export default function PerformancePage() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analyzeResult, setAnalyzeResult] = useState<{success: boolean; message: string} | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
+    const [autoEnabled, setAutoEnabled] = useState(true);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -54,7 +63,71 @@ export default function PerformancePage() {
 
     useEffect(() => {
         fetchLogs();
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch('/api/admin/settings?key=pagespeed_auto');
+            const data = await res.json();
+            if (data.value) {
+                setAutoEnabled(data.value.enabled !== false);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const runAutoAnalysis = async () => {
+        setAnalyzing(true);
+        setAnalyzeResult(null);
+        try {
+            const res = await fetch('/api/admin/pagespeed-check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source: 'manual' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAnalyzeResult({
+                    success: true,
+                    message: `Performance: ${data.scores.performance}, LCP: ${data.metrics.lcp}`
+                });
+                fetchLogs();
+            } else {
+                setAnalyzeResult({
+                    success: false,
+                    message: data.error || 'Analysis failed'
+                });
+            }
+        } catch (e) {
+            setAnalyzeResult({
+                success: false,
+                message: 'Network error'
+            });
+        } finally {
+            setAnalyzing(false);
+            setTimeout(() => setAnalyzeResult(null), 5000);
+        }
+    };
+
+    const toggleAutoCheck = async () => {
+        const newEnabled = !autoEnabled;
+        setAutoEnabled(newEnabled);
+        try {
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    key: 'pagespeed_auto',
+                    value: { enabled: newEnabled }
+                })
+            });
+        } catch (e) {
+            console.error(e);
+            setAutoEnabled(!newEnabled);
+        }
+    };
 
     const fetchLogs = async () => {
         try {
@@ -191,15 +264,26 @@ export default function PerformancePage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={runAutoAnalysis}
+                                disabled={analyzing}
+                                className="flex items-center gap-2 px-4 py-2.5 text-sm bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg text-white font-medium hover:from-violet-500 hover:to-violet-400 transition-all shadow-lg shadow-violet-500/20 disabled:opacity-50"
+                            >
+                                {analyzing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Zap className="w-4 h-4" />
+                                )}
+                                {analyzing ? '분석 중...' : '자동 분석'}
+                            </button>
                             <a
                                 href="https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.koreanewsone.com%2F"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-4 py-2.5 text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg text-white font-medium hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+                                className="flex items-center gap-2 px-3 py-2 text-sm bg-[#21262d] border border-[#30363d] rounded-lg text-slate-300 hover:text-white hover:bg-[#30363d] transition-colors"
                             >
-                                <Activity className="w-4 h-4" />
-                                분석하기
-                                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                                <ExternalLink className="w-4 h-4" />
+                                수동 분석
                             </a>
                             <button
                                 onClick={() => setShowForm(true)}
@@ -218,6 +302,49 @@ export default function PerformancePage() {
                         </div>
                     </div>
                 </header>
+
+                {/* Analysis Result Notification */}
+                {analyzeResult && (
+                    <div className={`mb-4 p-4 rounded-lg flex items-center gap-3 ${
+                        analyzeResult.success
+                            ? 'bg-emerald-500/10 border border-emerald-500/30'
+                            : 'bg-red-500/10 border border-red-500/30'
+                    }`}>
+                        {analyzeResult.success ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                            <AlertCircle className="w-5 h-5 text-red-400" />
+                        )}
+                        <span className={analyzeResult.success ? 'text-emerald-300' : 'text-red-300'}>
+                            {analyzeResult.message}
+                        </span>
+                    </div>
+                )}
+
+                {/* Auto Check Settings */}
+                <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-violet-500/20 rounded-lg">
+                                <Clock className="w-5 h-5 text-violet-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-white">Auto Check</h3>
+                                <p className="text-xs text-slate-500">Daily at 09:00, 15:00, 21:00 KST</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={toggleAutoCheck}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${
+                                autoEnabled ? 'bg-violet-500' : 'bg-slate-600'
+                            }`}
+                        >
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                                autoEnabled ? 'left-7' : 'left-1'
+                            }`} />
+                        </button>
+                    </div>
+                </div>
 
                 {/* Score Cards */}
                 {latest && (

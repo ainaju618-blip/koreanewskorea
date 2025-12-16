@@ -3,6 +3,18 @@
     {
       "path": "/api/bot/cron",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/admin/pagespeed-check",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/admin/pagespeed-check",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/admin/pagespeed-check",
+      "schedule": "0 12 * * *"
     }
   ],
   "headers": [
