@@ -31,7 +31,6 @@
     "cookies-next": "^6.1.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.26",
-    "gsap": "^3.14.2",
     "lucide-react": "^0.556.0",
     "next": "15.5.9",
     "next-cloudinary": "^6.17.5",

@@ -75,7 +75,9 @@
       "Bash(npx vercel:*)",
       "Bash(vercel ls:*)",
       "Bash(vercel logs:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add cosmic landing page with 3D space scene\n\n- Add Three.js/R3F cosmic scene with stars, nebulae, and orbiting planets\n- Create responsive landing page at /cosmos with Hero, Features, Posts sections\n- Fix TypeScript errors: LucideIcon type for icon props across multiple files\n- Add ESLint ignore during builds for cleaner CI/CD\n- Fix BufferAttribute args syntax for R3F compatibility\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add cosmic landing page with 3D space scene\n\n- Add Three.js/R3F cosmic scene with stars, nebulae, and orbiting planets\n- Create responsive landing page at /cosmos with Hero, Features, Posts sections\n- Fix TypeScript errors: LucideIcon type for icon props across multiple files\n- Add ESLint ignore during builds for cleaner CI/CD\n- Fix BufferAttribute args syntax for R3F compatibility\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(find:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nperf: Optimize PageSpeed performance (LCP, bundle size, accessibility)\n\n- Three.js: Dynamic import for StarField (~1.4MB bundle reduction)\n- NewsCard: Convert all img tags to next/Image with proper sizes\n- TipTap: Dynamic import for editor (~400KB bundle reduction)\n- Fonts: Reduce Pretendard weights from 8 to 3 (~120KB savings)\n- Remove unused GSAP dependency\n- Accessibility: Remove viewport zoom restrictions, add aria-labels\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }

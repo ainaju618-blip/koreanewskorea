@@ -2,12 +2,19 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Search, Heart, MessageCircle, Share2, User, Folder, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot, type LucideIcon } from 'lucide-react';
 import { CATEGORIES, MOCK_POSTS } from '../constants';
 import { CosmosLayout } from '../components/CosmosLayout';
-import { StarField } from '../components/StarField';
 import { MouseGlow } from '../components/MouseGlow';
+
+// Dynamic import for Three.js components (reduces initial bundle by ~1.4MB)
+const StarField = dynamic(
+    () => import('../components/StarField').then(mod => ({ default: mod.StarField })),
+    { ssr: false, loading: () => <div className="fixed inset-0 z-0 bg-black" /> }
+);
 
 const iconMap: Record<string, LucideIcon> = {
     Telescope,
@@ -149,10 +156,12 @@ export default function CategoryPage() {
                                         <div className="flex flex-col md:flex-row">
                                             {/* Thumbnail */}
                                             <div className="w-full md:w-64 h-48 md:h-auto relative overflow-hidden">
-                                                <img
+                                                <Image
                                                     src={post.thumbnailUrl}
                                                     alt={post.title}
-                                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 256px"
+                                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
                                                 />
                                             </div>
 

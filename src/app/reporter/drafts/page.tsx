@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from 'next/dynamic';
 import { Search, FileEdit, Trash2, Save, Loader2, Plus, Copy, Check } from "lucide-react";
-import NewsEditor from "@/components/admin/NewsEditor";
 import { useToast } from '@/components/ui/Toast';
+
+// Dynamic import for TipTap editor (reduces initial bundle by ~400KB)
+const NewsEditor = dynamic(() => import("@/components/admin/NewsEditor"), {
+    ssr: false,
+    loading: () => <div className="h-64 bg-slate-100 rounded-lg animate-pulse" />
+});
 
 interface Draft {
     id: string;

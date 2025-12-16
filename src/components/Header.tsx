@@ -116,9 +116,9 @@ export default function Header() {
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex justify-between items-center text-xs">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 opacity-80">
-                            <a href="#" className="hover:text-primary transition-colors"><Twitter className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors"><Facebook className="w-3.5 h-3.5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors"><Instagram className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors" aria-label="Twitter"><Twitter className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors" aria-label="Facebook"><Facebook className="w-3.5 h-3.5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors" aria-label="Instagram"><Instagram className="w-3.5 h-3.5" /></a>
                         </div>
                         <span className="opacity-60 font-medium">
                             {currentDate}
@@ -360,7 +360,7 @@ export default function Header() {
                         <span className="font-bold text-lg text-secondary">
                             전체메뉴
                         </span>
-                        <button className="p-2">
+                        <button className="p-2" aria-label="기사 검색">
                             <Search className="w-6 h-6 text-secondary" />
                         </button>
                     </div>
@@ -399,6 +399,7 @@ export default function Header() {
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                            aria-label="메뉴 닫기"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -524,13 +525,13 @@ export default function Header() {
                             <div className="pt-4 border-t border-slate-100">
                                 <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3">Follow Us</p>
                                 <div className="flex items-center gap-3">
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#1DA1F2] hover:text-white transition-colors">
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#1DA1F2] hover:text-white transition-colors" aria-label="Twitter">
                                         <Twitter className="w-4 h-4" />
                                     </a>
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#4267B2] hover:text-white transition-colors">
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-[#4267B2] hover:text-white transition-colors" aria-label="Facebook">
                                         <Facebook className="w-4 h-4" />
                                     </a>
-                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors">
+                                    <a href="#" className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors" aria-label="Instagram">
                                         <Instagram className="w-4 h-4" />
                                     </a>
                                 </div>

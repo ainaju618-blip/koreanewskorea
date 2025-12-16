@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { NewsItem } from '@/types/news'
 import { Clock, ArrowRight } from 'lucide-react'
 import { cleanContentPreview } from '@/lib/contentUtils'
@@ -27,10 +28,12 @@ export function NewsCard({
                 {/* Thumbnail */}
                 <div className={`${imageHeight} relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-50`}>
                     {news.thumbnail_url ? (
-                        <img
+                        <Image
                             src={news.thumbnail_url}
-                            alt=""
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                            alt={news.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -78,10 +81,13 @@ export function NewsCard({
             <Link href={`/news/${news.id}`} className="group relative block w-full h-full overflow-hidden rounded-2xl">
                 {/* Background Image */}
                 <div className="absolute inset-0">
-                    <img
+                    <Image
                         src={news.thumbnail_url || '/placeholder.png'}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
+                        alt={news.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        priority
+                        className="object-cover group-hover:scale-105 transition-transform duration-1000 ease-out"
                     />
                 </div>
 
@@ -132,7 +138,13 @@ export function NewsCard({
                 </div>
                 {news.thumbnail_url && (
                     <div className="w-16 h-16 shrink-0 bg-slate-100 rounded-lg overflow-hidden relative">
-                        <img src={news.thumbnail_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="" />
+                        <Image
+                            src={news.thumbnail_url}
+                            alt={news.title}
+                            fill
+                            sizes="64px"
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
                     </div>
                 )}
             </Link>
@@ -181,10 +193,12 @@ export function NewsCard({
                 {news.thumbnail_url && (
                     <div className="w-full md:w-[260px] shrink-0 order-1 md:order-2">
                         <div className="aspect-[16/10] relative overflow-hidden rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
-                            <img
+                            <Image
                                 src={news.thumbnail_url}
-                                alt=""
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                                alt={news.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 260px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                             />
                         </div>
                     </div>
@@ -204,10 +218,12 @@ export function NewsCard({
                 {news.thumbnail_url && (
                     <div className="w-[120px] md:w-[160px] shrink-0">
                         <div className="aspect-[4/3] relative overflow-hidden rounded-xl shadow-sm">
-                            <img
+                            <Image
                                 src={news.thumbnail_url}
-                                alt=""
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                alt={news.title}
+                                fill
+                                sizes="(max-width: 768px) 120px, 160px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                         </div>
                     </div>

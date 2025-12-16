@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase-client';
-import NewsEditor from '@/components/admin/NewsEditor';
 import { Save, Send, Trash2, ArrowLeft, CheckCircle, XCircle, Globe } from 'lucide-react';
+
+// Dynamic import for TipTap editor (reduces initial bundle by ~400KB)
+const NewsEditor = dynamic(() => import('@/components/admin/NewsEditor'), {
+    ssr: false,
+    loading: () => <div className="h-64 bg-slate-100 rounded-lg animate-pulse" />
+});
 import Link from 'next/link';
 import { useToast } from '@/components/ui/Toast';
 
