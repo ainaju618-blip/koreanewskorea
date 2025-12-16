@@ -109,26 +109,6 @@ export default async function JeonnamRegionPage({ searchParams }: PageProps) {
         <div className="min-h-screen bg-white text-slate-900 font-sans">
             <CategoryHeader slug="jeonnam-region" />
 
-            {/* 시군 선택 탭 */}
-            <div className="bg-slate-50 border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-wrap gap-1 py-3">
-                        {JEONNAM_REGIONS.map((r) => (
-                            <Link
-                                key={r.code}
-                                href={`/category/jeonnam-region?region=${r.code}`}
-                                className={`px-3 py-1.5 text-sm rounded-full transition-colors ${region === r.code
-                                    ? 'bg-[#ff2e63] text-white font-bold'
-                                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                                    }`}
-                            >
-                                {r.name}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
             {/* Main Content - 9:3 그리드 */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
