@@ -89,7 +89,9 @@
       "Bash(start cmd /c \"npx supabase login\")",
       "Bash(start:*)",
       "Bash(vercel inspect:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(powershell -Command \"$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut(''C:\\Users\\user\\OneDrive\\바탕 화면\\Claude Hub.lnk''); $Shortcut.TargetPath = ''pythonw''; $Shortcut.Arguments = ''d:\\cbt\\claude-hub\\gui.py''; $Shortcut.WorkingDirectory = ''d:\\cbt\\claude-hub''; $Shortcut.IconLocation = ''shell32.dll,21''; $Shortcut.Save()\")",
+      "Bash(cscript:*)"
     ]
   }
 }

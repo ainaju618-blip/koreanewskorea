@@ -46,6 +46,10 @@ export default function PerformancePage() {
     const [analyzeResult, setAnalyzeResult] = useState<{success: boolean; message: string} | null>(null);
     const [showSettings, setShowSettings] = useState(false);
     const [autoEnabled, setAutoEnabled] = useState(true);
+    const [todayUsage, setTodayUsage] = useState(0);
+
+    // API daily limit (Google PageSpeed API)
+    const API_DAILY_LIMIT = 25000;
 
     // Form state
     const [formData, setFormData] = useState({
@@ -65,6 +69,16 @@ export default function PerformancePage() {
         fetchLogs();
         fetchSettings();
     }, []);
+
+    // Calculate today's API usage from logs
+    useEffect(() => {
+        const today = new Date().toISOString().split('T')[0];
+        const todayLogs = logs.filter(log => {
+            const logDate = new Date(log.measured_at).toISOString().split('T')[0];
+            return logDate === today && log.created_by === 'auto';
+        });
+        setTodayUsage(todayLogs.length);
+    }, [logs]);
 
     const fetchSettings = async () => {
         try {
@@ -321,9 +335,9 @@ export default function PerformancePage() {
                     </div>
                 )}
 
-                {/* Auto Check Settings */}
+                {/* Auto Check Settings & API Usage */}
                 <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4 mb-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-violet-500/20 rounded-lg">
                                 <Clock className="w-5 h-5 text-violet-400" />
@@ -343,6 +357,39 @@ export default function PerformancePage() {
                                 autoEnabled ? 'left-7' : 'left-1'
                             }`} />
                         </button>
+                    </div>
+
+                    {/* API Usage */}
+                    <div className="border-t border-[#30363d] pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-slate-400">API Usage (Today)</span>
+                            <a
+                                href="https://console.cloud.google.com/apis/dashboard"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                            >
+                                Google Console
+                                <ExternalLink className="w-3 h-3" />
+                            </a>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 h-2 bg-[#21262d] rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all ${
+                                        todayUsage / API_DAILY_LIMIT > 0.8 ? 'bg-red-500' :
+                                        todayUsage / API_DAILY_LIMIT > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'
+                                    }`}
+                                    style={{ width: `${Math.min((todayUsage / API_DAILY_LIMIT) * 100, 100)}%` }}
+                                />
+                            </div>
+                            <span className="text-xs text-slate-300 whitespace-nowrap">
+                                {todayUsage.toLocaleString()} / {API_DAILY_LIMIT.toLocaleString()}
+                            </span>
+                        </div>
+                        <p className="text-[10px] text-slate-600 mt-1">
+                            Remaining: {(API_DAILY_LIMIT - todayUsage).toLocaleString()} calls
+                        </p>
                     </div>
                 </div>
 
