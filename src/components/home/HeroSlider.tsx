@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { cleanContentPreview } from '@/lib/contentUtils';
 
@@ -20,43 +21,26 @@ interface SliderArticle {
 
 interface HeroSliderProps {
     className?: string;
+    initialArticles?: SliderArticle[];
+    initialInterval?: number;
 }
 
-export default function HeroSlider({ className = '' }: HeroSliderProps) {
-    const [articles, setArticles] = useState<SliderArticle[]>([]);
+export default function HeroSlider({
+    className = '',
+    initialArticles = [],
+    initialInterval = 4000
+}: HeroSliderProps) {
+    const [articles] = useState<SliderArticle[]>(initialArticles);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
     const [progress, setProgress] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [slideInterval, setSlideInterval] = useState(4000);
+    const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Touch handling for mobile swipe
     const touchStartX = useRef<number | null>(null);
     const touchEndX = useRef<number | null>(null);
-
-    // Fetch articles from API
-    useEffect(() => {
-        const fetchArticles = async () => {
-            try {
-                setIsLoading(true);
-                const res = await fetch('/api/hero-slider');
-                if (res.ok) {
-                    const data = await res.json();
-                    setArticles(data.articles || []);
-                    if (data.settings?.interval) {
-                        setSlideInterval(data.settings.interval);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to fetch hero slider articles:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchArticles();
-    }, []);
 
     // Auto-slide with progress bar (paused on hover)
     useEffect(() => {
@@ -68,12 +52,12 @@ export default function HeroSlider({ className = '' }: HeroSliderProps) {
                     setCurrentIndex((idx) => (idx + 1) % articles.length);
                     return 0;
                 }
-                return prev + (100 / (slideInterval / 50));
+                return prev + (100 / (initialInterval / 50));
             });
         }, 50);
 
         return () => clearInterval(progressInterval);
-    }, [articles.length, isPlaying, isHovered, slideInterval]);
+    }, [articles.length, isPlaying, isHovered, initialInterval]);
 
     // Navigation handlers
     const goToSlide = useCallback((index: number) => {
@@ -122,19 +106,6 @@ export default function HeroSlider({ className = '' }: HeroSliderProps) {
         touchEndX.current = null;
     };
 
-    // Loading skeleton
-    if (isLoading) {
-        return (
-            <div className={`relative w-full h-[400px] md:h-[500px] rounded-xl overflow-hidden bg-slate-100 animate-pulse ${className}`}>
-                <div className="absolute bottom-0 left-0 p-8 w-full max-w-2xl">
-                    <div className="h-6 w-24 bg-slate-200 rounded-full mb-4" />
-                    <div className="h-10 w-3/4 bg-slate-200 rounded mb-3" />
-                    <div className="h-6 w-1/2 bg-slate-200 rounded" />
-                </div>
-            </div>
-        );
-    }
-
     // No articles fallback
     if (articles.length === 0) {
         return (
@@ -156,26 +127,41 @@ export default function HeroSlider({ className = '' }: HeroSliderProps) {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
-            {/* Background Images with Crossfade + Ken Burns Effect */}
-            {articles.map((article, idx) => (
-                <div
-                    key={article.id}
-                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                        idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                    }`}
-                >
-                    {article.thumbnail_url ? (
-                        <div
-                            className={`w-full h-full bg-cover bg-center transition-transform duration-[8000ms] ease-out ${
-                                idx === currentIndex ? 'scale-110' : 'scale-100'
-                            }`}
-                            style={{ backgroundImage: `url(${article.thumbnail_url})` }}
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
-                    )}
-                </div>
-            ))}
+            {/* Background Images - Only load current and adjacent slides */}
+            {articles.map((article, idx) => {
+                // Only render current, previous, and next slides for performance
+                const shouldRender =
+                    idx === currentIndex ||
+                    idx === (currentIndex + 1) % articles.length ||
+                    idx === (currentIndex - 1 + articles.length) % articles.length;
+
+                if (!shouldRender) return null;
+
+                return (
+                    <div
+                        key={article.id}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                            idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                        }`}
+                    >
+                        {article.thumbnail_url ? (
+                            <Image
+                                src={article.thumbnail_url}
+                                alt={article.title}
+                                fill
+                                priority={idx === 0}
+                                sizes="(max-width: 1024px) 100vw, 66vw"
+                                className={`object-cover transition-transform duration-[8000ms] ease-out ${
+                                    idx === currentIndex ? 'scale-110' : 'scale-100'
+                                }`}
+                                onLoad={() => setImageLoaded(prev => ({ ...prev, [idx]: true }))}
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
+                        )}
+                    </div>
+                );
+            })}
 
             {/* Gradient Overlays */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 z-20" />
