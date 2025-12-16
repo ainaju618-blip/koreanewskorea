@@ -7,6 +7,7 @@ import { CATEGORIES, STATS, MOCK_POSTS } from './constants';
 import { CategoryCard } from './components/CategoryCard';
 import { CosmosLayout } from './components/CosmosLayout';
 import { StarField } from './components/StarField';
+import { MouseGlow } from './components/MouseGlow';
 
 function LandingContent() {
     return (
@@ -163,6 +164,9 @@ export default function CosmosPage() {
         <div className="relative">
             {/* StarField Background */}
             <StarField />
+
+            {/* Mouse Glow Effect */}
+            <MouseGlow />
 
             {/* Layout with Content */}
             <CosmosLayout>

@@ -7,6 +7,7 @@ import { Search, Heart, MessageCircle, Share2, User, Folder, Telescope, Sparkles
 import { CATEGORIES, MOCK_POSTS } from '../constants';
 import { CosmosLayout } from '../components/CosmosLayout';
 import { StarField } from '../components/StarField';
+import { MouseGlow } from '../components/MouseGlow';
 
 const iconMap: Record<string, LucideIcon> = {
     Telescope,
@@ -35,6 +36,7 @@ export default function CategoryPage() {
         return (
             <div className="relative">
                 <StarField />
+                <MouseGlow />
                 <CosmosLayout>
                     <div className="text-white text-center py-20">Category not found</div>
                 </CosmosLayout>
@@ -45,6 +47,7 @@ export default function CategoryPage() {
     return (
         <div className="relative">
             <StarField />
+            <MouseGlow />
             <CosmosLayout>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
