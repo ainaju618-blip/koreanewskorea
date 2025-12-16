@@ -17,8 +17,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.88.0",
     "@tiptap/extension-image": "^3.13.0",
     "@tiptap/extension-link": "^3.13.0",
     "@tiptap/extension-placeholder": "^3.13.0",
@@ -36,11 +36,11 @@
     "next-cloudinary": "^6.17.5",
     "node-cron": "^4.2.1",
     "openai": "^6.10.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "rss-parser": "^3.13.0",
     "three": "^0.182.0",
-    "undici": "6.19.7"
+    "undici": "^6.22.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
