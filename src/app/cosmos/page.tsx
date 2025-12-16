@@ -303,7 +303,7 @@ function FeaturesSection() {
                             transition={{ delay: index * 0.1, duration: 0.5 }}
                             viewport={{ once: true }}
                             whileHover={{ y: -5, scale: 1.02 }}
-                            className="group relative p-6 bg-[#12121a]/80 backdrop-blur-md rounded-2xl border border-purple-500/20 hover:border-purple-500/50 transition-all cursor-pointer"
+                            className="group relative p-6 bg-black/80 backdrop-blur-md rounded-2xl border border-purple-500/20 hover:border-purple-500/50 transition-all cursor-pointer"
                         >
                             {/* Glow effect */}
                             <div className={`absolute -inset-0.5 bg-gradient-to-r ${feature.color} rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity`} />
@@ -392,7 +392,7 @@ function LatestPostsSection() {
                                 >
                                     <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
 
-                                    <div className="relative bg-[#12121a]/90 backdrop-blur-md">
+                                    <div className="relative bg-black/90 backdrop-blur-md">
                                         {post.thumbnail_url ? (
                                             <div className="aspect-video overflow-hidden">
                                                 <img
@@ -485,7 +485,7 @@ function CTASection() {
                     className="relative p-8 md:p-12 rounded-3xl overflow-hidden"
                 >
                     {/* Background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-[#12121a] to-pink-900/30" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-black to-pink-900/30" />
                     <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
                     {/* Glow effects */}
@@ -521,7 +521,7 @@ function CTASection() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="your@email.com"
                                     required
-                                    className="flex-1 px-6 py-4 bg-[#0a0a1a]/50 border border-purple-500/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/70 transition-colors"
+                                    className="flex-1 px-6 py-4 bg-black/50 border border-purple-500/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/70 transition-colors"
                                 />
                                 <button
                                     type="submit"
@@ -600,7 +600,7 @@ function FooterSection() {
 // Loading fallback
 function LoadingFallback() {
     return (
-        <div className="fixed inset-0 bg-[#0a0a1a] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black flex items-center justify-center">
             <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
@@ -624,7 +624,7 @@ export default function CosmosLandingPage() {
     }
 
     return (
-        <div className="relative min-h-screen bg-[#0a0a1a] text-white overflow-x-hidden">
+        <div className="relative min-h-screen bg-black text-white overflow-x-hidden">
             {/* 3D Background */}
             <Suspense fallback={null}>
                 <CosmicBackground />

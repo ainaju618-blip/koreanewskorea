@@ -218,7 +218,7 @@ export default function CosmicScene({ children }: { children?: React.ReactNode }
             <Canvas
                 camera={{ position: [0, 0, 8], fov: 60 }}
                 gl={{ antialias: true, alpha: true }}
-                style={{ background: 'linear-gradient(to bottom, #0a0a1a, #0d0d20, #0a0a1a)' }}
+                style={{ background: '#000000' }}
             >
                 {children ? (
                     <ScrollScene>{children}</ScrollScene>
@@ -237,7 +237,7 @@ export function CosmicBackground() {
             <Canvas
                 camera={{ position: [0, 0, 8], fov: 60 }}
                 gl={{ antialias: true, alpha: true }}
-                style={{ background: 'transparent' }}
+                style={{ background: '#000000' }}
             >
                 <Scene />
             </Canvas>
