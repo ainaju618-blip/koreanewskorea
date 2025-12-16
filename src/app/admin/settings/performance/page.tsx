@@ -330,7 +330,7 @@ export default function PerformancePage() {
                             </div>
                             <div>
                                 <h3 className="text-sm font-semibold text-white">Auto Check</h3>
-                                <p className="text-xs text-slate-500">Daily at 09:00, 15:00, 21:00 KST</p>
+                                <p className="text-xs text-slate-500">Daily at 09:00 KST</p>
                             </div>
                         </div>
                         <button

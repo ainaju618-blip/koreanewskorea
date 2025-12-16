@@ -5,6 +5,64 @@
 
 ---
 
+## [2025-12-17 21:30] 세션 #14 - PageSpeed 자동 체크 시스템 by Claude
+
+### 주인님 의도
+- PageSpeed 분석 자동화 시스템 구축
+- 관리자 메뉴에서 설정 가능하도록
+- 하이브리드 방식: API + Cron
+- 디폴트 하루 3번 자동 체크
+
+### 수행 작업
+
+1. **PageSpeed API 엔드포인트 생성**
+   - `/api/admin/pagespeed-check/route.ts` 신규 생성
+   - Google PageSpeed Insights API v5 연동
+   - POST: 수동 분석 트리거
+   - GET: 크론 자동 호출용
+   - 결과 자동 DB 저장 (pagespeed_logs 테이블)
+
+2. **Vercel Cron Jobs 설정**
+   - vercel.json에 3개 크론 추가
+   - 09:00 KST (00:00 UTC)
+   - 15:00 KST (06:00 UTC)
+   - 21:00 KST (12:00 UTC)
+
+3. **관리자 UI 개선**
+   - 수동 분석 버튼 추가 (즉시 PageSpeed 측정)
+   - 자동 체크 ON/OFF 토글 추가
+   - 분석 결과 즉시 표시
+
+4. **빌드 에러 수정**
+   - URLSearchParams 중복 키 에러 해결
+   - Object literal → append() 메서드로 변경
+
+### 사용 도구
+- 직접 구현: API, UI, 크론 설정
+
+### 결과
+- Commit: `47711eb` "feat: Add PageSpeed auto-check with cron jobs"
+- 3 files changed, 380 insertions
+- Vercel 자동 배포 완료
+
+### 주요 생성/수정 파일
+```
+src/app/api/admin/pagespeed-check/route.ts (신규)
+src/app/admin/settings/performance/page.tsx (수정)
+vercel.json (수정)
+```
+
+### API 키 참고
+- Google PageSpeed API는 키 없이도 기본 쿼터로 사용 가능
+- 하루 3회 체크는 무료 한도 내
+
+### 다음 단계
+1. 배포 완료 후 수동 분석 버튼 테스트
+2. 크론 작동 확인 (첫 실행 시점까지 대기)
+3. 필요시 API 키 추가하여 쿼터 확대
+
+---
+
 ## [2025-12-17 17:00] 세션 #13 - HomeHero Server Component 최적화 by Claude
 
 ### 주인님 의도
