@@ -352,8 +352,8 @@ export default function ReporterProfilePage() {
             setFormData(prev => ({ ...prev, profile_image: profileImageUrl }));
 
             showSuccess("Profile saved!");
-            fetchProfile();
-            router.refresh();
+            // Redirect to dashboard after successful save
+            router.push('/reporter');
         } catch (err) {
             console.error("Save error:", err);
             showError(err instanceof Error ? err.message : "Failed to save profile");
