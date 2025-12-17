@@ -42,20 +42,18 @@ export default function ReporterDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 기자 정보 가져오기
+                // Get reporter info
                 const meRes = await fetch("/api/auth/me");
                 if (meRes.ok) {
                     const meData = await meRes.json();
                     setReporter(meData.reporter);
+                }
 
-                    // 통계 가져오기 (추후 API 구현)
-                    // 지금은 임시 데이터
-                    setStats({
-                        myRegionArticles: 24,
-                        myArticles: 8,
-                        publishedArticles: 7,
-                        pendingArticles: 1,
-                    });
+                // Get real statistics
+                const statsRes = await fetch("/api/reporter/stats");
+                if (statsRes.ok) {
+                    const statsData = await statsRes.json();
+                    setStats(statsData.stats);
                 }
             } catch (err) {
                 console.error("Failed to fetch data:", err);

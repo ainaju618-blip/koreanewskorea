@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { recordArticleHistory, createNotification, generateChangeSummary } from '@/lib/article-history';
 
 /**
  * 기사 편집 권한 확인
@@ -152,31 +153,48 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const { title, content, category, thumbnail_url, status, author_id } = body;
+        const { title, content, category, thumbnail_url, status, author_id, rejection_reason } = body;
 
-        // 업데이트할 데이터
-        const updateData: Record<string, unknown> = {};
+        // Determine action type
+        let action: 'edited' | 'approved' | 'rejected' | 'status_changed' = 'edited';
+        if (status === 'published' && existingArticle.status !== 'published') {
+            action = 'approved';
+        } else if (status === 'rejected') {
+            action = 'rejected';
+        } else if (status !== undefined && status !== existingArticle.status) {
+            action = 'status_changed';
+        }
+
+        // Build update data
+        const updateData: Record<string, unknown> = {
+            last_edited_by: reporter.id,
+            last_edited_at: new Date().toISOString(),
+        };
         if (title !== undefined) updateData.title = title;
         if (content !== undefined) updateData.content = content;
         if (category !== undefined) updateData.category = category;
         if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url;
         if (status !== undefined) updateData.status = status;
 
-        // 기자 배정 로직
-        // 1. 명시적 author_id 지정 (편집국장/지사장이 기자 지정)
+        // Rejection reason
+        if (status === 'rejected' && rejection_reason) {
+            updateData.rejection_reason = rejection_reason;
+        }
+
+        // Author assignment logic
+        // 1. Explicit author_id (editor/branch manager assigns reporter)
         if (author_id !== undefined) {
-            // 기자 지정 권한 확인 (access_level 2 이상: 지사장, 편집국장)
             if (reporter.access_level >= 2) {
                 updateData.author_id = author_id;
             }
         }
-        // 2. 승인(published)으로 변경 시 author_id가 없으면 현재 기자로 자동 배정
+        // 2. Auto-assign on publish if no author
         else if (status === 'published' && !existingArticle.author_id) {
             updateData.author_id = reporter.id;
             updateData.published_at = new Date().toISOString();
         }
 
-        // 기사 업데이트
+        // Update article
         const { data: updatedArticle, error: updateError } = await supabaseAdmin
             .from('posts')
             .update(updateData)
@@ -187,13 +205,54 @@ export async function PUT(
         if (updateError) {
             console.error('Article update error:', updateError);
             return NextResponse.json(
-                { message: '기사 수정에 실패했습니다.' },
+                { message: 'Failed to update article' },
                 { status: 500 }
             );
         }
 
+        // Record history
+        const changeSummary = generateChangeSummary(existingArticle, { title, content, status });
+        await recordArticleHistory({
+            article_id: id,
+            editor_id: reporter.id,
+            editor_name: reporter.name,
+            action,
+            previous_title: existingArticle.title,
+            previous_content: existingArticle.content,
+            previous_status: existingArticle.status,
+            new_title: title,
+            new_content: content,
+            new_status: status,
+            change_summary: changeSummary,
+        });
+
+        // Send notifications
+        if (existingArticle.author_id && existingArticle.author_id !== reporter.id) {
+            if (action === 'approved') {
+                await createNotification({
+                    recipient_id: existingArticle.author_id,
+                    type: 'article_approved',
+                    title: 'Article approved',
+                    message: `Your article "${existingArticle.title}" has been approved`,
+                    article_id: id,
+                    actor_id: reporter.id,
+                    actor_name: reporter.name,
+                });
+            } else if (action === 'rejected') {
+                await createNotification({
+                    recipient_id: existingArticle.author_id,
+                    type: 'article_rejected',
+                    title: 'Article rejected',
+                    message: rejection_reason || `Your article "${existingArticle.title}" has been rejected`,
+                    article_id: id,
+                    actor_id: reporter.id,
+                    actor_name: reporter.name,
+                });
+            }
+        }
+
         return NextResponse.json({
-            message: '기사가 수정되었습니다.',
+            message: 'Article updated',
             article: updatedArticle,
         });
 
@@ -352,7 +411,14 @@ export async function PATCH(
             );
         }
 
-        // 기자 변경
+        // Get new author info
+        const { data: newAuthor } = await supabaseAdmin
+            .from('reporters')
+            .select('id, name')
+            .eq('id', author_id)
+            .single();
+
+        // Change author
         const { data: updatedArticle, error: updateError } = await supabaseAdmin
             .from('posts')
             .update({ author_id })
@@ -363,13 +429,35 @@ export async function PATCH(
         if (updateError) {
             console.error('Author change error:', updateError);
             return NextResponse.json(
-                { message: '기자 변경에 실패했습니다.' },
+                { message: 'Failed to change author' },
                 { status: 500 }
             );
         }
 
+        // Record history
+        await recordArticleHistory({
+            article_id: id,
+            editor_id: reporter.id,
+            editor_name: reporter.name,
+            action: 'assigned',
+            change_summary: `Assigned to ${newAuthor?.name || 'unknown'}`,
+        });
+
+        // Notify new author
+        if (newAuthor && newAuthor.id !== reporter.id) {
+            await createNotification({
+                recipient_id: newAuthor.id,
+                type: 'article_assigned',
+                title: 'Article assigned',
+                message: `"${article.title}" has been assigned to you`,
+                article_id: id,
+                actor_id: reporter.id,
+                actor_name: reporter.name,
+            });
+        }
+
         return NextResponse.json({
-            message: '기자가 변경되었습니다.',
+            message: 'Author changed',
             article: updatedArticle,
         });
 
