@@ -301,6 +301,23 @@ export default function Header() {
                                 )}
                             </Link>
 
+                            {/* Claude Hub Link */}
+                            <Link
+                                href="/claude-hub"
+                                className={`h-full flex items-center gap-1.5 transition-colors relative
+                                    ${pathname.startsWith('/claude-hub') ? 'text-emerald-500' : 'text-slate-900'}
+                                    hover:text-emerald-500
+                                `}
+                            >
+                                <Database className="w-4 h-4" />
+                                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-bold">
+                                    Claude Hub
+                                </span>
+                                {pathname.startsWith('/claude-hub') && (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500"></span>
+                                )}
+                            </Link>
+
                             {/* Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
                                 <div className="relative group/search">
