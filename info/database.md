@@ -36,6 +36,8 @@
 | `created_at` | timestamp | 생성일 |
 | `view_count` | integer | 조회수 |
 | `is_focus` | boolean | 포커스 기사 여부 |
+| `approved_by` | uuid | 승인자 ID (FK → reporters) |
+| `approved_at` | timestamptz | 승인 일시 |
 
 ### reporters (기자)
 | 컬럼 | 타입 | 설명 |
@@ -52,6 +54,29 @@
 | `status` | text | 상태 ('Active', 'Inactive') |
 | `user_id` | uuid | Supabase Auth ID |
 | `access_level` | integer | 권한 레벨 |
+| `role` | text | 역할 (super_admin/admin/editor/reporter/contributor) |
+
+### site_settings (사이트 설정)
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `key` | text | PK, 설정 키 |
+| `value` | jsonb | 설정 값 (boolean/string/object) |
+| `description` | text | 설정 설명 |
+| `updated_at` | timestamptz | 마지막 수정일 |
+
+**주요 설정 키:**
+- `auto_assign_reporter`: 기사 승인 시 기자 자동 배정 (true/false)
+
+### audit_logs (감사 로그)
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | uuid | PK, 자동생성 |
+| `user_id` | uuid | 수행자 ID (FK → reporters) |
+| `action` | text | 수행 작업 (approve/reject/delete 등) |
+| `target_type` | text | 대상 유형 (post/reporter/setting) |
+| `target_id` | uuid | 대상 ID |
+| `details` | jsonb | 상세 정보 |
+| `created_at` | timestamptz | 수행 시각 |
 
 ---
 

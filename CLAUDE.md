@@ -2,7 +2,7 @@
 
 > **프로젝트:** Korea NEWS - 전남/광주 지역 뉴스 자동화 플랫폼
 > **역할:** 프로젝트 총괄 실행자 (속도 & 안정성 중심)
-> **버전:** v4.3
+> **버전:** v4.4
 > **최종수정:** 2025-12-17 by Claude
 
 ---
@@ -23,6 +23,43 @@
 | **반복 작업에 서브에이전트 미활용** | 속도 저하로 **경고** |
 | **Vercel 프로젝트 신규 생성 금지** | 작업 즉시 **중단** |
 | **편법/비정상적 방법 사용** | 작업 **REJECT** + 롤백 |
+| **질문/대화 중 임의 실행** | 즉시 **중단** + 대화 모드 전환 |
+
+---
+
+# 💬 대화 vs 실행 구분 규칙 (P0)
+
+> **주인님이 질문하거나 대화를 원할 때는 대화에 집중한다. 작업 지시가 명확할 때만 실행한다.**
+
+## 대화 모드 트리거 (실행 금지)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  아래 표현이 있으면 → 대화 모드 (도구 사용 금지)            │
+│                                                              │
+│  "물어볼께", "질문이 있어", "궁금한게", "어떻게 생각해?"    │
+│  "왜?", "뭐야?", "설명해줘", "대화하자", "잠깐"             │
+│  "이게 뭐야?", "어떤 방식으로?", "차이가 뭐야?"             │
+│                                                              │
+│  → 도구 사용 없이 대화로만 응답                             │
+│  → 주인님이 "해줘", "바꿔줘", "고쳐줘" 등 명확히 지시할 때  │
+│     까지 대기                                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 실행 모드 트리거 (작업 수행)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  아래 표현이 있으면 → 실행 모드 (작업 수행)                 │
+│                                                              │
+│  "해줘", "만들어줘", "고쳐줘", "바꿔줘", "추가해줘"         │
+│  "삭제해줘", "배포해줘", "커밋해줘", "수정해줘"             │
+│  "~하자", "~해", "진행해", "시작해"                         │
+│                                                              │
+│  → 즉시 작업 수행                                           │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -538,5 +575,230 @@ koreanews/
 
 ---
 
+# Part F: 문서 계층 구조 (Document Hierarchy)
+
+> **CLAUDE.md만 읽어도 모든 프로젝트 문서에 접근할 수 있도록 계층적으로 정리**
+
+## F.1 문서 폴더 전체 구조
+
+```
+koreanews/
+│
+├── CLAUDE.md                    # 🔵 AI 지침 (이 파일) - 최상위 진입점
+│
+├── info/                        # 📘 정보 허브 (메인 문서)
+│   ├── _index.md                # → 정보 허브 진입점
+│   ├── README.md                # → 프로젝트 통합 가이드 (완전판)
+│   ├── frontend.md              # → 프론트엔드 개발 가이드
+│   ├── backend.md               # → 백엔드 개발 가이드
+│   ├── database.md              # → DB 스키마 및 쿼리 가이드
+│   ├── scraper.md               # → 스크래퍼 개요
+│   ├── design-system.md         # → 디자인 시스템 (색상, 폰트)
+│   ├── performance.md           # → 성능 최적화 가이드
+│   ├── git.md                   # → Git 워크플로우
+│   ├── troubleshooting.md       # → 문제 해결 가이드
+│   ├── collaboration.md         # → AI 협업 가이드
+│   │
+│   ├── errors/                  # 🔴 에러 해결 문서
+│   │   ├── _catalog.md          # → 키워드 검색 카탈로그 (MUST READ FIRST)
+│   │   ├── backend/             # → API, Supabase 에러
+│   │   ├── frontend/            # → React, TypeScript 에러
+│   │   ├── deploy/              # → Vercel 배포 에러
+│   │   ├── scraper/             # → 스크래퍼 에러
+│   │   └── database/            # → DB 제약조건 에러
+│   │
+│   ├── guides/                  # 🟢 개발 가이드
+│   │   ├── _catalog.md          # → 가이드 카탈로그
+│   │   ├── frontend/            # → 프론트엔드 가이드
+│   │   ├── backend/             # → 백엔드 가이드
+│   │   └── scraper/             # → 스크래퍼 가이드
+│   │
+│   ├── config/                  # ⚙️ 설정 정보
+│   │   ├── accounts.md          # → 계정 정보 (Git, Vercel, Supabase)
+│   │   ├── env-vars.md          # → 환경변수 목록
+│   │   └── gemini_accounts.md   # → Gemini API 계정
+│   │
+│   ├── ai-collab/               # 🤖 AI 협업
+│   │   ├── _index.md            # → AI 협업 가이드
+│   │   ├── claude.md            # → Claude 전용 지침
+│   │   └── gemini.md            # → Gemini 전용 지침
+│   │
+│   └── planning/                # 📋 기획 문서
+│       └── permission-system.md # → 권한 시스템 기획
+│
+├── scrapers/                    # 🐍 스크래퍼 (Python)
+│   ├── SCRAPER_GUIDE.md         # → 스크래퍼 개발 가이드 (AI용)
+│   ├── SCRAPER_DEVELOPMENT_GUIDE.md # → 외부 협업용 가이드
+│   ├── SCRAPER_CHANGELOG.md     # → 변경 이력
+│   ├── STATUS.md                # → 스크래퍼 상태 현황
+│   ├── [지역]/                  # → 지역별 스크래퍼
+│   │   └── ALGORITHM.md         # → 해당 지역 알고리즘 문서
+│   └── _queue/PRIORITY.md       # → 개발 우선순위
+│
+├── design/                      # 🎨 디자인 문서
+│   ├── designplan.md            # → 디자인 가이드라인 (상세)
+│   ├── logo.md                  # → 로고 가이드
+│   ├── logo_integration_plan.md # → 로고 적용 계획
+│   └── algorithm_proposal.md    # → 알고리즘 제안
+│
+├── docs/                        # 📄 기획 문서
+│   ├── 기획.md                  # → 프로젝트 기획서 (전체)
+│   ├── seo/                     # → SEO 관련 기획
+│   │   └── reporter_page_plan.md
+│   └── features/                # → 기능 기획
+│       ├── PERSONALIZATION_SYSTEM.md
+│       └── PERSONALIZATION_WORK_ORDER.md
+│
+├── idea/                        # 💡 AI 뉴스 수집 기획
+│   ├── README.md                # → AI 뉴스 시스템 개요
+│   ├── ARCHITECTURE.md          # → 시스템 아키텍처
+│   ├── DATABASE.md              # → DB 스키마
+│   ├── PROMPTS.md               # → AI 프롬프트
+│   ├── SOURCES.md               # → 수집 소스
+│   └── LEGAL.md                 # → 법적 고려사항
+│
+├── gitinfo/                     # 🔧 Git/Vercel 정보
+│   ├── README.md                # → 진입점
+│   ├── GIT_CONFIG.md            # → Git 설정
+│   ├── VERCEL_DEPLOY.md         # → Vercel 배포
+│   ├── TROUBLESHOOTING.md       # → 문제 해결
+│   └── COMMANDS.md              # → 명령어 모음
+│
+├── backend/                     # 🖥️ 백엔드 규칙
+│   ├── DEVELOPMENT_RULES.md     # → 개발 원칙 (UDP 6-Cycle)
+│   └── processors/README.md     # → 프로세서 문서
+│
+├── src/                         # 💻 소스코드 문서
+│   ├── README.md                # → 소스 구조 설명
+│   ├── db/                      # → SQL 마이그레이션
+│   │   └── permission_system.sql
+│   └── components/admin/shared/
+│       └── README.md            # → 공유 컴포넌트 API
+│
+├── .claude/context/             # 🗂️ Claude 세션
+│   ├── current_task.md          # → 현재 작업
+│   ├── session_log.md           # → 세션 로그
+│   ├── decisions.md             # → 주요 결정
+│   └── PLAN_*.md                # → 작업 계획들
+│
+└── .ai-collab/                  # 🤝 AI 협업 채널
+    ├── README.md                # → 협업 가이드
+    ├── TASK.md                  # → 작업 지시
+    ├── QUESTION.md              # → 질문/논의
+    └── quality_report.md        # → 품질 보고
+```
+
+## F.2 작업별 문서 진입점
+
+| 작업 유형 | 1차 진입점 | 상세 문서 |
+|----------|-----------|----------|
+| **에러 해결** | `info/errors/_catalog.md` | 키워드로 해당 파일 찾기 |
+| **프론트엔드 개발** | `info/frontend.md` | `info/guides/frontend/` |
+| **백엔드 개발** | `info/backend.md` | `info/guides/backend/` |
+| **DB 작업** | `info/database.md` | `src/db/*.sql` |
+| **스크래퍼 개발** | `scrapers/SCRAPER_GUIDE.md` | `scrapers/[지역]/ALGORITHM.md` |
+| **디자인 변경** | `info/design-system.md` | `design/designplan.md` |
+| **배포/Git** | `gitinfo/README.md` | `info/git.md` |
+| **AI 협업** | `info/ai-collab/_index.md` | `.ai-collab/` |
+| **전체 기획** | `docs/기획.md` | `info/README.md` |
+
+---
+
+# Part G: 문서화 동기화 규칙 (Documentation Sync Rules)
+
+> **코드 변경 시 관련 문서를 반드시 업데이트해야 합니다.**
+
+## G.1 동기화 규칙 매트릭스
+
+| 변경 대상 | 업데이트할 문서 | 중요도 |
+|----------|---------------|--------|
+| **globals.css (테마/색상)** | `info/design-system.md` | P1 |
+| **tailwind.config.ts** | `info/design-system.md` | P1 |
+| **DB 스키마 (ALTER TABLE)** | `info/database.md` | P0 |
+| **새 API 엔드포인트** | `info/backend.md` | P1 |
+| **API 수정/삭제** | `info/backend.md` | P1 |
+| **새 컴포넌트 (admin/shared)** | `src/components/admin/shared/README.md` | P2 |
+| **스크래퍼 수정** | `scrapers/[지역]/ALGORITHM.md` | P1 |
+| **새 스크래퍼** | `scrapers/SCRAPER_GUIDE.md` + `ALGORITHM.md` | P1 |
+| **환경변수 추가** | `info/config/env-vars.md` | P1 |
+| **에러 해결** | `info/errors/[분야]/` + `_catalog.md` | P1 |
+| **tsconfig.json** | `CLAUDE.md` 또는 `info/frontend.md` | P2 |
+| **next.config.ts** | `info/frontend.md` | P2 |
+| **package.json (의존성)** | 버전 변경 시 해당 가이드 | P2 |
+
+## G.2 동기화 체크리스트 (작업 완료 전 확인)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  작업 완료 전 자문 (MUST):                                   │
+│                                                              │
+│  □ 이 변경이 다른 AI가 참조할 문서에 영향을 주는가?         │
+│  □ 영향을 준다면 → 해당 문서 업데이트 완료했는가?           │
+│  □ 새로운 패턴/규칙을 도입했다면 → 문서에 기록했는가?       │
+│                                                              │
+│  예시:                                                       │
+│  - CSS 색상 #003366 → #002244 변경                           │
+│    → info/design-system.md 업데이트 필요                    │
+│                                                              │
+│  - posts 테이블에 approved_at 컬럼 추가                      │
+│    → info/database.md 업데이트 필요                          │
+│                                                              │
+│  - 새 API /api/reporter/reporters 추가                       │
+│    → info/backend.md에 엔드포인트 추가 필요                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## G.3 문서 작성 시 형식
+
+### 에러 문서 형식
+```markdown
+# [에러 제목]
+
+> **증상:** [간단 설명]
+> **원인:** [원인 설명]
+> **해결일:** YYYY-MM-DD
+
+---
+
+## 증상
+[상세 증상]
+
+## 원인
+[상세 원인]
+
+## 해결
+[해결 방법 - 코드 포함]
+
+## 관련 파일
+- [파일 경로]
+
+---
+*추가일: YYYY-MM-DD*
+```
+
+### 가이드 문서 형식
+```markdown
+# [가이드 제목]
+
+> **목적:** [한 줄 설명]
+> **대상:** [누구를 위한 가이드인지]
+
+---
+
+## 1. 개요
+[설명]
+
+## 2. 사용법
+[코드 예시]
+
+## 3. 주의사항
+[경고 사항]
+
+---
+*최종 업데이트: YYYY-MM-DD*
+```
+
+---
+
 *이 문서는 AI Agent(Claude)가 Korea NEWS 프로젝트를 총괄 실행할 때 참조하는 핵심 지침입니다.*
-*v4.3 - 에러 문서 시스템 안내 섹션 추가*
+*v4.4 - 문서 계층 구조 및 동기화 규칙 추가*

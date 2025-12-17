@@ -5,6 +5,54 @@
 
 ---
 
+## [2025-12-17 22:00] 세션 #17 - 문서 계층 구조화 완료 by Claude
+
+### 주인님 의도
+- CLAUDE.md만 읽어도 모든 프로젝트 문서에 접근 가능하도록 계층적 구조화
+- 모든 문서 규칙을 찾아서 체계적으로 기록
+
+### 수행 작업
+
+1. **프로젝트 전체 문서 탐색**
+   - 10개 폴더, 80+개 .md 문서 발견
+   - info/, scrapers/, design/, docs/, idea/, gitinfo/, .claude/context/, .ai-collab/, backend/, src/
+
+2. **CLAUDE.md 대규모 업데이트 (v4.4)**
+   - Part F: 문서 계층 구조 (Document Hierarchy) 추가
+     - 전체 폴더 트리 구조 문서화
+     - 작업 유형별 진입점 매핑 테이블
+   - Part G: 문서화 동기화 규칙 추가
+     - 코드 변경 → 문서 업데이트 매트릭스
+     - 작업 완료 전 문서 동기화 체크리스트
+     - 문서 포맷 템플릿
+
+3. **database.md 스키마 보완**
+   - posts 테이블: `approved_by`, `approved_at` 컬럼 추가
+   - reporters 테이블: `role` 컬럼 추가
+   - site_settings 테이블 스키마 추가
+   - audit_logs 테이블 스키마 추가
+
+### 사용 도구
+- Glob: 프로젝트 전체 .md 파일 탐색
+- Read: 핵심 문서 10+개 분석
+- Edit: CLAUDE.md, database.md 업데이트
+
+### 결과
+- ✅ CLAUDE.md v4.4 완성 - 문서 계층 구조 및 동기화 규칙 추가
+- ✅ database.md 스키마 보완 완료
+
+### 주요 수정 파일
+```
+CLAUDE.md - Part F, Part G 추가
+info/database.md - 4개 스키마 항목 추가
+```
+
+### 교훈
+- 프로젝트 문서는 계층적으로 구조화하여 진입점만 읽어도 전체 파악 가능하도록
+- 코드 변경 시 관련 문서도 반드시 동기화
+
+---
+
 ## [2025-12-17 18:00] 세션 #16 - 봇 관리 센터 문제 해결 by Claude
 
 ### 주인님 의도
