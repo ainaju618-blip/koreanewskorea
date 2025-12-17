@@ -97,13 +97,7 @@ export default function ReporterProfilePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // 파일 크기 체크 (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showError("파일 크기는 5MB 이하여야 합니다.");
-            return;
-        }
-
-        // 이미지 타입 체크
+        // 이미지 타입 체크만 (용량은 Cloudinary에서 자동 압축)
         if (!file.type.startsWith("image/")) {
             showError("이미지 파일만 업로드 가능합니다.");
             return;
@@ -115,19 +109,23 @@ export default function ReporterProfilePage() {
             formDataUpload.append("file", file);
             formDataUpload.append("folder", "reporters");
 
-            const res = await fetch("/api/upload", {
+            // Cloudinary API 사용 (자동 400x400 리사이즈 및 압축)
+            const res = await fetch("/api/upload/image", {
                 method: "POST",
                 body: formDataUpload,
             });
 
-            if (!res.ok) throw new Error("업로드 실패");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || "업로드 실패");
+            }
 
             const data = await res.json();
             setFormData(prev => ({ ...prev, profile_image: data.url }));
             showSuccess("프로필 사진이 업로드되었습니다.");
         } catch (err) {
             console.error("Upload error:", err);
-            showError("이미지 업로드에 실패했습니다.");
+            showError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
         } finally {
             setIsUploading(false);
         }
