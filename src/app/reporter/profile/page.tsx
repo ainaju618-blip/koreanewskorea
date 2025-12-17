@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Save, Loader2, User, Mail, Phone, MapPin, Briefcase, FileText } from "lucide-react";
+import { Camera, Save, Loader2, User, Mail, Phone, MapPin, Briefcase, FileText, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
+import Cropper, { Area } from "react-easy-crop";
 
 interface Reporter {
     id: string;
@@ -45,6 +46,15 @@ export default function ReporterProfilePage() {
     const [compressionInfo, setCompressionInfo] = useState<{original: number; compressed: number} | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showSuccess, showError } = useToast();
+
+    // Image crop state
+    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [imageSrc, setImageSrc] = useState<string>("");
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -142,7 +152,93 @@ export default function ReporterProfilePage() {
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Crop complete callback
+    const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    // Create cropped image from canvas
+    const createCroppedImage = async (
+        imageSrc: string,
+        pixelCrop: Area,
+        rotation: number = 0
+    ): Promise<Blob> => {
+        const image = await createImage(imageSrc);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) throw new Error("Failed to get canvas context");
+
+        const rotRad = (rotation * Math.PI) / 180;
+
+        // Calculate bounding box of rotated image
+        const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
+            image.width,
+            image.height,
+            rotation
+        );
+
+        // Set canvas size to match bounding box
+        canvas.width = bBoxWidth;
+        canvas.height = bBoxHeight;
+
+        // Translate canvas center
+        ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
+        ctx.rotate(rotRad);
+        ctx.translate(-image.width / 2, -image.height / 2);
+
+        // Draw rotated image
+        ctx.drawImage(image, 0, 0);
+
+        // Extract cropped image data
+        const data = ctx.getImageData(
+            pixelCrop.x,
+            pixelCrop.y,
+            pixelCrop.width,
+            pixelCrop.height
+        );
+
+        // Set canvas to crop size
+        canvas.width = pixelCrop.width;
+        canvas.height = pixelCrop.height;
+
+        // Put cropped image data
+        ctx.putImageData(data, 0, 0);
+
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) resolve(blob);
+                    else reject(new Error("Failed to create blob"));
+                },
+                "image/jpeg",
+                0.9
+            );
+        });
+    };
+
+    // Helper: Create image element from source
+    const createImage = (url: string): Promise<HTMLImageElement> =>
+        new Promise((resolve, reject) => {
+            const image = document.createElement("img");
+            image.addEventListener("load", () => resolve(image));
+            image.addEventListener("error", (error) => reject(error));
+            image.src = url;
+        });
+
+    // Helper: Calculate rotated size
+    const rotateSize = (width: number, height: number, rotation: number) => {
+        const rotRad = (rotation * Math.PI) / 180;
+        return {
+            width:
+                Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+            height:
+                Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
+        };
+    };
+
+    // Handle file selection - open crop modal
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -152,28 +248,55 @@ export default function ReporterProfilePage() {
             return;
         }
 
-        const originalSize = file.size;
-        const needsCompression = originalSize > 500 * 1024; // 500KB
+        // Store original file and create preview
+        setOriginalFile(file);
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            setImageSrc(reader.result as string);
+            setCropModalOpen(true);
+            setCrop({ x: 0, y: 0 });
+            setZoom(1);
+            setRotation(0);
+        });
+        reader.readAsDataURL(file);
 
-        // Show compression notice if file is large
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    // Handle crop confirm - process and upload
+    const handleCropConfirm = async () => {
+        if (!croppedAreaPixels || !originalFile) return;
+
+        setCropModalOpen(false);
+        setIsUploading(true);
+        setCompressionInfo(null);
+
+        const originalSize = originalFile.size;
+        const needsCompression = originalSize > 500 * 1024;
+
         if (needsCompression) {
             showSuccess(`용량이 큽니다 (${formatFileSize(originalSize)}). 자동 압축을 시작합니다.`);
         }
 
-        setIsUploading(true);
-        setCompressionInfo(null);
-
         try {
-            // Step 1: Compress image
-            setUploadStatus(needsCompression ? "이미지 압축 중..." : "이미지 처리 중...");
-            const resizedBlob = await resizeImage(file);
+            // Step 1: Create cropped image
+            setUploadStatus("이미지 자르는 중...");
+            const croppedBlob = await createCroppedImage(imageSrc, croppedAreaPixels, rotation);
+
+            // Step 2: Resize/compress the cropped image
+            setUploadStatus("이미지 압축 중...");
+            const croppedFile = new File([croppedBlob], originalFile.name, { type: "image/jpeg" });
+            const resizedBlob = await resizeImage(croppedFile);
             const compressedSize = resizedBlob.size;
             setCompressionInfo({ original: originalSize, compressed: compressedSize });
 
-            // Step 2: Upload to server
+            // Step 3: Upload to server
             setUploadStatus("서버에 업로드 중...");
             const formDataUpload = new FormData();
-            formDataUpload.append("file", resizedBlob, file.name);
+            formDataUpload.append("file", resizedBlob, originalFile.name);
             formDataUpload.append("folder", "reporters");
 
             const res = await fetch("/api/upload/image", {
@@ -186,20 +309,14 @@ export default function ReporterProfilePage() {
                 throw new Error(errorData.error || "업로드 실패");
             }
 
-            // Step 3: Complete
+            // Step 4: Complete
             setUploadStatus("완료!");
             const data = await res.json();
             setFormData(prev => ({ ...prev, profile_image: data.url }));
 
-            // Show compression result if compressed
-            if (needsCompression) {
-                const reduction = Math.round((1 - compressedSize / originalSize) * 100);
-                showSuccess(`압축 완료! ${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% 감소)`);
-            } else {
-                showSuccess("프로필 사진이 업로드되었습니다.");
-            }
+            const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+            showSuccess(`업로드 완료! ${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% 감소)`);
 
-            // Clear status after 3 seconds
             setTimeout(() => {
                 setUploadStatus("");
                 setCompressionInfo(null);
@@ -211,7 +328,16 @@ export default function ReporterProfilePage() {
             showError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
         } finally {
             setIsUploading(false);
+            setImageSrc("");
+            setOriginalFile(null);
         }
+    };
+
+    // Cancel crop
+    const handleCropCancel = () => {
+        setCropModalOpen(false);
+        setImageSrc("");
+        setOriginalFile(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -307,7 +433,7 @@ export default function ReporterProfilePage() {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
-                                onChange={handleImageUpload}
+                                onChange={handleImageSelect}
                                 className="hidden"
                             />
                         </div>
@@ -497,6 +623,90 @@ export default function ReporterProfilePage() {
                     </button>
                 </div>
             </form>
+
+            {/* Image Crop Modal */}
+            {cropModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b">
+                            <h3 className="text-lg font-bold text-gray-900">프로필 사진 편집</h3>
+                            <button
+                                onClick={handleCropCancel}
+                                className="p-2 hover:bg-gray-100 rounded-full transition"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Crop Area */}
+                        <div className="relative h-80 bg-gray-900">
+                            <Cropper
+                                image={imageSrc}
+                                crop={crop}
+                                zoom={zoom}
+                                rotation={rotation}
+                                aspect={1}
+                                cropShape="round"
+                                showGrid={false}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onRotationChange={setRotation}
+                                onCropComplete={onCropComplete}
+                            />
+                        </div>
+
+                        {/* Controls */}
+                        <div className="px-6 py-4 space-y-4 bg-gray-50">
+                            {/* Zoom Control */}
+                            <div className="flex items-center gap-3">
+                                <ZoomOut className="w-5 h-5 text-gray-400" />
+                                <input
+                                    type="range"
+                                    value={zoom}
+                                    min={1}
+                                    max={3}
+                                    step={0.1}
+                                    onChange={(e) => setZoom(Number(e.target.value))}
+                                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                />
+                                <ZoomIn className="w-5 h-5 text-gray-400" />
+                            </div>
+
+                            {/* Rotation Control */}
+                            <div className="flex items-center gap-3">
+                                <RotateCw className="w-5 h-5 text-gray-400" />
+                                <input
+                                    type="range"
+                                    value={rotation}
+                                    min={0}
+                                    max={360}
+                                    step={1}
+                                    onChange={(e) => setRotation(Number(e.target.value))}
+                                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                />
+                                <span className="text-sm text-gray-500 w-12">{rotation}°</span>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex gap-3 px-6 py-4 border-t">
+                            <button
+                                onClick={handleCropCancel}
+                                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleCropConfirm}
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+                            >
+                                적용하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
