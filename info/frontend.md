@@ -333,4 +333,338 @@ npx tsc --noEmit
 
 ---
 
-*최종 업데이트: 2025-12-15*
+## 11. GNB Menu Structure
+
+### Overview
+The Global Navigation Bar (GNB) displays a hierarchical menu loaded from the `categories` table in the database. This section explains how the menu system works from database to UI rendering.
+
+---
+
+### Data Flow Architecture
+
+```
+DB (categories table)
+    ↓
+API (/api/categories?gnb=true)
+    ↓
+Header Component (useEffect)
+    ↓
+Desktop Menu (dropdown) / Mobile Menu (accordion)
+```
+
+---
+
+### Database Structure: categories Table
+
+**Key Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `name` | text | Display name (e.g., "Politics") |
+| `slug` | text | URL slug (e.g., "politics") |
+| `parent_id` | uuid | Parent category ID (NULL for top-level) |
+| `depth` | int | Hierarchy level (0-2) |
+| `path` | text | Full path (e.g., "jeonnam/mokpo") |
+| `order_index` | int | Display order |
+| `show_in_gnb` | boolean | Show in header menu (true/false) |
+| `custom_url` | text | Override default URL |
+| `link_target` | text | Link target (_self, _blank) |
+| `is_active` | boolean | Enable/disable category |
+
+**Hierarchy Levels:**
+- **Depth 0**: Top-level categories (e.g., "Jeonnam", "Politics")
+- **Depth 1**: Sub-categories (e.g., "Mokpo", "Naju" under "Jeonnam")
+- **Depth 2**: Not used in GNB (reserved for future)
+
+---
+
+### API Endpoint: `/api/categories`
+
+**Location:** `src/app/api/categories/route.ts`
+
+**GET Request:**
+```typescript
+// Query Parameters
+?gnb=true    // Filter: show_in_gnb = true
+?active=true // Filter: is_active = true (default)
+?flat=true   // Return flat array instead of tree
+```
+
+**Response (Tree Structure):**
+```typescript
+{
+  "categories": [
+    {
+      "id": "uuid",
+      "name": "Jeonnam",
+      "slug": "jeonnam",
+      "depth": 0,
+      "parent_id": null,
+      "show_in_gnb": true,
+      "custom_url": null,
+      "link_target": "_self",
+      "children": [
+        {
+          "id": "uuid",
+          "name": "Mokpo",
+          "slug": "mokpo",
+          "depth": 1,
+          "parent_id": "parent-uuid",
+          "show_in_gnb": true
+        },
+        // ... more children
+      ]
+    }
+  ]
+}
+```
+
+**Tree Building Logic:**
+- Uses `buildTree()` helper function
+- Groups children under parent_id
+- Returns hierarchical structure
+
+---
+
+### Header Component: Menu Rendering
+
+**Location:** `src/components/Header.tsx`
+
+**Load Categories:**
+```typescript
+// Lines 80-94
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/categories?gnb=true');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data.categories || []);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+      setCategories([]);
+    }
+  };
+  fetchCategories();
+}, []);
+```
+
+**Desktop Menu (Lines 220-285):**
+- Maps through `categories` array
+- Top-level: Links to category pages
+- Children: Rendered as mega menu dropdown (4-column grid)
+- Hover trigger: `onMouseEnter`/`onMouseLeave`
+- Active state: Highlighted with primary color
+
+**Mega Menu Dropdown:**
+```typescript
+{hasChildren(category) && (
+  <div className="mega-menu-dropdown">
+    {/* Header */}
+    <div className="header">{category.name}</div>
+
+    {/* Grid of sub-categories */}
+    <div className="grid grid-cols-4 gap-2">
+      {category.children.map(child => (
+        <Link href={getCategoryUrl(child, category)}>
+          {child.name}
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+**Mobile Menu (Lines 413-462):**
+- Slide-in panel from right
+- Accordion-style sub-categories
+- 2-column grid for children
+
+---
+
+### URL Generation Logic
+
+**Function:** `getCategoryUrl()`
+
+```typescript
+// Lines 107-113
+const getCategoryUrl = (category: Category, parent?: Category): string => {
+  // Custom URL override
+  if (category.custom_url) return category.custom_url;
+
+  // Special case: 'region' slug redirects to 'jeonnam-region'
+  if (category.slug === 'region') return '/category/jeonnam-region';
+
+  // Child category: /category/{parent-slug}/{child-slug}
+  if (parent) return `/category/${parent.slug}/${category.slug}`;
+
+  // Top-level: /category/{slug}
+  return `/category/${category.slug}`;
+};
+```
+
+**Examples:**
+- Top-level: `/category/politics`
+- Sub-category: `/category/jeonnam/mokpo`
+- Custom URL: `/map` (if custom_url is set)
+- External link: `https://google.com` (opens in new tab if link_target="_blank")
+
+---
+
+### Active State Detection
+
+**Function:** `isActiveCategory()`
+
+```typescript
+// Lines 49-65
+const isActiveCategory = (category: Category): boolean => {
+  // Home page
+  if (pathname === '/' && category.slug === 'home') return true;
+
+  // Special region matching
+  if (category.slug === 'region' && pathname.startsWith('/category/jeonnam-region')) {
+    return true;
+  }
+
+  // Exact path matching
+  const categoryPath = `/category/${category.slug}`;
+  if (pathname === categoryPath || pathname.startsWith(`${categoryPath}/`)) {
+    return true;
+  }
+
+  // Check children
+  if (category.children) {
+    return category.children.some(child => pathname.includes(`/${child.slug}`));
+  }
+
+  return false;
+};
+```
+
+---
+
+### Adding/Modifying Menu Items
+
+#### Method 1: Supabase Dashboard
+
+1. Open Supabase Dashboard → SQL Editor
+2. Insert new category:
+
+```sql
+-- Add top-level category
+INSERT INTO categories (name, slug, depth, path, order_index, show_in_gnb)
+VALUES ('New Category', 'new-category', 0, 'new-category', 10, true);
+
+-- Add sub-category
+INSERT INTO categories (name, slug, parent_id, depth, path, order_index, show_in_gnb)
+VALUES (
+  'Sub Category',
+  'sub-category',
+  (SELECT id FROM categories WHERE slug = 'new-category'),
+  1,
+  'new-category/sub-category',
+  1,
+  true
+);
+```
+
+#### Method 2: Admin Panel (Future)
+
+```
+Admin → Categories → Add New
+- Name: Display name
+- Slug: URL slug (auto-generated)
+- Parent: Select parent category
+- Show in GNB: Toggle visibility
+- Order: Display position
+```
+
+---
+
+### Special Cases
+
+**1. Custom URLs:**
+```sql
+-- Link to external site
+UPDATE categories
+SET custom_url = 'https://google.com', link_target = '_blank'
+WHERE slug = 'contact';
+
+-- Link to internal page
+UPDATE categories
+SET custom_url = '/map', link_target = '_self'
+WHERE slug = 'map';
+```
+
+**2. Disabled Mega Menu:**
+```typescript
+// Line 244: Disable dropdown for specific categories
+{hasChildren(category) &&
+ category.slug !== 'jeonnam' &&
+ category.slug !== 'region' && (
+  // Mega menu dropdown
+)}
+```
+
+**3. Static Menu Items:**
+- "Home" link (Line 200-207)
+- "News TV" link (Line 209-218)
+- "CosmicPulse" link (Line 287-302)
+- "Claude Hub" link (Line 304-319)
+
+---
+
+### Troubleshooting
+
+**Issue 1: Menu not loading**
+```typescript
+// Check API response
+fetch('/api/categories?gnb=true')
+  .then(r => r.json())
+  .then(console.log);
+
+// Verify show_in_gnb = true
+SELECT * FROM categories WHERE show_in_gnb = true;
+```
+
+**Issue 2: Wrong URL generated**
+```typescript
+// Check slug and custom_url
+SELECT slug, custom_url, link_target FROM categories WHERE name = 'Category Name';
+```
+
+**Issue 3: Children not showing**
+```typescript
+// Verify parent_id and depth
+SELECT id, name, parent_id, depth FROM categories ORDER BY depth, order_index;
+```
+
+**Issue 4: Order not correct**
+```sql
+-- Update order_index
+UPDATE categories SET order_index = 5 WHERE slug = 'category-slug';
+```
+
+---
+
+### Performance Optimization
+
+**Caching Strategy:**
+- Categories loaded once on component mount
+- Stored in React state (no re-fetch on navigation)
+- Refetch only on page reload
+
+**Future Improvements:**
+- Add React Query for cache management
+- Implement SWR for background revalidation
+- Add loading skeleton during fetch
+
+---
+
+*Added: 2025-12-17*
+
+---
+
+*최종 업데이트: 2025-12-17*

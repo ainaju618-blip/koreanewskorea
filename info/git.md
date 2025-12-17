@@ -62,6 +62,23 @@ origin  https://github.com/korea-news/koreanewsone.git (fetch/push)
 |------|-----|
 | Production | https://koreanews.vercel.app |
 | Production (별칭) | https://koreanewsone.vercel.app |
+| Preview | https://koreanewsone-[hash]-koreanews-projects.vercel.app |
+
+### Local Configuration
+```
+.vercel/
+└── project.json    # Project connection info
+```
+
+### Build Configuration
+| 항목 | 값 |
+|------|-----|
+| Framework | Next.js 16 (auto-detected) |
+| Build Command | `npm run build` |
+| Output Directory | `.next` |
+| Node.js | Auto |
+| Region | Washington, D.C., USA (iad1) |
+| Build Time | ~2 minutes |
 
 ### 자동 배포 흐름
 ```
@@ -74,31 +91,87 @@ Vercel 빌드 시작 (~2분)
 Production 배포 완료
 ```
 
+### Vercel Dashboard Access
+```bash
+# Open dashboard in browser
+vercel open
+
+# Direct URL
+https://vercel.com/koreanews-projects/koreanewsone
+```
+
+**Dashboard Sections:**
+- **Deployments**: Deployment history and status
+- **Analytics**: Traffic analysis and metrics
+- **Logs**: Function logs and debugging
+- **Settings**:
+  - Git: GitHub integration settings
+  - Environment Variables: Manage env vars
+  - Domains: Domain management
+
 ---
 
 ## 4. 자주 쓰는 명령어
 
 ### Git 기본
 ```bash
-git status                    # 상태 확인
-git add .                     # 전체 스테이징
-git commit -m "메시지"        # 커밋
-git push origin master        # 푸시
-git log --oneline -10         # 히스토리
+git status                    # Current status
+git add .                     # Stage all changes
+git add [file]                # Stage specific file
+git commit -m "message"       # Commit with message
+git push origin master        # Push to remote
+git log --oneline -10         # Recent commit history
+
+# Check changes
+git diff                      # Unstaged changes
+git diff --staged             # Staged changes
+
+# Branch operations
+git branch -a                 # List all branches
+git checkout -b [branch]      # Create and switch branch
+git merge [branch]            # Merge branch
+
+# Undo operations
+git commit --amend            # Modify last commit
+git reset HEAD [file]         # Unstage file
+git revert HEAD               # Revert last commit (new commit)
+git reset --hard HEAD~1       # Hard reset (DANGER!)
 ```
 
 ### Vercel CLI
 ```bash
-vercel ls                     # 배포 목록
-vercel --prod                 # 수동 배포
-vercel logs [url]             # 빌드 로그
-vercel env ls                 # 환경 변수 확인
-vercel git connect            # Git 연결 복구
+vercel ls                     # List deployments
+vercel --prod                 # Manual production deploy
+vercel logs [url]             # Build logs
+vercel env ls                 # List environment variables
+vercel env add [NAME]         # Add environment variable
+vercel git connect            # Restore Git connection
+vercel inspect [url]          # Deployment details
+vercel redeploy [url]         # Redeploy specific deployment
+vercel rollback [url]         # Rollback to deployment
+vercel open                   # Open dashboard
 ```
 
-### 한 번에 배포
+### GitHub CLI
 ```bash
-git add . && git commit -m "메시지" && git push origin master
+gh auth login                 # Login to GitHub
+gh auth status                # Check auth status
+gh api repos/korea-news/koreanewsone/hooks  # Check webhooks
+gh pr list                    # List pull requests
+gh pr create --title "..." --body "..."     # Create PR
+gh issue list                 # List issues
+```
+
+### Quick Deploy
+```bash
+# Build check and deploy
+npm run build && git add . && git commit -m "message" && git push
+
+# Full status check
+git status && vercel ls
+
+# Diagnose sync issues
+git fetch origin && git log HEAD..origin/master --oneline
 ```
 
 ---
@@ -171,6 +244,28 @@ git rm --cached path/to/large/file
 git commit -m "fix: remove large file"
 ```
 
+### 6.4 Local-Remote Sync Issues
+
+**Check sync status:**
+```bash
+# Check status
+git status
+
+# Compare with remote
+git fetch origin
+git log HEAD..origin/master --oneline  # Remote ahead
+git log origin/master..HEAD --oneline  # Local ahead
+```
+
+**Force sync (DANGER!):**
+```bash
+# Reset local to match remote (local changes LOST!)
+git reset --hard origin/master
+
+# Force push local to remote (remote history CHANGED!)
+git push --force origin master  # Use with extreme caution!
+```
+
 ---
 *추가일: 2025-12-15*
 
@@ -225,6 +320,42 @@ git config user.name "유향"
 git commit --amend --reset-author
 ```
 
+### Git Credential Manager (Windows)
+- Credentials stored in Windows Credential Manager
+- Access: Control Panel > Credential Manager > Windows Credentials
+
+### .gitignore (Main Items)
+```
+# Dependencies
+node_modules/
+.pnp/
+
+# Build
+.next/
+out/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Temp files
+*.zip
+*.log
+```
+
 ---
 *추가일: 2025-12-15*
 
@@ -242,6 +373,21 @@ vercel rollback [url]        # 롤백
 ```bash
 git revert HEAD              # 되돌리기 커밋 생성
 git push origin master       # 자동 재배포
+```
+
+### Production Emergency Response
+```bash
+# 1. Immediately rollback to last working deployment
+vercel rollback [previous-working-url]
+
+# 2. Diagnose issue locally
+npm run build  # Check build errors
+npm run dev    # Check runtime errors
+
+# 3. Fix and redeploy
+git add .
+git commit -m "fix: [issue description]"
+git push origin master
 ```
 
 ---
@@ -287,6 +433,7 @@ EOF
 ### 배포 전
 - [ ] `npm run build` 성공
 - [ ] `git config user.email` 계정 확인
+- [ ] `git status` 커밋할 파일 확인
 - [ ] 환경 변수 설정 완료
 
 ### 배포 후
@@ -296,4 +443,25 @@ EOF
 
 ---
 
-*최종 업데이트: 2025-12-15*
+## Command Aliases (Optional)
+
+Add to `.bashrc` or `.zshrc`:
+
+```bash
+# Git aliases
+alias gs="git status"
+alias gp="git push origin master"
+alias gc="git commit -m"
+alias gac="git add . && git commit -m"
+
+# Vercel aliases
+alias vl="vercel ls"
+alias vp="vercel --prod"
+
+# Combined
+alias deploy="npm run build && git add . && git commit -m 'deploy' && git push"
+```
+
+---
+
+*최종 업데이트: 2025-12-17*

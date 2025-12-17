@@ -5,6 +5,119 @@
 
 ---
 
+## [2025-12-18 02:30] 세션 #20 - Reporter Dashboard UX Redesign by Claude
+
+### 주인님 의도
+- 기자가 대시보드에서 한눈에 모든 정보를 볼 수 있어야 함
+- 여러 단계 거치지 않고 자유롭게 기사 수정/삭제/편집 가능해야 함
+- 기능 추가 없이 UX 개선에 집중
+
+### 수행 작업
+
+1. **기존 대시보드 분석**
+   - Card-based layout: 환영 메시지 → 통계 카드 → 빠른 액션 → Activity Feed
+   - 문제점: 정보 밀도 낮음, 기사 목록 보려면 페이지 이동 필요
+
+2. **신규 대시보드 설계 및 구현** (`src/app/reporter/page.tsx`)
+   - Compact Header: 이름/직위 + 인라인 통계 + "새 기사" 버튼
+   - Tab UI: "내 지역 기사" | "보도자료" 탭 전환
+   - Article List: 직접 목록 표시 + 인라인 액션 버튼
+     - 승인/반려 (대기 기사만)
+     - 보기/수정/삭제
+   - Press Releases List: 보도자료 목록 + "기사 작성" 버튼
+   - Search & Filter: 탭 헤더에 통합
+   - Pagination: 양쪽 탭에 페이지네이션
+
+3. **TypeScript 체크 및 배포**
+   - `npx tsc --noEmit` 통과
+   - Git commit 및 push 완료
+
+### 사용 도구
+- Read: ReporterLayoutClient.tsx, articles/page.tsx
+- Edit: src/app/reporter/page.tsx (642줄 추가, 233줄 삭제)
+- Bash: TypeScript 체크, git commit/push
+
+### 결과
+- ✅ 대시보드 UX 완전 개편 완료
+- ✅ 한 페이지에서 기사 목록 + 인라인 액션 가능
+- ✅ Tab 기반 Articles/Press Releases 전환
+- ✅ TypeScript 체크 통과
+- ✅ Vercel 배포 완료
+
+### 주요 수정 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/reporter/page.tsx` | 전면 재작성 - Article-centric dashboard |
+
+### 배포
+- git commit: `4e54e01` "feat: Redesign reporter dashboard with article-centric UX"
+- Vercel 자동 배포 트리거됨
+
+---
+
+## [2025-12-17 23:50] 세션 #19 - GNB Menu Structure Documentation by Claude
+
+### 주인님 의도
+- Header 서브메뉴(GNB) 구조를 문서화하여 다른 AI가 이해할 수 있도록
+- 데이터 흐름: DB → API → Header 컴포넌트 분석
+- 메뉴 추가/수정 방법 문서화
+
+### 수행 작업
+
+1. **관련 파일 분석**
+   - `src/components/Header.tsx` 읽기 (547줄) - 메뉴 렌더링 로직 파악
+   - `src/app/api/categories/route.ts` 읽기 (135줄) - API 구조 분석
+   - `src/db/cms_schema_v2.sql` 읽기 - categories 테이블 스키마 확인
+
+2. **info/frontend.md 문서화**
+   - Section 11: "GNB Menu Structure" 추가
+   - 총 334줄 분량 추가 (전체 670줄으로 확장)
+   - 주요 내용:
+     - Data Flow Architecture 다이어그램
+     - DB categories 테이블 구조 (11개 주요 컬럼)
+     - API 엔드포인트 사용법 (`/api/categories?gnb=true`)
+     - Header 컴포넌트 메뉴 로딩 방법
+     - URL 생성 로직 (`getCategoryUrl()`)
+     - Active State 감지 로직 (`isActiveCategory()`)
+     - 메뉴 추가/수정 방법 (SQL + 미래 Admin Panel)
+     - Special Cases (Custom URL, Disabled Mega Menu, Static Items)
+     - Troubleshooting (4가지 Issue)
+     - Performance Optimization
+
+3. **세션 로그 업데이트**
+   - session_log.md에 세션 #19 기록
+
+### 사용 도구
+- Read: Header.tsx, categories API, database.md, frontend.md
+- Grep: categories 관련 SQL 파일 검색
+- Edit: frontend.md 대규모 업데이트
+
+### 결과
+- ✅ GNB Menu Structure 문서화 완료
+- ✅ info/frontend.md Section 11 추가 (334줄)
+- ✅ 세션 로그 업데이트 완료
+
+### 주요 수정 파일
+```
+info/frontend.md (수정, 337 → 670줄)
+.claude/context/session_log.md (이 파일)
+```
+
+### 문서 주요 내용
+- 데이터 흐름: categories 테이블 → API → Header 컴포넌트
+- 계층 구조: depth 0 (top-level) → depth 1 (sub-categories)
+- API 쿼리: `?gnb=true`, `?active=true`, `?flat=true`
+- 메가 메뉴: 4-column grid 드롭다운
+- 특수 케이스: Custom URL, 외부 링크, 정적 메뉴
+- 문제 해결: 로딩 실패, URL 오류, 순서 조정
+
+### 교훈
+- 복잡한 시스템은 데이터 흐름부터 문서화 (DB → API → UI)
+- 코드와 SQL 스키마를 함께 분석해야 완전한 이해 가능
+- Troubleshooting 섹션은 실제 에러 상황을 미리 대비
+
+---
+
 ## [2025-12-17 23:30] 세션 #18 - 어드민 다크모드 전체 수정 by Claude
 
 ### 주인님 의도
