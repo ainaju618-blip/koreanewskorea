@@ -44,6 +44,7 @@ interface Article {
     thumbnail_url: string | null;
     canEdit: boolean;
     rejection_reason?: string | null;
+    original_url?: string | null;
 }
 
 interface Reporter {
@@ -73,7 +74,8 @@ interface ReporterInfo {
 
 export default function ReporterArticlesPage() {
     const searchParams = useSearchParams();
-    const initialFilter = searchParams.get("filter") || "all";
+    // Default to "my-region" (managed regions) instead of "all"
+    const initialFilter = searchParams.get("filter") || "my-region";
 
     const [articles, setArticles] = useState<Article[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -511,8 +513,8 @@ export default function ReporterArticlesPage() {
                         <Filter className="w-4 h-4 text-slate-400" />
                         <div className="flex gap-1.5 flex-wrap">
                             {[
+                                { value: "my-region", label: "관리지역" },
                                 { value: "all", label: "전체" },
-                                { value: "my-region", label: `${reporter?.regionGroup || reporter?.region || "내 지역"}` },
                                 { value: "my-articles", label: "내 기사" },
                             ].map((opt) => (
                                 <button
@@ -982,25 +984,49 @@ function ArticleRow({
                         </span>
                     )}
                 </div>
-                <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition">
-                    {article.title}
-                </h3>
+                {/* Title - clickable: published -> homepage, unpublished -> original URL */}
+                {article.status === "published" ? (
+                    <Link
+                        href={`/news/${article.id}`}
+                        target="_blank"
+                        className="block font-semibold text-slate-900 truncate hover:text-blue-600 transition cursor-pointer"
+                        title="게시된 기사 보기"
+                    >
+                        {article.title}
+                    </Link>
+                ) : article.original_url ? (
+                    <a
+                        href={article.original_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block font-semibold text-slate-900 truncate hover:text-blue-600 transition cursor-pointer"
+                        title="원본 기사 보기"
+                    >
+                        {article.title}
+                    </a>
+                ) : (
+                    <h3 className="font-semibold text-slate-900 truncate">
+                        {article.title}
+                    </h3>
+                )}
                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                    <span className="flex items-center gap-1" title="Collected date">
-                        <Calendar className="w-3 h-3" />
+                    <span className="flex items-center gap-1">
+                        <span className="text-slate-400 font-medium">원본기사일:</span>
+                        {new Date(article.published_at).toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                        })}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-400 font-medium">수집일:</span>
                         {new Date(article.created_at).toLocaleDateString("ko-KR", {
                             month: "short",
                             day: "numeric",
                             hour: "2-digit",
                             minute: "2-digit"
-                        })}
-                    </span>
-                    <span className="text-slate-300">|</span>
-                    <span title="Published date">
-                        {new Date(article.published_at).toLocaleDateString("ko-KR", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric"
                         })}
                     </span>
                 </div>

@@ -959,12 +959,35 @@ function AdminNewsListPage() {
                                 <td className="py-1 px-3">
                                     <StatusBadge type="article" status={article.status} />
                                 </td>
-                                <td className="py-1 px-3">
+                                <td className="py-1 px-3" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-2">
                                         {article.is_focus && (
                                             <span className="px-1.5 py-0.5 bg-orange-900/40 text-orange-300 text-[10px] font-bold rounded border border-orange-700/50">Focus</span>
                                         )}
-                                        <p className="text-sm font-medium text-[#e6edf3] line-clamp-1">{article.title}</p>
+                                        {/* Title clickable: published -> homepage, unpublished -> original source */}
+                                        {article.status === 'published' ? (
+                                            <a
+                                                href={`/news/${article.id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm font-medium text-[#e6edf3] line-clamp-1 hover:text-blue-400 transition cursor-pointer"
+                                                title="게시된 기사 보기"
+                                            >
+                                                {article.title}
+                                            </a>
+                                        ) : article.original_link ? (
+                                            <a
+                                                href={article.original_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm font-medium text-[#e6edf3] line-clamp-1 hover:text-blue-400 transition cursor-pointer"
+                                                title="원본 기사 보기"
+                                            >
+                                                {article.title}
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm font-medium text-[#e6edf3] line-clamp-1">{article.title}</p>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="py-1 px-3">

@@ -78,9 +78,32 @@ export default function MyArticlesPage() {
                                         <span className="text-xs text-slate-300">|</span>
                                         <span className="text-xs text-slate-500 font-medium">{article.category || '미지정'}</span>
                                     </div>
-                                    <h3 className="text-base font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                                        {article.title}
-                                    </h3>
+                                    {/* Title clickable: published -> homepage, unpublished -> original source */}
+                                    {article.status === 'published' ? (
+                                        <a
+                                            href={`/news/${article.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-base font-bold text-slate-800 truncate hover:text-blue-600 transition-colors block"
+                                            title="게시된 기사 보기"
+                                        >
+                                            {article.title}
+                                        </a>
+                                    ) : article.original_url ? (
+                                        <a
+                                            href={article.original_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-base font-bold text-slate-800 truncate hover:text-blue-600 transition-colors block"
+                                            title="원본 기사 보기"
+                                        >
+                                            {article.title}
+                                        </a>
+                                    ) : (
+                                        <h3 className="text-base font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                                            {article.title}
+                                        </h3>
+                                    )}
                                 </div>
                                 <div>
                                     <Link href={`/admin/news/edit/${article.id}`} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded text-xs font-bold hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all">

@@ -55,9 +55,17 @@ export async function GET(req: NextRequest) {
         // 접근 가능한 지역 목록 조회
         const accessibleRegions = getAccessibleRegions(reporter.position, reporter.region);
 
+        // Status filter
+        const statusFilter = searchParams.get('status');
+
         let query = supabaseAdmin
             .from('posts')
-            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at', { count: 'exact' });
+            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at, original_url', { count: 'exact' });
+
+        // Apply status filter if provided
+        if (statusFilter && statusFilter !== 'all') {
+            query = query.eq('status', statusFilter);
+        }
 
         // 필터 적용
         if (filter === 'my-region') {
