@@ -206,24 +206,67 @@ export async function executeScraper(
             let status = isKilled ? 'stopped' : (isSuccess ? 'success' : 'failed');
             let articlesCount = 0;
 
+            // Parse detailed stats JSON if available
+            let detailedStats: any = null;
+            let skippedCount = 0;
             try {
-                // "📊 결과: 신규 5, 중복 0, 실패 0" 패턴 파싱
-                const match = stdoutData.match(/신규\s+(\d+),\s+중복/);
-                if (match) {
-                    articlesCount = parseInt(match[1], 10);
+                // Look for detailed stats JSON between markers
+                const statsMatch = stdoutData.match(/===DETAILED_STATS_START===\s*([\s\S]*?)\s*===DETAILED_STATS_END===/);
+                if (statsMatch && statsMatch[1]) {
+                    detailedStats = JSON.parse(statsMatch[1].trim());
+                    articlesCount = detailedStats.summary?.total_created || 0;
+                    skippedCount = detailedStats.summary?.total_skipped || 0;
                 }
-            } catch (e) { }
+            } catch (e) {
+                console.log(`[${region}] Could not parse detailed stats, falling back to regex`);
+            }
 
+            // Fallback: legacy regex pattern
+            if (!detailedStats) {
+                try {
+                    const match = stdoutData.match(/신규\s+(\d+),\s+중복\s*(\d*)/);
+                    if (match) {
+                        articlesCount = parseInt(match[1], 10);
+                        skippedCount = match[2] ? parseInt(match[2], 10) : 0;
+                    }
+                } catch (e) { }
+            }
+
+            // Build final message with more detail
             let finalMessage: string;
             if (isKilled) {
                 finalMessage = '사용자에 의해 중지됨';
             } else if (isSuccess) {
-                finalMessage = articlesCount > 0 ? `${articlesCount}건 수집 완료` : '수집된 기사 없음';
+                if (articlesCount > 0) {
+                    finalMessage = skippedCount > 0
+                        ? `${articlesCount}건 수집 완료 (중복 ${skippedCount}건 제외)`
+                        : `${articlesCount}건 수집 완료`;
+                } else if (skippedCount > 0) {
+                    finalMessage = `중복 ${skippedCount}건 (신규 기사 없음)`;
+                } else {
+                    finalMessage = '수집된 기사 없음';
+                }
             } else {
                 finalMessage = `프로세스 에러 (Code ${code})`;
             }
 
             const fullLog = stdoutData + (stderrData ? `\n[STDERR]\n${stderrData}` : '');
+
+            // Build metadata with detailed stats
+            const metadata: any = {
+                full_log: fullLog.slice(0, 5000),
+                skipped_count: skippedCount
+            };
+
+            // Add detailed breakdown if available
+            if (detailedStats) {
+                metadata.detailed_stats = {
+                    summary: detailedStats.summary,
+                    date_breakdown: detailedStats.date_breakdown,
+                    duration_seconds: detailedStats.duration_seconds,
+                    errors: detailedStats.errors
+                };
+            }
 
             // Update log record with completion status
             const { error: updateError } = await supabaseAdmin
@@ -233,7 +276,7 @@ export async function executeScraper(
                     ended_at: new Date().toISOString(),
                     articles_count: articlesCount,
                     log_message: finalMessage,
-                    metadata: { full_log: fullLog.slice(0, 5000) }
+                    metadata: metadata
                 })
                 .eq('id', logId);
 

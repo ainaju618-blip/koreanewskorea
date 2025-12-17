@@ -20,6 +20,7 @@ from utils.api_client import send_article_to_server, log_to_server, ensure_serve
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.scraper_utils import clean_article_content, extract_subtitle
 from utils.category_detector import detect_category
+from utils.detailed_stats import DetailedStats
 
 # ============================================
 # 상수 정의
@@ -291,13 +292,17 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
 
             time.sleep(0.5)
 
-        print(f"[OK] 총 {len(collected_links)}개의 수집 대상 링크 확보 완료.")
+        print(f"[OK] Total {len(collected_links)} target links collected.")
 
         # ============================================
-        # Phase 2: 상세 페이지 방문
+        # Phase 2: Visit detail pages
         # ============================================
+        # Initialize detailed stats tracker
+        stats = DetailedStats(REGION_CODE, REGION_NAME)
+
         success_count = 0
         skip_count = 0
+        fail_count = 0
         processed_count = 0
 
         target_links = collected_links[:max_articles]
@@ -307,20 +312,20 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             title = item['title']
             list_date = item['date']
 
-            print(f"   [{processed_count+1}] 분석 중: {title[:40]}...")
+            print(f"   [{processed_count+1}] Processing: {title[:40]}...")
 
             content, thumbnail_url, pub_date, department = fetch_detail(page, url)
 
-            # 날짜 결정 (상세 페이지 > 목록 페이지)
+            # Determine date (detail page > list page)
             final_date = pub_date if pub_date else list_date
 
-            # 부제목 추출
+            # Extract subtitle
             subtitle, content = extract_subtitle(content, title)
 
-            # 카테고리 자동 분류
+            # Auto-categorize
             cat_code, cat_name = detect_category(title, content)
 
-            # 데이터 객체 생성
+            # Create data object
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
@@ -335,7 +340,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             }
 
             # ============================================
-            # Phase 3: 검증 및 DB 적재
+            # Phase 3: Validate and save to DB
             # ============================================
             is_valid, msg = validate_article(article_data)
             print(f"      {msg}")
@@ -343,22 +348,32 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             if is_valid:
                 result = send_article_to_server(article_data)
                 if result and result.get('status') == 'created':
-                    print(f"      [OK] DB 저장 완료 ID: {result.get('id', 'Unknown')}")
+                    print(f"      [OK] Saved to DB ID: {result.get('id', 'Unknown')}")
                     success_count += 1
-                    log_to_server(REGION_CODE, '실행중', f"성공: {title[:15]}...", 'success')
+                    stats.add_article(final_date, 'created', title)
+                    log_to_server(REGION_CODE, '실행중', f"Created: {title[:15]}...", 'success')
                 elif result and result.get('status') == 'skipped':
-                    print(f"      [SKIP] 이미 존재하는 기사")
+                    print(f"      [SKIP] Article already exists in DB")
                     skip_count += 1
+                    stats.add_article(final_date, 'skipped', title, 'Duplicate in DB')
                 else:
-                    print(f"      [WARN] DB 저장 실패: {result}")
+                    print(f"      [WARN] DB save failed: {result}")
+                    fail_count += 1
+                    stats.add_article(final_date, 'failed', title, 'DB save failed')
+            else:
+                fail_count += 1
+                stats.add_article(final_date, 'failed', title, msg)
 
             processed_count += 1
-            time.sleep(1)  # 부하 조절
+            time.sleep(1)  # Rate limiting
 
         browser.close()
 
-    final_msg = f"작업 종료: 총 {processed_count}건 처리 / {success_count}건 저장 / {skip_count}건 스킵"
-    print(f"[완료] {final_msg}")
+    # Output detailed stats (parsed by bot-service.ts)
+    stats.output()
+
+    final_msg = f"Completed: {processed_count} processed / {success_count} created / {skip_count} skipped"
+    print(f"[DONE] {final_msg}")
     log_to_server(REGION_CODE, '성공', final_msg, 'success')
     return []
 

@@ -5,6 +5,58 @@
 
 ---
 
+## [2025-12-18 15:30] 세션 #24 - Detailed Scraper Logging Feature by Claude
+
+### 주인님 의도
+- 스크래퍼 수동 실행 UI에 상세 로그 기능 추가
+- 날짜별 기사 수집 결과 표시 (12일은 기사 없음, 15일은 5건 등)
+- 중복 기사(DB 존재) 제외 건수 명확히 표시
+
+### 수행 작업
+
+1. **Python DetailedStats 유틸리티 생성** (`scrapers/utils/detailed_stats.py`)
+   - 날짜별 기사 통계 추적 클래스
+   - JSON 마커로 감싼 출력 형식 (bot-service.ts 파싱용)
+   - created/skipped/failed 상태별 집계
+
+2. **bot-service.ts 파싱 로직 업데이트**
+   - `===DETAILED_STATS_START===` / `===DETAILED_STATS_END===` 마커로 JSON 파싱
+   - metadata.detailed_stats에 날짜별 breakdown 저장
+   - 레거시 regex 폴백 유지 (다른 스크래퍼 호환)
+
+3. **jeonnam_edu_scraper.py 업데이트** (샘플 스크래퍼)
+   - DetailedStats 클래스 통합
+   - 기사별 결과 추적 (created, skipped, failed)
+   - stats.output() 호출로 JSON 출력
+
+4. **DetailedResultPanel 컴포넌트 생성** (`src/app/admin/bot/run/components/`)
+   - 지역별 접기/펼치기 UI
+   - 날짜별 기사 수 표시 (+3, 중복 2건 등)
+   - 기사 제목 목록 (상태 아이콘 포함)
+   - 전체 요약 (신규, 중복, 실패, 성공 지역)
+
+5. **ScraperPanel 통합**
+   - "상세 로그" 토글 버튼 추가
+   - 결과 요약에 중복 건수 표시
+   - DetailedResultPanel 조건부 렌더링
+
+### 사용 도구
+- Python 문법 검증: py_compile
+- TypeScript 타입 체크: tsc --noEmit
+- 파일 생성/수정: Write, Edit
+
+### 결과
+- ✅ Python DetailedStats 모듈 완성
+- ✅ TypeScript 파싱 로직 완성
+- ✅ UI 컴포넌트 완성
+- ✅ 빌드 검증 통과
+
+### 향후 작업 (선택)
+- 나머지 25개 스크래퍼에 DetailedStats 적용
+- 현재는 jeonnam_edu만 적용됨 (레퍼런스 구현)
+
+---
+
 ## [2025-12-18 10:00] 세션 #23 - Documentation Enhancement by Claude
 
 ### 주인님 의도

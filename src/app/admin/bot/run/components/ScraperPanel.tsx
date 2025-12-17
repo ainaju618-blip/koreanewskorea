@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw } from "lucide-react";
+import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
+import { DetailedResultPanel } from "./DetailedResultPanel";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
 import { useConfirm } from '@/components/ui/ConfirmModal';
 
@@ -13,6 +14,33 @@ interface JobResult {
     log_message?: string;
     articles_count?: number;
     created_at?: string;
+    metadata?: {
+        detailed_stats?: {
+            summary: {
+                total_processed: number;
+                total_created: number;
+                total_skipped: number;
+                total_failed: number;
+                message: string;
+            };
+            date_breakdown: Array<{
+                date: string;
+                created: number;
+                skipped: number;
+                failed: number;
+                note?: string;
+                articles?: Array<{
+                    status: 'created' | 'skipped' | 'failed';
+                    title: string;
+                    reason?: string;
+                }>;
+            }>;
+            duration_seconds?: number;
+            errors?: string[];
+        };
+        skipped_count?: number;
+        full_log?: string;
+    };
 }
 
 interface RegionStat {
@@ -310,18 +338,32 @@ export function ScraperPanel() {
         setSelectedRegions([]);
     };
 
+    // State for detailed result panel
+    const [showDetailedResults, setShowDetailedResults] = useState(false);
+
     const summary = useMemo(() => {
         if (jobResults.length === 0) return null;
         const total = jobResults.length;
         const success = jobResults.filter(j => j.status === 'success').length;
         const failed = jobResults.filter(j => j.status !== 'success').length;
         const totalArticles = jobResults.reduce((sum, j) => sum + (j.articles_count || 0), 0);
+
+        // Calculate skipped count from metadata
+        const totalSkipped = jobResults.reduce((sum, j) => {
+            const statsSkipped = j.metadata?.detailed_stats?.summary?.total_skipped || 0;
+            const metaSkipped = j.metadata?.skipped_count || 0;
+            return sum + (statsSkipped || metaSkipped);
+        }, 0);
+
         const failedRegions = jobResults
             .filter(j => j.status !== 'success')
             .map(j => getRegionLabel(j.region))
             .join(', ');
 
-        return { total, success, failed, totalArticles, failedRegions };
+        // Check if any job has detailed stats
+        const hasDetailedStats = jobResults.some(j => j.metadata?.detailed_stats);
+
+        return { total, success, failed, totalArticles, totalSkipped, failedRegions, hasDetailedStats };
     }, [jobResults]);
 
     const datePresets = [
@@ -452,28 +494,57 @@ export function ScraperPanel() {
 
             {/* Result Panel (Completed) */}
             {!isRunning && summary && (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                    <div className={`p-4 ${summary.failed === 0 ? 'bg-green-50 border-b border-green-100' : 'bg-red-50 border-b border-red-100'}`}>
-                        <h3 className={`font-bold flex items-center gap-2 ${summary.failed === 0 ? 'text-green-800' : 'text-red-800'}`}>
-                            {summary.failed === 0 ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
-                            {summary.failed === 0 ? "수집 작업 완료 성공!" : "수집 작업 완료 (일부 실패)"}
-                        </h3>
+                <div className="space-y-4">
+                    {/* Summary Card */}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+                        <div className={`p-4 ${summary.failed === 0 ? 'bg-green-50 border-b border-green-100' : 'bg-red-50 border-b border-red-100'}`}>
+                            <div className="flex items-center justify-between">
+                                <h3 className={`font-bold flex items-center gap-2 ${summary.failed === 0 ? 'text-green-800' : 'text-red-800'}`}>
+                                    {summary.failed === 0 ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                                    {summary.failed === 0 ? "수집 작업 완료!" : "수집 작업 완료 (일부 실패)"}
+                                </h3>
+                                <button
+                                    onClick={() => setShowDetailedResults(!showDetailedResults)}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    상세 로그
+                                    {showDetailedResults ? (
+                                        <ChevronUp className="w-4 h-4" />
+                                    ) : (
+                                        <ChevronDown className="w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 grid grid-cols-4 gap-4 text-center">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">신규 수집</p>
+                                <p className="text-2xl font-bold text-green-600">{summary.totalArticles}건</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">중복 제외</p>
+                                <p className="text-2xl font-bold text-yellow-600">{summary.totalSkipped}건</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">성공 지역</p>
+                                <p className="text-2xl font-bold text-blue-600">{summary.success} / {summary.total}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-1">실패 지역</p>
+                                <p className={`text-2xl font-bold ${summary.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>{summary.failed}</p>
+                                {summary.failed > 0 && <p className="text-xs text-red-500 mt-1 truncate">{summary.failedRegions}</p>}
+                            </div>
+                        </div>
                     </div>
-                    <div className="p-4 grid grid-cols-3 gap-4 text-center">
-                        <div>
-                            <p className="text-xs text-gray-500 mb-1">총 수집 기사</p>
-                            <p className="text-2xl font-bold text-gray-900">{summary.totalArticles}건</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500 mb-1">성공 지역</p>
-                            <p className="text-2xl font-bold text-green-600">{summary.success} / {summary.total}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500 mb-1">실패 지역</p>
-                            <p className={`text-2xl font-bold ${summary.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>{summary.failed}</p>
-                            {summary.failed > 0 && <p className="text-xs text-red-500 mt-1">{summary.failedRegions}</p>}
-                        </div>
-                    </div>
+
+                    {/* Detailed Results Panel (Expandable) */}
+                    {showDetailedResults && (
+                        <DetailedResultPanel
+                            jobResults={jobResults}
+                            onClose={() => setShowDetailedResults(false)}
+                        />
+                    )}
                 </div>
             )}
 
