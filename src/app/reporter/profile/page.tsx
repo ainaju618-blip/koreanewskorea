@@ -93,11 +93,51 @@ export default function ReporterProfilePage() {
         fileInputRef.current?.click();
     };
 
+    // Client-side image resize to avoid Vercel 4.5MB limit
+    const resizeImage = (file: File, maxSize: number = 1024): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const img = document.createElement("img");
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            img.onload = () => {
+                let { width, height } = img;
+
+                // Calculate new dimensions
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = (height / width) * maxSize;
+                        width = maxSize;
+                    } else {
+                        width = (width / height) * maxSize;
+                        height = maxSize;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx?.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error("Failed to create blob"));
+                    },
+                    "image/jpeg",
+                    0.85 // 85% quality
+                );
+            };
+
+            img.onerror = () => reject(new Error("Failed to load image"));
+            img.src = URL.createObjectURL(file);
+        });
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // 이미지 타입 체크만 (용량은 Cloudinary에서 자동 압축)
+        // Image type check
         if (!file.type.startsWith("image/")) {
             showError("이미지 파일만 업로드 가능합니다.");
             return;
@@ -105,11 +145,17 @@ export default function ReporterProfilePage() {
 
         setIsUploading(true);
         try {
+            // Resize image on client if too large (> 2MB)
+            let uploadFile: File | Blob = file;
+            if (file.size > 2 * 1024 * 1024) {
+                uploadFile = await resizeImage(file, 1024);
+            }
+
             const formDataUpload = new FormData();
-            formDataUpload.append("file", file);
+            formDataUpload.append("file", uploadFile, file.name);
             formDataUpload.append("folder", "reporters");
 
-            // Cloudinary API 사용 (자동 400x400 리사이즈 및 압축)
+            // Cloudinary API (auto 400x400 resize)
             const res = await fetch("/api/upload/image", {
                 method: "POST",
                 body: formDataUpload,

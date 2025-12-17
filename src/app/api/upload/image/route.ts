@@ -27,6 +27,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: '파일이 없습니다.' }, { status: 400 });
         }
 
+        // 파일 크기 체크 (Vercel 제한: 4.5MB)
+        // 이보다 큰 파일은 클라이언트에서 리사이즈 필요
+        if (file.size > 4.5 * 1024 * 1024) {
+            return NextResponse.json(
+                { error: '파일이 너무 큽니다. 4.5MB 이하로 줄여주세요.' },
+                { status: 413 }
+            );
+        }
+
         // 파일을 Base64로 변환
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
@@ -41,7 +50,7 @@ export async function POST(request: Request) {
         const result = await cloudinary.uploader.upload(base64, {
             folder: `koreanews/${folder}`,
             transformation: transformations,
-            format: 'webp',  // WebP로 자동 변환 (용량 50% 감소)
+            format: 'webp',
         });
 
         return NextResponse.json({
@@ -53,11 +62,9 @@ export async function POST(request: Request) {
             bytes: result.bytes,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Cloudinary Upload Error:', error);
-        return NextResponse.json(
-            { error: error.message || '업로드 실패' },
-            { status: 500 }
-        );
+        const message = error instanceof Error ? error.message : '업로드 실패';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
