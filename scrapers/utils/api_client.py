@@ -2,11 +2,14 @@
 API 클라이언트 공통 모듈
 - Next.js /api/bot/ingest 엔드포인트와 통신
 - 예외 처리 및 재시도 로직 포함
+- 개발 서버 자동 시작 기능 포함
 """
 
 import os
+import sys
 import time
 import logging
+import subprocess
 import requests
 from typing import Dict, Any, Optional, Callable
 from dotenv import load_dotenv
@@ -148,6 +151,130 @@ def check_server_health() -> bool:
         return resp.status_code < 500
     except:
         return False
+
+
+# Global variable to track dev server process
+_dev_server_process: Optional[subprocess.Popen] = None
+
+
+def ensure_server_running(max_wait: int = 30) -> bool:
+    """
+    Check if dev server is running; if not, start it automatically.
+
+    Args:
+        max_wait: Maximum seconds to wait for server to be ready (default: 30)
+
+    Returns:
+        True if server is running/started successfully, False otherwise
+
+    Usage:
+        from utils.api_client import ensure_server_running
+
+        if not ensure_server_running():
+            print("Failed to start server")
+            sys.exit(1)
+    """
+    global _dev_server_process
+
+    # Skip if using production URL (not localhost)
+    if 'localhost' not in API_URL and '127.0.0.1' not in API_URL:
+        print('[SERVER] Production URL detected, skipping server check')
+        return True
+
+    # Check if server is already running
+    if _is_server_accessible():
+        print('[SERVER] Dev server is already running')
+        return True
+
+    print('[SERVER] Dev server not running, starting...')
+
+    # Find project root (two levels up from utils/)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+    # Check if package.json exists
+    package_json = os.path.join(project_root, 'package.json')
+    if not os.path.exists(package_json):
+        print(f'[SERVER] ERROR: package.json not found at {project_root}')
+        return False
+
+    try:
+        # Start dev server in background
+        # Use shell=True on Windows for npm command
+        if sys.platform == 'win32':
+            _dev_server_process = subprocess.Popen(
+                'npm run dev',
+                cwd=project_root,
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+            )
+        else:
+            _dev_server_process = subprocess.Popen(
+                ['npm', 'run', 'dev'],
+                cwd=project_root,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True
+            )
+
+        print(f'[SERVER] Started dev server (PID: {_dev_server_process.pid})')
+
+        # Wait for server to be ready
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            if _is_server_accessible():
+                elapsed = int(time.time() - start_time)
+                print(f'[SERVER] Dev server ready ({elapsed}s)')
+                return True
+            time.sleep(1)
+            print('.', end='', flush=True)
+
+        print(f'\n[SERVER] ERROR: Server did not start within {max_wait}s')
+        return False
+
+    except Exception as e:
+        print(f'[SERVER] ERROR: Failed to start dev server: {str(e)}')
+        return False
+
+
+def _is_server_accessible() -> bool:
+    """
+    Internal function to check if server is accessible.
+    """
+    try:
+        # Try to connect to the API endpoint
+        resp = requests.get(API_URL, timeout=2)
+        # 405 Method Not Allowed is expected for POST-only endpoints
+        return resp.status_code in [200, 400, 401, 405]
+    except:
+        return False
+
+
+def stop_dev_server() -> None:
+    """
+    Stop the dev server if it was started by this module.
+    Call this at the end of scraping if you want to clean up.
+    """
+    global _dev_server_process
+
+    if _dev_server_process is not None:
+        try:
+            if sys.platform == 'win32':
+                # On Windows, use taskkill to terminate process tree
+                subprocess.run(
+                    f'taskkill /F /T /PID {_dev_server_process.pid}',
+                    shell=True,
+                    capture_output=True
+                )
+            else:
+                import signal
+                os.killpg(os.getpgid(_dev_server_process.pid), signal.SIGTERM)
+
+            print(f'[SERVER] Stopped dev server (PID: {_dev_server_process.pid})')
+            _dev_server_process = None
+        except Exception as e:
+            print(f'[SERVER] Warning: Could not stop dev server: {str(e)}')
 
 
 def retry_request(

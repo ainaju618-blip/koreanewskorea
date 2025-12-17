@@ -20,7 +20,7 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.text_cleaner import clean_article_content
 from utils.category_detector import detect_category
@@ -333,7 +333,17 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
 
 def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """기사 수집"""
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)
+    
+
+    # Ensure dev server is running before starting
+
+    if not ensure_server_running():
+
+        print("[ERROR] Dev server could not be started. Aborting.")
+
+        return []
+")
     if dry_run:
         print("   ⚠️ DRY-RUN 모드")
     

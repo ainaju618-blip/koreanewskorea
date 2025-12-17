@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle, detect_category
 from utils.cloudinary_uploader import download_and_upload_image
 
@@ -142,7 +142,17 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
 
 def collect_articles(days: int = 3, start_date: str = None, end_date: str = None) -> List[Dict]:
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)
+    
+
+    # Ensure dev server is running before starting
+
+    if not ensure_server_running():
+
+        print("[ERROR] Dev server could not be started. Aborting.")
+
+        return []
+")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v3.0 시작', 'info')
 
     collected_links = []

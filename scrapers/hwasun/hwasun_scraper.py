@@ -35,7 +35,7 @@ from playwright.sync_api import sync_playwright, Page
 # 3. 로컬 모듈
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_classifier import detect_category
@@ -292,10 +292,15 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         print(f"🏛️ {REGION_NAME} 화순포커스 수집 시작 (최대 {max_articles}개, {start_date} ~ {end_date})")
     else:
         print(f"🏛️ {REGION_NAME} 화순포커스 수집 시작 (최대 {max_articles}개, 날짜 필터 없음)")
-    
+
+    # Ensure dev server is running before starting
+    if not ensure_server_running():
+        print("[ERROR] Dev server could not be started. Aborting.")
+        return []
+
     if dry_run:
         print("   🧪 DRY-RUN 모드: 서버 전송 안함")
-    
+
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
     
     collected_count = 0

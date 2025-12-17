@@ -21,7 +21,7 @@ from playwright.sync_api import sync_playwright, Page
 
 # 로컬 모듈 경로 설정
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category
 )
@@ -256,6 +256,12 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
 
 def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None):
     print(f"🏛️ {REGION_NAME} 보도자료 수집 시작")
+
+    # Ensure dev server is running before starting
+    if not ensure_server_running():
+        print("[ERROR] Dev server could not be started. Aborting.")
+        return []
+
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     if not end_date:
