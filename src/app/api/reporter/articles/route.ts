@@ -57,11 +57,7 @@ export async function GET(req: NextRequest) {
 
         let query = supabaseAdmin
             .from('posts')
-            .select(`
-                id, title, source, category, published_at, created_at, status,
-                author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at,
-                author:reporters!posts_author_id_fkey(id, name)
-            `, { count: 'exact' });
+            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at', { count: 'exact' });
 
         // 필터 적용
         if (filter === 'my-region') {
@@ -104,19 +100,30 @@ export async function GET(req: NextRequest) {
             throw error;
         }
 
-        // 권한 정보 추가 및 author_name 변환
-        const articlesWithPermission = articles?.map(article => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const authorData = (article as any).author;
-            return {
-                ...article,
-                author_name: authorData?.name || null,
-                canEdit: canEditArticle(
-                    { id: reporter.id, position: reporter.position, region: reporter.region },
-                    article
-                ),
-            };
-        }) || [];
+        // Get author names for articles that have author_id
+        const authorIds = [...new Set(articles?.filter(a => a.author_id).map(a => a.author_id) || [])];
+        let authorMap: Record<string, string> = {};
+
+        if (authorIds.length > 0) {
+            const { data: authors } = await supabaseAdmin
+                .from('reporters')
+                .select('id, name')
+                .in('id', authorIds);
+
+            if (authors) {
+                authorMap = Object.fromEntries(authors.map(a => [a.id, a.name]));
+            }
+        }
+
+        // Add permission info and author_name
+        const articlesWithPermission = articles?.map(article => ({
+            ...article,
+            author_name: article.author_id ? authorMap[article.author_id] || null : null,
+            canEdit: canEditArticle(
+                { id: reporter.id, position: reporter.position, region: reporter.region },
+                article
+            ),
+        })) || [];
 
         // 지역 그룹 라벨
         const regionGroupLabel = getRegionGroupLabel(reporter.position, reporter.region);
