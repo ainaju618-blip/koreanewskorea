@@ -97,7 +97,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         });
     } catch (error: unknown) {
         console.error('[PATCH /api/posts] Catch Error:', error);
-        const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+        // Handle both Error instances and Supabase error objects
+        let message = 'Server error occurred';
+        if (error instanceof Error) {
+            message = error.message;
+        } else if (typeof error === 'object' && error !== null && 'message' in error) {
+            message = String((error as { message: unknown }).message);
+        }
         return NextResponse.json({ message }, { status: 500 });
     }
 }

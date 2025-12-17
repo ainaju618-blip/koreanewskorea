@@ -94,7 +94,8 @@ export default function ReporterProfilePage() {
     };
 
     // Client-side image resize to avoid Vercel 4.5MB limit
-    const resizeImage = (file: File, maxSize: number = 1024): Promise<Blob> => {
+    // Always resize profile images to 600px max for safety
+    const resizeImage = (file: File): Promise<Blob> => {
         return new Promise((resolve, reject) => {
             const img = document.createElement("img");
             const canvas = document.createElement("canvas");
@@ -102,16 +103,15 @@ export default function ReporterProfilePage() {
 
             img.onload = () => {
                 let { width, height } = img;
+                const maxSize = 600; // Small size for profile photos
 
-                // Calculate new dimensions
-                if (width > maxSize || height > maxSize) {
-                    if (width > height) {
-                        height = (height / width) * maxSize;
-                        width = maxSize;
-                    } else {
-                        width = (width / height) * maxSize;
-                        height = maxSize;
-                    }
+                // Always resize to maxSize
+                if (width > height) {
+                    height = (height / width) * maxSize;
+                    width = maxSize;
+                } else {
+                    width = (width / height) * maxSize;
+                    height = maxSize;
                 }
 
                 canvas.width = width;
@@ -124,7 +124,7 @@ export default function ReporterProfilePage() {
                         else reject(new Error("Failed to create blob"));
                     },
                     "image/jpeg",
-                    0.85 // 85% quality
+                    0.7 // 70% quality for smaller file
                 );
             };
 
@@ -145,14 +145,11 @@ export default function ReporterProfilePage() {
 
         setIsUploading(true);
         try {
-            // Resize image on client if too large (> 2MB)
-            let uploadFile: File | Blob = file;
-            if (file.size > 2 * 1024 * 1024) {
-                uploadFile = await resizeImage(file, 1024);
-            }
+            // Always resize profile images on client to avoid Vercel limit
+            const resizedBlob = await resizeImage(file);
 
             const formDataUpload = new FormData();
-            formDataUpload.append("file", uploadFile, file.name);
+            formDataUpload.append("file", resizedBlob, file.name);
             formDataUpload.append("folder", "reporters");
 
             // Cloudinary API (auto 400x400 resize)
