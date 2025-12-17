@@ -72,7 +72,19 @@ export async function POST(request: Request) {
 
     } catch (error: unknown) {
         console.error('[Upload API] Error:', error);
-        const message = error instanceof Error ? error.message : 'Upload failed';
-        return NextResponse.json({ error: message }, { status: 500 });
+
+        // Return detailed error for debugging
+        let errorDetail = 'Unknown error';
+        if (error instanceof Error) {
+            errorDetail = `${error.name}: ${error.message}`;
+        } else if (typeof error === 'object' && error !== null) {
+            errorDetail = JSON.stringify(error);
+        }
+
+        return NextResponse.json({
+            error: 'Upload failed',
+            detail: errorDetail,
+            cloudinaryConfigured: !!process.env.CLOUDINARY_CLOUD_NAME
+        }, { status: 500 });
     }
 }
