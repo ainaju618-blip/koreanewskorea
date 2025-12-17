@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
     Database, FolderGit2, BookOpen, MessageSquare, RefreshCw, ExternalLink, Trash2,
     ChevronRight, ChevronDown, Folder, FileText, Globe, Layers, Box, X,
-    Eye, Calendar, Tag, Plus, Save
+    Eye, Calendar, Tag, Plus, Save, Link, History, Clock
 } from 'lucide-react';
 
 interface Project {
@@ -22,10 +22,20 @@ interface Project {
     created_at: string;
 }
 
+interface UsageLog {
+    id: string;
+    knowledge_id: string;
+    used_at: string;
+    context: string;
+    outcome?: string;
+    project_code?: string;
+}
+
 interface KnowledgeEntry {
     id: string;
     scope: string;
     project_code?: string;
+    project_codes?: string[];
     topic: string;
     title: string;
     summary: string;
@@ -33,6 +43,7 @@ interface KnowledgeEntry {
     tags?: string[];
     source_type?: string;
     created_at: string;
+    usage_count?: number;
 }
 
 interface Stats {
@@ -51,15 +62,33 @@ interface NewKnowledge {
     content: string;
     tags: string;
     source_type: string;
+    project_codes: string[];
+}
+
+interface NewProject {
+    code: string;
+    name: string;
+    description: string;
+    git_email: string;
+    git_name: string;
+    git_repo: string;
+    tech_stack: string;
+}
+
+interface NewUsageLog {
+    context: string;
+    outcome: string;
+    project_code: string;
 }
 
 type TabType = 'dashboard' | 'projects' | 'knowledge';
+type ModalType = 'none' | 'addKnowledge' | 'addProject' | 'addUsage' | 'viewUsage';
 
 // Korean translations
 const SCOPE_LABELS: Record<string, string> = {
-    global: '전역 (Global)',
-    stack: '스택 (Stack)',
-    project: '프로젝트 (Project)'
+    global: '(Global)',
+    stack: '(Stack)',
+    project: '(Project)'
 };
 
 const SCOPE_ICONS: Record<string, React.ReactNode> = {
@@ -69,21 +98,22 @@ const SCOPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const TOPIC_LABELS: Record<string, string> = {
-    prompting: '프롬프팅',
-    development: '개발',
-    troubleshooting: '문제해결',
-    workflow: '워크플로우',
-    reference: '참조',
-    general: '일반'
+    prompting: 'Prompting',
+    development: 'Development',
+    troubleshooting: 'Troubleshooting',
+    workflow: 'Workflow',
+    reference: 'Reference',
+    general: 'General'
 };
 
 const SOURCE_TYPES = [
-    { value: 'manual', label: '직접 입력' },
+    { value: 'manual', label: 'Manual Input' },
     { value: 'youtube', label: 'YouTube' },
-    { value: 'document', label: '문서' },
-    { value: 'article', label: '기사/블로그' },
-    { value: 'code', label: '코드' },
-    { value: 'other', label: '기타' }
+    { value: 'document', label: 'Document' },
+    { value: 'article', label: 'Article/Blog' },
+    { value: 'code', label: 'Code' },
+    { value: 'session', label: 'Session Log' },
+    { value: 'other', label: 'Other' }
 ];
 
 export default function ClaudeHubPage() {
@@ -93,16 +123,17 @@ export default function ClaudeHubPage() {
     const [knowledge, setKnowledge] = useState<KnowledgeEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTopic, setSelectedTopic] = useState<string>('');
 
     // For hierarchical view
     const [expandedScopes, setExpandedScopes] = useState<Set<string>>(new Set(['global', 'stack', 'project']));
     const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
     const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(null);
 
-    // For add knowledge modal
-    const [showAddModal, setShowAddModal] = useState(false);
+    // Modals
+    const [activeModal, setActiveModal] = useState<ModalType>('none');
     const [saving, setSaving] = useState(false);
+
+    // New Knowledge form
     const [newKnowledge, setNewKnowledge] = useState<NewKnowledge>({
         title: '',
         scope: 'global',
@@ -110,11 +141,32 @@ export default function ClaudeHubPage() {
         summary: '',
         content: '',
         tags: '',
-        source_type: 'manual'
+        source_type: 'manual',
+        project_codes: []
+    });
+
+    // New Project form
+    const [newProject, setNewProject] = useState<NewProject>({
+        code: '',
+        name: '',
+        description: '',
+        git_email: '',
+        git_name: '',
+        git_repo: '',
+        tech_stack: ''
+    });
+
+    // Usage logs
+    const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
+    const [newUsageLog, setNewUsageLog] = useState<NewUsageLog>({
+        context: '',
+        outcome: '',
+        project_code: ''
     });
 
     useEffect(() => {
         fetchStats();
+        fetchProjects();
     }, []);
 
     useEffect(() => {
@@ -123,7 +175,7 @@ export default function ClaudeHubPage() {
         } else if (activeTab === 'knowledge') {
             fetchKnowledge();
         }
-    }, [activeTab, selectedTopic]);
+    }, [activeTab]);
 
     const fetchStats = async () => {
         try {
@@ -140,7 +192,6 @@ export default function ClaudeHubPage() {
     };
 
     const fetchProjects = async () => {
-        setLoading(true);
         try {
             const res = await fetch('/api/claude-hub/projects');
             if (res.ok) {
@@ -149,8 +200,6 @@ export default function ClaudeHubPage() {
             }
         } catch (error) {
             console.error('Failed to fetch projects:', error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -158,9 +207,6 @@ export default function ClaudeHubPage() {
         setLoading(true);
         try {
             let url = '/api/claude-hub/knowledge?limit=100';
-            if (selectedTopic) {
-                url += `&topic=${selectedTopic}`;
-            }
             if (searchQuery) {
                 url += `&search=${encodeURIComponent(searchQuery)}`;
             }
@@ -176,6 +222,18 @@ export default function ClaudeHubPage() {
         }
     };
 
+    const fetchUsageLogs = async (knowledgeId: string) => {
+        try {
+            const res = await fetch(`/api/claude-hub/knowledge/${knowledgeId}/usage`);
+            if (res.ok) {
+                const data = await res.json();
+                setUsageLogs(data.logs || []);
+            }
+        } catch {
+            setUsageLogs([]);
+        }
+    };
+
     const handleSearch = () => {
         if (activeTab === 'knowledge') {
             fetchKnowledge();
@@ -183,7 +241,7 @@ export default function ClaudeHubPage() {
     };
 
     const deleteKnowledge = async (id: string) => {
-        if (!confirm('이 지식 항목을 삭제하시겠습니까?')) return;
+        if (!confirm('Delete this knowledge entry?')) return;
         try {
             const res = await fetch(`/api/claude-hub/knowledge/${id}`, { method: 'DELETE' });
             if (res.ok) {
@@ -198,9 +256,22 @@ export default function ClaudeHubPage() {
         }
     };
 
+    const deleteProject = async (id: string) => {
+        if (!confirm('Delete this project?')) return;
+        try {
+            const res = await fetch(`/api/claude-hub/projects/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchProjects();
+                fetchStats();
+            }
+        } catch (error) {
+            console.error('Failed to delete:', error);
+        }
+    };
+
     const handleAddKnowledge = async () => {
         if (!newKnowledge.title.trim() || !newKnowledge.summary.trim()) {
-            alert('제목과 요약은 필수입니다.');
+            alert('Title and summary are required.');
             return;
         }
 
@@ -208,7 +279,8 @@ export default function ClaudeHubPage() {
         try {
             const payload = {
                 ...newKnowledge,
-                tags: newKnowledge.tags.split(',').map(t => t.trim()).filter(t => t)
+                tags: newKnowledge.tags.split(',').map(t => t.trim()).filter(t => t),
+                project_codes: newKnowledge.project_codes
             };
 
             const res = await fetch('/api/claude-hub/knowledge', {
@@ -218,7 +290,7 @@ export default function ClaudeHubPage() {
             });
 
             if (res.ok) {
-                setShowAddModal(false);
+                setActiveModal('none');
                 setNewKnowledge({
                     title: '',
                     scope: 'global',
@@ -226,17 +298,91 @@ export default function ClaudeHubPage() {
                     summary: '',
                     content: '',
                     tags: '',
-                    source_type: 'manual'
+                    source_type: 'manual',
+                    project_codes: []
                 });
                 fetchKnowledge();
                 fetchStats();
             } else {
                 const error = await res.json();
-                alert(`저장 실패: ${error.error || '알 수 없는 오류'}`);
+                alert(`Save failed: ${error.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Failed to save:', error);
-            alert('저장 중 오류가 발생했습니다.');
+            alert('Error occurred while saving.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleAddProject = async () => {
+        if (!newProject.code.trim() || !newProject.name.trim() || !newProject.git_email.trim()) {
+            alert('Code, name, and git email are required.');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const payload = {
+                ...newProject,
+                tech_stack: newProject.tech_stack.split(',').map(t => t.trim()).filter(t => t)
+            };
+
+            const res = await fetch('/api/claude-hub/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                setActiveModal('none');
+                setNewProject({
+                    code: '',
+                    name: '',
+                    description: '',
+                    git_email: '',
+                    git_name: '',
+                    git_repo: '',
+                    tech_stack: ''
+                });
+                fetchProjects();
+                fetchStats();
+            } else {
+                const error = await res.json();
+                alert(`Save failed: ${error.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Failed to save:', error);
+            alert('Error occurred while saving.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleAddUsageLog = async () => {
+        if (!selectedEntry || !newUsageLog.context.trim()) {
+            alert('Please provide usage context.');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/claude-hub/knowledge/${selectedEntry.id}/usage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newUsageLog)
+            });
+
+            if (res.ok) {
+                setActiveModal('none');
+                setNewUsageLog({ context: '', outcome: '', project_code: '' });
+                fetchUsageLogs(selectedEntry.id);
+                fetchKnowledge();
+            } else {
+                alert('Failed to add usage log.');
+            }
+        } catch (error) {
+            console.error('Failed to save:', error);
         } finally {
             setSaving(false);
         }
@@ -260,6 +406,17 @@ export default function ClaudeHubPage() {
             newExpanded.add(key);
         }
         setExpandedTopics(newExpanded);
+    };
+
+    const toggleProjectCode = (code: string) => {
+        const codes = [...newKnowledge.project_codes];
+        const idx = codes.indexOf(code);
+        if (idx >= 0) {
+            codes.splice(idx, 1);
+        } else {
+            codes.push(code);
+        }
+        setNewKnowledge({ ...newKnowledge, project_codes: codes });
     };
 
     // Group knowledge by scope and topic
@@ -288,6 +445,13 @@ export default function ClaudeHubPage() {
         });
     };
 
+    const openUsageModal = () => {
+        if (selectedEntry) {
+            fetchUsageLogs(selectedEntry.id);
+            setActiveModal('viewUsage');
+        }
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto">
             {/* Header */}
@@ -298,24 +462,24 @@ export default function ClaudeHubPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-100">Claude Hub</h1>
-                        <p className="text-sm text-slate-400">AI 지식 관리 시스템</p>
+                        <p className="text-sm text-slate-400">AI Knowledge Management System</p>
                     </div>
                 </div>
                 <button
-                    onClick={() => { fetchStats(); if (activeTab === 'projects') fetchProjects(); else if (activeTab === 'knowledge') fetchKnowledge(); }}
+                    onClick={() => { fetchStats(); fetchProjects(); if (activeTab === 'knowledge') fetchKnowledge(); }}
                     className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    새로고침
+                    Refresh
                 </button>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-1 mb-6 bg-slate-800 p-1 rounded-lg w-fit">
                 {[
-                    { id: 'dashboard', label: '대시보드', icon: Database },
-                    { id: 'projects', label: '프로젝트', icon: FolderGit2 },
-                    { id: 'knowledge', label: '지식 관리', icon: BookOpen },
+                    { id: 'dashboard', label: 'Dashboard', icon: Database },
+                    { id: 'projects', label: 'Projects', icon: FolderGit2 },
+                    { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
                 ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -347,7 +511,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.projects}</p>
-                                    <p className="text-sm text-slate-400">프로젝트</p>
+                                    <p className="text-sm text-slate-400">Projects</p>
                                 </div>
                             </div>
                         </div>
@@ -358,7 +522,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.knowledge}</p>
-                                    <p className="text-sm text-slate-400">지식 항목</p>
+                                    <p className="text-sm text-slate-400">Knowledge Entries</p>
                                 </div>
                             </div>
                         </div>
@@ -369,7 +533,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.sessions}</p>
-                                    <p className="text-sm text-slate-400">세션 로그</p>
+                                    <p className="text-sm text-slate-400">Session Logs</p>
                                 </div>
                             </div>
                         </div>
@@ -378,7 +542,7 @@ export default function ClaudeHubPage() {
                     {/* Topic Distribution */}
                     {Object.keys(stats.topicCounts).length > 0 && (
                         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                            <h3 className="text-lg font-semibold text-slate-100 mb-4">주제별 지식 분포</h3>
+                            <h3 className="text-lg font-semibold text-slate-100 mb-4">Knowledge Distribution by Topic</h3>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(stats.topicCounts).map(([topic, count]) => (
                                     <span
@@ -394,7 +558,7 @@ export default function ClaudeHubPage() {
 
                     {/* Recent Knowledge */}
                     <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                        <h3 className="text-lg font-semibold text-slate-100 mb-4">최근 지식</h3>
+                        <h3 className="text-lg font-semibold text-slate-100 mb-4">Recent Knowledge</h3>
                         {stats.recentKnowledge.length > 0 ? (
                             <div className="space-y-3">
                                 {stats.recentKnowledge.map((entry) => (
@@ -414,7 +578,7 @@ export default function ClaudeHubPage() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-slate-500 text-center py-8">등록된 지식이 없습니다</p>
+                            <p className="text-slate-500 text-center py-8">No knowledge entries yet</p>
                         )}
                     </div>
                 </div>
@@ -423,8 +587,19 @@ export default function ClaudeHubPage() {
             {/* Projects Tab */}
             {activeTab === 'projects' && (
                 <div className="space-y-4">
+                    {/* Add Project Button */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setActiveModal('addProject')}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Project
+                        </button>
+                    </div>
+
                     {loading ? (
-                        <div className="text-center py-12 text-slate-400">불러오는 중...</div>
+                        <div className="text-center py-12 text-slate-400">Loading...</div>
                     ) : projects.length > 0 ? (
                         <div className="grid gap-4">
                             {projects.map((project) => (
@@ -437,10 +612,13 @@ export default function ClaudeHubPage() {
                                             <div className="flex items-center gap-3 mb-2">
                                                 <h3 className="text-lg font-semibold text-slate-100">{project.name}</h3>
                                                 <span className="px-2 py-0.5 bg-emerald-900/50 text-emerald-400 text-xs font-medium rounded-full">
-                                                    {project.status === 'active' ? '활성' : project.status}
+                                                    {project.status === 'active' ? 'Active' : project.status}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-slate-400 mb-3">{project.code}</p>
+                                            <p className="text-sm text-slate-500 mb-3 font-mono">{project.code}</p>
+                                            {project.description && (
+                                                <p className="text-sm text-slate-400 mb-3">{project.description}</p>
+                                            )}
                                             <div className="flex flex-wrap gap-4 text-sm text-slate-400">
                                                 <span>Git: {project.git_email}</span>
                                                 {project.git_repo && (
@@ -468,12 +646,28 @@ export default function ClaudeHubPage() {
                                                 </div>
                                             )}
                                         </div>
+                                        <button
+                                            onClick={() => deleteProject(project.code)}
+                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12 text-slate-400">프로젝트가 없습니다</div>
+                        <div className="text-center py-12">
+                            <p className="text-slate-400 mb-4">No projects registered yet</p>
+                            <button
+                                onClick={() => setActiveModal('addProject')}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add First Project
+                            </button>
+                        </div>
                     )}
                 </div>
             )}
@@ -491,21 +685,21 @@ export default function ClaudeHubPage() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    placeholder="지식 검색..."
+                                    placeholder="Search knowledge..."
                                     className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                                 <button
                                     onClick={handleSearch}
                                     className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
                                 >
-                                    검색
+                                    Search
                                 </button>
                                 <button
-                                    onClick={() => setShowAddModal(true)}
+                                    onClick={() => setActiveModal('addKnowledge')}
                                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    추가
+                                    Add
                                 </button>
                             </div>
                         </div>
@@ -513,20 +707,20 @@ export default function ClaudeHubPage() {
                         {/* Tree View */}
                         <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
                             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                                지식 계층 구조
+                                Knowledge Hierarchy
                             </h3>
 
                             {loading ? (
-                                <div className="text-center py-8 text-slate-400">불러오는 중...</div>
+                                <div className="text-center py-8 text-slate-400">Loading...</div>
                             ) : knowledge.length === 0 ? (
                                 <div className="text-center py-8 text-slate-400">
-                                    <p className="mb-4">등록된 지식이 없습니다</p>
+                                    <p className="mb-4">No knowledge entries yet</p>
                                     <button
-                                        onClick={() => setShowAddModal(true)}
+                                        onClick={() => setActiveModal('addKnowledge')}
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        첫 지식 추가하기
+                                        Add First Entry
                                     </button>
                                 </div>
                             ) : (
@@ -598,6 +792,11 @@ export default function ClaudeHubPage() {
                                                                                 >
                                                                                     <FileText className="w-3 h-3 flex-shrink-0" />
                                                                                     <span className="text-sm truncate">{entry.title}</span>
+                                                                                    {entry.usage_count && entry.usage_count > 0 && (
+                                                                                        <span className="ml-auto text-xs bg-blue-900/50 text-blue-400 px-1.5 py-0.5 rounded">
+                                                                                            {entry.usage_count}x
+                                                                                        </span>
+                                                                                    )}
                                                                                 </button>
                                                                             ))}
                                                                         </div>
@@ -634,16 +833,30 @@ export default function ClaudeHubPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
+                                            onClick={openUsageModal}
+                                            className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"
+                                            title="Usage History"
+                                        >
+                                            <History className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveModal('addUsage')}
+                                            className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                            title="Log Usage"
+                                        >
+                                            <Clock className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             onClick={() => deleteKnowledge(selectedEntry.id)}
                                             className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
-                                            title="삭제"
+                                            title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => setSelectedEntry(null)}
                                             className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
-                                            title="닫기"
+                                            title="Close"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
@@ -664,6 +877,23 @@ export default function ClaudeHubPage() {
                                             </span>
                                         )}
                                     </div>
+                                    {/* Linked Projects */}
+                                    {selectedEntry.project_codes && selectedEntry.project_codes.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                <Link className="w-3 h-3" />
+                                                Projects:
+                                            </span>
+                                            {selectedEntry.project_codes.map((code) => (
+                                                <span
+                                                    key={code}
+                                                    className="px-2 py-0.5 bg-purple-900/50 text-purple-400 text-xs rounded"
+                                                >
+                                                    {code}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                     {selectedEntry.tags && selectedEntry.tags.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 mt-2">
                                             {selectedEntry.tags.map((tag) => (
@@ -685,7 +915,7 @@ export default function ClaudeHubPage() {
                                         {/* Summary */}
                                         <div>
                                             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                                                요약
+                                                Summary
                                             </h3>
                                             <p className="text-slate-300 leading-relaxed">{selectedEntry.summary}</p>
                                         </div>
@@ -694,7 +924,7 @@ export default function ClaudeHubPage() {
                                         {selectedEntry.content && (
                                             <div>
                                                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                                                    상세 내용
+                                                    Full Content
                                                 </h3>
                                                 <div className="prose prose-invert prose-sm max-w-none">
                                                     <pre className="whitespace-pre-wrap text-slate-300 text-sm leading-relaxed bg-slate-900/50 p-4 rounded-lg overflow-x-auto">
@@ -710,8 +940,8 @@ export default function ClaudeHubPage() {
                             <div className="bg-slate-800 rounded-xl border border-slate-700 h-full flex items-center justify-center">
                                 <div className="text-center text-slate-500 p-8">
                                     <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p className="text-lg font-medium mb-2">지식 항목을 선택하세요</p>
-                                    <p className="text-sm">왼쪽 트리에서 항목을 클릭하면<br />상세 내용을 확인할 수 있습니다</p>
+                                    <p className="text-lg font-medium mb-2">Select a Knowledge Entry</p>
+                                    <p className="text-sm">Click an item in the tree<br />to view details</p>
                                 </div>
                             </div>
                         )}
@@ -720,14 +950,14 @@ export default function ClaudeHubPage() {
             )}
 
             {/* Add Knowledge Modal */}
-            {showAddModal && (
+            {activeModal === 'addKnowledge' && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
-                            <h2 className="text-xl font-bold text-slate-100">새 지식 추가</h2>
+                            <h2 className="text-xl font-bold text-slate-100">Add New Knowledge</h2>
                             <button
-                                onClick={() => setShowAddModal(false)}
+                                onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -739,13 +969,13 @@ export default function ClaudeHubPage() {
                             {/* Title */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    제목 <span className="text-red-400">*</span>
+                                    Title <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={newKnowledge.title}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, title: e.target.value })}
-                                    placeholder="지식 제목을 입력하세요"
+                                    placeholder="Enter knowledge title"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
@@ -753,7 +983,7 @@ export default function ClaudeHubPage() {
                             {/* Scope & Topic */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">범위</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Scope</label>
                                     <select
                                         value={newKnowledge.scope}
                                         onChange={(e) => setNewKnowledge({ ...newKnowledge, scope: e.target.value })}
@@ -765,7 +995,7 @@ export default function ClaudeHubPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">주제</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Topic</label>
                                     <select
                                         value={newKnowledge.topic}
                                         onChange={(e) => setNewKnowledge({ ...newKnowledge, topic: e.target.value })}
@@ -780,7 +1010,7 @@ export default function ClaudeHubPage() {
 
                             {/* Source Type */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">원본 타입</label>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">Source Type</label>
                                 <select
                                     value={newKnowledge.source_type}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, source_type: e.target.value })}
@@ -792,15 +1022,41 @@ export default function ClaudeHubPage() {
                                 </select>
                             </div>
 
+                            {/* Linked Projects */}
+                            {projects.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                                        <Link className="w-3 h-3 inline mr-1" />
+                                        Link to Projects
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {projects.map((proj) => (
+                                            <button
+                                                key={proj.code}
+                                                type="button"
+                                                onClick={() => toggleProjectCode(proj.code)}
+                                                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                                    newKnowledge.project_codes.includes(proj.code)
+                                                        ? 'bg-purple-600 text-white'
+                                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                                }`}
+                                            >
+                                                {proj.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Summary */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    요약 <span className="text-red-400">*</span>
+                                    Summary <span className="text-red-400">*</span>
                                 </label>
                                 <textarea
                                     value={newKnowledge.summary}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, summary: e.target.value })}
-                                    placeholder="핵심 내용을 요약해서 입력하세요"
+                                    placeholder="Enter core summary"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
@@ -809,12 +1065,12 @@ export default function ClaudeHubPage() {
                             {/* Content */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    상세 내용 (원본 텍스트)
+                                    Full Content (Optional)
                                 </label>
                                 <textarea
                                     value={newKnowledge.content}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, content: e.target.value })}
-                                    placeholder="원본 문서나 상세 내용을 입력하세요 (선택)"
+                                    placeholder="Enter original document or detailed content"
                                     rows={8}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
                                 />
@@ -823,7 +1079,7 @@ export default function ClaudeHubPage() {
                             {/* Tags */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    태그 (쉼표로 구분)
+                                    Tags (comma separated)
                                 </label>
                                 <input
                                     type="text"
@@ -838,10 +1094,10 @@ export default function ClaudeHubPage() {
                         {/* Modal Footer */}
                         <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 sticky bottom-0 bg-slate-800">
                             <button
-                                onClick={() => setShowAddModal(false)}
+                                onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                취소
+                                Cancel
                             </button>
                             <button
                                 onClick={handleAddKnowledge}
@@ -851,14 +1107,331 @@ export default function ClaudeHubPage() {
                                 {saving ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 animate-spin" />
-                                        저장 중...
+                                        Saving...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        저장
+                                        Save
                                     </>
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Project Modal */}
+            {activeModal === 'addProject' && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
+                            <h2 className="text-xl font-bold text-slate-100">Add New Project</h2>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            {/* Code */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Project Code <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.code}
+                                    onChange={(e) => setNewProject({ ...newProject, code: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                                    placeholder="koreanews"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Lowercase letters, numbers, hyphens only</p>
+                            </div>
+
+                            {/* Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Project Name <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.name}
+                                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                                    placeholder="Korea NEWS"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Description
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.description}
+                                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                                    placeholder="News automation platform"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Git Email */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Git Email <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={newProject.git_email}
+                                    onChange={(e) => setNewProject({ ...newProject, git_email: e.target.value })}
+                                    placeholder="user@example.com"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Git Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Git Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.git_name}
+                                    onChange={(e) => setNewProject({ ...newProject, git_name: e.target.value })}
+                                    placeholder="Username"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Git Repo */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    GitHub Repository
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.git_repo}
+                                    onChange={(e) => setNewProject({ ...newProject, git_repo: e.target.value })}
+                                    placeholder="owner/repo"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Tech Stack */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Tech Stack (comma separated)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newProject.tech_stack}
+                                    onChange={(e) => setNewProject({ ...newProject, tech_stack: e.target.value })}
+                                    placeholder="Next.js, TypeScript, Tailwind"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 sticky bottom-0 bg-slate-800">
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddProject}
+                                disabled={saving || !newProject.code.trim() || !newProject.name.trim() || !newProject.git_email.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Save
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Usage Log Modal */}
+            {activeModal === 'addUsage' && selectedEntry && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                            <h2 className="text-xl font-bold text-slate-100">Log Usage</h2>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-slate-400">
+                                Recording usage of: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
+                            </p>
+
+                            {/* Context */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Usage Context <span className="text-red-400">*</span>
+                                </label>
+                                <textarea
+                                    value={newUsageLog.context}
+                                    onChange={(e) => setNewUsageLog({ ...newUsageLog, context: e.target.value })}
+                                    placeholder="How did you use this knowledge?"
+                                    rows={3}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                />
+                            </div>
+
+                            {/* Outcome */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Outcome/Result
+                                </label>
+                                <textarea
+                                    value={newUsageLog.outcome}
+                                    onChange={(e) => setNewUsageLog({ ...newUsageLog, outcome: e.target.value })}
+                                    placeholder="What was the result?"
+                                    rows={2}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                />
+                            </div>
+
+                            {/* Related Project */}
+                            {projects.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                                        Related Project
+                                    </label>
+                                    <select
+                                        value={newUsageLog.project_code}
+                                        onChange={(e) => setNewUsageLog({ ...newUsageLog, project_code: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    >
+                                        <option value="">-- Select Project --</option>
+                                        {projects.map((proj) => (
+                                            <option key={proj.code} value={proj.code}>{proj.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700">
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddUsageLog}
+                                disabled={saving || !newUsageLog.context.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Log Usage
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Usage History Modal */}
+            {activeModal === 'viewUsage' && selectedEntry && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                            <h2 className="text-xl font-bold text-slate-100">Usage History</h2>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-4 overflow-y-auto flex-1">
+                            <p className="text-sm text-slate-400 mb-4">
+                                Usage history for: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
+                            </p>
+
+                            {usageLogs.length > 0 ? (
+                                <div className="space-y-3">
+                                    {usageLogs.map((log) => (
+                                        <div key={log.id} className="p-3 bg-slate-700/50 rounded-lg">
+                                            <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
+                                                <Clock className="w-3 h-3" />
+                                                {formatDate(log.used_at)}
+                                                {log.project_code && (
+                                                    <span className="px-2 py-0.5 bg-purple-900/50 text-purple-400 rounded">
+                                                        {log.project_code}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-slate-300">{log.context}</p>
+                                            {log.outcome && (
+                                                <p className="text-sm text-slate-400 mt-2 pt-2 border-t border-slate-600">
+                                                    Result: {log.outcome}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-slate-500">
+                                    <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p>No usage records yet</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-between gap-3 p-4 border-t border-slate-700">
+                            <button
+                                onClick={() => { setActiveModal('addUsage'); }}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Usage
+                            </button>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
