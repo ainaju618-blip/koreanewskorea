@@ -130,6 +130,12 @@ const MENU_ITEMS: MenuGroup[] = [
         ]
     },
     {
+        category: "개발 도구",
+        items: [
+            { label: "Claude Hub", icon: Database, href: "/admin/claude-hub", highlight: true }
+        ]
+    },
+    {
         category: "바로가기",
         items: [
             { label: "기자 페이지", icon: UserCircle, href: "/reporter" },
