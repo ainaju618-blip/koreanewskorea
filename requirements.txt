@@ -6,3 +6,5 @@ python-dateutil
 beautifulsoup4
 requests
 playwright
+Pillow
+cloudinary
