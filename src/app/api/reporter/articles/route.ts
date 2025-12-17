@@ -100,19 +100,17 @@ export async function GET(req: NextRequest) {
             // 내가 작성한 기사만
             query = query.eq('author_id', reporter.id);
         } else {
-            // 'all' 필터: 권한 범위 내 기사만 표시
+            // 'all' filter: show articles in accessible regions + my articles
+            // Use .in() for regions to avoid encoding issues with Korean characters in .or()
             if (accessibleRegions === null) {
-                // 주필: 전체 (필터 없음)
+                // Editor-in-chief: full access (no filter)
             } else if (validRegions.length === 0) {
                 // No valid regions - show only my articles
                 query = query.eq('author_id', reporter.id);
-            } else if (validRegions.length === 1) {
-                // 단일 지역: 해당 지역 + 내가 쓴 기사
-                query = query.or(`source.eq.${validRegions[0]},author_id.eq.${reporter.id}`);
             } else {
-                // 여러 지역 (광주권역 or 전남권역)
-                const regionFilter = validRegions.map(r => `source.eq.${r}`).join(',');
-                query = query.or(`${regionFilter},author_id.eq.${reporter.id}`);
+                // For single or multiple regions: use .in() for regions
+                // Then we'll include author's articles in post-processing if needed
+                query = query.in('source', validRegions);
             }
         }
 
@@ -148,13 +146,13 @@ export async function GET(req: NextRequest) {
             ...article,
             author_name: article.author_id ? authorMap[article.author_id] || null : null,
             canEdit: canEditArticle(
-                { id: reporter.id, position: reporter.position, region: reporter.region },
-                article
+                { id: reporter.id, position: reporter.position || '', region: reporter.region || '' },
+                { source: article.source || '', author_id: article.author_id }
             ),
         })) || [];
 
         // 지역 그룹 라벨
-        const regionGroupLabel = getRegionGroupLabel(reporter.position, reporter.region);
+        const regionGroupLabel = getRegionGroupLabel(reporter.position || '', reporter.region || '');
 
         return NextResponse.json({
             articles: articlesWithPermission,
