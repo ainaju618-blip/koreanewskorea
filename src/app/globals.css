@@ -506,7 +506,8 @@
 }
 
 /* Red - Error/Danger */
-.admin-layout .bg-red-50 {
+.admin-layout .bg-red-50,
+.admin-layout .bg-red-100 {
     background-color: var(--admin-accent-red-muted) !important;
 }
 
@@ -896,6 +897,12 @@
     background-color: rgba(88, 166, 255, 0.08) !important;
 }
 
+/* Red alert backgrounds with opacity */
+.admin-layout .bg-red-50\/30,
+.admin-layout [class*="bg-red-50/30"] {
+    background-color: rgba(248, 81, 73, 0.1) !important;
+}
+
 /* Border bottom for sections */
 .admin-layout .border-blue-100,
 .admin-layout [class*="border-blue-100"] {
@@ -1036,6 +1043,10 @@
 .admin-layout .ring-gray-300,
 .admin-layout .ring-slate-300 {
     --tw-ring-color: var(--admin-border-default) !important;
+}
+
+.admin-layout .ring-red-200 {
+    --tw-ring-color: rgba(248, 81, 73, 0.3) !important;
 }
 
 /* Divide colors */
