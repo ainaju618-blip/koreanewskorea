@@ -20,6 +20,7 @@ interface ScheduleHistory {
 
 // Parse cron expression to human-readable format
 function parseCronToHuman(cron: string): string {
+    if (!cron) return 'Not configured';
     const parts = cron.split(' ');
     if (parts.length !== 5) return cron;
 
@@ -45,6 +46,7 @@ function parseCronToHuman(cron: string): string {
 
 // Calculate next run times from cron expression
 function getNextRunTimes(cron: string, count: number = 5): Date[] {
+    if (!cron) return [];
     const now = new Date();
     const parts = cron.split(' ');
     if (parts.length !== 5) return [];
@@ -190,6 +192,7 @@ export default function BotSchedulePage() {
 
     // Time slot selection helper
     const toggleHour = (hour: number) => {
+        if (!config.cronExpression) return;
         const parts = config.cronExpression.split(' ');
         const currentHours = parts[1] === '*' ? [] : parts[1].split(',').map(Number);
 
@@ -205,6 +208,7 @@ export default function BotSchedulePage() {
     };
 
     const getSelectedHours = (): number[] => {
+        if (!config.cronExpression) return [];
         const parts = config.cronExpression.split(' ');
         if (parts[1] === '*') return [];
         return parts[1].split(',').map(Number);
