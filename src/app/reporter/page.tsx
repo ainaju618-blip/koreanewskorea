@@ -584,9 +584,13 @@ function ArticleRow({
                     </span>
                     {statusBadge()}
                 </div>
-                <h3 className="font-medium text-slate-900 truncate text-sm group-hover:text-blue-600">
+                <Link
+                    href={`/news/${article.id}`}
+                    target="_blank"
+                    className="font-medium text-slate-900 truncate text-sm hover:text-blue-600 hover:underline block"
+                >
                     {article.title}
-                </h3>
+                </Link>
                 <p className="text-xs text-slate-400 mt-0.5">
                     {new Date(article.published_at).toLocaleDateString("ko-KR", {
                         month: "short",
