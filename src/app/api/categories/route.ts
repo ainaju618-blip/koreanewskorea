@@ -23,22 +23,38 @@ export async function GET(req: NextRequest) {
             query = query.eq('is_active', true);
         }
 
-        // GNB용 필터: show_in_gnb=true인 것만
-        if (gnbOnly) {
-            query = query.eq('show_in_gnb', true);
-        }
-
         const { data, error } = await query;
         if (error) throw error;
 
-        // flat=true면 평면 배열 반환
-        if (flat) {
-            return NextResponse.json({ categories: data, flat: data });
+        let filteredData = data || [];
+
+        // GNB filter: exclude categories where self or parent has show_in_gnb=false
+        if (gnbOnly) {
+            const gnbOffIds = new Set(
+                filteredData.filter(c => !c.show_in_gnb).map(c => c.id)
+            );
+
+            filteredData = filteredData.filter(category => {
+                // Exclude if self is GNB OFF
+                if (!category.show_in_gnb) return false;
+
+                // Exclude if parent is GNB OFF (hierarchical inheritance)
+                if (category.parent_id && gnbOffIds.has(category.parent_id)) {
+                    return false;
+                }
+
+                return true;
+            });
         }
 
-        // 트리 구조로 변환
-        const tree = buildTree(data || []);
-        return NextResponse.json({ categories: tree, flat: data });
+        // flat=true returns flat array
+        if (flat) {
+            return NextResponse.json({ categories: filteredData, flat: filteredData });
+        }
+
+        // Convert to tree structure
+        const tree = buildTree(filteredData);
+        return NextResponse.json({ categories: tree, flat: filteredData });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
