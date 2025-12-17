@@ -114,7 +114,7 @@ async function getHeroData() {
     const { data: sideData } = await supabase
         .from('posts')
         .select('id, title, content, summary, thumbnail_url, category, published_at')
-        .eq('status', 'published')
+        .in('status', ['approved', 'published'])
         .order('published_at', { ascending: false })
         .limit(20);
 
