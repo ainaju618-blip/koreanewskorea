@@ -1,8 +1,78 @@
 # Korea NEWS 스크래퍼 개발 가이드
 
-> **버전:** v3.2
-> **최종수정:** 2025-12-13
+> **버전:** v3.3
+> **최종수정:** 2025-12-17
 > **관리자:** AI Agent
+
+---
+
+## [CRITICAL] Import 모듈 규칙 (P0 - 절대 준수)
+
+```
++==============================================================================+
+|  2025-12-17 사건: 15개 스크래퍼가 누락된 모듈 import로 전체 실패              |
+|                                                                              |
+|  원인: 스크래퍼마다 다른 import 경로 사용                                    |
+|        (category_detector, category_classifier, category_utils 등)          |
+|                                                                              |
+|  결과: GitHub Actions에서 ModuleNotFoundError 발생, 뉴스 수집 중단           |
++==============================================================================+
+```
+
+### P0-1. 공식 Import 경로 (MUST)
+
+**모든 스크래퍼는 아래 공식 경로만 사용해야 합니다:**
+
+```python
+# 카테고리 감지
+from utils.scraper_utils import detect_category
+
+# 본문 정리
+from utils.scraper_utils import clean_article_content
+
+# 또는 content_cleaner에서
+from utils.content_cleaner import clean_article_content
+
+# API 클라이언트
+from utils.api_client import send_article_to_server, log_to_server
+
+# 이미지 업로드
+from utils.cloudinary_uploader import download_and_upload_image
+```
+
+### P0-2. 금지된 Import 경로 (NEVER USE)
+
+```python
+# 절대 사용 금지 - 호환성 wrapper일 뿐!
+from utils.category_detector import ...    # WRONG
+from utils.category_classifier import ...  # WRONG
+from utils.category_utils import ...       # WRONG
+from utils.detect_category import ...      # WRONG
+from utils.text_cleaner import ...         # WRONG
+from utils.clean_content import ...        # WRONG
+```
+
+### P0-3. 스크래퍼 수정 전 필수 체크 (MUST)
+
+```bash
+# 수정 전 반드시 실행!
+cd scrapers
+python test_imports.py
+
+# 결과: SUCCESS: 26/26 확인 후 수정 시작
+```
+
+### P0-4. 스크래퍼 수정 후 필수 체크 (MUST)
+
+```bash
+# 1. 로컬 import 테스트
+python test_imports.py
+
+# 2. 해당 스크래퍼 실행 테스트
+python [지역]/[지역]_scraper.py --days 1 --max-articles 1 --dry-run
+
+# 3. Git 커밋 전 전체 테스트 통과 확인
+```
 
 ---
 
