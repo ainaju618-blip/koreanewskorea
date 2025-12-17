@@ -5,6 +5,58 @@
 
 ---
 
+## [2025-12-17 22:30] 세션 #22 - Category GNB Hierarchical Inheritance by Claude
+
+### 주인님 의도
+- 프론트엔드 메뉴와 관리자 카테고리 관리 연동 문제 해결
+- Claude Hub를 관리자 전용으로 변경 (프론트엔드에서 숨김)
+- 상위 카테고리 GNB OFF 시 하위 카테고리도 자동 OFF 되도록 수정
+
+### 수행 작업
+
+1. **Claude Hub 프론트엔드 메뉴에서 제거**
+   - `src/components/Header.tsx`에서 하드코딩된 Claude Hub 링크 삭제
+   - 데스크톱 GNB, 모바일 메뉴 모두 제거
+   - 커밋: `bc71f0a`
+
+2. **API 캐싱 비활성화**
+   - `src/app/api/categories/route.ts`에 `dynamic = 'force-dynamic'` 추가
+   - 관리자에서 GNB 변경 시 즉시 반영되도록 수정
+   - 커밋: `dcadd67`
+
+3. **GNB 계층 상속 필터링 (GET API)**
+   - 부모 카테고리 GNB OFF → 자식 카테고리도 API 응답에서 제외
+   - 커밋: `821478c`
+
+4. **GNB 계층 상속 캐스케이드 (PATCH API)** - 근본적 해결책
+   - 부모 GNB OFF 시 → DB에서 자식들도 자동으로 GNB OFF
+   - `cascadeGnbOffToChildren()` 재귀 함수 추가
+   - `cascadeActiveOffToChildren()` 재귀 함수 추가
+   - `src/app/api/categories/[id]/route.ts` 수정
+   - 커밋: `56c47ac`
+
+### 문제 해결 과정
+1. Claude Hub가 Header.tsx에 하드코딩 → 제거
+2. GNB 변경 안 됨 → API 캐싱 문제 → force-dynamic 추가
+3. 코스모스 OFF 해도 하위 노출 → 계층 상속 미구현 발견
+4. GET API 필터링 (임시) → PATCH API 캐스케이드 (근본 해결)
+
+### 사용 도구
+- Edit: Header.tsx, route.ts 수정
+- Read: 코드 분석
+- Bash: curl API 테스트, git commit/push
+
+### 결과
+- ✅ Claude Hub 프론트엔드에서 숨김 완료
+- ✅ 카테고리 GNB 계층 상속 정상 작동
+- ✅ GNB 7개: 광주광역시, 전라남도, 전남지역, 광주교육청, 전남교육청, AI, 오피니언
+
+### 배포
+- 커밋: bc71f0a → dcadd67 → 821478c → 56c47ac
+- Vercel 자동 배포 완료
+
+---
+
 ## [2025-12-17 15:00] 세션 #21 - README FAQ System & Git Verification by Claude
 
 ### 주인님 의도
