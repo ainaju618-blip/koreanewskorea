@@ -1,30 +1,64 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
     FileText,
     PenSquare,
     Eye,
     Clock,
     Loader2,
-    User,
-    TrendingUp,
-    ArrowUpRight,
-    ArrowDownRight,
-    BarChart3,
+    Edit,
+    Trash2,
+    Check,
+    Ban,
+    Search,
+    RefreshCw,
     Inbox,
-    type LucideIcon,
+    Calendar,
+    ArrowRight,
+    CheckCircle,
+    XCircle,
+    User,
+    ChevronLeft,
+    ChevronRight,
+    ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
-import ActivityFeed from "@/components/reporter/ActivityFeed";
+import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/ConfirmModal";
 
 interface Reporter {
     id: string;
     name: string;
     position: string;
     region: string;
+    regionGroup?: string;
     access_level: number;
     profile_image?: string;
+}
+
+interface Article {
+    id: string;
+    title: string;
+    source: string;
+    category: string;
+    published_at: string;
+    status: string;
+    author_id: string | null;
+    thumbnail_url: string | null;
+    canEdit: boolean;
+    rejection_reason?: string | null;
+}
+
+interface PressRelease {
+    id: string;
+    title: string;
+    source: string;
+    content_preview: string;
+    region: string;
+    received_at: string;
+    is_read: boolean;
+    status: "new" | "viewed" | "converted";
 }
 
 interface Stats {
@@ -34,23 +68,47 @@ interface Stats {
     pendingArticles: number;
 }
 
+type TabType = "articles" | "press-releases";
+
 export default function ReporterDashboard() {
     const [reporter, setReporter] = useState<Reporter | null>(null);
     const [stats, setStats] = useState<Stats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Tab state
+    const [activeTab, setActiveTab] = useState<TabType>("articles");
+
+    // Articles state
+    const [articles, setArticles] = useState<Article[]>([]);
+    const [articlesLoading, setArticlesLoading] = useState(false);
+    const [articlePage, setArticlePage] = useState(1);
+    const [articleTotalPages, setArticleTotalPages] = useState(1);
+    const [articleSearch, setArticleSearch] = useState("");
+    const [articleFilter, setArticleFilter] = useState("my-region");
+
+    // Press releases state
+    const [pressReleases, setPressReleases] = useState<PressRelease[]>([]);
+    const [pressLoading, setPressLoading] = useState(false);
+
+    // Processing state
+    const [processingId, setProcessingId] = useState<string | null>(null);
+
+    const { showSuccess, showError } = useToast();
+    const { confirmDelete, confirm } = useConfirm();
+
+    // Initial data fetch
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
             try {
-                // Get reporter info
-                const meRes = await fetch("/api/auth/me");
+                const [meRes, statsRes] = await Promise.all([
+                    fetch("/api/auth/me"),
+                    fetch("/api/reporter/stats"),
+                ]);
+
                 if (meRes.ok) {
                     const meData = await meRes.json();
                     setReporter(meData.reporter);
                 }
-
-                // Get real statistics
-                const statsRes = await fetch("/api/reporter/stats");
                 if (statsRes.ok) {
                     const statsData = await statsRes.json();
                     setStats(statsData.stats);
@@ -62,272 +120,629 @@ export default function ReporterDashboard() {
             }
         };
 
-        fetchData();
+        fetchInitialData();
     }, []);
 
+    // Fetch articles
+    const fetchArticles = useCallback(async () => {
+        setArticlesLoading(true);
+        try {
+            const res = await fetch(
+                `/api/reporter/articles?filter=${articleFilter}&page=${articlePage}&limit=15`
+            );
+            if (res.ok) {
+                const data = await res.json();
+                setArticles(data.articles);
+                setArticleTotalPages(data.pagination?.totalPages || 1);
+            }
+        } catch (err) {
+            console.error("Failed to fetch articles:", err);
+        } finally {
+            setArticlesLoading(false);
+        }
+    }, [articleFilter, articlePage]);
+
+    // Fetch press releases
+    const fetchPressReleases = useCallback(async () => {
+        setPressLoading(true);
+        try {
+            const res = await fetch("/api/reporter/press-releases?limit=20");
+            if (res.ok) {
+                const data = await res.json();
+                setPressReleases(data.releases || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch press releases:", err);
+        } finally {
+            setPressLoading(false);
+        }
+    }, []);
+
+    // Load data based on active tab
+    useEffect(() => {
+        if (activeTab === "articles") {
+            fetchArticles();
+        } else {
+            fetchPressReleases();
+        }
+    }, [activeTab, fetchArticles, fetchPressReleases]);
+
+    // Article actions
+    const handleApprove = async (article: Article) => {
+        const confirmed = await confirm({
+            title: "기사 승인",
+            message: `"${article.title}" 기사를 승인하시겠습니까?`,
+            type: "info",
+            confirmText: "승인",
+            cancelText: "취소",
+        });
+        if (!confirmed) return;
+
+        setProcessingId(article.id);
+        try {
+            const res = await fetch(`/api/reporter/articles/${article.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "published" }),
+            });
+            if (res.ok) {
+                showSuccess("기사가 승인되었습니다.");
+                fetchArticles();
+            } else {
+                const data = await res.json();
+                showError(data.message || "승인에 실패했습니다.");
+            }
+        } catch {
+            showError("승인 중 오류가 발생했습니다.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleReject = async (article: Article) => {
+        const confirmed = await confirm({
+            title: "기사 반려",
+            message: `"${article.title}" 기사를 반려하시겠습니까?`,
+            type: "danger",
+            confirmText: "반려",
+            cancelText: "취소",
+        });
+        if (!confirmed) return;
+
+        setProcessingId(article.id);
+        try {
+            const res = await fetch(`/api/reporter/articles/${article.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "rejected" }),
+            });
+            if (res.ok) {
+                showSuccess("기사가 반려되었습니다.");
+                fetchArticles();
+            } else {
+                const data = await res.json();
+                showError(data.message || "반려에 실패했습니다.");
+            }
+        } catch {
+            showError("반려 중 오류가 발생했습니다.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleDelete = async (article: Article) => {
+        const confirmed = await confirmDelete(
+            `"${article.title}" 기사를 삭제하시겠습니까?`
+        );
+        if (!confirmed) return;
+
+        setProcessingId(article.id);
+        try {
+            const res = await fetch(`/api/reporter/articles/${article.id}`, {
+                method: "DELETE",
+            });
+            if (res.ok) {
+                showSuccess("기사가 삭제되었습니다.");
+                fetchArticles();
+            } else {
+                const data = await res.json();
+                showError(data.message || "삭제에 실패했습니다.");
+            }
+        } catch {
+            showError("삭제 중 오류가 발생했습니다.");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    // Filter articles by search
+    const filteredArticles = articleSearch
+        ? articles.filter((a) =>
+              a.title.toLowerCase().includes(articleSearch.toLowerCase())
+          )
+        : articles;
+
+    // Loading state
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
-                    <p className="text-slate-500 text-sm">대시보드 로딩 중...</p>
+                    <p className="text-slate-500 text-sm">로딩 중...</p>
                 </div>
             </div>
         );
     }
 
-    const positionLabel = getPositionLabel(reporter?.position || "reporter");
-    const currentHour = new Date().getHours();
-    const greeting = currentHour < 12 ? "좋은 아침이에요" : currentHour < 18 ? "좋은 오후에요" : "좋은 저녁이에요";
+    const unreadPressReleases = pressReleases.filter((p) => !p.is_read).length;
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
-            {/* Welcome Header */}
-            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="text-slate-500 text-sm">{greeting}</span>
-                </div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
-                    {reporter?.name} {positionLabel}님, 환영합니다!
-                </h1>
-                <p className="text-slate-500 mb-6">
-                    {reporter?.region} 담당 · Korea NEWS 기자 대시보드
-                </p>
-
-                {/* Quick Stats Row */}
-                <div className="flex flex-wrap gap-6">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-slate-600" />
-                        </div>
+        <div className="space-y-4 max-w-7xl mx-auto">
+            {/* Compact Header */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
                         <div>
-                            <p className="text-2xl font-bold text-slate-900">{stats?.myArticles || 0}</p>
-                            <p className="text-xs text-slate-500">작성 기사</p>
+                            <h1 className="text-lg font-bold text-slate-900">
+                                {reporter?.name} {getPositionLabel(reporter?.position || "")}
+                            </h1>
+                            <p className="text-sm text-slate-500">
+                                {reporter?.regionGroup || reporter?.region} 담당
+                            </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Eye className="w-5 h-5 text-slate-600" />
+                    {/* Compact Stats */}
+                    <div className="flex items-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-500" />
+                            <span className="text-slate-600">기사</span>
+                            <span className="font-bold text-slate-900">{stats?.myRegionArticles || 0}</span>
                         </div>
-                        <div>
-                            <p className="text-2xl font-bold text-slate-900">{stats?.publishedArticles || 0}</p>
-                            <p className="text-xs text-slate-500">게시됨</p>
+                        <div className="flex items-center gap-2">
+                            <Eye className="w-4 h-4 text-emerald-500" />
+                            <span className="text-slate-600">게시</span>
+                            <span className="font-bold text-slate-900">{stats?.publishedArticles || 0}</span>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-slate-600" />
+                        <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-500" />
+                            <span className="text-slate-600">대기</span>
+                            <span className="font-bold text-slate-900">{stats?.pendingArticles || 0}</span>
                         </div>
-                        <div>
-                            <p className="text-2xl font-bold text-slate-900">{stats?.pendingArticles || 0}</p>
-                            <p className="text-xs text-slate-500">대기 중</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    label="내 지역 기사"
-                    value={stats?.myRegionArticles || 0}
-                    icon={FileText}
-                    color="blue"
-                    trend={12}
-                    trendUp={true}
-                />
-                <StatCard
-                    label="내 기사"
-                    value={stats?.myArticles || 0}
-                    icon={PenSquare}
-                    color="emerald"
-                    trend={5}
-                    trendUp={true}
-                />
-                <StatCard
-                    label="게시된 기사"
-                    value={stats?.publishedArticles || 0}
-                    icon={Eye}
-                    color="violet"
-                    trend={8}
-                    trendUp={true}
-                />
-                <StatCard
-                    label="승인 대기"
-                    value={stats?.pendingArticles || 0}
-                    icon={Clock}
-                    color="amber"
-                    trend={2}
-                    trendUp={false}
-                />
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid lg:grid-cols-3 gap-6">
-                {/* Quick Actions */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-lg font-bold text-slate-900">빠른 작업</h2>
-                        <BarChart3 className="w-5 h-5 text-slate-400" />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                        <QuickActionCard
+                        <Link
                             href="/reporter/write"
-                            icon={PenSquare}
-                            title="새 기사 작성"
-                            description="새로운 기사를 작성합니다"
-                            color="blue"
-                            featured
-                        />
-                        <QuickActionCard
-                            href="/reporter/press-releases"
-                            icon={Inbox}
-                            title="보도자료 수신함"
-                            description="새로운 보도자료를 확인합니다"
-                            color="purple"
-                            badge="3"
-                        />
-                        <QuickActionCard
-                            href="/reporter/articles"
-                            icon={FileText}
-                            title="기사 관리"
-                            description="기사 목록을 확인하고 관리합니다"
-                            color="slate"
-                        />
-                        <QuickActionCard
-                            href="/reporter/drafts"
-                            icon={Clock}
-                            title="임시저장함"
-                            description="임시 저장된 초안을 확인합니다"
-                            color="slate"
-                        />
-                        <QuickActionCard
-                            href="/reporter/profile"
-                            icon={User}
-                            title="내 프로필"
-                            description="프로필 사진과 약력을 수정합니다"
-                            color="slate"
-                        />
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
+                        >
+                            <PenSquare className="w-4 h-4" />
+                            새 기사
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs + Content */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                {/* Tab Header */}
+                <div className="flex items-center justify-between border-b border-slate-200 px-4">
+                    <div className="flex">
+                        <button
+                            onClick={() => setActiveTab("articles")}
+                            className={`flex items-center gap-2 px-5 py-3.5 font-medium text-sm border-b-2 transition ${
+                                activeTab === "articles"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-slate-500 hover:text-slate-700"
+                            }`}
+                        >
+                            <FileText className="w-4 h-4" />
+                            내 지역 기사
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("press-releases")}
+                            className={`flex items-center gap-2 px-5 py-3.5 font-medium text-sm border-b-2 transition ${
+                                activeTab === "press-releases"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-slate-500 hover:text-slate-700"
+                            }`}
+                        >
+                            <Inbox className="w-4 h-4" />
+                            보도자료
+                            {unreadPressReleases > 0 && (
+                                <span className="px-1.5 py-0.5 text-xs font-bold bg-purple-100 text-purple-700 rounded-full">
+                                    {unreadPressReleases}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Tab Actions */}
+                    <div className="flex items-center gap-2">
+                        {activeTab === "articles" && (
+                            <>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="검색..."
+                                        value={articleSearch}
+                                        onChange={(e) => setArticleSearch(e.target.value)}
+                                        className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                </div>
+                                <select
+                                    value={articleFilter}
+                                    onChange={(e) => {
+                                        setArticleFilter(e.target.value);
+                                        setArticlePage(1);
+                                    }}
+                                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white"
+                                >
+                                    <option value="my-region">내 지역</option>
+                                    <option value="my-articles">내 기사</option>
+                                    <option value="all">전체</option>
+                                </select>
+                            </>
+                        )}
+                        <button
+                            onClick={() => activeTab === "articles" ? fetchArticles() : fetchPressReleases()}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${(articlesLoading || pressLoading) ? "animate-spin" : ""}`} />
+                        </button>
                     </div>
                 </div>
 
-                {/* Activity Feed */}
-                <ActivityFeed className="lg:row-span-1" />
-            </div>
+                {/* Content */}
+                {activeTab === "articles" ? (
+                    <ArticlesList
+                        articles={filteredArticles}
+                        isLoading={articlesLoading}
+                        processingId={processingId}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onDelete={handleDelete}
+                        myRegion={reporter?.region || ""}
+                    />
+                ) : (
+                    <PressReleasesList
+                        releases={pressReleases}
+                        isLoading={pressLoading}
+                    />
+                )}
 
-            {/* Info Banner */}
-            <div className="bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-2xl p-5 flex items-start gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">권한 안내</h3>
-                    <p className="text-sm text-slate-600">
-                        <strong>{reporter?.region}</strong> 지역의 보도자료와 직접 작성한 기사를 편집할 수 있습니다.
-                        다른 지역의 승인된 기사는 열람만 가능합니다.
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StatCard({
-    label,
-    value,
-    icon: Icon,
-    color,
-    trend,
-    trendUp,
-}: {
-    label: string;
-    value: number;
-    icon: LucideIcon;
-    color: string;
-    trend?: number;
-    trendUp?: boolean;
-}) {
-    const colorStyles: Record<string, { bg: string; icon: string; iconBg: string }> = {
-        blue: { bg: "bg-blue-50", icon: "text-blue-600", iconBg: "bg-blue-100" },
-        emerald: { bg: "bg-emerald-50", icon: "text-emerald-600", iconBg: "bg-emerald-100" },
-        violet: { bg: "bg-violet-50", icon: "text-violet-600", iconBg: "bg-violet-100" },
-        amber: { bg: "bg-amber-50", icon: "text-amber-600", iconBg: "bg-amber-100" },
-    };
-
-    const style = colorStyles[color] || colorStyles.blue;
-
-    return (
-        <div className={`${style.bg} rounded-2xl p-5 transition hover:shadow-md hover:scale-[1.02]`}>
-            <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 ${style.iconBg} rounded-xl flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 ${style.icon}`} />
-                </div>
-                {trend !== undefined && (
-                    <div className={`flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        {trend}%
+                {/* Pagination for Articles */}
+                {activeTab === "articles" && articleTotalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 py-3 border-t border-slate-100">
+                        <button
+                            onClick={() => setArticlePage((p) => Math.max(1, p - 1))}
+                            disabled={articlePage === 1}
+                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm text-slate-600">
+                            {articlePage} / {articleTotalPages}
+                        </span>
+                        <button
+                            onClick={() => setArticlePage((p) => Math.min(articleTotalPages, p + 1))}
+                            disabled={articlePage === articleTotalPages}
+                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 )}
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-            <p className="text-sm text-slate-500 mt-1">{label}</p>
         </div>
     );
 }
 
-function QuickActionCard({
-    href,
-    icon: Icon,
-    title,
-    description,
-    color,
-    featured,
-    badge,
+// Articles List Component
+function ArticlesList({
+    articles,
+    isLoading,
+    processingId,
+    onApprove,
+    onReject,
+    onDelete,
+    myRegion,
 }: {
-    href: string;
-    icon: LucideIcon;
-    title: string;
-    description: string;
-    color: string;
-    featured?: boolean;
-    badge?: string;
+    articles: Article[];
+    isLoading: boolean;
+    processingId: string | null;
+    onApprove: (article: Article) => void;
+    onReject: (article: Article) => void;
+    onDelete: (article: Article) => void;
+    myRegion: string;
 }) {
-    const isPurple = color === "purple";
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (articles.length === 0) {
+        return (
+            <div className="py-12 text-center">
+                <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                <p className="text-slate-500">기사가 없습니다</p>
+            </div>
+        );
+    }
 
     return (
-        <Link
-            href={href}
-            className={`
-                group flex items-start gap-4 p-4 rounded-xl transition-all duration-200 relative
-                ${featured
-                    ? "bg-slate-900 text-white hover:bg-slate-800 hover:scale-[1.02]"
-                    : isPurple
-                        ? "bg-purple-50 hover:bg-purple-100 border border-purple-100"
-                        : "bg-slate-50 hover:bg-slate-100 border border-slate-100"
-                }
-            `}
-        >
-            {badge && (
-                <span className="absolute top-3 right-3 px-2 py-0.5 text-xs font-bold bg-purple-500 text-white rounded-full">
-                    {badge}
+        <div className="divide-y divide-slate-100">
+            {articles.map((article) => (
+                <ArticleRow
+                    key={article.id}
+                    article={article}
+                    myRegion={myRegion}
+                    isProcessing={processingId === article.id}
+                    onApprove={onApprove}
+                    onReject={onReject}
+                    onDelete={onDelete}
+                />
+            ))}
+        </div>
+    );
+}
+
+// Article Row Component
+function ArticleRow({
+    article,
+    myRegion,
+    isProcessing,
+    onApprove,
+    onReject,
+    onDelete,
+}: {
+    article: Article;
+    myRegion: string;
+    isProcessing: boolean;
+    onApprove: (article: Article) => void;
+    onReject: (article: Article) => void;
+    onDelete: (article: Article) => void;
+}) {
+    const isMyRegion = article.source === myRegion;
+    const isPending = article.status === "pending" || article.status === "draft";
+
+    const statusBadge = () => {
+        switch (article.status) {
+            case "published":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                        <CheckCircle className="w-3 h-3" />
+                        게시
+                    </span>
+                );
+            case "pending":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                        <Clock className="w-3 h-3" />
+                        대기
+                    </span>
+                );
+            case "draft":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-full">
+                        <FileText className="w-3 h-3" />
+                        초안
+                    </span>
+                );
+            case "rejected":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                        <XCircle className="w-3 h-3" />
+                        반려
+                    </span>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group">
+            {/* Thumbnail */}
+            <div className="w-14 h-14 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                {article.thumbnail_url ? (
+                    <img src={article.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-slate-300" />
+                    </div>
+                )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        isMyRegion ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
+                    }`}>
+                        {article.source}
+                    </span>
+                    {statusBadge()}
+                </div>
+                <h3 className="font-medium text-slate-900 truncate text-sm group-hover:text-blue-600">
+                    {article.title}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                    {new Date(article.published_at).toLocaleDateString("ko-KR", {
+                        month: "short",
+                        day: "numeric",
+                    })}
+                    {article.rejection_reason && (
+                        <span className="text-red-500 ml-2">
+                            반려: {article.rejection_reason.substring(0, 30)}...
+                        </span>
+                    )}
+                </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+                {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                ) : (
+                    <>
+                        {isPending && article.canEdit && (
+                            <>
+                                <button
+                                    onClick={() => onApprove(article)}
+                                    className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition"
+                                    title="승인"
+                                >
+                                    <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => onReject(article)}
+                                    className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition"
+                                    title="반려"
+                                >
+                                    <Ban className="w-4 h-4" />
+                                </button>
+                            </>
+                        )}
+                        <Link
+                            href={`/news/${article.id}`}
+                            target="_blank"
+                            className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition"
+                            title="보기"
+                        >
+                            <Eye className="w-4 h-4" />
+                        </Link>
+                        {article.canEdit && (
+                            <>
+                                <Link
+                                    href={`/reporter/edit/${article.id}`}
+                                    className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                                    title="편집"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </Link>
+                                <button
+                                    onClick={() => onDelete(article)}
+                                    className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition"
+                                    title="삭제"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// Press Releases List Component
+function PressReleasesList({
+    releases,
+    isLoading,
+}: {
+    releases: PressRelease[];
+    isLoading: boolean;
+}) {
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (releases.length === 0) {
+        return (
+            <div className="py-12 text-center">
+                <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                <p className="text-slate-500">보도자료가 없습니다</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="divide-y divide-slate-100">
+            {releases.map((release) => (
+                <PressReleaseRow key={release.id} release={release} />
+            ))}
+        </div>
+    );
+}
+
+// Press Release Row Component
+function PressReleaseRow({ release }: { release: PressRelease }) {
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffHours < 24) return `${diffHours}시간 전`;
+        if (diffDays < 7) return `${diffDays}일 전`;
+        return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+    };
+
+    return (
+        <div className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition ${
+            !release.is_read ? "bg-blue-50/30" : ""
+        }`}>
+            {/* Status Indicator */}
+            <div className="pt-1.5 flex-shrink-0">
+                {release.status === "new" ? (
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                ) : release.status === "converted" ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                ) : (
+                    <div className="w-2 h-2 rounded-full bg-slate-300" />
+                )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                        release.status === "new"
+                            ? "bg-blue-100 text-blue-700"
+                            : release.status === "converted"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-100 text-slate-600"
+                    }`}>
+                        {release.status === "new" ? "NEW" : release.status === "converted" ? "작성완료" : "읽음"}
+                    </span>
+                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatTime(release.received_at)}
+                    </span>
+                </div>
+                <h3 className={`text-sm mb-0.5 ${!release.is_read ? "font-bold text-slate-900" : "font-medium text-slate-700"}`}>
+                    {release.title}
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-1">
+                    {release.content_preview}
+                </p>
+                <span className="text-xs text-slate-400 mt-1 inline-block">
+                    {release.source}
                 </span>
-            )}
-            <div className={`
-                w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition
-                ${featured
-                    ? "bg-white/10 group-hover:bg-white/20"
-                    : isPurple
-                        ? "bg-purple-100 group-hover:bg-purple-200"
-                        : "bg-white shadow-sm group-hover:shadow"
-                }
-            `}>
-                <Icon className={`w-5 h-5 ${featured ? "text-white" : isPurple ? "text-purple-600" : "text-slate-600"}`} />
             </div>
-            <div>
-                <p className={`font-semibold ${featured ? "text-white" : isPurple ? "text-purple-900" : "text-slate-900"}`}>{title}</p>
-                <p className={`text-sm mt-0.5 ${featured ? "text-slate-300" : isPurple ? "text-purple-600" : "text-slate-500"}`}>{description}</p>
+
+            {/* Action */}
+            <div className="flex-shrink-0">
+                {release.status === "converted" ? (
+                    <span className="text-xs text-emerald-600 font-medium">작성완료</span>
+                ) : (
+                    <Link
+                        href={`/reporter/write?press_release_id=${release.id}`}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                    >
+                        기사 작성
+                        <ArrowRight className="w-3 h-3" />
+                    </Link>
+                )}
             </div>
-        </Link>
+        </div>
     );
 }
 
@@ -341,12 +756,6 @@ function getPositionLabel(position: string): string {
         reporter: "기자",
         intern_reporter: "수습기자",
         citizen_reporter: "시민기자",
-        opinion_writer: "오피니언",
-        advisor: "고문",
-        consultant: "자문위원",
-        ambassador: "홍보대사",
-        seoul_correspondent: "서울특파원",
-        foreign_correspondent: "해외특파원",
     };
     return positions[position] || position;
 }
