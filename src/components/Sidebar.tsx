@@ -45,7 +45,7 @@ export default async function Sidebar() {
                     <div className="p-1.5 bg-white/20 rounded-lg">
                         <Flame className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold text-white text-[15px] tracking-tight">HOT Issue</h3>
+                    <h3 className="font-bold text-white text-[15px] tracking-tight">많이 본 뉴스</h3>
                 </div>
                 <ul className="divide-y divide-slate-50">
                     {(hotPosts || []).map((post, idx) => (
@@ -76,7 +76,7 @@ export default async function Sidebar() {
                     <div className="p-1.5 bg-white/15 rounded-lg">
                         <Calendar className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-bold text-white text-[15px] tracking-tight">Latest News</h3>
+                    <h3 className="font-bold text-white text-[15px] tracking-tight">최신 뉴스</h3>
                 </div>
                 <ul className="divide-y divide-slate-50">
                     {(recentPosts || []).map((post) => (
