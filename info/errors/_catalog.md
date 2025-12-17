@@ -12,6 +12,7 @@
 | vercel, 자동, 배포, webhook, 반영 | `vercel-auto.md` | push 후 배포 안됨 |
 | vercel, build, 빌드, 실패 | `vercel-build.md` | Vercel 빌드 에러 |
 | git, webhook, 연결, hook | `git-webhook.md` | GitHub 웹훅 없음 |
+| vercel, utf-8, encoding, stream, 인코딩, 한글 | `vercel-utf8-build.md` | UTF-8 인코딩 빌드 실패 |
 
 ---
 
@@ -38,6 +39,7 @@
 | params, dynamic, route, 라우트 | `nextjs-params.md` | Next.js 동적 라우트 |
 | image, loading, slow, LCP, 느림, 이미지 | `image-loading-slow.md` | 이미지 로딩 속도 느림 |
 | powershell, encoding, 한글, 깨짐, 인코딩 | `powershell-encoding.md` | PowerShell 한글 인코딩 손상 |
+| sidearticles, preparing, 사이드, 홈페이지 | `sidearticles-preparing.md` | 홈페이지 사이드 기사 안 보임 |
 
 ---
 
@@ -63,4 +65,4 @@
 
 ---
 
-*최종 업데이트: 2025-12-15*
+*최종 업데이트: 2025-12-17*
