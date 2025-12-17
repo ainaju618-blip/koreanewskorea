@@ -41,6 +41,8 @@ export default function ReporterProfilePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState<string>("");
+    const [compressionInfo, setCompressionInfo] = useState<{original: number; compressed: number} | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showSuccess, showError } = useToast();
 
@@ -133,6 +135,13 @@ export default function ReporterProfilePage() {
         });
     };
 
+    // Format file size for display
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -143,16 +152,30 @@ export default function ReporterProfilePage() {
             return;
         }
 
-        setIsUploading(true);
-        try {
-            // Always resize profile images on client to avoid Vercel limit
-            const resizedBlob = await resizeImage(file);
+        const originalSize = file.size;
+        const needsCompression = originalSize > 500 * 1024; // 500KB
 
+        // Show compression notice if file is large
+        if (needsCompression) {
+            showSuccess(`용량이 큽니다 (${formatFileSize(originalSize)}). 자동 압축을 시작합니다.`);
+        }
+
+        setIsUploading(true);
+        setCompressionInfo(null);
+
+        try {
+            // Step 1: Compress image
+            setUploadStatus(needsCompression ? "이미지 압축 중..." : "이미지 처리 중...");
+            const resizedBlob = await resizeImage(file);
+            const compressedSize = resizedBlob.size;
+            setCompressionInfo({ original: originalSize, compressed: compressedSize });
+
+            // Step 2: Upload to server
+            setUploadStatus("서버에 업로드 중...");
             const formDataUpload = new FormData();
             formDataUpload.append("file", resizedBlob, file.name);
             formDataUpload.append("folder", "reporters");
 
-            // Cloudinary API (auto 400x400 resize)
             const res = await fetch("/api/upload/image", {
                 method: "POST",
                 body: formDataUpload,
@@ -163,11 +186,28 @@ export default function ReporterProfilePage() {
                 throw new Error(errorData.error || "업로드 실패");
             }
 
+            // Step 3: Complete
+            setUploadStatus("완료!");
             const data = await res.json();
             setFormData(prev => ({ ...prev, profile_image: data.url }));
-            showSuccess("프로필 사진이 업로드되었습니다.");
+
+            // Show compression result if compressed
+            if (needsCompression) {
+                const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                showSuccess(`압축 완료! ${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% 감소)`);
+            } else {
+                showSuccess("프로필 사진이 업로드되었습니다.");
+            }
+
+            // Clear status after 3 seconds
+            setTimeout(() => {
+                setUploadStatus("");
+                setCompressionInfo(null);
+            }, 3000);
         } catch (err) {
             console.error("Upload error:", err);
+            setUploadStatus("");
+            setCompressionInfo(null);
             showError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
         } finally {
             setIsUploading(false);
@@ -275,9 +315,27 @@ export default function ReporterProfilePage() {
                             <p className="text-sm text-gray-600 mb-2">
                                 클릭하여 프로필 사진을 업로드하세요.
                             </p>
-                            <p className="text-xs text-gray-400">
-                                권장 크기: 400x400px / 최대 5MB / JPG, PNG 형식
+                            <p className="text-xs text-gray-400 mb-2">
+                                권장 크기: 400x400px / JPG, PNG 형식
                             </p>
+                            <p className="text-xs text-blue-600">
+                                큰 파일은 자동으로 압축됩니다.
+                            </p>
+
+                            {/* Upload Status */}
+                            {uploadStatus && (
+                                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+                                    <p className="text-sm text-blue-700 font-medium">{uploadStatus}</p>
+                                    {compressionInfo && (
+                                        <p className="text-xs text-blue-600 mt-1">
+                                            {formatFileSize(compressionInfo.original)} → {formatFileSize(compressionInfo.compressed)}
+                                            <span className="ml-2 text-green-600 font-medium">
+                                                ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% 감소)
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
