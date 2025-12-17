@@ -5,6 +5,76 @@
 
 ---
 
+## [2025-12-17 15:00] 세션 #21 - README FAQ System & Git Verification by Claude
+
+### 주인님 의도
+- 모든 폴더에 README.md 파일 생성 (한국어 FAQ 포함)
+- AI가 파일 위치를 빠르게 찾을 수 있도록 자연어 검색 지원
+- FAQ 동기화 문제 해결 (파일 추가/삭제 시 문서 업데이트)
+- Git 이력을 최종 진실의 소스로 활용
+
+### 수행 작업
+
+1. **README.md 파일 대량 생성 (45+ 파일)**
+   - src/ 하위: app, components, hooks, lib, types, constants, data, db
+   - info/ 하위: guides, errors, config, ai-collab, planning
+   - scrapers/ 하위: configs, _queue, 개별 지역
+   - 기타: backend, design, docs, logo, public, .github/workflows
+
+2. **Korean FAQ 섹션 추가**
+   - 한국어 자연어 질문 → 파일 매핑
+   - 예: "순천 스크래퍼 어디?" → `suncheon_scraper.py`
+   - 예: "예약 시간?" → `.github/workflows/daily_scrape.yml`
+
+3. **README_SYNC_GUIDE.md 생성** (`info/guides/`)
+   - Part 1-6: FAQ 동기화 규칙, Changelog 형식
+   - Part 7: Git History Verification (최종 진실)
+   - Git 명령어: `git log --diff-filter=D/A -- "file"`
+
+4. **CLAUDE.md 업데이트**
+   - FAQ 검증 규칙 추가 (P1)
+   - Git 검증 명령어 추가
+   - Quick Reference Card에 FAQ 검증 섹션 추가
+
+5. **예약 스크래퍼 작동 원리 설명**
+   - GitHub Actions cron: 09:00, 13:00, 17:00 KST
+   - `.github/workflows/daily_scrape.yml` 분석
+
+### 사용 도구
+- Write: 45+ README.md 파일 생성
+- Edit: CLAUDE.md, _catalog.md, README.md 수정
+- Read: daily_scrape.yml 분석
+- Glob: 기존 파일 탐색
+
+### 결과
+- ✅ 56 files changed, 4255 insertions
+- ✅ Git commit: `2e8604e` "docs: Add comprehensive README.md files with Korean FAQ"
+- ✅ Vercel 자동 배포 트리거됨
+
+### 주요 생성 파일
+```
+info/guides/README_SYNC_GUIDE.md (신규) - AI 필독 가이드
+45+ README.md 파일 (신규) - 전체 폴더 커버리지
+```
+
+### 핵심 규칙 (Part 7)
+```
+파일 존재 확인 4중 안전장치:
+1️⃣ README FAQ 확인
+2️⃣ Glob/Read로 실제 파일 확인
+3️⃣ 코드베이스 탐색
+4️⃣ Git 이력 확인 (최종 진실)
+
+git log --oneline --all -- "**/filename*"
+```
+
+### 교훈
+- FAQ는 정적 인덱스 → 코드 변경 시 반드시 동기화
+- Git 이력이 최종 진실 (README보다 정확)
+- 도메인별 탐색 경로 정의로 빠른 답변 가능
+
+---
+
 ## [2025-12-18 02:30] 세션 #20 - Reporter Dashboard UX Redesign by Claude
 
 ### 주인님 의도

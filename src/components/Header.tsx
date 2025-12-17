@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot, Database } from 'lucide-react';
+import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot } from 'lucide-react';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
 
 // Dynamic import for NewsTicker (reduces initial bundle, loads after header)
@@ -301,23 +301,6 @@ export default function Header() {
                                 )}
                             </Link>
 
-                            {/* Claude Hub Link - Admin Page */}
-                            <Link
-                                href="/admin/claude-hub"
-                                className={`h-full flex items-center gap-1.5 transition-colors relative
-                                    ${pathname.startsWith('/admin/claude-hub') ? 'text-emerald-500' : 'text-slate-900'}
-                                    hover:text-emerald-500
-                                `}
-                            >
-                                <Database className="w-4 h-4" />
-                                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-bold">
-                                    Claude Hub
-                                </span>
-                                {pathname.startsWith('/admin/claude-hub') && (
-                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500"></span>
-                                )}
-                            </Link>
-
                             {/* Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
                                 <div className="relative group/search">
@@ -498,28 +481,6 @@ export default function Header() {
                                         );
                                     })}
                                 </div>
-                            </div>
-
-                            {/* Claude Hub - Admin Page */}
-                            <div className="bg-gradient-to-br from-emerald-900/50 to-teal-900/30 rounded-2xl overflow-hidden border border-emerald-500/20">
-                                <Link
-                                    href="/admin/claude-hub"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex items-center justify-between p-4"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
-                                            <Database className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-lg font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                                                Claude Hub
-                                            </span>
-                                            <p className="text-xs text-gray-400">Knowledge Management</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-emerald-400" />
-                                </Link>
                             </div>
 
                             {/* Social Links */}
