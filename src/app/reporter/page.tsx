@@ -12,8 +12,6 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     BarChart3,
-    Sparkles,
-    ChevronRight,
     Inbox,
     type LucideIcon,
 } from "lucide-react";
@@ -87,53 +85,44 @@ export default function ReporterDashboard() {
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
             {/* Welcome Header */}
-            <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-2xl p-6 lg:p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute -right-20 -top-20 w-96 h-96 bg-white rounded-full blur-3xl" />
-                    <div className="absolute -left-20 -bottom-20 w-72 h-72 bg-white rounded-full blur-3xl" />
+            <div className="bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-slate-500 text-sm">{greeting}</span>
                 </div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">
+                    {reporter?.name} {positionLabel}님, 환영합니다!
+                </h1>
+                <p className="text-slate-500 mb-6">
+                    {reporter?.region} 담당 · Korea NEWS 기자 대시보드
+                </p>
 
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-5 h-5 text-yellow-300" />
-                        <span className="text-blue-200 text-sm">{greeting}</span>
+                {/* Quick Stats Row */}
+                <div className="flex flex-wrap gap-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900">{stats?.myArticles || 0}</p>
+                            <p className="text-xs text-slate-500">작성 기사</p>
+                        </div>
                     </div>
-                    <h1 className="text-2xl lg:text-3xl font-bold mb-2">
-                        {reporter?.name} {positionLabel}님, 환영합니다!
-                    </h1>
-                    <p className="text-blue-100 mb-6">
-                        {reporter?.region} 담당 · Korea NEWS 기자 대시보드
-                    </p>
-
-                    {/* Quick Stats Row */}
-                    <div className="flex flex-wrap gap-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur">
-                                <FileText className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{stats?.myArticles || 0}</p>
-                                <p className="text-xs text-blue-200">작성 기사</p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <Eye className="w-5 h-5 text-slate-600" />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur">
-                                <Eye className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{stats?.publishedArticles || 0}</p>
-                                <p className="text-xs text-blue-200">게시됨</p>
-                            </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900">{stats?.publishedArticles || 0}</p>
+                            <p className="text-xs text-slate-500">게시됨</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur">
-                                <Clock className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{stats?.pendingArticles || 0}</p>
-                                <p className="text-xs text-blue-200">대기 중</p>
-                            </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900">{stats?.pendingArticles || 0}</p>
+                            <p className="text-xs text-slate-500">대기 중</p>
                         </div>
                     </div>
                 </div>
@@ -313,7 +302,7 @@ function QuickActionCard({
             className={`
                 group flex items-start gap-4 p-4 rounded-xl transition-all duration-200 relative
                 ${featured
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.02]"
+                    ? "bg-slate-900 text-white hover:bg-slate-800 hover:scale-[1.02]"
                     : isPurple
                         ? "bg-purple-50 hover:bg-purple-100 border border-purple-100"
                         : "bg-slate-50 hover:bg-slate-100 border border-slate-100"
@@ -328,17 +317,17 @@ function QuickActionCard({
             <div className={`
                 w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition
                 ${featured
-                    ? "bg-white/20 group-hover:bg-white/30"
+                    ? "bg-white/10 group-hover:bg-white/20"
                     : isPurple
                         ? "bg-purple-100 group-hover:bg-purple-200"
                         : "bg-white shadow-sm group-hover:shadow"
                 }
             `}>
-                <Icon className={`w-5 h-5 ${featured ? "text-white" : isPurple ? "text-purple-600" : "text-blue-600"}`} />
+                <Icon className={`w-5 h-5 ${featured ? "text-white" : isPurple ? "text-purple-600" : "text-slate-600"}`} />
             </div>
             <div>
                 <p className={`font-semibold ${featured ? "text-white" : isPurple ? "text-purple-900" : "text-slate-900"}`}>{title}</p>
-                <p className={`text-sm mt-0.5 ${featured ? "text-blue-100" : isPurple ? "text-purple-600" : "text-slate-500"}`}>{description}</p>
+                <p className={`text-sm mt-0.5 ${featured ? "text-slate-300" : isPurple ? "text-purple-600" : "text-slate-500"}`}>{description}</p>
             </div>
         </Link>
     );
