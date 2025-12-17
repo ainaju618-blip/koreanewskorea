@@ -110,18 +110,15 @@ async function getHeroData() {
     // 5. Fetch side articles (different from slider)
     const sliderIds = sliderArticles.map(a => a.id);
 
-    // Fetch more articles to ensure we have enough after filtering
+    // Fetch recent articles (relaxed conditions - no thumbnail requirement)
     const { data: sideData } = await supabase
         .from('posts')
         .select('id, title, content, summary, thumbnail_url, category, published_at')
         .eq('status', 'published')
-        .not('thumbnail_url', 'is', null)
-        .neq('thumbnail_url', '')
-        .like('thumbnail_url', 'http%')
         .order('published_at', { ascending: false })
-        .limit(15);
+        .limit(20);
 
-    // Filter out slider articles client-side
+    // Filter out slider articles and pick first 2
     const filteredSideData = (sideData || [])
         .filter(article => !sliderIds.includes(article.id))
         .slice(0, 2);
