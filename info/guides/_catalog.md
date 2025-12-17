@@ -46,6 +46,18 @@
 
 ---
 
+## ⭐ AI 필독 가이드 (루트)
+
+| 주제 | 파일 | 설명 |
+|------|------|------|
+| **README FAQ 동기화** | `README_SYNC_GUIDE.md` | **파일 추가/삭제 시 필독** |
+| FAQ 업데이트 방법 | `README_SYNC_GUIDE.md` | FAQ 항목 추가/삭제 |
+| Changelog 기록 | `README_SYNC_GUIDE.md` | 변경 이력 타임라인 |
+| FAQ 검증 규칙 | `README_SYNC_GUIDE.md` | 답변 전 실제 파일 확인 |
+| **Git 검증 (Part 7)** | `README_SYNC_GUIDE.md` | **최종 진실 확인 (git log)** |
+
+---
+
 ## DevOps (devops/)
 
 | 주제 | 파일 | 설명 |

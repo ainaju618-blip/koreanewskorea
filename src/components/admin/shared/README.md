@@ -291,4 +291,22 @@ web/src/components/admin/
 
 ---
 
+---
+
+## FAQ (검색용)
+
+| Question | Answer |
+|----------|--------|
+| "상태 배지? 상태 표시?" | `StatusBadge.tsx` - article/user/bot 상태 |
+| "확인 모달? 삭제 확인?" | `ConfirmModal.tsx` |
+| "alert 대신? confirm 대신?" | `ConfirmModal.tsx` (P0 규칙: alert/confirm 금지) |
+| "필터 탭?" | `FilterTabs.tsx` - pills/buttons 스타일 |
+| "페이지 헤더?" | `PageHeader.tsx` - 제목+설명+액션 |
+| "페이지네이션?" | `Pagination.tsx` |
+| "슬라이드 패널?" | `SlidePanel.tsx` - 우측 슬라이드 |
+| "공통 컴포넌트 임포트?" | `@/components/admin/shared` 에서 일괄 import |
+| "관리자 UI 재사용?" | 이 폴더 - StatusBadge, ConfirmModal, FilterTabs 등 |
+
+---
+
 *이 문서는 AI Agent가 관리자 컴포넌트 작업 시 참조합니다.*

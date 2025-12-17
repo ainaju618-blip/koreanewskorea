@@ -2,7 +2,7 @@
 
 > **프로젝트:** Korea NEWS - 전남/광주 지역 뉴스 자동화 플랫폼
 > **역할:** 프로젝트 총괄 실행자 (속도 & 안정성 중심)
-> **버전:** v4.7
+> **버전:** v4.8
 > **최종수정:** 2025-12-17 by Claude
 
 ---
@@ -140,6 +140,36 @@
 | **디자인 시스템** | `info/design-system.md` |
 | **에러 해결** | `info/errors/_catalog.md` |
 
+## 0.7 질문 도메인별 탐색 경로 (MUST - 모르면 먼저 탐색)
+
+> **⚠️ Part 0에 답이 없는 질문이 오면, "모른다"고 하지 말고 해당 도메인 폴더를 먼저 탐색하라.**
+
+| 질문 도메인 | 탐색 경로 | 예시 질문 |
+|------------|----------|----------|
+| **스크래퍼/봇** | `scrapers/` + `.github/workflows/` + `src/lib/scheduler.ts` + `src/app/admin/bot/` | "자동예약시스템 있어?", "봇 어떻게 돌아가?" |
+| **프론트엔드/페이지** | `src/app/` + `src/components/` | "이 페이지 어디 있어?", "컴포넌트 구조가?" |
+| **API/백엔드** | `src/app/api/` | "이 API 어디 있어?", "엔드포인트가?" |
+| **배포/자동화** | `.github/workflows/` + `vercel.json` | "배포 어떻게 해?", "CI/CD 있어?" |
+| **DB/스키마** | `src/db/` + `info/database.md` | "테이블 구조가?", "컬럼이 뭐야?" |
+| **디자인/스타일** | `src/app/globals.css` + `tailwind.config.ts` | "색상 어디서 바꿔?", "테마가?" |
+| **설정/환경변수** | `.env*` + `info/config/` | "환경변수 뭐 있어?", "API 키가?" |
+| **에러/문제해결** | `info/errors/` | "이 에러 본 적 있어?", "해결법이?" |
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🔍 탐색 우선 원칙 (MUST)                                    │
+│                                                              │
+│  1. Part 0에서 답을 찾는다                                   │
+│  2. 없으면 → 해당 도메인 폴더를 먼저 탐색한다               │
+│  3. 폴더 도착 시 → README.md 먼저 읽는다 (있으면)           │
+│  4. 탐색 후 답을 찾으면 → 답변한다                          │
+│  5. 탐색해도 없으면 → 그때 주인님께 "없는 것 같다" 보고     │
+│                                                              │
+│  ❌ 금지: Part 0에 없다고 바로 "모른다" 또는 되묻기          │
+│  ✅ 필수: 관련 폴더 탐색 → README.md 확인 → 답 찾기 → 답변  │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 # ⚡ Quick Dispatch (빠른 응답 라우팅)
@@ -195,6 +225,40 @@
 | **Vercel 프로젝트 신규 생성 금지** | 작업 즉시 **중단** |
 | **편법/비정상적 방법 사용** | 작업 **REJECT** + 롤백 |
 | **질문/대화 중 임의 실행** | 즉시 **중단** + 대화 모드 전환 |
+| **파일 추가/삭제 시 README FAQ 미동기화** | 작업 **REJECT** (아래 규칙 참조) |
+| **FAQ 답변 전 실제 파일 존재 미확인** | 답변 **REJECT** (검증 필수) |
+
+> **⚠️ README FAQ 동기화 필수 규칙 (P1)**
+>
+> 파일/기능 추가/삭제 시 반드시 `info/guides/README_SYNC_GUIDE.md` 참조!
+>
+> ```
+> [SYNC_GUIDE_CHECK]
+> Step 1: info/guides/README_SYNC_GUIDE.md 읽기
+> Step 2: 가이드대로 README FAQ 업데이트 + Changelog 기록
+> Step 3: 가이드 파일 없으면 → 아래 메시지 출력 후 작업 중단
+>
+> [SYNC_GUIDE_NOT_FOUND]
+> README Sync Guide is missing.
+> Expected: info/guides/README_SYNC_GUIDE.md
+> Action: Restore this file before proceeding.
+> ```
+>
+> **질문 답변 시 검증 규칙:**
+> - FAQ에 "있다" → 실제 파일 존재 Glob/Read로 확인 후 답변
+> - FAQ에 "없다" → 실제 탐색 후 답변 (바로 "없다" 금지)
+> - **최종 검증** → Git 이력으로 확인 (Part 7 참조)
+>
+> **Git 검증 (Ultimate Source of Truth):**
+> ```bash
+> # 파일 삭제 이력 확인
+> git log --diff-filter=D -- "**/filename*"
+> # 파일 추가 이력 확인
+> git log --diff-filter=A -- "**/filename*"
+> # 파일 전체 이력 확인
+> git log --oneline --all -- "**/filename*"
+> ```
+> → 상세 가이드: `info/guides/README_SYNC_GUIDE.md` Part 7
 
 ---
 
@@ -792,6 +856,11 @@ koreanews/
 │     - 에러 해결 → info/errors/ + _catalog.md                 │
 │     - 세션 기록 → .claude/context/session_log.md             │
 │                                                              │
+│  🔍 FAQ 답변 검증 (P1):                                       │
+│     - "있다" 답변 전 → Glob/Read로 파일 확인                  │
+│     - "없다" 답변 전 → 탐색 후 Git 이력 확인                  │
+│     - git log --all -- "**/filename*" (최종 진실)            │
+│                                                              │
 │  ⚠️ 금지:                                                    │
 │     - alert/confirm → useToast/useConfirm 사용               │
 │     - 코드에 이모지 사용                                     │
@@ -956,6 +1025,9 @@ koreanews/
 | **tsconfig.json** | `CLAUDE.md` 또는 `info/frontend.md` | P2 |
 | **next.config.ts** | `info/frontend.md` | P2 |
 | **package.json (의존성)** | 버전 변경 시 해당 가이드 | P2 |
+| **⭐ 파일 추가/삭제** | 해당 폴더 `README.md` FAQ + Changelog | **P1** |
+
+> **⚠️ README FAQ 동기화 상세 가이드:** `info/guides/README_SYNC_GUIDE.md` 필독!
 
 ## G.2 동기화 체크리스트 (작업 완료 전 확인)
 
