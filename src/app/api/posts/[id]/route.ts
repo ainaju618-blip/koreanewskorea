@@ -31,8 +31,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         if (body.status === 'published') {
             const now = new Date().toISOString();
             body.published_at = now;
-            // Note: approved_at requires DB migration (permission_system.sql)
-            // body.approved_at = now;
+            body.approved_at = now;
 
             // Check if auto-assign is enabled and author not already specified
             const shouldAutoAssign = !body.author_id && !body.skip_auto_assign;
