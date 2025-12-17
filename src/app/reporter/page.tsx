@@ -324,20 +324,54 @@ export default function ReporterDashboard() {
                 {/* Tab Header */}
                 <div className="flex items-center justify-between border-b border-slate-200 px-4">
                     <div className="flex">
+                        {/* Article Filter Tabs */}
                         <button
-                            onClick={() => setActiveTab("articles")}
-                            className={`flex items-center gap-2 px-5 py-3.5 font-medium text-sm border-b-2 transition ${
-                                activeTab === "articles"
+                            onClick={() => {
+                                setActiveTab("articles");
+                                setArticleFilter("my-region");
+                                setArticlePage(1);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition ${
+                                activeTab === "articles" && articleFilter === "my-region"
                                     ? "border-blue-500 text-blue-600"
                                     : "border-transparent text-slate-500 hover:text-slate-700"
                             }`}
                         >
                             <FileText className="w-4 h-4" />
-                            내 지역 기사
+                            내지역기사
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab("articles");
+                                setArticleFilter("all");
+                                setArticlePage(1);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition ${
+                                activeTab === "articles" && articleFilter === "all"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-slate-500 hover:text-slate-700"
+                            }`}
+                        >
+                            전체
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab("articles");
+                                setArticleFilter("my-articles");
+                                setArticlePage(1);
+                            }}
+                            className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition ${
+                                activeTab === "articles" && articleFilter === "my-articles"
+                                    ? "border-blue-500 text-blue-600"
+                                    : "border-transparent text-slate-500 hover:text-slate-700"
+                            }`}
+                        >
+                            <User className="w-4 h-4" />
+                            내 기사
                         </button>
                         <button
                             onClick={() => setActiveTab("press-releases")}
-                            className={`flex items-center gap-2 px-5 py-3.5 font-medium text-sm border-b-2 transition ${
+                            className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition ${
                                 activeTab === "press-releases"
                                     ? "border-blue-500 text-blue-600"
                                     : "border-transparent text-slate-500 hover:text-slate-700"
@@ -356,30 +390,16 @@ export default function ReporterDashboard() {
                     {/* Tab Actions */}
                     <div className="flex items-center gap-2">
                         {activeTab === "articles" && (
-                            <>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="검색..."
-                                        value={articleSearch}
-                                        onChange={(e) => setArticleSearch(e.target.value)}
-                                        className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    />
-                                </div>
-                                <select
-                                    value={articleFilter}
-                                    onChange={(e) => {
-                                        setArticleFilter(e.target.value);
-                                        setArticlePage(1);
-                                    }}
-                                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white"
-                                >
-                                    <option value="my-region">내 지역</option>
-                                    <option value="my-articles">내 기사</option>
-                                    <option value="all">전체</option>
-                                </select>
-                            </>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="검색..."
+                                    value={articleSearch}
+                                    onChange={(e) => setArticleSearch(e.target.value)}
+                                    className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
                         )}
                         <button
                             onClick={() => activeTab === "articles" ? fetchArticles() : fetchPressReleases()}

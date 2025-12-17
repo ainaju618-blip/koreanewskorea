@@ -140,7 +140,8 @@
       "Bash(dir /b d:cbtkoreanewssrccomponents)",
       "Bash(git commit -m \"$(cat <<''EOF''\ndocs: Add comprehensive README.md files with Korean FAQ for all folders\n\n- Created 45+ README.md files across all project folders\n- Added Korean natural language FAQ sections for AI quick navigation\n- Created README_SYNC_GUIDE.md for FAQ synchronization rules\n- Added Part 7 (Git History Verification) for ultimate source of truth\n- Updated CLAUDE.md with FAQ verification rules and Git commands\n- Enhanced scraper README files with FAQ and related documents\n\nKey additions:\n- info/guides/README_SYNC_GUIDE.md - AI required reading for file sync\n- Git verification commands for file existence checking\n- Changelog timeline format for tracking file changes\n- Domain-based search path guidance in CLAUDE.md Part 0.7\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(python jeonnam_edu/jeonnam_edu_scraper.py:*)",
-      "Bash(timeout 30 python:*)"
+      "Bash(timeout 30 python:*)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }

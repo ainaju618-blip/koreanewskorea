@@ -55,6 +55,9 @@ export async function GET(req: NextRequest) {
         // 접근 가능한 지역 목록 조회
         const accessibleRegions = getAccessibleRegions(reporter.position, reporter.region);
 
+        // Validate accessibleRegions - filter out null/undefined values
+        const validRegions = accessibleRegions?.filter(r => r && r.trim() !== '') || [];
+
         // Status filter
         const statusFilter = searchParams.get('status');
 
@@ -72,12 +75,26 @@ export async function GET(req: NextRequest) {
             // 내 권한 범위 기사만
             if (accessibleRegions === null) {
                 // 주필: 전체 (필터 없음)
-            } else if (accessibleRegions.length === 1) {
+            } else if (validRegions.length === 0) {
+                // No valid regions - return empty result
+                return NextResponse.json({
+                    articles: [],
+                    pagination: { page, limit, total: 0, totalPages: 0 },
+                    reporter: {
+                        id: reporter.id,
+                        position: reporter.position,
+                        region: reporter.region,
+                        regionGroup: getRegionGroupLabel(reporter.position, reporter.region),
+                        accessibleRegions: validRegions,
+                        access_level: reporter.access_level,
+                    },
+                });
+            } else if (validRegions.length === 1) {
                 // 단일 지역
-                query = query.eq('source', accessibleRegions[0]);
+                query = query.eq('source', validRegions[0]);
             } else {
                 // 여러 지역 (광주권역 or 전남권역)
-                query = query.in('source', accessibleRegions);
+                query = query.in('source', validRegions);
             }
         } else if (filter === 'my-articles') {
             // 내가 작성한 기사만
@@ -86,12 +103,15 @@ export async function GET(req: NextRequest) {
             // 'all' 필터: 권한 범위 내 기사만 표시
             if (accessibleRegions === null) {
                 // 주필: 전체 (필터 없음)
-            } else if (accessibleRegions.length === 1) {
+            } else if (validRegions.length === 0) {
+                // No valid regions - show only my articles
+                query = query.eq('author_id', reporter.id);
+            } else if (validRegions.length === 1) {
                 // 단일 지역: 해당 지역 + 내가 쓴 기사
-                query = query.or(`source.eq.${accessibleRegions[0]},author_id.eq.${reporter.id}`);
+                query = query.or(`source.eq.${validRegions[0]},author_id.eq.${reporter.id}`);
             } else {
                 // 여러 지역 (광주권역 or 전남권역)
-                const regionFilter = accessibleRegions.map(r => `source.eq.${r}`).join(',');
+                const regionFilter = validRegions.map(r => `source.eq.${r}`).join(',');
                 query = query.or(`${regionFilter},author_id.eq.${reporter.id}`);
             }
         }

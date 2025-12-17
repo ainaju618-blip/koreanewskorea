@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
     Database, FolderGit2, BookOpen, MessageSquare, RefreshCw, ExternalLink, Trash2,
     ChevronRight, ChevronDown, Folder, FileText, Globe, Layers, Box, X,
-    Eye, Calendar, Tag, Plus, Save, Link, History, Clock
+    Eye, Calendar, Tag, Plus, Save, Link, History, Clock, ArrowLeft, ArrowRight
 } from 'lucide-react';
 
 interface Project {
@@ -149,6 +149,39 @@ export default function ClaudeHubPage() {
     const [expandedScopes, setExpandedScopes] = useState<Set<string>>(new Set(['global', 'stack', 'project']));
     const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
     const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(null);
+
+    // Navigation history for knowledge entries
+    const [navHistory, setNavHistory] = useState<KnowledgeEntry[]>([]);
+    const [navIndex, setNavIndex] = useState(-1);
+
+    // Navigate to a knowledge entry (with history tracking)
+    const navigateToEntry = (entry: KnowledgeEntry) => {
+        // If we're not at the end of history, truncate forward history
+        const newHistory = navHistory.slice(0, navIndex + 1);
+        newHistory.push(entry);
+        setNavHistory(newHistory);
+        setNavIndex(newHistory.length - 1);
+        setSelectedEntry(entry);
+    };
+
+    // Go back in history
+    const goBack = () => {
+        if (navIndex > 0) {
+            setNavIndex(navIndex - 1);
+            setSelectedEntry(navHistory[navIndex - 1]);
+        }
+    };
+
+    // Go forward in history
+    const goForward = () => {
+        if (navIndex < navHistory.length - 1) {
+            setNavIndex(navIndex + 1);
+            setSelectedEntry(navHistory[navIndex + 1]);
+        }
+    };
+
+    const canGoBack = navIndex > 0;
+    const canGoForward = navIndex < navHistory.length - 1;
 
     // Modals
     const [activeModal, setActiveModal] = useState<ModalType>('none');
@@ -593,7 +626,7 @@ export default function ClaudeHubPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-100">Claude Hub</h1>
-                        <p className="text-sm text-slate-400">AI Knowledge Management System</p>
+                        <p className="text-sm text-slate-400">AI 지식 관리 시스템</p>
                     </div>
                 </div>
                 <button
@@ -601,17 +634,17 @@ export default function ClaudeHubPage() {
                     className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
+                    새로고침
                 </button>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-1 mb-6 bg-slate-800 p-1 rounded-lg w-fit">
                 {[
-                    { id: 'dashboard', label: 'Dashboard', icon: Database },
-                    { id: 'projects', label: 'Projects', icon: FolderGit2 },
-                    { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
-                    { id: 'sessions', label: 'Sessions', icon: MessageSquare },
+                    { id: 'dashboard', label: '대시보드', icon: Database },
+                    { id: 'projects', label: '프로젝트', icon: FolderGit2 },
+                    { id: 'knowledge', label: '지식', icon: BookOpen },
+                    { id: 'sessions', label: '세션', icon: MessageSquare },
                 ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -643,7 +676,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.projects}</p>
-                                    <p className="text-sm text-slate-400">Projects</p>
+                                    <p className="text-sm text-slate-400">프로젝트</p>
                                 </div>
                             </div>
                         </div>
@@ -654,7 +687,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.knowledge}</p>
-                                    <p className="text-sm text-slate-400">Knowledge Entries</p>
+                                    <p className="text-sm text-slate-400">지식 항목</p>
                                 </div>
                             </div>
                         </div>
@@ -665,7 +698,7 @@ export default function ClaudeHubPage() {
                                 </div>
                                 <div>
                                     <p className="text-3xl font-bold text-slate-100">{stats.sessions}</p>
-                                    <p className="text-sm text-slate-400">Session Logs</p>
+                                    <p className="text-sm text-slate-400">세션 로그</p>
                                 </div>
                             </div>
                         </div>
@@ -674,7 +707,7 @@ export default function ClaudeHubPage() {
                     {/* Topic Distribution */}
                     {Object.keys(stats.topicCounts).length > 0 && (
                         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                            <h3 className="text-lg font-semibold text-slate-100 mb-4">Knowledge Distribution by Topic</h3>
+                            <h3 className="text-lg font-semibold text-slate-100 mb-4">주제별 지식 분포</h3>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(stats.topicCounts).map(([topic, count]) => (
                                     <span
@@ -690,7 +723,7 @@ export default function ClaudeHubPage() {
 
                     {/* Recent Knowledge */}
                     <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
-                        <h3 className="text-lg font-semibold text-slate-100 mb-4">Recent Knowledge</h3>
+                        <h3 className="text-lg font-semibold text-slate-100 mb-4">최근 지식</h3>
                         {stats.recentKnowledge.length > 0 ? (
                             <div className="space-y-3">
                                 {stats.recentKnowledge.map((entry) => (
@@ -710,7 +743,7 @@ export default function ClaudeHubPage() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-slate-500 text-center py-8">No knowledge entries yet</p>
+                            <p className="text-slate-500 text-center py-8">등록된 지식이 없습니다</p>
                         )}
                     </div>
                 </div>
@@ -726,12 +759,12 @@ export default function ClaudeHubPage() {
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
-                            Add Project
+                            프로젝트 추가
                         </button>
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-12 text-slate-400">Loading...</div>
+                        <div className="text-center py-12 text-slate-400">로딩 중...</div>
                     ) : projects.length > 0 ? (
                         <div className="grid gap-4">
                             {projects.map((project) => (
@@ -744,7 +777,7 @@ export default function ClaudeHubPage() {
                                             <div className="flex items-center gap-3 mb-2">
                                                 <h3 className="text-lg font-semibold text-slate-100">{project.name}</h3>
                                                 <span className="px-2 py-0.5 bg-emerald-900/50 text-emerald-400 text-xs font-medium rounded-full">
-                                                    {project.status === 'active' ? 'Active' : project.status}
+                                                    {project.status === 'active' ? '활성' : project.status}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-slate-500 mb-3 font-mono">{project.code}</p>
@@ -791,13 +824,13 @@ export default function ClaudeHubPage() {
                         </div>
                     ) : (
                         <div className="text-center py-12">
-                            <p className="text-slate-400 mb-4">No projects registered yet</p>
+                            <p className="text-slate-400 mb-4">등록된 프로젝트가 없습니다</p>
                             <button
                                 onClick={() => setActiveModal('addProject')}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add First Project
+                                첫 프로젝트 추가
                             </button>
                         </div>
                     )}
@@ -817,21 +850,21 @@ export default function ClaudeHubPage() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    placeholder="Search knowledge..."
+                                    placeholder="지식 검색..."
                                     className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                                 <button
                                     onClick={handleSearch}
                                     className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
                                 >
-                                    Search
+                                    검색
                                 </button>
                                 <button
                                     onClick={() => setActiveModal('addKnowledge')}
                                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    Add
+                                    추가
                                 </button>
                             </div>
                         </div>
@@ -839,20 +872,20 @@ export default function ClaudeHubPage() {
                         {/* Tree View */}
                         <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
                             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                                Knowledge Hierarchy
+                                지식 계층 구조
                             </h3>
 
                             {loading ? (
-                                <div className="text-center py-8 text-slate-400">Loading...</div>
+                                <div className="text-center py-8 text-slate-400">로딩 중...</div>
                             ) : knowledge.length === 0 ? (
                                 <div className="text-center py-8 text-slate-400">
-                                    <p className="mb-4">No knowledge entries yet</p>
+                                    <p className="mb-4">등록된 지식이 없습니다</p>
                                     <button
                                         onClick={() => setActiveModal('addKnowledge')}
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        Add First Entry
+                                        첫 지식 추가
                                     </button>
                                 </div>
                             ) : (
@@ -915,7 +948,7 @@ export default function ClaudeHubPage() {
                                                                             {entries.map((entry) => (
                                                                                 <button
                                                                                     key={entry.id}
-                                                                                    onClick={() => setSelectedEntry(entry)}
+                                                                                    onClick={() => navigateToEntry(entry)}
                                                                                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-left ${
                                                                                         selectedEntry?.id === entry.id
                                                                                             ? 'bg-emerald-900/50 text-emerald-300'
@@ -964,6 +997,38 @@ export default function ClaudeHubPage() {
                                         <h2 className="text-xl font-bold text-slate-100">{selectedEntry.title}</h2>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        {/* Navigation buttons */}
+                                        <div className="flex items-center gap-1 mr-2 pr-2 border-r border-slate-700">
+                                            <button
+                                                onClick={goBack}
+                                                disabled={!canGoBack}
+                                                className={`p-2 rounded-lg transition-colors ${
+                                                    canGoBack
+                                                        ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                                                        : 'text-slate-600 cursor-not-allowed'
+                                                }`}
+                                                title="이전 (뒤로)"
+                                            >
+                                                <ArrowLeft className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={goForward}
+                                                disabled={!canGoForward}
+                                                className={`p-2 rounded-lg transition-colors ${
+                                                    canGoForward
+                                                        ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                                                        : 'text-slate-600 cursor-not-allowed'
+                                                }`}
+                                                title="다음 (앞으로)"
+                                            >
+                                                <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                            {navHistory.length > 1 && (
+                                                <span className="text-xs text-slate-500 ml-1">
+                                                    {navIndex + 1}/{navHistory.length}
+                                                </span>
+                                            )}
+                                        </div>
                                         <button
                                             onClick={openUsageModal}
                                             className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"
@@ -1072,8 +1137,8 @@ export default function ClaudeHubPage() {
                             <div className="bg-slate-800 rounded-xl border border-slate-700 h-full flex items-center justify-center">
                                 <div className="text-center text-slate-500 p-8">
                                     <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p className="text-lg font-medium mb-2">Select a Knowledge Entry</p>
-                                    <p className="text-sm">Click an item in the tree<br />to view details</p>
+                                    <p className="text-lg font-medium mb-2">지식 항목을 선택하세요</p>
+                                    <p className="text-sm">상세 내용을 보려면<br />트리에서 항목을 클릭하세요</p>
                                 </div>
                             </div>
                         )}
@@ -1088,7 +1153,7 @@ export default function ClaudeHubPage() {
                     <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-slate-200">Session Logs</h2>
+                            <h2 className="text-lg font-semibold text-slate-200">세션 로그</h2>
                             <button
                                 onClick={() => {
                                     fetchKnowledge();
@@ -1097,7 +1162,7 @@ export default function ClaudeHubPage() {
                                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Session
+                                세션 추가
                             </button>
                         </div>
 
@@ -1106,7 +1171,7 @@ export default function ClaudeHubPage() {
                             {sessions.length === 0 ? (
                                 <div className="text-center py-12">
                                     <MessageSquare className="w-12 h-12 mx-auto mb-4 text-slate-600" />
-                                    <p className="text-slate-400 mb-4">No session logs yet</p>
+                                    <p className="text-slate-400 mb-4">등록된 세션이 없습니다</p>
                                     <button
                                         onClick={() => {
                                             fetchKnowledge();
@@ -1115,7 +1180,7 @@ export default function ClaudeHubPage() {
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        Add First Session
+                                        첫 세션 추가
                                     </button>
                                 </div>
                             ) : (
@@ -1143,12 +1208,12 @@ export default function ClaudeHubPage() {
                                         <p className="text-slate-300 text-sm line-clamp-2">{session.summary}</p>
                                         <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                                             {session.tasks_completed?.length > 0 && (
-                                                <span>{session.tasks_completed.length} tasks</span>
+                                                <span>{session.tasks_completed.length}개 작업</span>
                                             )}
                                             {session.knowledge_ids?.length > 0 && (
                                                 <span className="flex items-center gap-1">
                                                     <BookOpen className="w-3 h-3" />
-                                                    {session.knowledge_ids.length} knowledge
+                                                    {session.knowledge_ids.length}개 지식
                                                 </span>
                                             )}
                                         </div>
@@ -1204,14 +1269,14 @@ export default function ClaudeHubPage() {
                                 <div className="p-4 space-y-4">
                                     {/* Summary */}
                                     <div>
-                                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Summary</h3>
+                                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">요약</h3>
                                         <p className="text-slate-300">{selectedSession.summary}</p>
                                     </div>
 
                                     {/* Tasks Completed */}
                                     {selectedSession.tasks_completed?.length > 0 && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Tasks Completed</h3>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">완료된 작업</h3>
                                             <ul className="space-y-1">
                                                 {selectedSession.tasks_completed.map((task, i) => (
                                                     <li key={i} className="flex items-start gap-2 text-slate-300">
@@ -1226,7 +1291,7 @@ export default function ClaudeHubPage() {
                                     {/* Decisions Made */}
                                     {selectedSession.decisions_made?.length > 0 && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Decisions Made</h3>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">결정 사항</h3>
                                             <ul className="space-y-1">
                                                 {selectedSession.decisions_made.map((decision, i) => (
                                                     <li key={i} className="flex items-start gap-2 text-slate-300">
@@ -1241,7 +1306,7 @@ export default function ClaudeHubPage() {
                                     {/* Issues Found */}
                                     {selectedSession.issues_found?.length > 0 && (
                                         <div>
-                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Issues Found</h3>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">발견된 이슈</h3>
                                             <ul className="space-y-1">
                                                 {selectedSession.issues_found.map((issue, i) => (
                                                     <li key={i} className="flex items-start gap-2 text-slate-300">
@@ -1258,7 +1323,7 @@ export default function ClaudeHubPage() {
                                         <div>
                                             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
                                                 <Link className="w-3 h-3 inline mr-1" />
-                                                Referenced Knowledge
+                                                참조된 지식
                                             </h3>
                                             <div className="flex flex-wrap gap-2">
                                                 {selectedSession.knowledge_ids.map((id) => {
@@ -1267,7 +1332,7 @@ export default function ClaudeHubPage() {
                                                         <span
                                                             key={id}
                                                             onClick={() => {
-                                                                setSelectedEntry(k);
+                                                                navigateToEntry(k);
                                                                 setActiveTab('knowledge');
                                                             }}
                                                             className="px-2 py-1 bg-slate-700 text-slate-300 text-sm rounded cursor-pointer hover:bg-slate-600"
@@ -1289,8 +1354,8 @@ export default function ClaudeHubPage() {
                             <div className="bg-slate-800 rounded-xl border border-slate-700 h-full flex items-center justify-center min-h-[400px]">
                                 <div className="text-center text-slate-500 p-8">
                                     <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                    <p className="text-lg font-medium mb-2">Select a Session</p>
-                                    <p className="text-sm">Click a session to view details</p>
+                                    <p className="text-lg font-medium mb-2">세션을 선택하세요</p>
+                                    <p className="text-sm">상세 내용을 보려면 세션을 클릭하세요</p>
                                 </div>
                             </div>
                         )}
@@ -1304,7 +1369,7 @@ export default function ClaudeHubPage() {
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
-                            <h2 className="text-xl font-bold text-slate-100">Add New Knowledge</h2>
+                            <h2 className="text-xl font-bold text-slate-100">새 지식 추가</h2>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
@@ -1318,13 +1383,13 @@ export default function ClaudeHubPage() {
                             {/* Title */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Title <span className="text-red-400">*</span>
+                                    제목 <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={newKnowledge.title}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, title: e.target.value })}
-                                    placeholder="Enter knowledge title"
+                                    placeholder="지식 제목을 입력하세요"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
@@ -1332,7 +1397,7 @@ export default function ClaudeHubPage() {
                             {/* Scope & Topic */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Scope</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">범위</label>
                                     <select
                                         value={newKnowledge.scope}
                                         onChange={(e) => setNewKnowledge({ ...newKnowledge, scope: e.target.value })}
@@ -1344,7 +1409,7 @@ export default function ClaudeHubPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Topic</label>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">주제</label>
                                     <select
                                         value={newKnowledge.topic}
                                         onChange={(e) => setNewKnowledge({ ...newKnowledge, topic: e.target.value })}
@@ -1359,7 +1424,7 @@ export default function ClaudeHubPage() {
 
                             {/* Source Type */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">Source Type</label>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">소스 유형</label>
                                 <select
                                     value={newKnowledge.source_type}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, source_type: e.target.value })}
@@ -1376,7 +1441,7 @@ export default function ClaudeHubPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-2">
                                         <Link className="w-3 h-3 inline mr-1" />
-                                        Link to Projects
+                                        프로젝트 연결
                                     </label>
                                     <div className="flex flex-wrap gap-2">
                                         {projects.map((proj) => (
@@ -1405,7 +1470,7 @@ export default function ClaudeHubPage() {
                                 <textarea
                                     value={newKnowledge.summary}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, summary: e.target.value })}
-                                    placeholder="Enter core summary"
+                                    placeholder="핵심 요약을 입력하세요"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
@@ -1414,12 +1479,12 @@ export default function ClaudeHubPage() {
                             {/* Content */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Full Content (Optional)
+                                    전체 내용 (선택사항)
                                 </label>
                                 <textarea
                                     value={newKnowledge.content}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, content: e.target.value })}
-                                    placeholder="Enter original document or detailed content"
+                                    placeholder="원본 문서 또는 상세 내용을 입력하세요"
                                     rows={8}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
                                 />
@@ -1428,13 +1493,13 @@ export default function ClaudeHubPage() {
                             {/* Tags */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Tags (comma separated)
+                                    태그 (쉼표로 구분)
                                 </label>
                                 <input
                                     type="text"
                                     value={newKnowledge.tags}
                                     onChange={(e) => setNewKnowledge({ ...newKnowledge, tags: e.target.value })}
-                                    placeholder="claude, prompting, best-practices"
+                                    placeholder="claude, 프롬프트, 모범사례"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
@@ -1446,7 +1511,7 @@ export default function ClaudeHubPage() {
                                 onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                Cancel
+                                취소
                             </button>
                             <button
                                 onClick={handleAddKnowledge}
@@ -1456,12 +1521,12 @@ export default function ClaudeHubPage() {
                                 {saving ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 animate-spin" />
-                                        Saving...
+                                        저장 중...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        Save
+                                        저장
                                     </>
                                 )}
                             </button>
@@ -1476,7 +1541,7 @@ export default function ClaudeHubPage() {
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
-                            <h2 className="text-xl font-bold text-slate-100">Add New Project</h2>
+                            <h2 className="text-xl font-bold text-slate-100">새 프로젝트 추가</h2>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
@@ -1490,7 +1555,7 @@ export default function ClaudeHubPage() {
                             {/* Code */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Project Code <span className="text-red-400">*</span>
+                                    프로젝트 코드 <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -1499,13 +1564,13 @@ export default function ClaudeHubPage() {
                                     placeholder="koreanews"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                                 />
-                                <p className="text-xs text-slate-500 mt-1">Lowercase letters, numbers, hyphens only</p>
+                                <p className="text-xs text-slate-500 mt-1">소문자, 숫자, 하이픈만 사용 가능</p>
                             </div>
 
                             {/* Name */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Project Name <span className="text-red-400">*</span>
+                                    프로젝트 이름 <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -1519,13 +1584,13 @@ export default function ClaudeHubPage() {
                             {/* Description */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Description
+                                    설명
                                 </label>
                                 <input
                                     type="text"
                                     value={newProject.description}
                                     onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                                    placeholder="News automation platform"
+                                    placeholder="뉴스 자동화 플랫폼"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
@@ -1533,7 +1598,7 @@ export default function ClaudeHubPage() {
                             {/* Git Email */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Git Email <span className="text-red-400">*</span>
+                                    Git 이메일 <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="email"
@@ -1547,13 +1612,13 @@ export default function ClaudeHubPage() {
                             {/* Git Name */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Git Name
+                                    Git 이름
                                 </label>
                                 <input
                                     type="text"
                                     value={newProject.git_name}
                                     onChange={(e) => setNewProject({ ...newProject, git_name: e.target.value })}
-                                    placeholder="Username"
+                                    placeholder="사용자명"
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 />
                             </div>
@@ -1561,7 +1626,7 @@ export default function ClaudeHubPage() {
                             {/* Git Repo */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    GitHub Repository
+                                    GitHub 저장소
                                 </label>
                                 <input
                                     type="text"
@@ -1575,7 +1640,7 @@ export default function ClaudeHubPage() {
                             {/* Tech Stack */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Tech Stack (comma separated)
+                                    기술 스택 (쉼표로 구분)
                                 </label>
                                 <input
                                     type="text"
@@ -1593,7 +1658,7 @@ export default function ClaudeHubPage() {
                                 onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                Cancel
+                                취소
                             </button>
                             <button
                                 onClick={handleAddProject}
@@ -1603,12 +1668,12 @@ export default function ClaudeHubPage() {
                                 {saving ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 animate-spin" />
-                                        Saving...
+                                        저장 중...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        Save
+                                        저장
                                     </>
                                 )}
                             </button>
@@ -1623,7 +1688,7 @@ export default function ClaudeHubPage() {
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                            <h2 className="text-xl font-bold text-slate-100">Log Usage</h2>
+                            <h2 className="text-xl font-bold text-slate-100">사용 기록</h2>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
@@ -1635,18 +1700,18 @@ export default function ClaudeHubPage() {
                         {/* Modal Body */}
                         <div className="p-6 space-y-4">
                             <p className="text-sm text-slate-400">
-                                Recording usage of: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
+                                사용 기록 대상: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
                             </p>
 
                             {/* Context */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Usage Context <span className="text-red-400">*</span>
+                                    사용 맥락 <span className="text-red-400">*</span>
                                 </label>
                                 <textarea
                                     value={newUsageLog.context}
                                     onChange={(e) => setNewUsageLog({ ...newUsageLog, context: e.target.value })}
-                                    placeholder="How did you use this knowledge?"
+                                    placeholder="이 지식을 어떻게 사용했나요?"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
@@ -1655,12 +1720,12 @@ export default function ClaudeHubPage() {
                             {/* Outcome */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Outcome/Result
+                                    결과/성과
                                 </label>
                                 <textarea
                                     value={newUsageLog.outcome}
                                     onChange={(e) => setNewUsageLog({ ...newUsageLog, outcome: e.target.value })}
-                                    placeholder="What was the result?"
+                                    placeholder="결과가 어땠나요?"
                                     rows={2}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
@@ -1670,14 +1735,14 @@ export default function ClaudeHubPage() {
                             {projects.length > 0 && (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">
-                                        Related Project
+                                        관련 프로젝트
                                     </label>
                                     <select
                                         value={newUsageLog.project_code}
                                         onChange={(e) => setNewUsageLog({ ...newUsageLog, project_code: e.target.value })}
                                         className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                     >
-                                        <option value="">-- Select Project --</option>
+                                        <option value="">-- 프로젝트 선택 --</option>
                                         {projects.map((proj) => (
                                             <option key={proj.code} value={proj.code}>{proj.name}</option>
                                         ))}
@@ -1692,7 +1757,7 @@ export default function ClaudeHubPage() {
                                 onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                Cancel
+                                취소
                             </button>
                             <button
                                 onClick={handleAddUsageLog}
@@ -1702,12 +1767,12 @@ export default function ClaudeHubPage() {
                                 {saving ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 animate-spin" />
-                                        Saving...
+                                        저장 중...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        Log Usage
+                                        기록 저장
                                     </>
                                 )}
                             </button>
@@ -1722,7 +1787,7 @@ export default function ClaudeHubPage() {
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                            <h2 className="text-xl font-bold text-slate-100">Usage History</h2>
+                            <h2 className="text-xl font-bold text-slate-100">사용 내역</h2>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
@@ -1734,7 +1799,7 @@ export default function ClaudeHubPage() {
                         {/* Modal Body */}
                         <div className="p-4 overflow-y-auto flex-1">
                             <p className="text-sm text-slate-400 mb-4">
-                                Usage history for: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
+                                사용 내역 대상: <span className="text-slate-200 font-medium">{selectedEntry.title}</span>
                             </p>
 
                             {usageLogs.length > 0 ? (
@@ -1753,7 +1818,7 @@ export default function ClaudeHubPage() {
                                             <p className="text-sm text-slate-300">{log.context}</p>
                                             {log.outcome && (
                                                 <p className="text-sm text-slate-400 mt-2 pt-2 border-t border-slate-600">
-                                                    Result: {log.outcome}
+                                                    결과: {log.outcome}
                                                 </p>
                                             )}
                                         </div>
@@ -1762,7 +1827,7 @@ export default function ClaudeHubPage() {
                             ) : (
                                 <div className="text-center py-8 text-slate-500">
                                     <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                    <p>No usage records yet</p>
+                                    <p>사용 기록이 없습니다</p>
                                 </div>
                             )}
                         </div>
@@ -1774,13 +1839,13 @@ export default function ClaudeHubPage() {
                                 className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Usage
+                                사용 추가
                             </button>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                Close
+                                닫기
                             </button>
                         </div>
                     </div>
@@ -1793,7 +1858,7 @@ export default function ClaudeHubPage() {
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
-                            <h2 className="text-xl font-bold text-slate-100">Add Session Log</h2>
+                            <h2 className="text-xl font-bold text-slate-100">세션 로그 추가</h2>
                             <button
                                 onClick={() => setActiveModal('none')}
                                 className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
@@ -1806,13 +1871,13 @@ export default function ClaudeHubPage() {
                         <div className="p-6 space-y-4">
                             {/* Project */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">Project</label>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">프로젝트</label>
                                 <select
                                     value={newSession.project_code}
                                     onChange={(e) => setNewSession({ ...newSession, project_code: e.target.value })}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                 >
-                                    <option value="">-- Select Project --</option>
+                                    <option value="">-- 프로젝트 선택 --</option>
                                     {projects.map((proj) => (
                                         <option key={proj.code} value={proj.code}>{proj.name}</option>
                                     ))}
@@ -1822,12 +1887,12 @@ export default function ClaudeHubPage() {
                             {/* Summary */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Summary <span className="text-red-400">*</span>
+                                    요약 <span className="text-red-400">*</span>
                                 </label>
                                 <textarea
                                     value={newSession.summary}
                                     onChange={(e) => setNewSession({ ...newSession, summary: e.target.value })}
-                                    placeholder="Brief summary of the session"
+                                    placeholder="세션 요약을 입력하세요"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                                 />
@@ -1836,12 +1901,12 @@ export default function ClaudeHubPage() {
                             {/* Tasks Completed */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Tasks Completed (one per line)
+                                    완료된 작업 (한 줄에 하나씩)
                                 </label>
                                 <textarea
                                     value={newSession.tasks_completed}
                                     onChange={(e) => setNewSession({ ...newSession, tasks_completed: e.target.value })}
-                                    placeholder="Implemented feature X&#10;Fixed bug in Y&#10;Refactored Z component"
+                                    placeholder="기능 X 구현&#10;Y 버그 수정&#10;Z 컴포넌트 리팩토링"
                                     rows={4}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
                                 />
@@ -1850,12 +1915,12 @@ export default function ClaudeHubPage() {
                             {/* Decisions Made */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Decisions Made (one per line)
+                                    결정 사항 (한 줄에 하나씩)
                                 </label>
                                 <textarea
                                     value={newSession.decisions_made}
                                     onChange={(e) => setNewSession({ ...newSession, decisions_made: e.target.value })}
-                                    placeholder="Chose library X over Y because...&#10;Decided to use pattern Z"
+                                    placeholder="Y 대신 X 라이브러리 선택 (이유: ...)&#10;Z 패턴 사용 결정"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
                                 />
@@ -1864,12 +1929,12 @@ export default function ClaudeHubPage() {
                             {/* Issues Found */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                                    Issues Found (one per line)
+                                    발견된 이슈 (한 줄에 하나씩)
                                 </label>
                                 <textarea
                                     value={newSession.issues_found}
                                     onChange={(e) => setNewSession({ ...newSession, issues_found: e.target.value })}
-                                    placeholder="Bug in component X&#10;Performance issue in Y"
+                                    placeholder="X 컴포넌트 버그&#10;Y 성능 이슈"
                                     rows={3}
                                     className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
                                 />
@@ -1880,7 +1945,7 @@ export default function ClaudeHubPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-2">
                                         <Link className="w-3 h-3 inline mr-1" />
-                                        Reference Knowledge
+                                        참조 지식
                                     </label>
                                     <div className="max-h-40 overflow-y-auto bg-slate-700/30 rounded-lg p-2 space-y-1">
                                         {knowledge.map((k) => (
@@ -1909,7 +1974,7 @@ export default function ClaudeHubPage() {
                                 onClick={() => setActiveModal('none')}
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
-                                Cancel
+                                취소
                             </button>
                             <button
                                 onClick={handleAddSession}
@@ -1919,12 +1984,12 @@ export default function ClaudeHubPage() {
                                 {saving ? (
                                     <>
                                         <RefreshCw className="w-4 h-4 animate-spin" />
-                                        Saving...
+                                        저장 중...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4" />
-                                        Save
+                                        저장
                                     </>
                                 )}
                             </button>
