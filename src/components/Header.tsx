@@ -301,18 +301,22 @@ export default function Header() {
                                 )}
                             </Link>
 
-                            {/* Claude Hub Link - External Python App */}
-                            <a
-                                href="http://localhost:8000"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="h-full flex items-center gap-1.5 transition-colors relative text-slate-900 hover:text-emerald-500"
+                            {/* Claude Hub Link - Admin Page */}
+                            <Link
+                                href="/admin/claude-hub"
+                                className={`h-full flex items-center gap-1.5 transition-colors relative
+                                    ${pathname.startsWith('/admin/claude-hub') ? 'text-emerald-500' : 'text-slate-900'}
+                                    hover:text-emerald-500
+                                `}
                             >
                                 <Database className="w-4 h-4" />
                                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-bold">
                                     Claude Hub
                                 </span>
-                            </a>
+                                {pathname.startsWith('/admin/claude-hub') && (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500"></span>
+                                )}
+                            </Link>
 
                             {/* Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
@@ -496,12 +500,10 @@ export default function Header() {
                                 </div>
                             </div>
 
-                            {/* Claude Hub - External Python App */}
+                            {/* Claude Hub - Admin Page */}
                             <div className="bg-gradient-to-br from-emerald-900/50 to-teal-900/30 rounded-2xl overflow-hidden border border-emerald-500/20">
-                                <a
-                                    href="http://localhost:8000"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <Link
+                                    href="/admin/claude-hub"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex items-center justify-between p-4"
                                 >
@@ -517,7 +519,7 @@ export default function Header() {
                                         </div>
                                     </div>
                                     <ChevronRight className="w-5 h-5 text-emerald-400" />
-                                </a>
+                                </Link>
                             </div>
 
                             {/* Social Links */}
