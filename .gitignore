@@ -102,3 +102,5 @@ nul
 
 # Gemini API 키 (민감 정보)
 info/config/gemini_accounts.md
+korea-news-reporter-portal-v2.0/
+.playwright-mcp/

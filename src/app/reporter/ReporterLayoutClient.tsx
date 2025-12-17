@@ -15,12 +15,14 @@ import {
     Loader2,
     StickyNote,
     ChevronRight,
-    Bell,
     Settings,
     HelpCircle,
     Home,
+    Inbox,
+    Bell,
     type LucideIcon,
 } from "lucide-react";
+import NotificationDropdown from "@/components/reporter/NotificationDropdown";
 
 interface Reporter {
     id: string;
@@ -63,6 +65,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
     { href: "/reporter", label: "대시보드", icon: LayoutDashboard },
+    { href: "/reporter/press-releases", label: "보도자료 수신함", icon: Inbox, badge: 3, badgeColor: "bg-purple-100 text-purple-700" },
     { href: "/reporter/articles", label: "기사 관리", icon: FileText },
     { href: "/reporter/write", label: "새 기사 작성", icon: PenSquare },
     { href: "/reporter/drafts", label: "임시저장", icon: StickyNote },
@@ -288,7 +291,7 @@ export default function ReporterLayoutClient({
 
                         {/* Version */}
                         <p className="text-center text-xs text-slate-400 mt-4">
-                            Version 1.0.0
+                            Version 2.0.0
                         </p>
                     </div>
                 </aside>
@@ -320,10 +323,7 @@ export default function ReporterLayoutClient({
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="relative p-2 hover:bg-slate-100 rounded-xl transition">
-                                <Bell className="w-5 h-5 text-slate-500" />
-                                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-                            </button>
+                            <NotificationDropdown />
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center overflow-hidden ring-2 ring-slate-100 shadow-sm">
                                 {reporter.profile_image ? (
                                     <img

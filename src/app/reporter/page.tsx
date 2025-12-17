@@ -11,13 +11,14 @@ import {
     TrendingUp,
     ArrowUpRight,
     ArrowDownRight,
-    Calendar,
     BarChart3,
     Sparkles,
     ChevronRight,
+    Inbox,
     type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import ActivityFeed from "@/components/reporter/ActivityFeed";
 
 interface Reporter {
     id: string;
@@ -192,6 +193,14 @@ export default function ReporterDashboard() {
                             featured
                         />
                         <QuickActionCard
+                            href="/reporter/press-releases"
+                            icon={Inbox}
+                            title="보도자료 수신함"
+                            description="새로운 보도자료를 확인합니다"
+                            color="purple"
+                            badge="3"
+                        />
+                        <QuickActionCard
                             href="/reporter/articles"
                             icon={FileText}
                             title="기사 관리"
@@ -215,38 +224,8 @@ export default function ReporterDashboard() {
                     </div>
                 </div>
 
-                {/* Activity / Calendar */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-lg font-bold text-slate-900">오늘의 할 일</h2>
-                        <Calendar className="w-5 h-5 text-slate-400" />
-                    </div>
-                    <div className="space-y-3">
-                        <TodoItem
-                            title="보도자료 확인"
-                            description={`${reporter?.region} 지역 새 보도자료`}
-                            status="pending"
-                        />
-                        <TodoItem
-                            title="기사 작성 완료"
-                            description="임시저장 기사 마무리"
-                            status="pending"
-                        />
-                        <TodoItem
-                            title="프로필 업데이트"
-                            description="사진 및 약력 수정"
-                            status="done"
-                        />
-                    </div>
-
-                    <Link
-                        href="/reporter/articles"
-                        className="mt-4 flex items-center justify-center gap-2 py-3 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-                    >
-                        모든 기사 보기
-                        <ChevronRight className="w-4 h-4" />
-                    </Link>
-                </div>
+                {/* Activity Feed */}
+                <ActivityFeed className="lg:row-span-1" />
             </div>
 
             {/* Info Banner */}
@@ -316,6 +295,7 @@ function QuickActionCard({
     description,
     color,
     featured,
+    badge,
 }: {
     href: string;
     icon: LucideIcon;
@@ -323,64 +303,44 @@ function QuickActionCard({
     description: string;
     color: string;
     featured?: boolean;
+    badge?: string;
 }) {
+    const isPurple = color === "purple";
+
     return (
         <Link
             href={href}
             className={`
-                group flex items-start gap-4 p-4 rounded-xl transition-all duration-200
+                group flex items-start gap-4 p-4 rounded-xl transition-all duration-200 relative
                 ${featured
                     ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.02]"
-                    : "bg-slate-50 hover:bg-slate-100 border border-slate-100"
+                    : isPurple
+                        ? "bg-purple-50 hover:bg-purple-100 border border-purple-100"
+                        : "bg-slate-50 hover:bg-slate-100 border border-slate-100"
                 }
             `}
         >
+            {badge && (
+                <span className="absolute top-3 right-3 px-2 py-0.5 text-xs font-bold bg-purple-500 text-white rounded-full">
+                    {badge}
+                </span>
+            )}
             <div className={`
                 w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition
                 ${featured
                     ? "bg-white/20 group-hover:bg-white/30"
-                    : "bg-white shadow-sm group-hover:shadow"
+                    : isPurple
+                        ? "bg-purple-100 group-hover:bg-purple-200"
+                        : "bg-white shadow-sm group-hover:shadow"
                 }
             `}>
-                <Icon className={`w-5 h-5 ${featured ? "text-white" : "text-blue-600"}`} />
+                <Icon className={`w-5 h-5 ${featured ? "text-white" : isPurple ? "text-purple-600" : "text-blue-600"}`} />
             </div>
             <div>
-                <p className={`font-semibold ${featured ? "text-white" : "text-slate-900"}`}>{title}</p>
-                <p className={`text-sm mt-0.5 ${featured ? "text-blue-100" : "text-slate-500"}`}>{description}</p>
+                <p className={`font-semibold ${featured ? "text-white" : isPurple ? "text-purple-900" : "text-slate-900"}`}>{title}</p>
+                <p className={`text-sm mt-0.5 ${featured ? "text-blue-100" : isPurple ? "text-purple-600" : "text-slate-500"}`}>{description}</p>
             </div>
         </Link>
-    );
-}
-
-function TodoItem({
-    title,
-    description,
-    status,
-}: {
-    title: string;
-    description: string;
-    status: "done" | "pending";
-}) {
-    return (
-        <div className={`flex items-start gap-3 p-3 rounded-xl transition ${status === "done" ? "bg-emerald-50" : "bg-slate-50 hover:bg-slate-100"}`}>
-            <div className={`
-                w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5
-                ${status === "done"
-                    ? "bg-emerald-500 border-emerald-500 text-white"
-                    : "border-slate-300"
-                }
-            `}>
-                {status === "done" && (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                )}
-            </div>
-            <div>
-                <p className={`font-medium text-sm ${status === "done" ? "text-emerald-700 line-through" : "text-slate-900"}`}>{title}</p>
-                <p className="text-xs text-slate-500">{description}</p>
-            </div>
-        </div>
     );
 }
 
