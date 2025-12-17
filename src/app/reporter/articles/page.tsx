@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -23,6 +23,10 @@ import {
     MoreHorizontal,
     RefreshCw,
     User,
+    Square,
+    CheckSquare,
+    Calendar,
+    Undo2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/ConfirmModal";
@@ -33,6 +37,7 @@ interface Article {
     source: string;
     category: string;
     published_at: string;
+    created_at: string;
     status: string;
     author_id: string | null;
     author_name?: string | null;
@@ -94,11 +99,21 @@ export default function ReporterArticlesPage() {
     const [rejectionReason, setRejectionReason] = useState("");
     const [isRejecting, setIsRejecting] = useState(false);
 
+    // Approval modal state
+    const [approveModalArticle, setApproveModalArticle] = useState<Article | null>(null);
+    const [selectedApprovalAuthorId, setSelectedApprovalAuthorId] = useState<string>("");
+    const [isApproving, setIsApproving] = useState(false);
+
+    // Bulk selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
     const { showSuccess, showError } = useToast();
     const { confirmDelete, confirm } = useConfirm();
 
     const fetchArticles = useCallback(async () => {
         setIsLoading(true);
+        setSelectedIds(new Set()); // Clear selection on fetch
         try {
             let url = `/api/reporter/articles?filter=${filter}&page=${page}&limit=20`;
             if (statusFilter !== "all") {
@@ -118,6 +133,121 @@ export default function ReporterArticlesPage() {
         }
     }, [filter, page, statusFilter]);
 
+    // Filtered articles (client-side search)
+    const filteredArticles = useMemo(() =>
+        searchQuery
+            ? articles.filter((a) => a.title.toLowerCase().includes(searchQuery.toLowerCase()))
+            : articles,
+        [articles, searchQuery]
+    );
+
+    // Bulk selection handlers
+    const handleSelectAll = useCallback(() => {
+        const editableIds = filteredArticles.filter(a => a.canEdit).map(a => a.id);
+        if (selectedIds.size === editableIds.length && editableIds.length > 0) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(editableIds));
+        }
+    }, [filteredArticles, selectedIds.size]);
+
+    const handleSelectOne = useCallback((id: string) => {
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    }, []);
+
+    // Bulk status change
+    const handleBulkStatusChange = useCallback(async (newStatus: string) => {
+        if (selectedIds.size === 0) return;
+
+        const statusLabel = newStatus === 'published' ? 'publish' : newStatus === 'draft' ? 'set as draft' : newStatus;
+        const confirmed = await confirm({
+            title: "Bulk Status Change",
+            message: `Change status of ${selectedIds.size} article(s) to "${statusLabel}"?`,
+            type: "warning",
+            confirmText: "Change",
+            cancelText: "Cancel",
+        });
+
+        if (!confirmed) return;
+
+        setIsBulkProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selectedIds) {
+            try {
+                const res = await fetch(`/api/reporter/articles/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch {
+                failCount++;
+            }
+        }
+
+        setIsBulkProcessing(false);
+        if (successCount > 0) {
+            showSuccess(`${successCount} article(s) updated successfully.`);
+        }
+        if (failCount > 0) {
+            showError(`${failCount} article(s) failed to update.`);
+        }
+        fetchArticles();
+    }, [selectedIds, confirm, showSuccess, showError, fetchArticles]);
+
+    // Bulk delete
+    const handleBulkDelete = useCallback(async () => {
+        if (selectedIds.size === 0) return;
+
+        const confirmed = await confirmDelete(
+            `Delete ${selectedIds.size} article(s)?\n\nDeleted articles will be moved to trash.`
+        );
+
+        if (!confirmed) return;
+
+        setIsBulkProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selectedIds) {
+            try {
+                const res = await fetch(`/api/reporter/articles/${id}`, {
+                    method: "DELETE",
+                });
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch {
+                failCount++;
+            }
+        }
+
+        setIsBulkProcessing(false);
+        if (successCount > 0) {
+            showSuccess(`${successCount} article(s) deleted.`);
+        }
+        if (failCount > 0) {
+            showError(`${failCount} article(s) failed to delete.`);
+        }
+        fetchArticles();
+    }, [selectedIds, confirmDelete, showSuccess, showError, fetchArticles]);
+
     useEffect(() => {
         fetchArticles();
     }, [fetchArticles]);
@@ -135,14 +265,14 @@ export default function ReporterArticlesPage() {
         }
     }, []);
 
-    // 기사 승인 핸들러
-    const handleApprove = useCallback(async (article: Article) => {
+    // Withdraw (published -> draft)
+    const handleWithdraw = useCallback(async (article: Article) => {
         const confirmed = await confirm({
-            title: "기사 승인",
-            message: `"${article.title}" 기사를 승인하시겠습니까?`,
-            type: "info",
-            confirmText: "승인",
-            cancelText: "취소",
+            title: "Withdraw Article",
+            message: `Withdraw "${article.title}" from publication?\n\nThe article will be moved back to draft status.`,
+            type: "warning",
+            confirmText: "Withdraw",
+            cancelText: "Cancel",
         });
 
         if (!confirmed) return;
@@ -152,11 +282,50 @@ export default function ReporterArticlesPage() {
             const res = await fetch(`/api/reporter/articles/${article.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "published" }),
+                body: JSON.stringify({ status: "draft" }),
+            });
+
+            if (res.ok) {
+                showSuccess("Article withdrawn to draft.");
+                fetchArticles();
+            } else {
+                const data = await res.json();
+                showError(data.message || "Failed to withdraw.");
+            }
+        } catch (err) {
+            console.error("Withdraw error:", err);
+            showError("Error withdrawing article.");
+        } finally {
+            setProcessingId(null);
+        }
+    }, [confirm, showSuccess, showError, fetchArticles]);
+
+    // Open approval modal
+    const handleApprove = useCallback(async (article: Article) => {
+        await fetchReporters(article.source);
+        setSelectedApprovalAuthorId(article.author_id || "");
+        setApproveModalArticle(article);
+    }, [fetchReporters]);
+
+    // Process approval with author assignment
+    const processApproval = useCallback(async () => {
+        if (!approveModalArticle) return;
+
+        setIsApproving(true);
+        try {
+            const res = await fetch(`/api/reporter/articles/${approveModalArticle.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    status: "published",
+                    author_id: selectedApprovalAuthorId || undefined,
+                }),
             });
 
             if (res.ok) {
                 showSuccess("기사가 승인되었습니다.");
+                setApproveModalArticle(null);
+                setSelectedApprovalAuthorId("");
                 fetchArticles();
             } else {
                 const data = await res.json();
@@ -166,9 +335,9 @@ export default function ReporterArticlesPage() {
             console.error("Approve error:", err);
             showError("승인 중 오류가 발생했습니다.");
         } finally {
-            setProcessingId(null);
+            setIsApproving(false);
         }
-    }, [confirm, showSuccess, showError, fetchArticles]);
+    }, [approveModalArticle, selectedApprovalAuthorId, showSuccess, showError, fetchArticles]);
 
     // Open rejection modal
     const handleReject = useCallback((article: Article) => {
@@ -271,13 +440,6 @@ export default function ReporterArticlesPage() {
             setIsChangingAuthor(false);
         }
     }, [authorModalArticle, selectedAuthorId, showSuccess, showError, fetchArticles]);
-
-    // 검색 필터링 (클라이언트 사이드)
-    const filteredArticles = searchQuery
-        ? articles.filter((a) =>
-            a.title.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        : articles;
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -408,6 +570,50 @@ export default function ReporterArticlesPage() {
                 </div>
             </div>
 
+            {/* Bulk Action Toolbar */}
+            {selectedIds.size > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">
+                            {selectedIds.size} article(s) selected
+                        </span>
+                        <button
+                            onClick={() => setSelectedIds(new Set())}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {isBulkProcessing ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => handleBulkStatusChange('published')}
+                                    className="px-3 py-1.5 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition"
+                                >
+                                    Publish
+                                </button>
+                                <button
+                                    onClick={() => handleBulkStatusChange('draft')}
+                                    className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition"
+                                >
+                                    Set Draft
+                                </button>
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
+                                >
+                                    Delete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Article List */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                 {isLoading ? (
@@ -424,21 +630,43 @@ export default function ReporterArticlesPage() {
                         <p className="text-slate-400 text-sm mt-1">필터 조건을 변경해보세요.</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-100">
-                        {filteredArticles.map((article) => (
-                            <ArticleRow
-                                key={article.id}
-                                article={article}
-                                getStatusBadge={getStatusBadge}
-                                myRegion={reporter?.region || ""}
-                                canChangeAuthor={canChangeAuthor}
-                                isProcessing={processingId === article.id}
-                                onApprove={handleApprove}
-                                onReject={handleReject}
-                                onDelete={handleDelete}
-                                onChangeAuthor={openAuthorModal}
-                            />
-                        ))}
+                    <div>
+                        {/* Select All Header */}
+                        <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+                            <button
+                                onClick={handleSelectAll}
+                                className="p-1 hover:bg-slate-200 rounded transition"
+                                title="Select All"
+                            >
+                                {selectedIds.size > 0 && selectedIds.size === filteredArticles.filter(a => a.canEdit).length ? (
+                                    <CheckSquare className="w-5 h-5 text-blue-600" />
+                                ) : (
+                                    <Square className="w-5 h-5 text-slate-400" />
+                                )}
+                            </button>
+                            <span className="text-xs text-slate-500">
+                                {filteredArticles.filter(a => a.canEdit).length} editable
+                            </span>
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                            {filteredArticles.map((article) => (
+                                <ArticleRow
+                                    key={article.id}
+                                    article={article}
+                                    getStatusBadge={getStatusBadge}
+                                    myRegion={reporter?.region || ""}
+                                    canChangeAuthor={canChangeAuthor}
+                                    isProcessing={processingId === article.id}
+                                    isSelected={selectedIds.has(article.id)}
+                                    onSelect={handleSelectOne}
+                                    onApprove={handleApprove}
+                                    onReject={handleReject}
+                                    onWithdraw={handleWithdraw}
+                                    onDelete={handleDelete}
+                                    onChangeAuthor={openAuthorModal}
+                                />
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -535,6 +763,78 @@ export default function ReporterArticlesPage() {
                 </div>
             )}
 
+            {/* Approval Modal */}
+            {approveModalArticle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setApproveModalArticle(null)}
+                    />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+                        <button
+                            onClick={() => setApproveModalArticle(null)}
+                            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Approve Article</h3>
+                                    <p className="text-sm text-slate-500">{approveModalArticle.source}</p>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-600 mb-4 line-clamp-2 p-3 bg-slate-50 rounded-lg">
+                                {approveModalArticle.title}
+                            </p>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Assign Reporter
+                            </label>
+                            <select
+                                value={selectedApprovalAuthorId}
+                                onChange={(e) => setSelectedApprovalAuthorId(e.target.value)}
+                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                            >
+                                <option value="">Select reporter (optional)...</option>
+                                {reportersList.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                        {r.name} ({getPositionLabel(r.position)})
+                                    </option>
+                                ))}
+                            </select>
+                            {approveModalArticle.author_id && approveModalArticle.author_name && (
+                                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                                    <User className="w-3 h-3" />
+                                    Current: {approveModalArticle.author_name}
+                                </p>
+                            )}
+                            <p className="text-xs text-slate-400 mt-2">
+                                If no reporter is selected, you will be assigned as the author.
+                            </p>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+                            <button
+                                onClick={() => setApproveModalArticle(null)}
+                                className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={processApproval}
+                                disabled={isApproving}
+                                className="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition"
+                            >
+                                {isApproving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Rejection Modal */}
             {rejectModalArticle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -605,8 +905,11 @@ function ArticleRow({
     myRegion,
     canChangeAuthor,
     isProcessing,
+    isSelected,
+    onSelect,
     onApprove,
     onReject,
+    onWithdraw,
     onDelete,
     onChangeAuthor,
 }: {
@@ -615,17 +918,36 @@ function ArticleRow({
     myRegion: string;
     canChangeAuthor: boolean;
     isProcessing: boolean;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
     onApprove: (article: Article) => void;
     onReject: (article: Article) => void;
+    onWithdraw: (article: Article) => void;
     onDelete: (article: Article) => void;
     onChangeAuthor: (article: Article) => void;
 }) {
     const isMyRegion = article.source === myRegion;
+    const isPublished = article.status === "published";
     const isPending = article.status === "pending" || article.status === "draft";
     const [showActions, setShowActions] = useState(false);
 
     return (
         <div className="flex items-center gap-4 p-4 hover:bg-slate-50/50 transition group">
+            {/* Checkbox */}
+            {article.canEdit && (
+                <button
+                    onClick={() => onSelect(article.id)}
+                    className="p-1 hover:bg-slate-100 rounded transition flex-shrink-0"
+                >
+                    {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600" />
+                    ) : (
+                        <Square className="w-5 h-5 text-slate-300" />
+                    )}
+                </button>
+            )}
+            {!article.canEdit && <div className="w-7" />}
+
             {/* Thumbnail */}
             <div className="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
                 {article.thumbnail_url ? (
@@ -663,13 +985,25 @@ function ArticleRow({
                 <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition">
                     {article.title}
                 </h3>
-                <p className="text-sm text-slate-500 mt-0.5">
-                    {new Date(article.published_at).toLocaleDateString("ko-KR", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric"
-                    })}
-                </p>
+                <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                    <span className="flex items-center gap-1" title="Collected date">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(article.created_at).toLocaleDateString("ko-KR", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        })}
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span title="Published date">
+                        {new Date(article.published_at).toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                        })}
+                    </span>
+                </div>
                 {/* Rejection reason display */}
                 {article.status === "rejected" && article.rejection_reason && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -687,27 +1021,38 @@ function ArticleRow({
                     <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
                 ) : (
                     <>
-                        {/* 승인/반려 버튼 (대기 중인 기사만, 편집 권한 있을 때) */}
+                        {/* Approve/Reject buttons (pending articles only) */}
                         {isPending && article.canEdit && (
                             <>
                                 <button
                                     onClick={() => onApprove(article)}
                                     className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
-                                    title="승인"
+                                    title="Approve"
                                 >
                                     <Check className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={() => onReject(article)}
                                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                                    title="반려"
+                                    title="Reject"
                                 >
                                     <Ban className="w-5 h-5" />
                                 </button>
                             </>
                         )}
 
-                        {/* 보기 버튼 */}
+                        {/* Withdraw button (published articles only) */}
+                        {isPublished && article.canEdit && (
+                            <button
+                                onClick={() => onWithdraw(article)}
+                                className="p-2 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                                title="Withdraw to draft"
+                            >
+                                <Undo2 className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        {/* View button */}
                         <Link
                             href={`/news/${article.id}`}
                             target="_blank"
