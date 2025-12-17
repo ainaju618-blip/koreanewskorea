@@ -455,9 +455,6 @@ export default function ReporterProfilePage() {
                                                     ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% reduced)
                                                 </span>
                                             </p>
-                                            <p className="text-xs text-amber-700 mt-1">
-                                                Click &quot;Save&quot; to apply
-                                            </p>
                                         </div>
                                         <button
                                             type="button"
@@ -471,6 +468,24 @@ export default function ReporterProfilePage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Save Button - right below image section */}
+                    {hasPendingImage && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <button
+                                type="submit"
+                                disabled={isSaving}
+                                className="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isSaving ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <Save className="w-5 h-5" />
+                                )}
+                                {isSaving ? "Uploading..." : "Save Profile Image"}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Basic Info Section */}
@@ -627,7 +642,7 @@ export default function ReporterProfilePage() {
                         ) : (
                             <Save className="w-5 h-5" />
                         )}
-                        {isSaving ? "저장 중..." : hasPendingImage ? "프로필 저장 (이미지 포함)" : "프로필 저장"}
+                        {isSaving ? "저장 중..." : "프로필 저장"}
                     </button>
                 </div>
             </form>
