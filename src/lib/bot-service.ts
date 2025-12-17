@@ -225,20 +225,22 @@ export async function executeScraper(
 
             const fullLog = stdoutData + (stderrData ? `\n[STDERR]\n${stderrData}` : '');
 
-            try {
-                // 기존 로그 레코드 업데이트
-                await supabaseAdmin
-                    .from('bot_logs')
-                    .update({
-                        status: status,
-                        ended_at: new Date().toISOString(),
-                        articles_count: articlesCount,
-                        log_message: finalMessage,
-                        metadata: { full_log: fullLog.slice(0, 5000) }
-                    })
-                    .eq('id', logId);
-            } catch (err) {
-                console.error(`[${region}] 로그 업데이트 실패:`, err);
+            // Update log record with completion status
+            const { error: updateError } = await supabaseAdmin
+                .from('bot_logs')
+                .update({
+                    status: status,
+                    ended_at: new Date().toISOString(),
+                    articles_count: articlesCount,
+                    log_message: finalMessage,
+                    metadata: { full_log: fullLog.slice(0, 5000) }
+                })
+                .eq('id', logId);
+
+            if (updateError) {
+                console.error(`[${region}] Log update failed for logId=${logId}:`, updateError.message);
+            } else {
+                console.log(`[${region}] Log updated: status=${status}, articles=${articlesCount}`);
             }
 
             resolve();
