@@ -64,7 +64,7 @@ export default function NewsTicker() {
             <div className="w-full max-w-[1250px] mx-auto px-4 flex items-center">
                 {/* Label */}
                 <span className="flex-shrink-0 bg-[#007BFF] text-white text-xs font-bold px-3 py-1 rounded-full mr-4 animate-pulse">
-                    속보
+                    실시간뉴스
                 </span>
 
                 {/* Ticker Text */}

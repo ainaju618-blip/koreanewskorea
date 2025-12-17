@@ -513,7 +513,7 @@ export default function ReporterArticlesPage() {
                         <Filter className="w-4 h-4 text-slate-400" />
                         <div className="flex gap-1.5 flex-wrap">
                             {[
-                                { value: "my-region", label: "관리지역" },
+                                { value: "my-region", label: "내지역기사" },
                                 { value: "all", label: "전체" },
                                 { value: "my-articles", label: "내 기사" },
                             ].map((opt) => (
