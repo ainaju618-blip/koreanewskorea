@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
 
         let query = supabaseAdmin
             .from('posts')
-            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at, original_url', { count: 'exact' });
+            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at', { count: 'exact' });
 
         // Apply status filter if provided
         if (statusFilter && statusFilter !== 'all') {
