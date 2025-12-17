@@ -157,62 +157,64 @@ export default function ReporterProfilePage() {
         setCroppedAreaPixels(croppedAreaPixels);
     }, []);
 
-    // Create cropped image from canvas
+    // Create cropped and resized image - combines crop + resize in one step for efficiency
     const createCroppedImage = async (
         imageSrc: string,
         pixelCrop: Area,
         rotation: number = 0
     ): Promise<Blob> => {
         const image = await createImage(imageSrc);
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
 
-        if (!ctx) throw new Error("Failed to get canvas context");
+        // Step 1: Create rotated canvas
+        const rotCanvas = document.createElement("canvas");
+        const rotCtx = rotCanvas.getContext("2d");
+        if (!rotCtx) throw new Error("Failed to get canvas context");
 
         const rotRad = (rotation * Math.PI) / 180;
-
-        // Calculate bounding box of rotated image
         const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
             image.width,
             image.height,
             rotation
         );
 
-        // Set canvas size to match bounding box
-        canvas.width = bBoxWidth;
-        canvas.height = bBoxHeight;
+        rotCanvas.width = bBoxWidth;
+        rotCanvas.height = bBoxHeight;
 
-        // Translate canvas center
-        ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
-        ctx.rotate(rotRad);
-        ctx.translate(-image.width / 2, -image.height / 2);
+        rotCtx.translate(bBoxWidth / 2, bBoxHeight / 2);
+        rotCtx.rotate(rotRad);
+        rotCtx.translate(-image.width / 2, -image.height / 2);
+        rotCtx.drawImage(image, 0, 0);
 
-        // Draw rotated image
-        ctx.drawImage(image, 0, 0);
+        // Step 2: Create final cropped + resized canvas (400x400 for profile)
+        const finalSize = 400;
+        const finalCanvas = document.createElement("canvas");
+        const finalCtx = finalCanvas.getContext("2d");
+        if (!finalCtx) throw new Error("Failed to get final canvas context");
 
-        // Extract cropped image data
-        const data = ctx.getImageData(
+        finalCanvas.width = finalSize;
+        finalCanvas.height = finalSize;
+
+        // Draw cropped area directly to final size (crop + resize in one step)
+        finalCtx.drawImage(
+            rotCanvas,
             pixelCrop.x,
             pixelCrop.y,
             pixelCrop.width,
-            pixelCrop.height
+            pixelCrop.height,
+            0,
+            0,
+            finalSize,
+            finalSize
         );
 
-        // Set canvas to crop size
-        canvas.width = pixelCrop.width;
-        canvas.height = pixelCrop.height;
-
-        // Put cropped image data
-        ctx.putImageData(data, 0, 0);
-
         return new Promise((resolve, reject) => {
-            canvas.toBlob(
+            finalCanvas.toBlob(
                 (blob) => {
                     if (blob) resolve(blob);
                     else reject(new Error("Failed to create blob"));
                 },
                 "image/jpeg",
-                0.9
+                0.8 // 80% quality - good balance of size and quality
             );
         });
     };
@@ -223,6 +225,7 @@ export default function ReporterProfilePage() {
             const image = document.createElement("img");
             image.addEventListener("load", () => resolve(image));
             image.addEventListener("error", (error) => reject(error));
+            image.setAttribute("crossOrigin", "anonymous");
             image.src = url;
         });
 
@@ -275,28 +278,18 @@ export default function ReporterProfilePage() {
         setCompressionInfo(null);
 
         const originalSize = originalFile.size;
-        const needsCompression = originalSize > 500 * 1024;
-
-        if (needsCompression) {
-            showSuccess(`용량이 큽니다 (${formatFileSize(originalSize)}). 자동 압축을 시작합니다.`);
-        }
 
         try {
-            // Step 1: Create cropped image
-            setUploadStatus("이미지 자르는 중...");
-            const croppedBlob = await createCroppedImage(imageSrc, croppedAreaPixels, rotation);
-
-            // Step 2: Resize/compress the cropped image
-            setUploadStatus("이미지 압축 중...");
-            const croppedFile = new File([croppedBlob], originalFile.name, { type: "image/jpeg" });
-            const resizedBlob = await resizeImage(croppedFile);
-            const compressedSize = resizedBlob.size;
+            // Step 1: Create cropped + resized image (400x400, 80% quality)
+            setUploadStatus("이미지 처리 중...");
+            const processedBlob = await createCroppedImage(imageSrc, croppedAreaPixels, rotation);
+            const compressedSize = processedBlob.size;
             setCompressionInfo({ original: originalSize, compressed: compressedSize });
 
-            // Step 3: Upload to server
+            // Step 2: Upload to server
             setUploadStatus("서버에 업로드 중...");
             const formDataUpload = new FormData();
-            formDataUpload.append("file", resizedBlob, originalFile.name);
+            formDataUpload.append("file", processedBlob, "profile.jpg");
             formDataUpload.append("folder", "reporters");
 
             const res = await fetch("/api/upload/image", {
@@ -306,16 +299,16 @@ export default function ReporterProfilePage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.error || "업로드 실패");
+                throw new Error(errorData.error || "Upload failed");
             }
 
-            // Step 4: Complete
-            setUploadStatus("완료!");
+            // Step 3: Complete
+            setUploadStatus("Complete!");
             const data = await res.json();
             setFormData(prev => ({ ...prev, profile_image: data.url }));
 
             const reduction = Math.round((1 - compressedSize / originalSize) * 100);
-            showSuccess(`업로드 완료! ${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% 감소)`);
+            showSuccess(`${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% reduced)`);
 
             setTimeout(() => {
                 setUploadStatus("");
@@ -325,7 +318,7 @@ export default function ReporterProfilePage() {
             console.error("Upload error:", err);
             setUploadStatus("");
             setCompressionInfo(null);
-            showError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
+            showError(err instanceof Error ? err.message : "Image upload failed");
         } finally {
             setIsUploading(false);
             setImageSrc("");
