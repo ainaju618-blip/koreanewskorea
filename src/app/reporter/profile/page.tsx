@@ -194,8 +194,8 @@ export default function ReporterProfilePage() {
         });
     };
 
-    // Handle file selection - open crop modal
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle file selection - simple upload without crop (for testing)
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -205,21 +205,67 @@ export default function ReporterProfilePage() {
             return;
         }
 
-        // Store original file and create preview
-        setOriginalFile(file);
-        const reader = new FileReader();
-        reader.onload = () => {
-            setImageSrc(reader.result as string);
-            setCropModalOpen(true);
-            setCrop({ x: 0, y: 0 });
-            setZoom(1);
-            setRotation(0);
-        };
-        reader.readAsDataURL(file);
-
         // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
+        }
+
+        // Direct upload without crop
+        setIsUploading(true);
+        setCompressionInfo(null);
+        const originalSize = file.size;
+
+        try {
+            // Step 1: Compress only
+            setUploadStatus("Compressing...");
+            console.log("Original file:", file.name, file.size, file.type);
+
+            const compressedFile = await imageCompression(file, {
+                maxSizeMB: 0.3,
+                maxWidthOrHeight: 400,
+                useWebWorker: true,
+            });
+
+            console.log("Compressed file:", compressedFile.size);
+            const compressedSize = compressedFile.size;
+            setCompressionInfo({ original: originalSize, compressed: compressedSize });
+
+            // Step 2: Upload
+            setUploadStatus("Uploading...");
+            const formDataUpload = new FormData();
+            formDataUpload.append("file", compressedFile, "profile.jpg");
+            formDataUpload.append("folder", "reporters");
+
+            console.log("Sending to API...");
+            const res = await fetch("/api/upload/image", {
+                method: "POST",
+                body: formDataUpload,
+            });
+
+            console.log("Response status:", res.status);
+            const responseText = await res.text();
+            console.log("Response body:", responseText);
+
+            if (!res.ok) {
+                throw new Error(responseText || "Upload failed");
+            }
+
+            const data = JSON.parse(responseText);
+            setFormData(prev => ({ ...prev, profile_image: data.url }));
+            setUploadStatus("Done!");
+            showSuccess("Upload success!");
+
+            setTimeout(() => {
+                setUploadStatus("");
+                setCompressionInfo(null);
+            }, 3000);
+        } catch (err) {
+            console.error("Upload error:", err);
+            setUploadStatus("");
+            setCompressionInfo(null);
+            showError(err instanceof Error ? err.message : "Upload failed");
+        } finally {
+            setIsUploading(false);
         }
     };
 

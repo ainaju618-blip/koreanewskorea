@@ -10,49 +10,57 @@ cloudinary.config({
 
 export async function POST(request: Request) {
     try {
-        // 환경변수 체크
+        console.log("[Upload API] Starting...");
+
+        // Check env vars
         if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY) {
+            console.log("[Upload API] Missing Cloudinary config");
             return NextResponse.json(
-                { error: 'Cloudinary 설정이 필요합니다. .env 파일을 확인하세요.' },
+                { error: 'Cloudinary config missing' },
                 { status: 500 }
             );
         }
 
-        // FormData에서 파일 추출
+        // Get file from FormData
         const formData = await request.formData();
         const file = formData.get('file') as File;
         const folder = formData.get('folder') as string || 'koreanews';
 
+        console.log("[Upload API] File received:", file?.name, file?.size, file?.type);
+
         if (!file) {
-            return NextResponse.json({ error: '파일이 없습니다.' }, { status: 400 });
+            return NextResponse.json({ error: 'No file' }, { status: 400 });
         }
 
-        // 파일 크기 체크 (Vercel 제한: 4.5MB)
-        // 이보다 큰 파일은 클라이언트에서 리사이즈 필요
+        // Size check (Vercel limit: 4.5MB)
         if (file.size > 4.5 * 1024 * 1024) {
+            console.log("[Upload API] File too large:", file.size);
             return NextResponse.json(
-                { error: '파일이 너무 큽니다. 4.5MB 이하로 줄여주세요.' },
+                { error: 'File too large (max 4.5MB)' },
                 { status: 413 }
             );
         }
 
-        // 파일을 Base64로 변환
+        // Convert to Base64
+        console.log("[Upload API] Converting to base64...");
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-        // 폴더별 변환 설정
+        // Transformation settings by folder
         const transformations = folder === 'reporters'
             ? [{ width: 400, height: 400, crop: 'fill', gravity: 'face', quality: 'auto:good' }]
             : [{ width: 800, height: 600, crop: 'limit', quality: 'auto:good' }];
 
-        // Cloudinary에 업로드 (자동 리사이즈 및 압축)
+        // Upload to Cloudinary
+        console.log("[Upload API] Uploading to Cloudinary...", folder);
         const result = await cloudinary.uploader.upload(base64, {
             folder: `koreanews/${folder}`,
             transformation: transformations,
             format: 'webp',
         });
 
+        console.log("[Upload API] Success:", result.secure_url);
         return NextResponse.json({
             url: result.secure_url,
             public_id: result.public_id,
@@ -63,8 +71,8 @@ export async function POST(request: Request) {
         });
 
     } catch (error: unknown) {
-        console.error('Cloudinary Upload Error:', error);
-        const message = error instanceof Error ? error.message : '업로드 실패';
+        console.error('[Upload API] Error:', error);
+        const message = error instanceof Error ? error.message : 'Upload failed';
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
