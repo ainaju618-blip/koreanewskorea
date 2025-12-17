@@ -5,6 +5,39 @@
 
 ---
 
+## [2025-12-17 23:30] 세션 #18 - 어드민 다크모드 수정 by Claude
+
+### 주인님 의도
+- 어드민 대시보드 오른쪽 카드들의 다크모드 적용 (서비스 사용량, 자동 테스트)
+- Git 커밋 규칙 변경 (기본: 확인 후 커밋, 예외: 자율 커밋)
+
+### 수행 작업
+
+1. **CLAUDE.md v4.5 업데이트**
+   - Git 커밋/배포 규칙 (P0) 섹션 추가
+   - 기본 프로세스: 작업 완료 → 주인님 확인 → 승인 → 커밋
+   - 예외 상황: "보고 안해도 돼" 등 → 자율 커밋 허용
+
+2. **다크모드 CSS 수정 (globals.css)**
+   - `bg-red-100` 오버라이드 추가 (실패 지역 목록 배경)
+   - `ring-red-200` 오버라이드 추가 (실패 시 카드 테두리)
+   - `bg-red-50/30` 오버라이드 추가 (실패 시 카드 배경)
+
+### 사용 도구
+- Read, Grep: CSS 분석
+- Edit: globals.css 수정
+- Bash: 빌드 테스트, git commit/push
+
+### 결과
+- ✅ CLAUDE.md v4.5 커밋 완료 (70ea7a6)
+- ✅ 다크모드 CSS 수정 커밋 완료 (bff01a8)
+
+### 커밋
+- `70ea7a6`: docs: Update CLAUDE.md v4.5 - Git commit approval rules
+- `bff01a8`: fix: Add missing dark mode CSS overrides for admin dashboard
+
+---
+
 ## [2025-12-17 22:00] 세션 #17 - 문서 계층 구조화 완료 by Claude
 
 ### 주인님 의도
