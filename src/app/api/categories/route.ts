@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET: 카테고리 트리 조회
+// Disable caching - always fetch fresh data from DB
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// GET: Category tree
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
