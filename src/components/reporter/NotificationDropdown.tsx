@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -10,6 +10,8 @@ import {
   FileText,
   AlertCircle,
   Megaphone,
+  UserPlus,
+  Loader2,
 } from "lucide-react";
 import { Notification, formatRelativeTime } from "./types";
 
@@ -17,56 +19,35 @@ interface NotificationDropdownProps {
   className?: string;
 }
 
-// Mock notifications - replace with real API call
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    user_id: "u1",
-    type: "approval",
-    title: "기사 승인됨",
-    message: '"나주시 2025년 예산안 발표" 기사가 게시되었습니다.',
-    link: "/reporter/articles",
-    is_read: false,
-    created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-  },
-  {
-    id: "2",
-    user_id: "u1",
-    type: "comment",
-    title: "에디터 코멘트",
-    message: '"제목을 더 간결하게 수정해주세요"',
-    link: "/reporter/articles",
-    is_read: false,
-    created_at: new Date(Date.now() - 60 * 60000).toISOString(),
-  },
-  {
-    id: "3",
-    user_id: "u1",
-    type: "press_release",
-    title: "새 보도자료 3건",
-    message: "광주시, 전남도에서 새 보도자료가 도착했습니다.",
-    link: "/reporter/press-releases",
-    is_read: false,
-    created_at: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-  },
-  {
-    id: "4",
-    user_id: "u1",
-    type: "rejection",
-    title: "기사 반려",
-    message: '"교통 정책" 기사가 반려되었습니다. 사유를 확인하세요.',
-    link: "/reporter/articles",
-    is_read: true,
-    created_at: new Date(Date.now() - 24 * 60 * 60000).toISOString(),
-  },
-];
-
 export default function NotificationDropdown({ className = "" }: NotificationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/reporter/notifications?limit=5");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  }, []);
+
+  // Initial fetch and polling
+  useEffect(() => {
+    fetchNotifications();
+
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -82,14 +63,16 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
   // Notification type icon mapping
   const getIcon = (type: Notification["type"]) => {
     switch (type) {
-      case "approval":
+      case "article_approved":
         return <Check className="w-4 h-4 text-emerald-600" />;
-      case "rejection":
+      case "article_rejected":
         return <X className="w-4 h-4 text-red-600" />;
-      case "comment":
+      case "article_assigned":
+        return <UserPlus className="w-4 h-4 text-purple-600" />;
+      case "article_edited":
+        return <FileText className="w-4 h-4 text-blue-600" />;
+      case "mention":
         return <MessageSquare className="w-4 h-4 text-blue-600" />;
-      case "press_release":
-        return <FileText className="w-4 h-4 text-purple-600" />;
       case "system":
         return <Megaphone className="w-4 h-4 text-slate-600" />;
       default:
@@ -100,14 +83,16 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
   // Notification type background color
   const getBgColor = (type: Notification["type"]) => {
     switch (type) {
-      case "approval":
+      case "article_approved":
         return "bg-emerald-100";
-      case "rejection":
+      case "article_rejected":
         return "bg-red-100";
-      case "comment":
-        return "bg-blue-100";
-      case "press_release":
+      case "article_assigned":
         return "bg-purple-100";
+      case "article_edited":
+        return "bg-blue-100";
+      case "mention":
+        return "bg-blue-100";
       case "system":
         return "bg-slate-100";
       default:
@@ -115,17 +100,49 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
     }
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, is_read: true }))
-    );
+  const handleMarkAllRead = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/reporter/notifications", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleNotificationClick = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    );
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) {
+      try {
+        await fetch("/api/reporter/notifications", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notificationIds: [notif.id] }),
+        });
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (err) {
+        console.error("Failed to mark as read:", err);
+      }
+    }
     setIsOpen(false);
+  };
+
+  const getNotificationLink = (notif: Notification) => {
+    if (notif.article_id) {
+      return `/reporter/edit/${notif.article_id}`;
+    }
+    return "/reporter/notifications";
   };
 
   return (
@@ -138,7 +155,9 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
       >
         <Bell className="w-5 h-5 text-slate-500" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+          <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
         )}
       </button>
 
@@ -148,7 +167,7 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-900">알림</span>
+              <span className="font-semibold text-slate-900">Notifications</span>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">
                   {unreadCount}
@@ -158,9 +177,10 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                disabled={isLoading}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline disabled:opacity-50"
               >
-                모두 읽음
+                {isLoading ? "..." : "Mark all read"}
               </button>
             )}
           </div>
@@ -170,14 +190,14 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
             {notifications.length === 0 ? (
               <div className="py-12 text-center text-slate-400">
                 <Bell className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p>새 알림이 없습니다</p>
+                <p>No new notifications</p>
               </div>
             ) : (
-              notifications.slice(0, 5).map((notif) => (
+              notifications.map((notif) => (
                 <Link
                   key={notif.id}
-                  href={notif.link || "/reporter"}
-                  onClick={() => handleNotificationClick(notif.id)}
+                  href={getNotificationLink(notif)}
+                  onClick={() => handleNotificationClick(notif)}
                   className={`flex gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${
                     !notif.is_read ? "bg-blue-50/50" : ""
                   }`}
@@ -196,12 +216,21 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
                     <p className="text-sm font-medium text-slate-900 truncate">
                       {notif.title}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                      {notif.message}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {formatRelativeTime(notif.created_at)}
-                    </p>
+                    {notif.message && (
+                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                        {notif.message}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-slate-400">
+                        {formatRelativeTime(notif.created_at)}
+                      </p>
+                      {notif.actor_name && (
+                        <span className="text-xs text-slate-400">
+                          by {notif.actor_name}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Unread indicator */}
@@ -220,7 +249,7 @@ export default function NotificationDropdown({ className = "" }: NotificationDro
               onClick={() => setIsOpen(false)}
               className="block text-center text-sm text-slate-600 hover:text-blue-600 font-medium transition-colors"
             >
-              전체 알림 보기 →
+              View all notifications →
             </Link>
           </div>
         </div>

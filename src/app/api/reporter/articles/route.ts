@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 
         let query = supabaseAdmin
             .from('posts')
-            .select('id, title, source, category, published_at, status, author_id, thumbnail_url', { count: 'exact' });
+            .select('id, title, source, category, published_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at', { count: 'exact' });
 
         // 필터 적용
         if (filter === 'my-region') {

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/ui/Toast';
+import ArticleHistory from '@/components/reporter/ArticleHistory';
 
 interface Article {
     id: string;
@@ -30,6 +31,9 @@ interface Article {
     status: string;
     published_at: string;
     author_id: string | null;
+    rejection_reason?: string | null;
+    last_edited_by?: string | null;
+    last_edited_at?: string | null;
 }
 
 interface Reporter {
@@ -474,11 +478,30 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                     </p>
                 </div>
 
+                {/* Rejection Reason Alert */}
+                {article?.status === "rejected" && article?.rejection_reason && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                            <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-medium text-red-800">Rejection Reason</p>
+                                <p className="text-sm text-red-700 mt-1">{article.rejection_reason}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Info */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
-                    <p><strong>지역:</strong> {article?.source}</p>
-                    <p className="mt-1"><strong>게시일:</strong> {article?.published_at ? new Date(article.published_at).toLocaleString("ko-KR") : "-"}</p>
+                    <p><strong>Region:</strong> {article?.source}</p>
+                    <p className="mt-1"><strong>Published:</strong> {article?.published_at ? new Date(article.published_at).toLocaleString("ko-KR") : "-"}</p>
+                    {article?.last_edited_at && (
+                        <p className="mt-1"><strong>Last Edited:</strong> {new Date(article.last_edited_at).toLocaleString("ko-KR")}</p>
+                    )}
                 </div>
+
+                {/* Article History */}
+                <ArticleHistory articleId={id} />
 
                 {/* Actions */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">

@@ -38,6 +38,7 @@ interface Article {
     author_name?: string | null;
     thumbnail_url: string | null;
     canEdit: boolean;
+    rejection_reason?: string | null;
 }
 
 interface Reporter {
@@ -87,6 +88,11 @@ export default function ReporterArticlesPage() {
 
     // 승인/반려 처리 중
     const [processingId, setProcessingId] = useState<string | null>(null);
+
+    // Rejection modal state
+    const [rejectModalArticle, setRejectModalArticle] = useState<Article | null>(null);
+    const [rejectionReason, setRejectionReason] = useState("");
+    const [isRejecting, setIsRejecting] = useState(false);
 
     const { showSuccess, showError } = useToast();
     const { confirmDelete, confirm } = useConfirm();
@@ -164,28 +170,31 @@ export default function ReporterArticlesPage() {
         }
     }, [confirm, showSuccess, showError, fetchArticles]);
 
-    // 기사 반려 핸들러
-    const handleReject = useCallback(async (article: Article) => {
-        const confirmed = await confirm({
-            title: "기사 반려",
-            message: `"${article.title}" 기사를 반려하시겠습니까?`,
-            type: "danger",
-            confirmText: "반려",
-            cancelText: "취소",
-        });
+    // Open rejection modal
+    const handleReject = useCallback((article: Article) => {
+        setRejectModalArticle(article);
+        setRejectionReason("");
+    }, []);
 
-        if (!confirmed) return;
+    // Process rejection with reason
+    const processRejection = useCallback(async () => {
+        if (!rejectModalArticle) return;
 
-        setProcessingId(article.id);
+        setIsRejecting(true);
         try {
-            const res = await fetch(`/api/reporter/articles/${article.id}`, {
+            const res = await fetch(`/api/reporter/articles/${rejectModalArticle.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: "rejected" }),
+                body: JSON.stringify({
+                    status: "rejected",
+                    rejection_reason: rejectionReason || null,
+                }),
             });
 
             if (res.ok) {
                 showSuccess("기사가 반려되었습니다.");
+                setRejectModalArticle(null);
+                setRejectionReason("");
                 fetchArticles();
             } else {
                 const data = await res.json();
@@ -195,9 +204,9 @@ export default function ReporterArticlesPage() {
             console.error("Reject error:", err);
             showError("반려 중 오류가 발생했습니다.");
         } finally {
-            setProcessingId(null);
+            setIsRejecting(false);
         }
-    }, [confirm, showSuccess, showError, fetchArticles]);
+    }, [rejectModalArticle, rejectionReason, showSuccess, showError, fetchArticles]);
 
     // 기사 삭제 핸들러
     const handleDelete = useCallback(async (article: Article) => {
@@ -525,6 +534,67 @@ export default function ReporterArticlesPage() {
                     </div>
                 </div>
             )}
+
+            {/* Rejection Modal */}
+            {rejectModalArticle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setRejectModalArticle(null)}
+                    />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+                        <button
+                            onClick={() => setRejectModalArticle(null)}
+                            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <Ban className="w-5 h-5 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Reject Article</h3>
+                                    <p className="text-sm text-slate-500">Please provide a reason</p>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-600 mb-4 line-clamp-2 p-3 bg-slate-50 rounded-lg">
+                                {rejectModalArticle.title}
+                            </p>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Rejection Reason
+                            </label>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Enter the reason for rejection (optional but recommended)..."
+                                rows={4}
+                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none bg-white resize-none"
+                            />
+                            <p className="text-xs text-slate-400 mt-2">
+                                The author will be notified with this reason.
+                            </p>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+                            <button
+                                onClick={() => setRejectModalArticle(null)}
+                                className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={processRejection}
+                                disabled={isRejecting}
+                                className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition"
+                            >
+                                {isRejecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -600,6 +670,15 @@ function ArticleRow({
                         day: "numeric"
                     })}
                 </p>
+                {/* Rejection reason display */}
+                {article.status === "rejected" && article.rejection_reason && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" />
+                        {article.rejection_reason.length > 50
+                            ? `${article.rejection_reason.substring(0, 50)}...`
+                            : article.rejection_reason}
+                    </p>
+                )}
             </div>
 
             {/* Actions */}

@@ -17,11 +17,13 @@ export interface Reporter {
 
 export interface Notification {
   id: string;
-  user_id: string;
-  type: 'approval' | 'rejection' | 'comment' | 'press_release' | 'system';
+  recipient_id?: string;
+  type: 'article_approved' | 'article_rejected' | 'article_assigned' | 'article_edited' | 'mention' | 'system';
   title: string;
-  message: string;
-  link?: string;
+  message: string | null;
+  article_id?: string | null;
+  actor_id?: string | null;
+  actor_name?: string | null;
   is_read: boolean;
   created_at: string;
 }
