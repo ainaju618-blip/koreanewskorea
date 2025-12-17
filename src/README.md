@@ -481,8 +481,152 @@ npm run dev
 # http://localhost:3000
 ```
 
+---
+
+## src 내부 폴더
+
+### constants/
+| 파일 | 설명 |
+|------|------|
+| `categories.ts` | 카테고리 상수 정의 |
+| `regions.ts` | 전남/광주 지역 코드 상수 |
+
+### data/
+| 파일 | 설명 |
+|------|------|
+| `mockHeroData.ts` | 히어로 슬라이더 목 데이터 |
+
+### hooks/
+| 파일/폴더 | 설명 |
+|----------|------|
+| `admin/` | 관리자 전용 훅 |
+| `useBehaviorTracker.ts` | 사용자 행동 추적 훅 |
+
+### types/
+| 파일 | 설명 |
+|------|------|
+| TypeScript 타입 정의 파일들 | 프로젝트 공통 타입 |
+
+### db/
+| 파일 | 설명 |
+|------|------|
+| SQL 마이그레이션 파일들 | DB 스키마 변경 이력 |
+
+---
+
+## 프로젝트 루트 폴더 구조
+
+### /backend/
+> **Python 백엔드 스크립트** - 봇, AI 처리, 데이터 로더
+
+| 파일 | 설명 |
+|------|------|
+| `main_bot.py` | 메인 봇 엔진 |
+| `ai_rewriter.py` | AI 기사 재작성 |
+| `db_loader.py` | DB 로더 |
+| `rss_collector.py` | RSS 수집기 |
+| `processors/` | 데이터 프로세서 |
+| `DEVELOPMENT_RULES.md` | 개발 규칙 (UDP 6-Cycle) |
+
+### /claude-hub/
+> **Claude Hub 데스크톱 앱** (Python GUI) - 별도 독립 앱
+
+| 파일/폴더 | 설명 |
+|----------|------|
+| `gui.py` | GUI 메인 (tkinter) |
+| `main.py` | 엔트리포인트 |
+| `knowledge/` | 지식 데이터 |
+| `frontend/` | 프론트엔드 |
+| `run.bat` | 실행 스크립트 |
+
+**참고**: src/app/admin/claude-hub (웹)와 별개의 데스크톱 앱
+
+### /design/
+> **디자인 문서** - 디자인 시스템, 로고, 알고리즘 제안
+
+| 파일 | 설명 |
+|------|------|
+| `DESIGN_SYSTEM.md` | 디자인 시스템 (색상, 폰트, 컴포넌트) |
+| `designplan.md` | 디자인 계획 |
+| `logo.md` | 로고 가이드 |
+| `logo_integration_plan.md` | 로고 적용 계획 |
+| `algorithm_proposal.md` | 알고리즘 제안 |
+
+### /idea/
+> **AI 뉴스 아이디어 시스템 기획** - 문서 + 설정
+
+| 파일 | 설명 |
+|------|------|
+| `README.md` | 시스템 개요 |
+| `ARCHITECTURE.md` | 아키텍처 |
+| `DATABASE.md` | DB 스키마 |
+| `PROMPTS.md` | AI 프롬프트 |
+| `SOURCES.md` | 수집 소스 |
+| `LEGAL.md` | 법적 고려사항 |
+
+### /scrapers/
+> **Python 스크래퍼** - 27개 지자체 보도자료 수집
+
+| 폴더/파일 | 설명 |
+|----------|------|
+| `[지역명]/` | 지역별 스크래퍼 (gwangju, jeonnam 등) |
+| `SCRAPER_GUIDE.md` | 스크래퍼 개발 가이드 |
+| `STATUS.md` | 스크래퍼 현황 |
+| `_queue/PRIORITY.md` | 개발 우선순위 |
+
+### /scripts/
+> **유틸리티 스크립트**
+
+| 파일 | 설명 |
+|------|------|
+| `generate-pwa-icons.py` | PWA 아이콘 생성 |
+| `update-cosmos-category.ts` | Cosmos 카테고리 업데이트 |
+
+### /supabase/
+> **Supabase 설정**
+
+| 폴더 | 설명 |
+|------|------|
+| `migrations/` | DB 마이그레이션 파일들 |
+
+### /sql/
+> **SQL 스크립트**
+
+| 파일 | 설명 |
+|------|------|
+| `analytics_tables.sql` | 분석 테이블 생성 |
+
+### /info/
+> **정보 허브** - 프로젝트 모든 가이드의 진입점
+
+| 파일/폴더 | 설명 |
+|----------|------|
+| `_index.md` | 진입점 |
+| `README.md` | 통합 가이드 |
+| `frontend.md` | 프론트엔드 가이드 |
+| `backend.md` | 백엔드 가이드 |
+| `database.md` | DB 가이드 |
+| `scraper.md` | 스크래퍼 개요 |
+| `design-system.md` | 디자인 시스템 |
+| `errors/` | 에러 해결 문서 |
+| `guides/` | 개발 가이드 |
+| `config/` | 설정 정보 |
+
+### /.ai-collab/
+> **AI 협업 채널** - Claude ↔ Gemini 소통
+
+| 파일 | 설명 |
+|------|------|
+| `README.md` | 협업 가이드 |
+| `TASK.md` | 작업 지시 |
+| `QUESTION.md` | 질문/논의 |
+
+---
+
 ## 관련 문서
 
 - [CLAUDE.md](../CLAUDE.md) - 프로젝트 AI Agent 지침
 - [scrapers/SCRAPER_GUIDE.md](../scrapers/SCRAPER_GUIDE.md) - 스크래퍼 개발 가이드
 - [scrapers/STATUS.md](../scrapers/STATUS.md) - 스크래퍼 현황
+- [info/README.md](../info/README.md) - 통합 가이드
+- [design/DESIGN_SYSTEM.md](../design/DESIGN_SYSTEM.md) - 디자인 시스템
