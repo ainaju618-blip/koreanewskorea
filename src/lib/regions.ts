@@ -148,3 +148,138 @@ export function getRegionGroupLabel(position: string, region: string): string {
 
     return region;
 }
+
+// ============================================
+// Multi-Region Support (Junction Table)
+// ============================================
+
+/**
+ * Get accessible regions for a reporter with multiple assigned regions
+ * This function supports the reporter_regions junction table
+ *
+ * @param position Reporter position
+ * @param regions Array of assigned regions (from junction table)
+ * @returns Accessible regions array, null for full access
+ */
+export function getAccessibleRegionsMulti(
+    position: string,
+    regions: string[]
+): string[] | null {
+    // Editor-in-chief: full access
+    if (position === 'editor_in_chief') {
+        return null;
+    }
+
+    // No regions assigned
+    if (!regions || regions.length === 0) {
+        return [];
+    }
+
+    const accessibleSet = new Set<string>();
+
+    // Process each assigned region
+    for (const region of regions) {
+        if (position === 'branch_manager') {
+            // Gwangju branch manager
+            if (region === '광주광역시' || region === '광주') {
+                GWANGJU_REGIONS.forEach(r => accessibleSet.add(r));
+            }
+            // Jeonnam branch manager
+            else if (region === '전라남도' || region === '전남') {
+                JEONNAM_REGIONS.forEach(r => accessibleSet.add(r));
+            }
+            // City/county branch manager
+            else {
+                accessibleSet.add(region);
+            }
+        } else {
+            // Regular reporter: only assigned regions
+            accessibleSet.add(region);
+        }
+    }
+
+    return Array.from(accessibleSet);
+}
+
+/**
+ * Check if reporter can access a region (multi-region version)
+ *
+ * @param position Reporter position
+ * @param reporterRegions Reporter's assigned regions (array)
+ * @param articleSource Article's source region
+ * @returns Whether access is allowed
+ */
+export function canAccessRegionMulti(
+    position: string,
+    reporterRegions: string[],
+    articleSource: string
+): boolean {
+    const accessibleRegions = getAccessibleRegionsMulti(position, reporterRegions);
+
+    // null = full access
+    if (accessibleRegions === null) {
+        return true;
+    }
+
+    return accessibleRegions.includes(articleSource);
+}
+
+/**
+ * Check if reporter can edit an article (multi-region version)
+ *
+ * @param reporter Reporter info with regions array
+ * @param article Article info
+ * @returns Whether edit is allowed
+ */
+export function canEditArticleMulti(
+    reporter: { id: string; position: string; regions: string[] },
+    article: { source: string; author_id: string | null }
+): boolean {
+    // Author can always edit their own article
+    if (article.author_id === reporter.id) {
+        return true;
+    }
+
+    return canAccessRegionMulti(reporter.position, reporter.regions, article.source);
+}
+
+/**
+ * Get region group label for multi-region reporters
+ *
+ * @param position Reporter position
+ * @param regions Array of assigned regions
+ * @returns Display label
+ */
+export function getRegionGroupLabelMulti(position: string, regions: string[]): string {
+    if (position === 'editor_in_chief') {
+        return '전체';
+    }
+
+    if (!regions || regions.length === 0) {
+        return '미지정';
+    }
+
+    // Check if covers entire Gwangju region
+    const hasGwangju = regions.some(r => r === '광주광역시' || r === '광주');
+    // Check if covers entire Jeonnam region
+    const hasJeonnam = regions.some(r => r === '전라남도' || r === '전남');
+
+    if (position === 'branch_manager') {
+        if (hasGwangju && hasJeonnam) {
+            return '광주/전남 권역';
+        }
+        if (hasGwangju) {
+            return '광주권역';
+        }
+        if (hasJeonnam) {
+            return '전남권역';
+        }
+    }
+
+    // Multiple regions
+    if (regions.length > 1) {
+        return `${regions[0]} 외 ${regions.length - 1}개`;
+    }
+
+    return regions[0];
+}

@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getAccessibleRegions, canEditArticle, getRegionGroupLabel } from '@/lib/regions';
+import {
+    getAccessibleRegions,
+    getAccessibleRegionsMulti,
+    canEditArticle,
+    canEditArticleMulti,
+    getRegionGroupLabel,
+    getRegionGroupLabelMulti
+} from '@/lib/regions';
 
 /**
  * GET /api/reporter/articles
- * 기자용 기사 목록 조회 (직위/지역 기반 권한 필터링)
+ * Reporter article list with position/region-based permission filtering
  *
- * 권한 체계:
- * - 주필: 전체
- * - 광주지사장: 광주권역 (광주광역시, 광주교육청, 5개구)
- * - 전남지사장: 전남권역 (전라남도, 전남교육청, 22개 시군)
- * - 시군지사장: 해당 시군만
- * - 그 외: 본인 담당 지역만
+ * Permission hierarchy:
+ * - Editor-in-chief: full access
+ * - Gwangju branch manager: Gwangju region (city, education office, 5 districts)
+ * - Jeonnam branch manager: Jeonnam region (province, education office, 22 cities/counties)
+ * - City/county branch manager: assigned city/county only
+ * - Others: assigned regions only
+ *
+ * Supports multi-region via reporter_regions junction table
  *
  * Query Params:
  * - filter: 'all' | 'my-region' | 'my-articles'
@@ -21,18 +30,18 @@ import { getAccessibleRegions, canEditArticle, getRegionGroupLabel } from '@/lib
  */
 export async function GET(req: NextRequest) {
     try {
-        // 인증 확인
+        // Auth check
         const supabase = await createClient();
         const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (userError || !user) {
             return NextResponse.json(
-                { message: '로그인이 필요합니다.' },
+                { message: 'Login required' },
                 { status: 401 }
             );
         }
 
-        // 기자 정보 조회
+        // Get reporter info
         const { data: reporter, error: reporterError } = await supabaseAdmin
             .from('reporters')
             .select('*')
@@ -41,10 +50,21 @@ export async function GET(req: NextRequest) {
 
         if (reporterError || !reporter) {
             return NextResponse.json(
-                { message: '기자 정보를 찾을 수 없습니다.' },
+                { message: 'Reporter not found' },
                 { status: 404 }
             );
         }
+
+        // Get regions from junction table (multi-region support)
+        const { data: reporterRegions } = await supabaseAdmin
+            .from('reporter_regions')
+            .select('region')
+            .eq('reporter_id', reporter.id);
+
+        // Extract region strings from junction table, fallback to single region
+        const assignedRegions: string[] = reporterRegions && reporterRegions.length > 0
+            ? reporterRegions.map(r => r.region)
+            : (reporter.region ? [reporter.region] : []);
 
         const { searchParams } = new URL(req.url);
         const filter = searchParams.get('filter') || 'all';
@@ -52,8 +72,10 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '20');
         const offset = (page - 1) * limit;
 
-        // 접근 가능한 지역 목록 조회
-        const accessibleRegions = getAccessibleRegions(reporter.position, reporter.region);
+        // Get accessible regions (supports multi-region)
+        const accessibleRegions = assignedRegions.length > 1
+            ? getAccessibleRegionsMulti(reporter.position, assignedRegions)
+            : getAccessibleRegions(reporter.position, reporter.region);
 
         // Validate accessibleRegions - filter out null/undefined/non-string values
         const validRegions = accessibleRegions?.filter(r => typeof r === 'string' && r.trim() !== '') || [];
@@ -141,18 +163,26 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Add permission info and author_name
+        // Add permission info and author_name (supports multi-region)
+        const useMultiRegion = assignedRegions.length > 1;
         const articlesWithPermission = articles?.map(article => ({
             ...article,
             author_name: article.author_id ? authorMap[article.author_id] || null : null,
-            canEdit: canEditArticle(
-                { id: reporter.id, position: reporter.position || '', region: reporter.region || '' },
-                { source: article.source || '', author_id: article.author_id }
-            ),
+            canEdit: useMultiRegion
+                ? canEditArticleMulti(
+                    { id: reporter.id, position: reporter.position || '', regions: assignedRegions },
+                    { source: article.source || '', author_id: article.author_id }
+                )
+                : canEditArticle(
+                    { id: reporter.id, position: reporter.position || '', region: reporter.region || '' },
+                    { source: article.source || '', author_id: article.author_id }
+                ),
         })) || [];
 
-        // 지역 그룹 라벨
-        const regionGroupLabel = getRegionGroupLabel(reporter.position || '', reporter.region || '');
+        // Region group label (supports multi-region)
+        const regionGroupLabel = useMultiRegion
+            ? getRegionGroupLabelMulti(reporter.position || '', assignedRegions)
+            : getRegionGroupLabel(reporter.position || '', reporter.region || '');
 
         return NextResponse.json({
             articles: articlesWithPermission,
@@ -166,6 +196,7 @@ export async function GET(req: NextRequest) {
                 id: reporter.id,
                 position: reporter.position,
                 region: reporter.region,
+                regions: assignedRegions,
                 regionGroup: regionGroupLabel,
                 accessibleRegions: accessibleRegions,
                 access_level: reporter.access_level,
