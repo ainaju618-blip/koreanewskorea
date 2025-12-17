@@ -81,8 +81,29 @@ interface NewUsageLog {
     project_code: string;
 }
 
-type TabType = 'dashboard' | 'projects' | 'knowledge';
-type ModalType = 'none' | 'addKnowledge' | 'addProject' | 'addUsage' | 'viewUsage';
+interface Session {
+    id: string;
+    project_code?: string;
+    session_date: string;
+    summary: string;
+    tasks_completed: string[];
+    decisions_made: string[];
+    issues_found: string[];
+    knowledge_ids: string[];
+    created_at: string;
+}
+
+interface NewSession {
+    project_code: string;
+    summary: string;
+    tasks_completed: string;
+    decisions_made: string;
+    issues_found: string;
+    knowledge_ids: string[];
+}
+
+type TabType = 'dashboard' | 'projects' | 'knowledge' | 'sessions';
+type ModalType = 'none' | 'addKnowledge' | 'addProject' | 'addUsage' | 'viewUsage' | 'addSession' | 'viewSession' | 'createKnowledgeFromSession';
 
 // Korean translations
 const SCOPE_LABELS: Record<string, string> = {
@@ -164,6 +185,18 @@ export default function ClaudeHubPage() {
         project_code: ''
     });
 
+    // Sessions
+    const [sessions, setSessions] = useState<Session[]>([]);
+    const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+    const [newSession, setNewSession] = useState<NewSession>({
+        project_code: '',
+        summary: '',
+        tasks_completed: '',
+        decisions_made: '',
+        issues_found: '',
+        knowledge_ids: []
+    });
+
     useEffect(() => {
         fetchStats();
         fetchProjects();
@@ -174,6 +207,8 @@ export default function ClaudeHubPage() {
             fetchProjects();
         } else if (activeTab === 'knowledge') {
             fetchKnowledge();
+        } else if (activeTab === 'sessions') {
+            fetchSessions();
         }
     }, [activeTab]);
 
@@ -232,6 +267,102 @@ export default function ClaudeHubPage() {
         } catch {
             setUsageLogs([]);
         }
+    };
+
+    const fetchSessions = async () => {
+        try {
+            const res = await fetch('/api/claude-hub/sessions');
+            if (res.ok) {
+                const data = await res.json();
+                setSessions(data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch sessions:', error);
+        }
+    };
+
+    const handleAddSession = async () => {
+        if (!newSession.summary.trim()) return;
+        setSaving(true);
+        try {
+            const res = await fetch('/api/claude-hub/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    project_code: newSession.project_code || null,
+                    summary: newSession.summary.trim(),
+                    tasks_completed: newSession.tasks_completed.split('\n').filter(t => t.trim()),
+                    decisions_made: newSession.decisions_made.split('\n').filter(d => d.trim()),
+                    issues_found: newSession.issues_found.split('\n').filter(i => i.trim()),
+                    knowledge_ids: newSession.knowledge_ids
+                })
+            });
+            if (res.ok) {
+                setActiveModal('none');
+                setNewSession({
+                    project_code: '',
+                    summary: '',
+                    tasks_completed: '',
+                    decisions_made: '',
+                    issues_found: '',
+                    knowledge_ids: []
+                });
+                fetchSessions();
+                fetchStats();
+            }
+        } catch (error) {
+            console.error('Failed to create session:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteSession = async (id: string) => {
+        if (!confirm('Delete this session log?')) return;
+        try {
+            const res = await fetch(`/api/claude-hub/sessions/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchSessions();
+                fetchStats();
+                setSelectedSession(null);
+            }
+        } catch (error) {
+            console.error('Failed to delete session:', error);
+        }
+    };
+
+    const toggleSessionKnowledge = (id: string) => {
+        const ids = [...newSession.knowledge_ids];
+        const idx = ids.indexOf(id);
+        if (idx >= 0) {
+            ids.splice(idx, 1);
+        } else {
+            ids.push(id);
+        }
+        setNewSession({ ...newSession, knowledge_ids: ids });
+    };
+
+    const createKnowledgeFromSession = (session: Session) => {
+        setNewKnowledge({
+            title: `Session: ${session.session_date}`,
+            scope: 'project',
+            topic: 'workflow',
+            summary: session.summary,
+            content: [
+                '## Tasks Completed',
+                ...(session.tasks_completed || []).map(t => `- ${t}`),
+                '',
+                '## Decisions Made',
+                ...(session.decisions_made || []).map(d => `- ${d}`),
+                '',
+                '## Issues Found',
+                ...(session.issues_found || []).map(i => `- ${i}`)
+            ].join('\n'),
+            tags: 'session',
+            source_type: 'session',
+            project_codes: session.project_code ? [session.project_code] : []
+        });
+        setActiveModal('addKnowledge');
     };
 
     const handleSearch = () => {
@@ -480,6 +611,7 @@ export default function ClaudeHubPage() {
                     { id: 'dashboard', label: 'Dashboard', icon: Database },
                     { id: 'projects', label: 'Projects', icon: FolderGit2 },
                     { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
+                    { id: 'sessions', label: 'Sessions', icon: MessageSquare },
                 ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -942,6 +1074,223 @@ export default function ClaudeHubPage() {
                                     <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                     <p className="text-lg font-medium mb-2">Select a Knowledge Entry</p>
                                     <p className="text-sm">Click an item in the tree<br />to view details</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Sessions Tab */}
+            {activeTab === 'sessions' && (
+                <div className="grid grid-cols-2 gap-6">
+                    {/* Left Panel - Session List */}
+                    <div className="space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-slate-200">Session Logs</h2>
+                            <button
+                                onClick={() => {
+                                    fetchKnowledge();
+                                    setActiveModal('addSession');
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Session
+                            </button>
+                        </div>
+
+                        {/* Session List */}
+                        <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+                            {sessions.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <MessageSquare className="w-12 h-12 mx-auto mb-4 text-slate-600" />
+                                    <p className="text-slate-400 mb-4">No session logs yet</p>
+                                    <button
+                                        onClick={() => {
+                                            fetchKnowledge();
+                                            setActiveModal('addSession');
+                                        }}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add First Session
+                                    </button>
+                                </div>
+                            ) : (
+                                sessions.map((session) => (
+                                    <div
+                                        key={session.id}
+                                        onClick={() => setSelectedSession(session)}
+                                        className={`p-4 cursor-pointer transition-colors ${
+                                            selectedSession?.id === session.id
+                                                ? 'bg-emerald-900/30'
+                                                : 'hover:bg-slate-700/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4 text-slate-400" />
+                                                <span className="text-sm font-medium text-slate-300">{session.session_date}</span>
+                                            </div>
+                                            {session.project_code && (
+                                                <span className="px-2 py-0.5 bg-purple-900/50 text-purple-400 text-xs rounded">
+                                                    {session.project_code}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-slate-300 text-sm line-clamp-2">{session.summary}</p>
+                                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                                            {session.tasks_completed?.length > 0 && (
+                                                <span>{session.tasks_completed.length} tasks</span>
+                                            )}
+                                            {session.knowledge_ids?.length > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                    <BookOpen className="w-3 h-3" />
+                                                    {session.knowledge_ids.length} knowledge
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Panel - Session Detail */}
+                    <div>
+                        {selectedSession ? (
+                            <div className="bg-slate-800 rounded-xl border border-slate-700">
+                                {/* Header */}
+                                <div className="flex items-start justify-between p-4 border-b border-slate-700">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Calendar className="w-4 h-4 text-emerald-400" />
+                                            <span className="font-semibold text-slate-200">{selectedSession.session_date}</span>
+                                            {selectedSession.project_code && (
+                                                <span className="px-2 py-0.5 bg-purple-900/50 text-purple-400 text-xs rounded">
+                                                    {selectedSession.project_code}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => createKnowledgeFromSession(selectedSession)}
+                                            className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                            title="Create Knowledge from Session"
+                                        >
+                                            <BookOpen className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteSession(selectedSession.id)}
+                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedSession(null)}
+                                            className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                                            title="Close"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-4 space-y-4">
+                                    {/* Summary */}
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Summary</h3>
+                                        <p className="text-slate-300">{selectedSession.summary}</p>
+                                    </div>
+
+                                    {/* Tasks Completed */}
+                                    {selectedSession.tasks_completed?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Tasks Completed</h3>
+                                            <ul className="space-y-1">
+                                                {selectedSession.tasks_completed.map((task, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-slate-300">
+                                                        <span className="text-emerald-400 mt-1">-</span>
+                                                        {task}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Decisions Made */}
+                                    {selectedSession.decisions_made?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Decisions Made</h3>
+                                            <ul className="space-y-1">
+                                                {selectedSession.decisions_made.map((decision, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-slate-300">
+                                                        <span className="text-blue-400 mt-1">-</span>
+                                                        {decision}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Issues Found */}
+                                    {selectedSession.issues_found?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Issues Found</h3>
+                                            <ul className="space-y-1">
+                                                {selectedSession.issues_found.map((issue, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-slate-300">
+                                                        <span className="text-yellow-400 mt-1">-</span>
+                                                        {issue}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Linked Knowledge */}
+                                    {selectedSession.knowledge_ids?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                                                <Link className="w-3 h-3 inline mr-1" />
+                                                Referenced Knowledge
+                                            </h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedSession.knowledge_ids.map((id) => {
+                                                    const k = knowledge.find(k => k.id === id);
+                                                    return k ? (
+                                                        <span
+                                                            key={id}
+                                                            onClick={() => {
+                                                                setSelectedEntry(k);
+                                                                setActiveTab('knowledge');
+                                                            }}
+                                                            className="px-2 py-1 bg-slate-700 text-slate-300 text-sm rounded cursor-pointer hover:bg-slate-600"
+                                                        >
+                                                            {k.title}
+                                                        </span>
+                                                    ) : (
+                                                        <span key={id} className="px-2 py-1 bg-slate-700/50 text-slate-500 text-sm rounded">
+                                                            {id.slice(0, 8)}...
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-800 rounded-xl border border-slate-700 h-full flex items-center justify-center min-h-[400px]">
+                                <div className="text-center text-slate-500 p-8">
+                                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p className="text-lg font-medium mb-2">Select a Session</p>
+                                    <p className="text-sm">Click a session to view details</p>
                                 </div>
                             </div>
                         )}
@@ -1432,6 +1781,152 @@ export default function ClaudeHubPage() {
                                 className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Session Modal */}
+            {activeModal === 'addSession' && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
+                            <h2 className="text-xl font-bold text-slate-100">Add Session Log</h2>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            {/* Project */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">Project</label>
+                                <select
+                                    value={newSession.project_code}
+                                    onChange={(e) => setNewSession({ ...newSession, project_code: e.target.value })}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
+                                    <option value="">-- Select Project --</option>
+                                    {projects.map((proj) => (
+                                        <option key={proj.code} value={proj.code}>{proj.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Summary */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Summary <span className="text-red-400">*</span>
+                                </label>
+                                <textarea
+                                    value={newSession.summary}
+                                    onChange={(e) => setNewSession({ ...newSession, summary: e.target.value })}
+                                    placeholder="Brief summary of the session"
+                                    rows={3}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                />
+                            </div>
+
+                            {/* Tasks Completed */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Tasks Completed (one per line)
+                                </label>
+                                <textarea
+                                    value={newSession.tasks_completed}
+                                    onChange={(e) => setNewSession({ ...newSession, tasks_completed: e.target.value })}
+                                    placeholder="Implemented feature X&#10;Fixed bug in Y&#10;Refactored Z component"
+                                    rows={4}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
+                                />
+                            </div>
+
+                            {/* Decisions Made */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Decisions Made (one per line)
+                                </label>
+                                <textarea
+                                    value={newSession.decisions_made}
+                                    onChange={(e) => setNewSession({ ...newSession, decisions_made: e.target.value })}
+                                    placeholder="Chose library X over Y because...&#10;Decided to use pattern Z"
+                                    rows={3}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
+                                />
+                            </div>
+
+                            {/* Issues Found */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    Issues Found (one per line)
+                                </label>
+                                <textarea
+                                    value={newSession.issues_found}
+                                    onChange={(e) => setNewSession({ ...newSession, issues_found: e.target.value })}
+                                    placeholder="Bug in component X&#10;Performance issue in Y"
+                                    rows={3}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
+                                />
+                            </div>
+
+                            {/* Reference Knowledge */}
+                            {knowledge.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                                        <Link className="w-3 h-3 inline mr-1" />
+                                        Reference Knowledge
+                                    </label>
+                                    <div className="max-h-40 overflow-y-auto bg-slate-700/30 rounded-lg p-2 space-y-1">
+                                        {knowledge.map((k) => (
+                                            <label
+                                                key={k.id}
+                                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-700 rounded cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newSession.knowledge_ids.includes(k.id)}
+                                                    onChange={() => toggleSessionKnowledge(k.id)}
+                                                    className="rounded border-slate-500 bg-slate-600 text-emerald-500 focus:ring-emerald-500"
+                                                />
+                                                <span className="text-sm text-slate-300 truncate">{k.title}</span>
+                                                <span className="ml-auto text-xs text-slate-500">{SCOPE_LABELS[k.scope]}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 sticky bottom-0 bg-slate-800">
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddSession}
+                                disabled={saving || !newSession.summary.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Save
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

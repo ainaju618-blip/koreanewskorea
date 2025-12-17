@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Filter,
@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ExternalLink,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 interface PressRelease {
@@ -29,74 +30,15 @@ interface PressRelease {
   converted_article_id?: string;
 }
 
-// Mock data - replace with real API call
-const MOCK_PRESS_RELEASES: PressRelease[] = [
-  {
-    id: "1",
-    title: "[신규] 나주시, 2025년 예산안 발표",
-    source: "나주시청 기획예산실",
-    content_preview:
-      "나주시는 2025년도 예산안을 1조 2천억원 규모로 편성하여 시의회에 제출했다. 이는 전년 대비 5.2% 증가한 규모로, 지역 경제 활성화와 주민 복지 증진에 중점을 두고 있다.",
-    region: "나주시",
-    received_at: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-    is_read: false,
-    status: "new",
-  },
-  {
-    id: "2",
-    title: "광주광역시, 대중교통 혁신 방안 브리핑",
-    source: "광주시 대변인실",
-    content_preview:
-      "광주광역시는 시민들의 이동 편의성을 높이기 위해 지하철 2호선 공사 가속화 및 버스 노선 전면 개편안을 발표했다. 2026년까지 단계적으로 시행할 예정이다.",
-    region: "광주광역시",
-    received_at: new Date(Date.now() - 24 * 60 * 60000).toISOString(),
-    is_read: true,
-    status: "viewed",
-  },
-  {
-    id: "3",
-    title: "전남도, AI 첨단 농업 단지 조성 계획",
-    source: "전남도청 농업정책과",
-    content_preview:
-      "전라남도는 스마트팜 기술을 활용한 100만평 규모의 AI 첨단 농업 단지를 해남군 일대에 조성할 계획이라고 밝혔다. 총 사업비 3,000억원이 투입될 예정이다.",
-    region: "전라남도",
-    received_at: new Date(Date.now() - 2 * 24 * 60 * 60000).toISOString(),
-    is_read: true,
-    status: "converted",
-    converted_article_id: "article-123",
-  },
-  {
-    id: "4",
-    title: "목포시, 해양문화관광 활성화 계획 발표",
-    source: "목포시 관광과",
-    content_preview:
-      "목포시가 2025년 해양문화관광 활성화를 위한 종합 계획을 발표했다. 구도심 재생사업과 연계한 관광 코스 개발이 핵심이다.",
-    region: "목포시",
-    received_at: new Date(Date.now() - 3 * 24 * 60 * 60000).toISOString(),
-    is_read: true,
-    status: "viewed",
-  },
-  {
-    id: "5",
-    title: "[긴급] 순천시, 재난 안전 대책 회의 결과",
-    source: "순천시 안전정책과",
-    content_preview:
-      "순천시는 최근 기상 이변에 대응하기 위한 긴급 재난 안전 대책 회의를 개최하고, 취약 지역 점검 및 대피소 운영 계획을 확정했다.",
-    region: "순천시",
-    received_at: new Date(Date.now() - 4 * 60 * 60000).toISOString(),
-    is_read: false,
-    status: "new",
-  },
-];
-
 const REGION_OPTIONS = [
   { value: "all", label: "전체 지역" },
-  { value: "gwangju", label: "광주광역시" },
-  { value: "jeonnam", label: "전라남도" },
-  { value: "naju", label: "나주시" },
-  { value: "mokpo", label: "목포시" },
-  { value: "yeosu", label: "여수시" },
-  { value: "suncheon", label: "순천시" },
+  { value: "광주광역시", label: "광주광역시" },
+  { value: "전라남도", label: "전라남도" },
+  { value: "나주시", label: "나주시" },
+  { value: "목포시", label: "목포시" },
+  { value: "여수시", label: "여수시" },
+  { value: "순천시", label: "순천시" },
+  { value: "광양시", label: "광양시" },
 ];
 
 const SORT_OPTIONS = [
@@ -123,37 +65,73 @@ function formatRelativeTime(dateString: string): string {
 export default function PressReleaseInboxPage() {
   const [releases, setReleases] = useState<PressRelease[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [showFilters, setShowFilters] = useState(false);
+  const [tableExists, setTableExists] = useState(true);
+
+  const fetchReleases = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      if (selectedRegion !== 'all') params.set('region', selectedRegion);
+      params.set('sort', sortBy);
+
+      const response = await fetch(`/api/reporter/press-releases?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch press releases');
+      }
+
+      const data = await response.json();
+      setReleases(data.releases || []);
+      setTableExists(data.tableExists !== false);
+    } catch (err) {
+      console.error('Press releases fetch error:', err);
+      setError('보도자료를 불러오는데 실패했습니다.');
+      setReleases([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery, selectedRegion, sortBy]);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchReleases = async () => {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setReleases(MOCK_PRESS_RELEASES);
-      setIsLoading(false);
-    };
     fetchReleases();
-  }, []);
+  }, [fetchReleases]);
 
-  const handleMarkAsRead = (id: string) => {
-    setReleases((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, is_read: true, status: r.status === "new" ? "viewed" : r.status } : r
-      )
-    );
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      const response = await fetch('/api/reporter/press-releases', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ press_release_id: id }),
+      });
+
+      if (response.ok) {
+        setReleases((prev) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, is_read: true, status: r.status === "new" ? "viewed" : r.status } : r
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Mark as read error:', err);
+    }
   };
 
-  // Filter and sort
+  const handleRefresh = () => {
+    fetchReleases();
+  };
+
+  // Client-side filtering (in case API doesn't filter properly)
   const filteredReleases = releases
     .filter((r) => {
       if (searchQuery && !r.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-      if (selectedRegion !== "all" && !r.region.includes(selectedRegion)) {
         return false;
       }
       return true;
@@ -202,13 +180,38 @@ export default function PressReleaseInboxPage() {
           </p>
         </div>
         <button
-          onClick={() => window.location.reload()}
+          onClick={handleRefresh}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm transition"
         >
           <RefreshCw className="w-4 h-4" />
           새로고침
         </button>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <p className="text-red-700 text-sm">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="ml-auto text-sm text-red-600 hover:underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {/* Table Not Ready Notice */}
+      {!tableExists && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          <div>
+            <p className="text-amber-700 text-sm font-medium">보도자료 시스템 준비 중</p>
+            <p className="text-amber-600 text-xs mt-0.5">데이터베이스 테이블이 아직 생성되지 않았습니다. 관리자에게 문의하세요.</p>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">

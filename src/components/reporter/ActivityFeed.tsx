@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Edit3,
@@ -13,55 +13,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { ActivityLog, formatRelativeTime } from "./types";
-
-// Mock activities - replace with real API call
-const MOCK_ACTIVITIES: ActivityLog[] = [
-  {
-    id: "1",
-    user_id: "u1",
-    action: "article_approved",
-    entity_type: "article",
-    entity_id: "a1",
-    entity_name: "나주시 예산안 발표",
-    created_at: new Date(Date.now() - 5 * 60000).toISOString(),
-  },
-  {
-    id: "2",
-    user_id: "u1",
-    action: "article_submitted",
-    entity_type: "article",
-    entity_id: "a2",
-    entity_name: "광주 교통 정책",
-    created_at: new Date(Date.now() - 60 * 60000).toISOString(),
-  },
-  {
-    id: "3",
-    user_id: "u1",
-    action: "article_created",
-    entity_type: "article",
-    entity_id: "a3",
-    entity_name: "전남도 AI 산업단지",
-    created_at: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-  },
-  {
-    id: "4",
-    user_id: "u1",
-    action: "article_saved",
-    entity_type: "article",
-    entity_id: "a4",
-    entity_name: "함평 나비축제 기획",
-    created_at: new Date(Date.now() - 3 * 60 * 60000).toISOString(),
-  },
-  {
-    id: "5",
-    user_id: "u1",
-    action: "article_published",
-    entity_type: "article",
-    entity_id: "a5",
-    entity_name: "지역 경제 활성화 방안",
-    created_at: new Date(Date.now() - 24 * 60 * 60000).toISOString(),
-  },
-];
 
 interface ActivityFeedProps {
   className?: string;
@@ -77,23 +28,38 @@ export default function ActivityFeed({
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchActivities = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/reporter/activity?limit=${maxItems + 5}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch activities');
+      }
+
+      const data = await response.json();
+      setActivities(data.activities || []);
+    } catch (err) {
+      console.error('Activity fetch error:', err);
+      setError('Failed to load activities');
+      setActivities([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [maxItems]);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchActivities = async () => {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setActivities(MOCK_ACTIVITIES);
-      setIsLoading(false);
-    };
     fetchActivities();
-  }, []);
+  }, [fetchActivities]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setActivities(MOCK_ACTIVITIES);
-    setIsRefreshing(false);
+    await fetchActivities(false);
   };
 
   // Action to icon mapping
@@ -190,7 +156,18 @@ export default function ActivityFeed({
 
       {/* Activity List */}
       <div className="p-5 flex-1 overflow-y-auto">
-        {activities.length === 0 ? (
+        {error ? (
+          <div className="py-8 text-center text-red-400">
+            <XCircle className="w-10 h-10 mx-auto mb-2 opacity-50" />
+            <p>{error}</p>
+            <button
+              onClick={handleRefresh}
+              className="mt-2 text-sm text-blue-600 hover:underline"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : activities.length === 0 ? (
           <div className="py-8 text-center text-slate-400">
             <Edit3 className="w-10 h-10 mx-auto mb-2 opacity-50" />
             <p>아직 활동이 없습니다</p>
