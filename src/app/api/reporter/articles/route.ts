@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
         // 접근 가능한 지역 목록 조회
         const accessibleRegions = getAccessibleRegions(reporter.position, reporter.region);
 
-        // Validate accessibleRegions - filter out null/undefined values
-        const validRegions = accessibleRegions?.filter(r => r && r.trim() !== '') || [];
+        // Validate accessibleRegions - filter out null/undefined/non-string values
+        const validRegions = accessibleRegions?.filter(r => typeof r === 'string' && r.trim() !== '') || [];
 
         // Status filter
         const statusFilter = searchParams.get('status');
