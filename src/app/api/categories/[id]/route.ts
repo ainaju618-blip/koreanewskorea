@@ -5,7 +5,7 @@ interface RouteParams {
     params: Promise<{ id: string }>;
 }
 
-// PATCH: 카테고리 수정
+// PATCH: Update category
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
     try {
         const { id } = await params;
@@ -35,9 +35,62 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
         if (error) throw error;
 
+        // Hierarchical inheritance: when parent GNB OFF, cascade to all children
+        if (show_in_gnb === false) {
+            await cascadeGnbOffToChildren(id);
+        }
+
+        // Hierarchical inheritance: when parent is_active OFF, cascade to all children
+        if (is_active === false) {
+            await cascadeActiveOffToChildren(id);
+        }
+
         return NextResponse.json({ success: true, category: data });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+}
+
+// Recursively set show_in_gnb=false for all descendants
+async function cascadeGnbOffToChildren(parentId: string) {
+    // Find all direct children
+    const { data: children } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('parent_id', parentId);
+
+    if (!children || children.length === 0) return;
+
+    // Update all children to show_in_gnb=false
+    const childIds = children.map(c => c.id);
+    await supabaseAdmin
+        .from('categories')
+        .update({ show_in_gnb: false, updated_at: new Date().toISOString() })
+        .in('id', childIds);
+
+    // Recursively process grandchildren
+    for (const child of children) {
+        await cascadeGnbOffToChildren(child.id);
+    }
+}
+
+// Recursively set is_active=false for all descendants
+async function cascadeActiveOffToChildren(parentId: string) {
+    const { data: children } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('parent_id', parentId);
+
+    if (!children || children.length === 0) return;
+
+    const childIds = children.map(c => c.id);
+    await supabaseAdmin
+        .from('categories')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .in('id', childIds);
+
+    for (const child of children) {
+        await cascadeActiveOffToChildren(child.id);
     }
 }
 
