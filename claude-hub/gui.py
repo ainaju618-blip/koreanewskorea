@@ -755,7 +755,7 @@ created: {datetime.now().isoformat()}
     def open_web(self):
         """Open web interface"""
         import webbrowser
-        webbrowser.open("http://localhost:8001")
+        webbrowser.open("http://localhost:3000/admin/claude-hub")
 
 
 if __name__ == "__main__":

@@ -42,20 +42,22 @@ export default function ReporterProfilePage() {
     const [reporter, setReporter] = useState<Reporter | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadStatus, setUploadStatus] = useState<string>("");
-    const [compressionInfo, setCompressionInfo] = useState<{original: number; compressed: number} | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showSuccess, showError } = useToast();
 
-    // Image crop state
+    // Image state - stored in MEMORY until save
+    const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+    const [pendingImagePreview, setPendingImagePreview] = useState<string>("");
+    const [compressionInfo, setCompressionInfo] = useState<{original: number; compressed: number} | null>(null);
+
+    // Crop modal state
     const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [imageSrc, setImageSrc] = useState<string>("");
+    const [rawImageSrc, setRawImageSrc] = useState<string>("");
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-    const [originalFile, setOriginalFile] = useState<File | null>(null);
+    const [originalFileSize, setOriginalFileSize] = useState(0);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -71,6 +73,18 @@ export default function ReporterProfilePage() {
     useEffect(() => {
         fetchProfile();
     }, []);
+
+    // Cleanup object URLs on unmount
+    useEffect(() => {
+        return () => {
+            if (pendingImagePreview && pendingImagePreview.startsWith("blob:")) {
+                URL.revokeObjectURL(pendingImagePreview);
+            }
+            if (rawImageSrc && rawImageSrc.startsWith("blob:")) {
+                URL.revokeObjectURL(rawImageSrc);
+            }
+        };
+    }, [pendingImagePreview, rawImageSrc]);
 
     const fetchProfile = async () => {
         try {
@@ -106,19 +120,17 @@ export default function ReporterProfilePage() {
         fileInputRef.current?.click();
     };
 
-    // Format file size for display
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     };
 
-    // Crop complete callback
     const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
         setCroppedAreaPixels(croppedAreaPixels);
     }, []);
 
-    // Simple and reliable crop function
+    // Crop image and return as File
     const getCroppedImg = async (
         imageSrc: string,
         pixelCrop: Area,
@@ -135,7 +147,6 @@ export default function ReporterProfilePage() {
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("Canvas context failed");
 
-        // Set canvas size to crop size (max 800px for safety)
         const maxSize = 800;
         const scale = Math.min(maxSize / pixelCrop.width, maxSize / pixelCrop.height, 1);
         const outputWidth = Math.round(pixelCrop.width * scale);
@@ -144,7 +155,6 @@ export default function ReporterProfilePage() {
         canvas.width = outputWidth;
         canvas.height = outputHeight;
 
-        // Apply rotation if needed
         if (rotation !== 0) {
             const tempCanvas = document.createElement("canvas");
             const tempCtx = tempCanvas.getContext("2d");
@@ -163,14 +173,12 @@ export default function ReporterProfilePage() {
             tempCtx.rotate(radians);
             tempCtx.drawImage(image, -image.width / 2, -image.height / 2);
 
-            // Draw cropped area from rotated image
             ctx.drawImage(
                 tempCanvas,
                 pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
                 0, 0, outputWidth, outputHeight
             );
         } else {
-            // No rotation - simple crop
             ctx.drawImage(
                 image,
                 pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
@@ -178,7 +186,6 @@ export default function ReporterProfilePage() {
             );
         }
 
-        // Convert to blob then file
         return new Promise((resolve, reject) => {
             canvas.toBlob(
                 (blob) => {
@@ -194,165 +201,143 @@ export default function ReporterProfilePage() {
         });
     };
 
-    // Handle file selection - simple upload without crop (for testing)
+    // STEP 1: User selects image -> open crop modal (NO upload yet)
     const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Image type check
         if (!file.type.startsWith("image/")) {
             showError("Only image files allowed");
             return;
         }
 
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
 
-        // Direct upload without crop
-        setIsUploading(true);
-        setCompressionInfo(null);
-        const originalSize = file.size;
+        // Store original file size
+        setOriginalFileSize(file.size);
 
-        try {
-            // Step 1: Compress only
-            setUploadStatus("Compressing...");
-            console.log("Original file:", file.name, file.size, file.type);
+        // Create object URL for crop modal (memory only)
+        const objectUrl = URL.createObjectURL(file);
+        setRawImageSrc(objectUrl);
 
-            const compressedFile = await imageCompression(file, {
-                maxSizeMB: 0.3,
-                maxWidthOrHeight: 400,
-                useWebWorker: true,
-            });
+        // Reset crop state
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setRotation(0);
+        setCroppedAreaPixels(null);
 
-            console.log("Compressed file:", compressedFile.size);
-            const compressedSize = compressedFile.size;
-            setCompressionInfo({ original: originalSize, compressed: compressedSize });
-
-            // Step 2: Upload
-            setUploadStatus("Uploading...");
-            const formDataUpload = new FormData();
-            formDataUpload.append("file", compressedFile, "profile.jpg");
-            formDataUpload.append("folder", "reporters");
-
-            console.log("Sending to API...");
-            const res = await fetch("/api/upload/image", {
-                method: "POST",
-                body: formDataUpload,
-            });
-
-            console.log("Response status:", res.status);
-            const responseText = await res.text();
-            console.log("Response body:", responseText);
-
-            if (!res.ok) {
-                throw new Error(responseText || "Upload failed");
-            }
-
-            const data = JSON.parse(responseText);
-            setFormData(prev => ({ ...prev, profile_image: data.url }));
-            setUploadStatus("Done!");
-            showSuccess("Upload success!");
-
-            setTimeout(() => {
-                setUploadStatus("");
-                setCompressionInfo(null);
-            }, 3000);
-        } catch (err) {
-            console.error("Upload error:", err);
-            setUploadStatus("");
-            setCompressionInfo(null);
-            showError(err instanceof Error ? err.message : "Upload failed");
-        } finally {
-            setIsUploading(false);
-        }
+        // Open crop modal
+        setCropModalOpen(true);
     };
 
-    // Handle crop confirm - process and upload
+    // STEP 2: User confirms crop -> compress and store in MEMORY (NO upload yet)
     const handleCropConfirm = async () => {
-        if (!croppedAreaPixels || !originalFile) return;
-
-        setCropModalOpen(false);
-        setIsUploading(true);
-        setCompressionInfo(null);
-
-        const originalSize = originalFile.size;
+        if (!croppedAreaPixels || !rawImageSrc) return;
 
         try {
-            // Step 1: Crop the image
-            setUploadStatus("Cropping...");
-            const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+            // Crop the image
+            const croppedFile = await getCroppedImg(rawImageSrc, croppedAreaPixels, rotation);
 
-            // Step 2: Compress with browser-image-compression (battle-tested library)
-            setUploadStatus("Compressing...");
+            // Compress the cropped image
             const compressedFile = await imageCompression(croppedFile, {
-                maxSizeMB: 0.5,           // Max 500KB
-                maxWidthOrHeight: 400,    // 400x400 for profile
+                maxSizeMB: 0.3,
+                maxWidthOrHeight: 400,
                 useWebWorker: true,
                 fileType: "image/jpeg",
             });
 
-            const compressedSize = compressedFile.size;
-            setCompressionInfo({ original: originalSize, compressed: compressedSize });
-
-            // Step 3: Upload to server
-            setUploadStatus("Uploading...");
-            const formDataUpload = new FormData();
-            formDataUpload.append("file", compressedFile, "profile.jpg");
-            formDataUpload.append("folder", "reporters");
-
-            const res = await fetch("/api/upload/image", {
-                method: "POST",
-                body: formDataUpload,
+            // Store compression info
+            setCompressionInfo({
+                original: originalFileSize,
+                compressed: compressedFile.size,
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || "Upload failed");
+            // Store in memory (NOT uploaded yet)
+            setPendingImageFile(compressedFile);
+
+            // Create preview URL from memory
+            if (pendingImagePreview) {
+                URL.revokeObjectURL(pendingImagePreview);
             }
+            const previewUrl = URL.createObjectURL(compressedFile);
+            setPendingImagePreview(previewUrl);
 
-            // Step 4: Complete
-            const data = await res.json();
-            setFormData(prev => ({ ...prev, profile_image: data.url }));
-
-            const reduction = Math.round((1 - compressedSize / originalSize) * 100);
-            setUploadStatus(`Done! (${reduction}% smaller)`);
-            showSuccess(`${formatFileSize(originalSize)} -> ${formatFileSize(compressedSize)}`);
-
-            setTimeout(() => {
-                setUploadStatus("");
-                setCompressionInfo(null);
-            }, 3000);
+            showSuccess(`Image ready! ${formatFileSize(originalFileSize)} -> ${formatFileSize(compressedFile.size)}`);
         } catch (err) {
-            console.error("Upload error:", err);
-            setUploadStatus("");
-            setCompressionInfo(null);
-            showError(err instanceof Error ? err.message : "Upload failed");
+            console.error("Crop error:", err);
+            showError("Failed to process image");
         } finally {
-            setIsUploading(false);
-            setImageSrc("");
-            setOriginalFile(null);
+            // Close modal and cleanup
+            setCropModalOpen(false);
+            if (rawImageSrc) {
+                URL.revokeObjectURL(rawImageSrc);
+            }
+            setRawImageSrc("");
         }
     };
 
-    // Cancel crop
     const handleCropCancel = () => {
         setCropModalOpen(false);
-        setImageSrc("");
-        setOriginalFile(null);
+        if (rawImageSrc) {
+            URL.revokeObjectURL(rawImageSrc);
+        }
+        setRawImageSrc("");
     };
 
+    // Remove pending image
+    const handleRemovePendingImage = () => {
+        if (pendingImagePreview) {
+            URL.revokeObjectURL(pendingImagePreview);
+        }
+        setPendingImageFile(null);
+        setPendingImagePreview("");
+        setCompressionInfo(null);
+    };
+
+    // STEP 3: User clicks SAVE -> upload to Cloudinary + save to DB
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!reporter) return;
 
         setIsSaving(true);
+
         try {
+            let profileImageUrl = formData.profile_image;
+
+            // If there's a pending image, upload it NOW
+            if (pendingImageFile) {
+                console.log("Uploading image to Cloudinary...");
+
+                const uploadFormData = new FormData();
+                uploadFormData.append("file", pendingImageFile, "profile.jpg");
+                uploadFormData.append("folder", "reporters");
+
+                const uploadRes = await fetch("/api/upload/image", {
+                    method: "POST",
+                    body: uploadFormData,
+                });
+
+                if (!uploadRes.ok) {
+                    const errorText = await uploadRes.text();
+                    console.error("Upload failed:", errorText);
+                    throw new Error("Image upload failed");
+                }
+
+                const uploadData = await uploadRes.json();
+                profileImageUrl = uploadData.url;
+                console.log("Upload success:", profileImageUrl);
+            }
+
+            // Save profile to DB
             const res = await fetch(`/api/users/reporters/${reporter.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    profile_image: profileImageUrl,
+                }),
             });
 
             if (!res.ok) {
@@ -360,7 +345,13 @@ export default function ReporterProfilePage() {
                 throw new Error(error.message || "Save failed");
             }
 
-            showSuccess("Profile saved");
+            // Clear pending image state
+            handleRemovePendingImage();
+
+            // Update form with new URL
+            setFormData(prev => ({ ...prev, profile_image: profileImageUrl }));
+
+            showSuccess("Profile saved!");
             fetchProfile();
             router.refresh();
         } catch (err) {
@@ -387,6 +378,9 @@ export default function ReporterProfilePage() {
         );
     }
 
+    // Determine which image to show in preview
+    const displayImage = pendingImagePreview || formData.profile_image;
+    const hasPendingImage = !!pendingImageFile;
     const positionLabel = POSITION_OPTIONS.find(p => p.value === formData.position)?.label || formData.position;
 
     return (
@@ -407,21 +401,17 @@ export default function ReporterProfilePage() {
                                 onClick={handleImageClick}
                                 className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg cursor-pointer hover:opacity-80 transition relative"
                             >
-                                {formData.profile_image ? (
+                                {displayImage ? (
                                     <Image
-                                        src={formData.profile_image}
+                                        src={displayImage}
                                         alt="Profile"
                                         fill
                                         className="object-cover"
+                                        unoptimized={displayImage.startsWith("blob:")}
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         <User className="w-16 h-16 text-gray-300" />
-                                    </div>
-                                )}
-                                {isUploading && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                        <Loader2 className="w-8 h-8 animate-spin text-white" />
                                     </div>
                                 )}
                             </div>
@@ -451,18 +441,32 @@ export default function ReporterProfilePage() {
                                 큰 파일은 자동으로 압축됩니다.
                             </p>
 
-                            {/* Upload Status */}
-                            {uploadStatus && (
-                                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-                                    <p className="text-sm text-blue-700 font-medium">{uploadStatus}</p>
-                                    {compressionInfo && (
-                                        <p className="text-xs text-blue-600 mt-1">
-                                            {formatFileSize(compressionInfo.original)} → {formatFileSize(compressionInfo.compressed)}
-                                            <span className="ml-2 text-green-600 font-medium">
-                                                ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% reduced)
-                                            </span>
-                                        </p>
-                                    )}
+                            {/* Pending Image Info */}
+                            {hasPendingImage && compressionInfo && (
+                                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm text-amber-800 font-medium">
+                                                New image ready
+                                            </p>
+                                            <p className="text-xs text-amber-600">
+                                                {formatFileSize(compressionInfo.original)} → {formatFileSize(compressionInfo.compressed)}
+                                                <span className="ml-2 text-green-600 font-medium">
+                                                    ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% reduced)
+                                                </span>
+                                            </p>
+                                            <p className="text-xs text-amber-700 mt-1">
+                                                Click &quot;Save&quot; to apply
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemovePendingImage}
+                                            className="p-1 hover:bg-amber-100 rounded"
+                                        >
+                                            <X className="w-4 h-4 text-amber-600" />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -584,13 +588,14 @@ export default function ReporterProfilePage() {
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">프로필 미리보기</h2>
                     <div className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-sm">
                         <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-                            {formData.profile_image ? (
+                            {displayImage ? (
                                 <Image
-                                    src={formData.profile_image}
+                                    src={displayImage}
                                     alt="Profile"
                                     width={80}
                                     height={80}
                                     className="object-cover w-full h-full"
+                                    unoptimized={displayImage.startsWith("blob:")}
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
@@ -622,7 +627,7 @@ export default function ReporterProfilePage() {
                         ) : (
                             <Save className="w-5 h-5" />
                         )}
-                        {isSaving ? "저장 중..." : "프로필 저장"}
+                        {isSaving ? "저장 중..." : hasPendingImage ? "프로필 저장 (이미지 포함)" : "프로필 저장"}
                     </button>
                 </div>
             </form>
@@ -645,7 +650,7 @@ export default function ReporterProfilePage() {
                         {/* Crop Area */}
                         <div className="relative h-80 bg-gray-900">
                             <Cropper
-                                image={imageSrc}
+                                image={rawImageSrc}
                                 crop={crop}
                                 zoom={zoom}
                                 rotation={rotation}

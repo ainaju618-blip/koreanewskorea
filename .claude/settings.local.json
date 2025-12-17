@@ -119,7 +119,11 @@
       "Bash(vercel env ls:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\ndocs: Add strict rule against workarounds and non-standard methods (P0)\n\n- Add new P0 rule prohibiting workarounds/non-standard methods\n- Require reporting to user and approval before using alternative approaches\n- Include detailed protocol for handling unsolvable problems\n- Add examples of prohibited workaround patterns\n- Update Quick Reference Card with new rule\n- Bump version to v4.2\n\nEOF\n)\")",
       "Bash(git commit -m \"$(cat <<''EOF''\ndocs: Add error documentation system guide and missing error records\n\n- Add B.5 section explaining error documentation system (MUST for all AIs)\n- Add vercel-utf8-build.md for UTF-8 encoding build errors\n- Add sidearticles-preparing.md for homepage sidebar issue\n- Update _catalog.md with new error entries\n- Bump version to v4.3\n\nEOF\n)\")",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(node -e \"\nconst { createClient } = require(''@supabase/supabase-js'');\nconst supabase = createClient(\n  ''https://xdcxfaoucvzfrryhczmy.supabase.co'',\n  ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkY3hmYW91Y3Z6ZnJyeWhjem15Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDg2MDkyMCwiZXhwIjoyMDgwNDM2OTIwfQ.ALK_bfbSmeSUxSjWLLk1kfTCMbqgUuyBb4yUXxzYRps''\n);\n\nasync function check() {\n  const { data: projects, error: e1 } = await supabase.from(''project_registry'').select(''*'');\n  console.log(''project_registry:'', projects?.length || 0, ''rows'', e1?.message || '''');\n  \n  const { data: knowledge, error: e2 } = await supabase.from(''knowledge_hub'').select(''*'');\n  console.log(''knowledge_hub:'', knowledge?.length || 0, ''rows'', e2?.message || '''');\n  \n  const { data: sessions, error: e3 } = await supabase.from(''session_logs'').select(''*'');\n  console.log(''session_logs:'', sessions?.length || 0, ''rows'', e3?.message || '''');\n  \n  if (projects?.length > 0) {\n    console.log(''\\nSample project:'', JSON.stringify(projects[0], null, 2));\n  }\n}\ncheck();\n\")",
+      "Bash(test:*)",
+      "Bash(node -e \"\nconst cloudinary = require(''cloudinary'').v2;\ncloudinary.config({\n    cloud_name: ''dkz9qbznb'',\n    api_key: ''364775376195792'',\n    api_secret: ''IiKVL8FnOmfnZLqX-DmvEztV0cA''\n});\ncloudinary.api.ping()\n    .then(result => console.log(''SUCCESS:'', result))\n    .catch(err => console.log(''ERROR:'', err.message));\n\")",
+      "Bash(vercel env:*)"
     ]
   }
 }
