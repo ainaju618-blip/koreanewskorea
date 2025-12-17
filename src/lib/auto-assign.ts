@@ -3,7 +3,7 @@
  * Automatically assigns reporters to articles during approval
  */
 
-import { createClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { ROLE_LEVELS } from './permissions';
 
 // Default system email for fallback assignment
@@ -35,11 +35,9 @@ export interface AssignResult {
 export async function autoAssignReporter(
     articleRegion: string | null
 ): Promise<AssignResult> {
-    const supabase = await createClient();
-
     // Step 1: Find region-specific reporters
     if (articleRegion) {
-        const { data: regionReporters, error: regionError } = await supabase
+        const { data: regionReporters, error: regionError } = await supabaseAdmin
             .from('reporters')
             .select('id, name, email, region, role, access_level')
             .eq('region', articleRegion)
@@ -67,7 +65,7 @@ export async function autoAssignReporter(
     }
 
     // Step 2: Find global reporters (editor and above, access_level >= 60)
-    const { data: globalReporters, error: globalError } = await supabase
+    const { data: globalReporters, error: globalError } = await supabaseAdmin
         .from('reporters')
         .select('id, name, email, region, role, access_level')
         .gte('access_level', ROLE_LEVELS.editor)
@@ -84,7 +82,7 @@ export async function autoAssignReporter(
     }
 
     // Step 3: Fallback to default system account
-    const { data: defaultReporter, error: defaultError } = await supabase
+    const { data: defaultReporter, error: defaultError } = await supabaseAdmin
         .from('reporters')
         .select('id, name, email, region, role, access_level')
         .eq('email', DEFAULT_EMAIL)
@@ -108,12 +106,10 @@ export async function autoAssignReporter(
 export async function getReportersByRegion(
     region: string | null
 ): Promise<{ regionReporters: Reporter[]; globalReporters: Reporter[] }> {
-    const supabase = await createClient();
-
     // Get region-specific reporters
     let regionReporters: Reporter[] = [];
     if (region) {
-        const { data } = await supabase
+        const { data } = await supabaseAdmin
             .from('reporters')
             .select('id, name, email, region, role, access_level')
             .eq('region', region)
@@ -125,7 +121,7 @@ export async function getReportersByRegion(
     }
 
     // Get global reporters (editor and above)
-    const { data: globalData } = await supabase
+    const { data: globalData } = await supabaseAdmin
         .from('reporters')
         .select('id, name, email, region, role, access_level')
         .gte('access_level', ROLE_LEVELS.editor)
@@ -143,9 +139,7 @@ export async function getReportersByRegion(
  * Get all active reporters for selection
  */
 export async function getAllActiveReporters(): Promise<Reporter[]> {
-    const supabase = await createClient();
-
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
         .from('reporters')
         .select('id, name, email, region, role, access_level')
         .eq('status', 'Active')
@@ -159,9 +153,7 @@ export async function getAllActiveReporters(): Promise<Reporter[]> {
  * Get auto-assign setting from site_settings
  */
 export async function getAutoAssignSetting(): Promise<boolean> {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from('site_settings')
         .select('value')
         .eq('key', 'auto_assign_reporter')
@@ -180,9 +172,7 @@ export async function getAutoAssignSetting(): Promise<boolean> {
  * Update auto-assign setting
  */
 export async function setAutoAssignSetting(enabled: boolean): Promise<void> {
-    const supabase = await createClient();
-
-    await supabase
+    await supabaseAdmin
         .from('site_settings')
         .upsert({
             key: 'auto_assign_reporter',
