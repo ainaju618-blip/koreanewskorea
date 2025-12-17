@@ -2,7 +2,7 @@
 
 > **프로젝트:** Korea NEWS - 전남/광주 지역 뉴스 자동화 플랫폼
 > **역할:** 프로젝트 총괄 실행자 (속도 & 안정성 중심)
-> **버전:** v4.6
+> **버전:** v4.7
 > **최종수정:** 2025-12-17 by Claude
 
 ---
@@ -44,6 +44,20 @@
 | **Blog** | `/blog/*` | 블로그 시스템 | 블로거 |
 | **Admin** | `/admin/*` | 관리자 대시보드 | 관리자 |
 | **Idea System** | `/idea/` | AI 뉴스 수집 기획 | 기획자 |
+
+### 소스 경로 Quick Reference
+
+> **AI가 경로를 정확히 답하기 위한 참조 테이블**
+
+| 기능 | URL | 소스 경로 | API 경로 |
+|------|-----|----------|---------|
+| 블로그 | `/blog/*` | `src/app/blog/` | `/api/blog/` |
+| CosmicPulse | `/cosmos/*` | `src/app/cosmos/` | - |
+| Claude Hub | `/admin/claude-hub` | `src/app/admin/claude-hub/` | `/api/claude-hub/` |
+| Reporter Portal | `/reporter/*` | `src/app/reporter/` | `/api/reporter/` |
+| Admin | `/admin/*` | `src/app/admin/` | `/api/admin/` |
+| Idea System | `/idea/` | `src/app/idea/` | `/api/idea/` |
+| Blog Admin | `/blogadmin/*` | `src/app/blogadmin/` | `/api/blog/` |
 
 ## 0.3 핵심 기능 상세
 
@@ -125,6 +139,41 @@
 | **스크래퍼** | `scrapers/SCRAPER_GUIDE.md` |
 | **디자인 시스템** | `info/design-system.md` |
 | **에러 해결** | `info/errors/_catalog.md` |
+
+---
+
+# ⚡ Quick Dispatch (빠른 응답 라우팅)
+
+> **목적:** 질문 유형을 파악하여 불필요한 파일 읽기 없이 빠르게 응답
+
+## 요청 모드별 행동
+
+| 키워드 | 모드 | 행동 | 파일 읽기 |
+|--------|------|------|----------|
+| **제안/추천/아이디어** | 💡 제안 | 생각 → 옵션 나열 | ❌ 불필요 |
+| **검토/확인/체크** | 🔍 검토 | 최소 파일만 읽기 → 분석 | ⚠️ 최소만 |
+| **계획/설계/기획** | 📋 계획 | 생각 → 단계 나열 | ❌ 불필요 |
+| **해줘/만들어/고쳐** | ⚡ 실행 | 즉시 작업 수행 | ✅ 필요시 |
+| **진척/상황/현황** | 📊 상태 | Part 0 또는 STATUS 파일 | ⚠️ 최소만 |
+| **뭐야/있어/어디** | ❓ 질문 | Part 0 기억으로 답변 | ❌ 불필요 |
+
+## 예시
+
+```
+주인님: "우주 관련 뉴스 있어?"
+→ 모드: ❓ 질문
+→ 행동: Part 0 기억으로 즉답
+→ 응답: "네, CosmicPulse (/cosmos/) 섹션이 있습니다."
+
+주인님: "새 기능 제안해봐"
+→ 모드: 💡 제안
+→ 행동: 파일 읽기 없이 생각 → 제안
+→ 응답: "1. ... 2. ... 3. ..."
+
+주인님: "에러 고쳐줘"
+→ 모드: ⚡ 실행
+→ 행동: 필요한 파일 읽기 → 수정 → 완료 보고
+```
 
 ---
 
