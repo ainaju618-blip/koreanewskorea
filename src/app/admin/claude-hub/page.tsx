@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
     Database, FolderGit2, BookOpen, MessageSquare, RefreshCw, ExternalLink, Trash2,
     ChevronRight, ChevronDown, Folder, FileText, Globe, Layers, Box, X,
-    Eye, Calendar, Tag
+    Eye, Calendar, Tag, Plus, Save
 } from 'lucide-react';
 
 interface Project {
@@ -43,6 +43,16 @@ interface Stats {
     topicCounts: Record<string, number>;
 }
 
+interface NewKnowledge {
+    title: string;
+    scope: string;
+    topic: string;
+    summary: string;
+    content: string;
+    tags: string;
+    source_type: string;
+}
+
 type TabType = 'dashboard' | 'projects' | 'knowledge';
 
 // Korean translations
@@ -67,6 +77,15 @@ const TOPIC_LABELS: Record<string, string> = {
     general: '일반'
 };
 
+const SOURCE_TYPES = [
+    { value: 'manual', label: '직접 입력' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'document', label: '문서' },
+    { value: 'article', label: '기사/블로그' },
+    { value: 'code', label: '코드' },
+    { value: 'other', label: '기타' }
+];
+
 export default function ClaudeHubPage() {
     const [activeTab, setActiveTab] = useState<TabType>('dashboard');
     const [stats, setStats] = useState<Stats | null>(null);
@@ -80,6 +99,19 @@ export default function ClaudeHubPage() {
     const [expandedScopes, setExpandedScopes] = useState<Set<string>>(new Set(['global', 'stack', 'project']));
     const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
     const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(null);
+
+    // For add knowledge modal
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [newKnowledge, setNewKnowledge] = useState<NewKnowledge>({
+        title: '',
+        scope: 'global',
+        topic: 'general',
+        summary: '',
+        content: '',
+        tags: '',
+        source_type: 'manual'
+    });
 
     useEffect(() => {
         fetchStats();
@@ -163,6 +195,50 @@ export default function ClaudeHubPage() {
             }
         } catch (error) {
             console.error('Failed to delete:', error);
+        }
+    };
+
+    const handleAddKnowledge = async () => {
+        if (!newKnowledge.title.trim() || !newKnowledge.summary.trim()) {
+            alert('제목과 요약은 필수입니다.');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const payload = {
+                ...newKnowledge,
+                tags: newKnowledge.tags.split(',').map(t => t.trim()).filter(t => t)
+            };
+
+            const res = await fetch('/api/claude-hub/knowledge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                setShowAddModal(false);
+                setNewKnowledge({
+                    title: '',
+                    scope: 'global',
+                    topic: 'general',
+                    summary: '',
+                    content: '',
+                    tags: '',
+                    source_type: 'manual'
+                });
+                fetchKnowledge();
+                fetchStats();
+            } else {
+                const error = await res.json();
+                alert(`저장 실패: ${error.error || '알 수 없는 오류'}`);
+            }
+        } catch (error) {
+            console.error('Failed to save:', error);
+            alert('저장 중 오류가 발생했습니다.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -407,7 +483,7 @@ export default function ClaudeHubPage() {
                 <div className="flex gap-6">
                     {/* Left Panel - Tree View */}
                     <div className="w-1/2 space-y-4">
-                        {/* Search Filter */}
+                        {/* Search Filter & Add Button */}
                         <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
                             <div className="flex gap-2">
                                 <input
@@ -420,9 +496,16 @@ export default function ClaudeHubPage() {
                                 />
                                 <button
                                     onClick={handleSearch}
-                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors"
                                 >
                                     검색
+                                </button>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    추가
                                 </button>
                             </div>
                         </div>
@@ -436,7 +519,16 @@ export default function ClaudeHubPage() {
                             {loading ? (
                                 <div className="text-center py-8 text-slate-400">불러오는 중...</div>
                             ) : knowledge.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400">등록된 지식이 없습니다</div>
+                                <div className="text-center py-8 text-slate-400">
+                                    <p className="mb-4">등록된 지식이 없습니다</p>
+                                    <button
+                                        onClick={() => setShowAddModal(true)}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        첫 지식 추가하기
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="space-y-1">
                                     {SCOPES.map((scope) => {
@@ -568,7 +660,7 @@ export default function ClaudeHubPage() {
                                         {selectedEntry.source_type && (
                                             <span className="flex items-center gap-1">
                                                 <FileText className="w-3 h-3" />
-                                                {selectedEntry.source_type}
+                                                {SOURCE_TYPES.find(s => s.value === selectedEntry.source_type)?.label || selectedEntry.source_type}
                                             </span>
                                         )}
                                     </div>
@@ -623,6 +715,152 @@ export default function ClaudeHubPage() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Add Knowledge Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
+                            <h2 className="text-xl font-bold text-slate-100">새 지식 추가</h2>
+                            <button
+                                onClick={() => setShowAddModal(false)}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            {/* Title */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    제목 <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newKnowledge.title}
+                                    onChange={(e) => setNewKnowledge({ ...newKnowledge, title: e.target.value })}
+                                    placeholder="지식 제목을 입력하세요"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Scope & Topic */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">범위</label>
+                                    <select
+                                        value={newKnowledge.scope}
+                                        onChange={(e) => setNewKnowledge({ ...newKnowledge, scope: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    >
+                                        {SCOPES.map((scope) => (
+                                            <option key={scope} value={scope}>{SCOPE_LABELS[scope]}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">주제</label>
+                                    <select
+                                        value={newKnowledge.topic}
+                                        onChange={(e) => setNewKnowledge({ ...newKnowledge, topic: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    >
+                                        {TOPICS.map((topic) => (
+                                            <option key={topic} value={topic}>{TOPIC_LABELS[topic]}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Source Type */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">원본 타입</label>
+                                <select
+                                    value={newKnowledge.source_type}
+                                    onChange={(e) => setNewKnowledge({ ...newKnowledge, source_type: e.target.value })}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
+                                    {SOURCE_TYPES.map((type) => (
+                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Summary */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    요약 <span className="text-red-400">*</span>
+                                </label>
+                                <textarea
+                                    value={newKnowledge.summary}
+                                    onChange={(e) => setNewKnowledge({ ...newKnowledge, summary: e.target.value })}
+                                    placeholder="핵심 내용을 요약해서 입력하세요"
+                                    rows={3}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                />
+                            </div>
+
+                            {/* Content */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    상세 내용 (원본 텍스트)
+                                </label>
+                                <textarea
+                                    value={newKnowledge.content}
+                                    onChange={(e) => setNewKnowledge({ ...newKnowledge, content: e.target.value })}
+                                    placeholder="원본 문서나 상세 내용을 입력하세요 (선택)"
+                                    rows={8}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
+                                />
+                            </div>
+
+                            {/* Tags */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    태그 (쉼표로 구분)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newKnowledge.tags}
+                                    onChange={(e) => setNewKnowledge({ ...newKnowledge, tags: e.target.value })}
+                                    placeholder="claude, prompting, best-practices"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 sticky bottom-0 bg-slate-800">
+                            <button
+                                onClick={() => setShowAddModal(false)}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleAddKnowledge}
+                                disabled={saving || !newKnowledge.title.trim() || !newKnowledge.summary.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        저장 중...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        저장
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
