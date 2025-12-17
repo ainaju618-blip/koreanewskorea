@@ -55,7 +55,7 @@ export default async function NewsGrid({
     let query = supabase
         .from('posts')
         .select('*')
-        .in('status', ['approved', 'published'])
+        .eq('status', 'published')
         .not('thumbnail_url', 'is', null)
         .neq('thumbnail_url', '')
         .like('thumbnail_url', 'http%')

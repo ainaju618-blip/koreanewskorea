@@ -26,14 +26,14 @@ export default async function Sidebar() {
     const { data: hotPosts } = await supabase
         .from('posts')
         .select('id, title, created_at, view_count')
-        .in('status', ['approved', 'published'])
+        .eq('status', 'published')
         .order('view_count', { ascending: false, nullsFirst: false })
         .limit(5);
 
     const { data: recentPosts } = await supabase
         .from('posts')
         .select('id, title, created_at, published_at')
-        .in('status', ['approved', 'published'])
+        .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(5);
 

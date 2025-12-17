@@ -53,6 +53,7 @@
 | 기자, reporter, assign, author, 배정 | `reporter-assign.md` | 기자 배정 문제 |
 | cors, origin, 교차 | `cors.md` | CORS 에러 |
 | bulk, approval, 승인, 실패, approved_at | `bulk-approval.md` | 일괄 승인 실패 |
+| cron, scheduler, 크론, 스케줄, 중복, dual | `dual-cron-system.md` | 이중 크론 실행 문제 |
 
 ---
 

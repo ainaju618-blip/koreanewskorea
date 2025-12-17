@@ -33,7 +33,7 @@ export default function MainSlider() {
                 const { data, error } = await supabase
                     .from('posts')
                     .select('*')
-                    .eq('status', 'approved')
+                    .eq('status', 'published')
                     .not('image_url', 'is', null)   // ★ null 제외
                     .neq('image_url', '')           // ★ 빈 문자열 제외
                     .like('image_url', 'http%')     // ★ http로 시작하는 URL만

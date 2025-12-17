@@ -18,6 +18,11 @@ export const ALL_REGIONS = [
  */
 const runningProcesses = new Map<number, ChildProcess>();
 
+// Process timeout: 30 minutes max execution time
+const PROCESS_TIMEOUT_MS = 30 * 60 * 1000;
+// Max stdout/stderr buffer size: 500KB to prevent memory leak
+const MAX_BUFFER_SIZE = 500 * 1024;
+
 /**
  * 실행 중인 프로세스 목록 조회
  */
@@ -180,23 +185,49 @@ export async function executeScraper(
 
     child.stdout.on('data', (data: Buffer) => {
         const text = data.toString();
-        stdoutData += text;
+        // Buffer size limit to prevent memory leak
+        if (stdoutData.length < MAX_BUFFER_SIZE) {
+            stdoutData += text.slice(0, MAX_BUFFER_SIZE - stdoutData.length);
+        }
         console.log(`[${region} STDOUT]`, text.trim());
     });
 
     child.stderr.on('data', (data: Buffer) => {
         const text = data.toString();
-        stderrData += text;
+        // Buffer size limit to prevent memory leak
+        if (stderrData.length < MAX_BUFFER_SIZE) {
+            stderrData += text.slice(0, MAX_BUFFER_SIZE - stderrData.length);
+        }
         console.error(`[${region} STDERR]`, text.trim());
     });
 
     child.on('error', (err: Error) => {
         console.error(`[${region}] 프로세스 스폰 에러:`, err.message);
-        stderrData += `\n[SPAWN ERROR] ${err.message}`;
+        if (stderrData.length < MAX_BUFFER_SIZE) {
+            stderrData += `\n[SPAWN ERROR] ${err.message}`;
+        }
     });
+
+    // Process timeout handler (30 minutes)
+    const timeoutId = setTimeout(() => {
+        if (runningProcesses.has(logId)) {
+            console.log(`[${region}] Process timeout after ${PROCESS_TIMEOUT_MS / 1000}s, killing...`);
+            child.kill('SIGTERM');
+
+            // Force kill after 5 seconds if still alive
+            setTimeout(() => {
+                if (!child.killed && runningProcesses.has(logId)) {
+                    console.log(`[${region}] Force killing process (SIGKILL)`);
+                    child.kill('SIGKILL');
+                }
+            }, 5000);
+        }
+    }, PROCESS_TIMEOUT_MS);
 
     return new Promise<void>((resolve) => {
         child.on('close', async (code: number | null, signal: string | null) => {
+            // Clear timeout on process close
+            clearTimeout(timeoutId);
             // 프로세스 종료 시 Map에서 제거
             runningProcesses.delete(logId);
             console.log(`[${region}] 프로세스 종료 (Exit Code: ${code}, Signal: ${signal}), remaining=${runningProcesses.size}`);

@@ -18,9 +18,9 @@ interface ScheduleHistory {
     articlesCount?: number;
 }
 
-// Parse cron expression to human-readable format
+// Parse cron expression to human-readable format (Korean)
 function parseCronToHuman(cron: string): string {
-    if (!cron) return 'Not configured';
+    if (!cron) return '설정 안됨';
     const parts = cron.split(' ');
     if (parts.length !== 5) return cron;
 
@@ -29,16 +29,16 @@ function parseCronToHuman(cron: string): string {
     // Handle common patterns
     if (minute === '0' && hour.includes(',')) {
         const hours = hour.split(',');
-        return `Daily at ${hours.map(h => `${h}:00`).join(', ')}`;
+        return `매일 ${hours.map(h => `${h}시`).join(', ')}`;
     }
     if (minute === '0' && hour === '*') {
-        return 'Every hour at :00';
+        return '매시 정각';
     }
     if (minute === '0' && hour !== '*') {
-        return `Daily at ${hour}:00`;
+        return `매일 ${hour}시`;
     }
     if (minute === '*/30') {
-        return 'Every 30 minutes';
+        return '30분마다';
     }
 
     return cron;
@@ -181,10 +181,10 @@ export default function BotSchedulePage() {
             }
 
             setSaveSuccess(true);
-            showSuccess('Schedule settings saved');
+            showSuccess('스케줄 설정이 저장되었습니다');
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (err) {
-            showError('Failed to save settings');
+            showError('설정 저장에 실패했습니다');
         } finally {
             setIsSaving(false);
         }
@@ -231,10 +231,10 @@ export default function BotSchedulePage() {
                         <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
                             <Calendar className="w-6 h-6 text-white" />
                         </div>
-                        Scheduler Settings
+                        스케줄러 설정
                     </h1>
                     <p className="text-sm text-gray-500 mt-2">
-                        Configure automatic news collection schedules
+                        자동 뉴스 수집 스케줄을 설정합니다
                     </p>
                 </div>
                 <button
@@ -245,12 +245,12 @@ export default function BotSchedulePage() {
                     {isSaving ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Saving...
+                            저장 중...
                         </>
                     ) : (
                         <>
                             <Save className="w-4 h-4" />
-                            Save Settings
+                            설정 저장
                         </>
                     )}
                 </button>
@@ -261,7 +261,7 @@ export default function BotSchedulePage() {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 animate-fade-in-down">
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
                     <p className="text-sm font-medium text-green-900">
-                        Schedule settings saved successfully
+                        스케줄 설정이 저장되었습니다
                     </p>
                 </div>
             )}
@@ -278,9 +278,9 @@ export default function BotSchedulePage() {
                                     <Power className={`w-6 h-6 ${config.enabled ? 'text-green-600' : 'text-gray-400'}`} />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-900">Scheduler Status</h3>
+                                    <h3 className="font-semibold text-gray-900">스케줄러 상태</h3>
                                     <p className={`text-sm ${config.enabled ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {config.enabled ? 'Active - Running automatically' : 'Inactive - Manual runs only'}
+                                        {config.enabled ? '활성 - 자동 실행 중' : '비활성 - 수동 실행만'}
                                     </p>
                                 </div>
                             </div>
@@ -298,7 +298,7 @@ export default function BotSchedulePage() {
                         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <Clock className="w-5 h-5 text-purple-600" />
-                                Execution Time
+                                실행 시간
                             </h3>
                         </div>
 
@@ -306,7 +306,7 @@ export default function BotSchedulePage() {
                             {/* Visual Time Selector */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    Select Hours (click to toggle)
+                                    시간 선택 (클릭하여 전환)
                                 </label>
                                 <div className="grid grid-cols-12 gap-2">
                                     {Array.from({ length: 24 }, (_, i) => {
@@ -331,21 +331,21 @@ export default function BotSchedulePage() {
                                     })}
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">
-                                    Purple highlighted hours are peak news times
+                                    보라색 강조 시간대는 뉴스 피크 시간입니다
                                 </p>
                             </div>
 
                             {/* Preset Buttons */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Quick Presets
+                                    빠른 설정
                                 </label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
-                                        { label: '3x Daily (9,13,17)', value: '0 9,13,17 * * *', icon: Zap },
-                                        { label: 'Morning (9:00)', value: '0 9 * * *', icon: Play },
-                                        { label: 'Every Hour', value: '0 * * * *', icon: Clock },
-                                        { label: 'Business Hours (9-18)', value: '0 9,12,15,18 * * *', icon: Calendar }
+                                        { label: '하루 3회 (9,13,17시)', value: '0 9,13,17 * * *', icon: Zap },
+                                        { label: '오전 (9시)', value: '0 9 * * *', icon: Play },
+                                        { label: '매시간', value: '0 * * * *', icon: Clock },
+                                        { label: '업무시간 (9-18시)', value: '0 9,12,15,18 * * *', icon: Calendar }
                                     ].map((preset) => (
                                         <button
                                             key={preset.label}
@@ -367,7 +367,7 @@ export default function BotSchedulePage() {
                             {/* Cron Expression (Advanced) */}
                             <div className="pt-4 border-t border-gray-100">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Cron Expression (Advanced)
+                                    크론 표현식 (고급)
                                 </label>
                                 <div className="flex gap-3">
                                     <input
@@ -394,7 +394,7 @@ export default function BotSchedulePage() {
                         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <Play className="w-5 h-5 text-blue-600" />
-                                Upcoming Runs
+                                예정된 실행
                             </h3>
                         </div>
                         <div className="p-4">
@@ -419,7 +419,7 @@ export default function BotSchedulePage() {
                             ) : (
                                 <div className="text-center py-6 text-gray-500">
                                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                    <p className="text-sm">Scheduler is disabled</p>
+                                    <p className="text-sm">스케줄러가 비활성화되어 있습니다</p>
                                 </div>
                             )}
                         </div>
@@ -430,7 +430,7 @@ export default function BotSchedulePage() {
                         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                 <History className="w-5 h-5 text-green-600" />
-                                Recent Runs
+                                최근 실행
                             </h3>
                         </div>
                         <div className="p-4">
@@ -449,7 +449,7 @@ export default function BotSchedulePage() {
                                                 <span className="text-xs text-gray-500">{item.time}</span>
                                                 {item.articlesCount !== undefined && (
                                                     <span className="text-xs px-2 py-0.5 bg-gray-200 rounded-full">
-                                                        {item.articlesCount} articles
+                                                        {item.articlesCount}건
                                                     </span>
                                                 )}
                                             </div>
@@ -459,7 +459,7 @@ export default function BotSchedulePage() {
                             ) : (
                                 <div className="text-center py-6 text-gray-500">
                                     <History className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                    <p className="text-sm">No recent runs</p>
+                                    <p className="text-sm">최근 실행 기록이 없습니다</p>
                                 </div>
                             )}
                         </div>
@@ -470,11 +470,11 @@ export default function BotSchedulePage() {
                         <div className="flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                             <div>
-                                <h4 className="font-bold text-blue-900 text-sm">Note</h4>
+                                <h4 className="font-bold text-blue-900 text-sm">참고</h4>
                                 <ul className="mt-1 space-y-1 text-xs text-blue-800">
-                                    <li>Runs all 27 regional scrapers</li>
-                                    <li>Vercel Cron Jobs (see vercel.json)</li>
-                                    <li>Production mode (not dry run)</li>
+                                    <li>27개 지역 스크래퍼 모두 실행</li>
+                                    <li>Vercel 크론 작업 (vercel.json 참조)</li>
+                                    <li>프로덕션 모드 (테스트 아님)</li>
                                 </ul>
                             </div>
                         </div>

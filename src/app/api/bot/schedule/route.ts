@@ -4,7 +4,7 @@ import { getConfig, saveConfig } from '@/lib/scheduler';
 
 export async function GET() {
     try {
-        const config = getConfig();
+        const config = await getConfig();  // Fix: await was missing
         return NextResponse.json(config);
     } catch (e: any) {
         return NextResponse.json({ message: '설정 로드 실패' }, { status: 500 });
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
             cronExpression: body.cronExpression
         });
 
-        return NextResponse.json({ success: true, config: getConfig() });
+        return NextResponse.json({ success: true, config: await getConfig() });
     } catch (e: any) {
         return NextResponse.json({ success: false, message: e.message }, { status: 500 });
     }

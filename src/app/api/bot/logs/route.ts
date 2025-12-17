@@ -4,8 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+    // Limit validation: max 100 to prevent DoS
+    const rawLimit = parseInt(searchParams.get('limit') || '50') || 50;
+    const limit = Math.min(Math.max(1, rawLimit), 100);
     const offset = (page - 1) * limit;
     const status = searchParams.get('status');
     const search = searchParams.get('search');
@@ -22,8 +24,12 @@ export async function GET(req: NextRequest) {
         }
 
         if (search) {
-            // region 또는 log_message 검색
-            query = query.or(`region.ilike.%${search}%,log_message.ilike.%${search}%`);
+            // Sanitize search input to prevent SQL injection
+            // Remove special characters that could be used for injection
+            const sanitizedSearch = search.replace(/[%_'";\\\x00-\x1f]/g, '').slice(0, 100);
+            if (sanitizedSearch.length > 0) {
+                query = query.or(`region.ilike.%${sanitizedSearch}%,log_message.ilike.%${sanitizedSearch}%`);
+            }
         }
 
         const { data, error, count } = await query;

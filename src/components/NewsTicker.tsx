@@ -26,7 +26,7 @@ export default function NewsTicker() {
             const { data, error } = await supabase
                 .from('posts')
                 .select('id, title, category')
-                .eq('status', 'approved') // 승인된 기사만
+                .eq('status', 'published') // published status only
                 .order('created_at', { ascending: false })
                 .limit(10);
 
