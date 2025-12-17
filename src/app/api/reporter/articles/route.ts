@@ -174,23 +174,37 @@ export async function GET(req: NextRequest) {
 
     } catch (error: unknown) {
         console.error('GET /api/reporter/articles error:', error);
-        console.error('Error type:', typeof error);
-        console.error('Error name:', error instanceof Error ? error.name : 'unknown');
-        console.error('Error message:', error instanceof Error ? error.message : String(error));
 
-        const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
-        const stack = error instanceof Error ? error.stack : undefined;
-        const errorName = error instanceof Error ? error.name : 'UnknownError';
+        // Handle different error types
+        let message = 'Server error';
+        let errorDetails: Record<string, unknown> = {};
+
+        if (error instanceof Error) {
+            message = error.message;
+            errorDetails = {
+                name: error.name,
+                message: error.message,
+                stack: error.stack?.substring(0, 500)
+            };
+        } else if (error && typeof error === 'object') {
+            // Supabase PostgrestError is not an Error instance
+            const supaError = error as Record<string, unknown>;
+            message = (supaError.message as string) || (supaError.details as string) || 'Database error';
+            errorDetails = {
+                code: supaError.code,
+                message: supaError.message,
+                details: supaError.details,
+                hint: supaError.hint,
+                full: JSON.stringify(error)
+            };
+        } else {
+            message = String(error);
+            errorDetails = { raw: String(error) };
+        }
 
         return NextResponse.json({
             message,
-            errorType: errorName,
-            // Include error details for debugging
-            _error: {
-                message,
-                stack: stack?.substring(0, 1000),
-                raw: String(error)
-            }
+            _error: errorDetails
         }, { status: 500 });
     }
 }
