@@ -343,20 +343,6 @@ export default function ReporterDashboard() {
                         <button
                             onClick={() => {
                                 setActiveTab("articles");
-                                setArticleFilter("all");
-                                setArticlePage(1);
-                            }}
-                            className={`flex items-center gap-2 px-4 py-3.5 font-medium text-sm border-b-2 transition ${
-                                activeTab === "articles" && articleFilter === "all"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-slate-500 hover:text-slate-700"
-                            }`}
-                        >
-                            전체
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab("articles");
                                 setArticleFilter("my-articles");
                                 setArticlePage(1);
                             }}
