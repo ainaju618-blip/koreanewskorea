@@ -6,6 +6,7 @@ import { Camera, Save, Loader2, User, Mail, Phone, MapPin, Briefcase, FileText, 
 import { useToast } from "@/components/ui/Toast";
 import Image from "next/image";
 import Cropper, { Area } from "react-easy-crop";
+import imageCompression from "browser-image-compression";
 
 interface Reporter {
     id: string;
@@ -90,7 +91,7 @@ export default function ReporterProfilePage() {
             }
         } catch (err) {
             console.error("Failed to fetch profile:", err);
-            showError("프로필을 불러오는데 실패했습니다.");
+            showError("Failed to load profile");
         } finally {
             setIsLoading(false);
         }
@@ -105,46 +106,6 @@ export default function ReporterProfilePage() {
         fileInputRef.current?.click();
     };
 
-    // Client-side image resize to avoid Vercel 4.5MB limit
-    // Always resize profile images to 600px max for safety
-    const resizeImage = (file: File): Promise<Blob> => {
-        return new Promise((resolve, reject) => {
-            const img = document.createElement("img");
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-
-            img.onload = () => {
-                let { width, height } = img;
-                const maxSize = 600; // Small size for profile photos
-
-                // Always resize to maxSize
-                if (width > height) {
-                    height = (height / width) * maxSize;
-                    width = maxSize;
-                } else {
-                    width = (width / height) * maxSize;
-                    height = maxSize;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                ctx?.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob(
-                    (blob) => {
-                        if (blob) resolve(blob);
-                        else reject(new Error("Failed to create blob"));
-                    },
-                    "image/jpeg",
-                    0.7 // 70% quality for smaller file
-                );
-            };
-
-            img.onerror = () => reject(new Error("Failed to load image"));
-            img.src = URL.createObjectURL(file);
-        });
-    };
-
     // Format file size for display
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;
@@ -153,91 +114,84 @@ export default function ReporterProfilePage() {
     };
 
     // Crop complete callback
-    const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
         setCroppedAreaPixels(croppedAreaPixels);
     }, []);
 
-    // Create cropped and resized image - combines crop + resize in one step for efficiency
-    const createCroppedImage = async (
+    // Simple and reliable crop function
+    const getCroppedImg = async (
         imageSrc: string,
         pixelCrop: Area,
-        rotation: number = 0
-    ): Promise<Blob> => {
-        const image = await createImage(imageSrc);
+        rotation = 0
+    ): Promise<File> => {
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = document.createElement("img");
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = imageSrc;
+        });
 
-        // Step 1: Create rotated canvas
-        const rotCanvas = document.createElement("canvas");
-        const rotCtx = rotCanvas.getContext("2d");
-        if (!rotCtx) throw new Error("Failed to get canvas context");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas context failed");
 
-        const rotRad = (rotation * Math.PI) / 180;
-        const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
-            image.width,
-            image.height,
-            rotation
-        );
+        // Set canvas size to crop size (max 800px for safety)
+        const maxSize = 800;
+        const scale = Math.min(maxSize / pixelCrop.width, maxSize / pixelCrop.height, 1);
+        const outputWidth = Math.round(pixelCrop.width * scale);
+        const outputHeight = Math.round(pixelCrop.height * scale);
 
-        rotCanvas.width = bBoxWidth;
-        rotCanvas.height = bBoxHeight;
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
 
-        rotCtx.translate(bBoxWidth / 2, bBoxHeight / 2);
-        rotCtx.rotate(rotRad);
-        rotCtx.translate(-image.width / 2, -image.height / 2);
-        rotCtx.drawImage(image, 0, 0);
+        // Apply rotation if needed
+        if (rotation !== 0) {
+            const tempCanvas = document.createElement("canvas");
+            const tempCtx = tempCanvas.getContext("2d");
+            if (!tempCtx) throw new Error("Temp canvas context failed");
 
-        // Step 2: Create final cropped + resized canvas (400x400 for profile)
-        const finalSize = 400;
-        const finalCanvas = document.createElement("canvas");
-        const finalCtx = finalCanvas.getContext("2d");
-        if (!finalCtx) throw new Error("Failed to get final canvas context");
+            const radians = (rotation * Math.PI) / 180;
+            const sin = Math.abs(Math.sin(radians));
+            const cos = Math.abs(Math.cos(radians));
+            const newWidth = image.width * cos + image.height * sin;
+            const newHeight = image.width * sin + image.height * cos;
 
-        finalCanvas.width = finalSize;
-        finalCanvas.height = finalSize;
+            tempCanvas.width = newWidth;
+            tempCanvas.height = newHeight;
 
-        // Draw cropped area directly to final size (crop + resize in one step)
-        finalCtx.drawImage(
-            rotCanvas,
-            pixelCrop.x,
-            pixelCrop.y,
-            pixelCrop.width,
-            pixelCrop.height,
-            0,
-            0,
-            finalSize,
-            finalSize
-        );
+            tempCtx.translate(newWidth / 2, newHeight / 2);
+            tempCtx.rotate(radians);
+            tempCtx.drawImage(image, -image.width / 2, -image.height / 2);
 
+            // Draw cropped area from rotated image
+            ctx.drawImage(
+                tempCanvas,
+                pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+                0, 0, outputWidth, outputHeight
+            );
+        } else {
+            // No rotation - simple crop
+            ctx.drawImage(
+                image,
+                pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+                0, 0, outputWidth, outputHeight
+            );
+        }
+
+        // Convert to blob then file
         return new Promise((resolve, reject) => {
-            finalCanvas.toBlob(
+            canvas.toBlob(
                 (blob) => {
-                    if (blob) resolve(blob);
-                    else reject(new Error("Failed to create blob"));
+                    if (blob) {
+                        resolve(new File([blob], "profile.jpg", { type: "image/jpeg" }));
+                    } else {
+                        reject(new Error("Canvas toBlob failed"));
+                    }
                 },
                 "image/jpeg",
-                0.8 // 80% quality - good balance of size and quality
+                0.92
             );
         });
-    };
-
-    // Helper: Create image element from source
-    const createImage = (url: string): Promise<HTMLImageElement> =>
-        new Promise((resolve, reject) => {
-            const image = document.createElement("img");
-            image.addEventListener("load", () => resolve(image));
-            image.addEventListener("error", (error) => reject(error));
-            image.setAttribute("crossOrigin", "anonymous");
-            image.src = url;
-        });
-
-    // Helper: Calculate rotated size
-    const rotateSize = (width: number, height: number, rotation: number) => {
-        const rotRad = (rotation * Math.PI) / 180;
-        return {
-            width:
-                Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
-            height:
-                Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
-        };
     };
 
     // Handle file selection - open crop modal
@@ -247,20 +201,20 @@ export default function ReporterProfilePage() {
 
         // Image type check
         if (!file.type.startsWith("image/")) {
-            showError("이미지 파일만 업로드 가능합니다.");
+            showError("Only image files allowed");
             return;
         }
 
         // Store original file and create preview
         setOriginalFile(file);
         const reader = new FileReader();
-        reader.addEventListener("load", () => {
+        reader.onload = () => {
             setImageSrc(reader.result as string);
             setCropModalOpen(true);
             setCrop({ x: 0, y: 0 });
             setZoom(1);
             setRotation(0);
-        });
+        };
         reader.readAsDataURL(file);
 
         // Reset file input
@@ -280,16 +234,26 @@ export default function ReporterProfilePage() {
         const originalSize = originalFile.size;
 
         try {
-            // Step 1: Create cropped + resized image (400x400, 80% quality)
-            setUploadStatus("이미지 처리 중...");
-            const processedBlob = await createCroppedImage(imageSrc, croppedAreaPixels, rotation);
-            const compressedSize = processedBlob.size;
+            // Step 1: Crop the image
+            setUploadStatus("Cropping...");
+            const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+
+            // Step 2: Compress with browser-image-compression (battle-tested library)
+            setUploadStatus("Compressing...");
+            const compressedFile = await imageCompression(croppedFile, {
+                maxSizeMB: 0.5,           // Max 500KB
+                maxWidthOrHeight: 400,    // 400x400 for profile
+                useWebWorker: true,
+                fileType: "image/jpeg",
+            });
+
+            const compressedSize = compressedFile.size;
             setCompressionInfo({ original: originalSize, compressed: compressedSize });
 
-            // Step 2: Upload to server
-            setUploadStatus("서버에 업로드 중...");
+            // Step 3: Upload to server
+            setUploadStatus("Uploading...");
             const formDataUpload = new FormData();
-            formDataUpload.append("file", processedBlob, "profile.jpg");
+            formDataUpload.append("file", compressedFile, "profile.jpg");
             formDataUpload.append("folder", "reporters");
 
             const res = await fetch("/api/upload/image", {
@@ -302,13 +266,13 @@ export default function ReporterProfilePage() {
                 throw new Error(errorData.error || "Upload failed");
             }
 
-            // Step 3: Complete
-            setUploadStatus("Complete!");
+            // Step 4: Complete
             const data = await res.json();
             setFormData(prev => ({ ...prev, profile_image: data.url }));
 
             const reduction = Math.round((1 - compressedSize / originalSize) * 100);
-            showSuccess(`${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} (${reduction}% reduced)`);
+            setUploadStatus(`Done! (${reduction}% smaller)`);
+            showSuccess(`${formatFileSize(originalSize)} -> ${formatFileSize(compressedSize)}`);
 
             setTimeout(() => {
                 setUploadStatus("");
@@ -318,7 +282,7 @@ export default function ReporterProfilePage() {
             console.error("Upload error:", err);
             setUploadStatus("");
             setCompressionInfo(null);
-            showError(err instanceof Error ? err.message : "Image upload failed");
+            showError(err instanceof Error ? err.message : "Upload failed");
         } finally {
             setIsUploading(false);
             setImageSrc("");
@@ -347,15 +311,15 @@ export default function ReporterProfilePage() {
 
             if (!res.ok) {
                 const error = await res.json();
-                throw new Error(error.message || "저장 실패");
+                throw new Error(error.message || "Save failed");
             }
 
-            showSuccess("프로필이 저장되었습니다.");
-            fetchProfile(); // 폼 데이터 새로고침
-            router.refresh(); // 사이드바 새로고침
+            showSuccess("Profile saved");
+            fetchProfile();
+            router.refresh();
         } catch (err) {
             console.error("Save error:", err);
-            showError(err instanceof Error ? err.message : "프로필 저장에 실패했습니다.");
+            showError(err instanceof Error ? err.message : "Failed to save profile");
         } finally {
             setIsSaving(false);
         }
@@ -372,7 +336,7 @@ export default function ReporterProfilePage() {
     if (!reporter) {
         return (
             <div className="text-center py-12 text-gray-500">
-                프로필 정보를 찾을 수 없습니다.
+                Profile not found
             </div>
         );
     }
@@ -400,7 +364,7 @@ export default function ReporterProfilePage() {
                                 {formData.profile_image ? (
                                     <Image
                                         src={formData.profile_image}
-                                        alt="프로필 사진"
+                                        alt="Profile"
                                         fill
                                         className="object-cover"
                                     />
@@ -449,7 +413,7 @@ export default function ReporterProfilePage() {
                                         <p className="text-xs text-blue-600 mt-1">
                                             {formatFileSize(compressionInfo.original)} → {formatFileSize(compressionInfo.compressed)}
                                             <span className="ml-2 text-green-600 font-medium">
-                                                ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% 감소)
+                                                ({Math.round((1 - compressionInfo.compressed / compressionInfo.original) * 100)}% reduced)
                                             </span>
                                         </p>
                                     )}
@@ -463,7 +427,7 @@ export default function ReporterProfilePage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* 이름 */}
+                        {/* Name */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 <User className="w-4 h-4 inline mr-1" />
@@ -476,11 +440,11 @@ export default function ReporterProfilePage() {
                                 onChange={handleInputChange}
                                 required
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="이름을 입력하세요"
+                                placeholder="Name"
                             />
                         </div>
 
-                        {/* 이메일 */}
+                        {/* Email */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 <Mail className="w-4 h-4 inline mr-1" />
@@ -492,11 +456,11 @@ export default function ReporterProfilePage() {
                                 value={formData.email}
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="이메일을 입력하세요"
+                                placeholder="Email"
                             />
                         </div>
 
-                        {/* 전화번호 */}
+                        {/* Phone */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 <Phone className="w-4 h-4 inline mr-1" />
@@ -512,7 +476,7 @@ export default function ReporterProfilePage() {
                             />
                         </div>
 
-                        {/* 담당 지역 */}
+                        {/* Region */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 <MapPin className="w-4 h-4 inline mr-1" />
@@ -524,11 +488,11 @@ export default function ReporterProfilePage() {
                                 value={formData.region}
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                placeholder="담당 지역"
+                                placeholder="Region"
                             />
                         </div>
 
-                        {/* 직위 */}
+                        {/* Position */}
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 <Briefcase className="w-4 h-4 inline mr-1" />
@@ -577,7 +541,7 @@ export default function ReporterProfilePage() {
                             {formData.profile_image ? (
                                 <Image
                                     src={formData.profile_image}
-                                    alt="프로필"
+                                    alt="Profile"
                                     width={80}
                                     height={80}
                                     className="object-cover w-full h-full"
@@ -589,9 +553,9 @@ export default function ReporterProfilePage() {
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-gray-900">{formData.name || "이름"}</h3>
+                            <h3 className="text-lg font-bold text-gray-900">{formData.name || "Name"}</h3>
                             <p className="text-sm text-blue-600 font-medium">
-                                {positionLabel} | {formData.region || "지역"}
+                                {positionLabel} | {formData.region || "Region"}
                             </p>
                             {formData.bio && (
                                 <p className="text-sm text-gray-600 mt-2 line-clamp-2">{formData.bio}</p>
@@ -678,7 +642,7 @@ export default function ReporterProfilePage() {
                                     onChange={(e) => setRotation(Number(e.target.value))}
                                     className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                 />
-                                <span className="text-sm text-gray-500 w-12">{rotation}°</span>
+                                <span className="text-sm text-gray-500 w-12">{rotation}</span>
                             </div>
                         </div>
 
