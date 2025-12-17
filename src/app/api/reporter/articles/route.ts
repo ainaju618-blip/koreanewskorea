@@ -55,6 +55,21 @@ export async function GET(req: NextRequest) {
         // 접근 가능한 지역 목록 조회
         const accessibleRegions = getAccessibleRegions(reporter.position, reporter.region);
 
+        // DEBUG: Log reporter info and accessible regions
+        console.log('[DEBUG] Reporter:', {
+            id: reporter.id,
+            position: reporter.position,
+            region: reporter.region,
+            accessibleRegions
+        });
+
+        // DEBUG: Direct count query to compare with stats
+        const { count: debugCount } = await supabaseAdmin
+            .from('posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('source', reporter.region);
+        console.log('[DEBUG] Direct count for region', reporter.region, ':', debugCount);
+
         // Status filter
         const statusFilter = searchParams.get('status');
 
@@ -102,6 +117,15 @@ export async function GET(req: NextRequest) {
             .range(offset, offset + limit - 1);
 
         const { data: articles, error, count } = await query;
+
+        // DEBUG: Log query results
+        console.log('[DEBUG] Query results:', {
+            filter,
+            accessibleRegions,
+            articlesCount: articles?.length || 0,
+            totalCount: count,
+            error: error?.message
+        });
 
         if (error) {
             console.error('Articles query error:', error);
@@ -151,6 +175,12 @@ export async function GET(req: NextRequest) {
                 regionGroup: regionGroupLabel,
                 accessibleRegions: accessibleRegions,
                 access_level: reporter.access_level,
+            },
+            // DEBUG: temporary debug info
+            _debug: {
+                filter,
+                directRegionCount: debugCount,
+                queryResultCount: articles?.length || 0,
             },
         });
 
