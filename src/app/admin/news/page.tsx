@@ -617,7 +617,7 @@ function AdminNewsListPage() {
     };
 
 
-    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 포함)
+    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 + 자동 기자 배정)
     const executeSingleApprove = async () => {
         if (!previewArticle) return;
 
@@ -627,7 +627,7 @@ function AdminNewsListPage() {
 
             // 1. 외부 이미지가 있으면 Cloudinary로 업로드
             if (previewArticle.thumbnail_url && !previewArticle.thumbnail_url.includes('res.cloudinary.com')) {
-                console.log('[승인] Cloudinary 이미지 업로드 시작...');
+                console.log('[Approve] Cloudinary upload starting...');
                 try {
                     const uploadRes = await fetch('/api/upload/from-url', {
                         method: 'POST',
@@ -642,22 +642,22 @@ function AdminNewsListPage() {
 
                     if (uploadData.cloudinaryUrl && !uploadData.error) {
                         finalThumbnailUrl = uploadData.cloudinaryUrl;
-                        console.log('[승인] Cloudinary 업로드 완료:', finalThumbnailUrl);
+                        console.log('[Approve] Cloudinary upload complete:', finalThumbnailUrl);
                     } else {
-                        console.warn('[승인] Cloudinary 업로드 실패, 원본 URL 사용:', uploadData.error);
+                        console.warn('[Approve] Cloudinary upload failed, using original URL:', uploadData.error);
                     }
                 } catch (uploadErr) {
-                    console.warn('[승인] Cloudinary 업로드 오류, 원본 URL 사용:', uploadErr);
-                    // 실패해도 발행은 진행 (graceful degradation)
+                    console.warn('[Approve] Cloudinary upload error, using original URL:', uploadErr);
+                    // Graceful degradation - continue with approval
                 }
             }
 
-            // 2. DB 업데이트 (thumbnail_url 포함)
+            // 2. DB update (thumbnail_url included, auto-assign handled by API)
             const bodyData: any = {
                 status: 'published',
                 thumbnail_url: finalThumbnailUrl
             };
-            // 원본 작성일(published_at)이 없으면 현재 시간 설정, 있으면 유지(보내지 않음)
+            // Keep original published_at if exists, otherwise API will set it
             if (!previewArticle.published_at) {
                 bodyData.published_at = new Date().toISOString();
             }
@@ -669,19 +669,31 @@ function AdminNewsListPage() {
             });
 
             if (res.ok) {
+                const responseData = await res.json();
+
                 setArticles(articles.map(a =>
                     a.id === previewArticle.id
                         ? { ...a, status: 'published', published_at: a.published_at || new Date().toISOString(), thumbnail_url: finalThumbnailUrl }
                         : a
                 ));
-                showSuccess("기사가 메인 페이지에 발행되었습니다!");
+
+                // Show success message with auto-assigned reporter info
+                if (responseData._assignment) {
+                    const { reporter, reason } = responseData._assignment;
+                    const reasonText = reason === 'region' ? '(region reporter)'
+                        : reason === 'global' ? '(global reporter)'
+                        : '(system default)';
+                    showSuccess(`Published! Assigned to: ${reporter} ${reasonText}`);
+                } else {
+                    showSuccess("Article published to main page!");
+                }
                 closePreview();
                 fetchArticles();
             } else {
-                throw new Error("승인 실패");
+                throw new Error("Approval failed");
             }
         } catch (err) {
-            showError("승인에 실패했습니다. (DB 연결 확인 필요)");
+            showError("Approval failed. (Check DB connection)");
             console.error(err);
         } finally {
             setIsApproving(false);

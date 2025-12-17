@@ -1,0 +1,210 @@
+/**
+ * Korea NEWS - Auto-assign Reporter System
+ * Automatically assigns reporters to articles during approval
+ */
+
+import { createClient } from '@/lib/supabase-server';
+import { ROLE_LEVELS } from './permissions';
+
+// Default system email for fallback assignment
+const DEFAULT_EMAIL = 'news@koreanewsone.com';
+
+export interface Reporter {
+    id: string;
+    name: string;
+    email: string;
+    region: string | null;
+    role: string;
+    access_level: number;
+}
+
+export interface AssignResult {
+    reporter: Reporter;
+    reason: 'region' | 'global' | 'default';
+    message: string;
+}
+
+/**
+ * Auto-assign a reporter to an article based on region
+ *
+ * Priority:
+ * 1. Region-specific reporter (random if multiple)
+ * 2. Global reporter (editor+) (random if multiple)
+ * 3. Default system account (news@koreanewsone.com)
+ */
+export async function autoAssignReporter(
+    articleRegion: string | null
+): Promise<AssignResult> {
+    const supabase = await createClient();
+
+    // Step 1: Find region-specific reporters
+    if (articleRegion) {
+        const { data: regionReporters, error: regionError } = await supabase
+            .from('reporters')
+            .select('id, name, email, region, role, access_level')
+            .eq('region', articleRegion)
+            .eq('status', 'Active')
+            .neq('email', DEFAULT_EMAIL);
+
+        if (!regionError && regionReporters && regionReporters.length > 0) {
+            // Single reporter - assign directly
+            if (regionReporters.length === 1) {
+                return {
+                    reporter: regionReporters[0],
+                    reason: 'region',
+                    message: `${articleRegion} region reporter assigned`,
+                };
+            }
+
+            // Multiple reporters - random selection
+            const randomIndex = Math.floor(Math.random() * regionReporters.length);
+            return {
+                reporter: regionReporters[randomIndex],
+                reason: 'region',
+                message: `Randomly selected from ${regionReporters.length} ${articleRegion} reporters`,
+            };
+        }
+    }
+
+    // Step 2: Find global reporters (editor and above, access_level >= 60)
+    const { data: globalReporters, error: globalError } = await supabase
+        .from('reporters')
+        .select('id, name, email, region, role, access_level')
+        .gte('access_level', ROLE_LEVELS.editor)
+        .eq('status', 'Active')
+        .neq('email', DEFAULT_EMAIL);
+
+    if (!globalError && globalReporters && globalReporters.length > 0) {
+        const randomIndex = Math.floor(Math.random() * globalReporters.length);
+        return {
+            reporter: globalReporters[randomIndex],
+            reason: 'global',
+            message: `Randomly selected from ${globalReporters.length} global reporters (no ${articleRegion || 'region'} reporter)`,
+        };
+    }
+
+    // Step 3: Fallback to default system account
+    const { data: defaultReporter, error: defaultError } = await supabase
+        .from('reporters')
+        .select('id, name, email, region, role, access_level')
+        .eq('email', DEFAULT_EMAIL)
+        .single();
+
+    if (!defaultError && defaultReporter) {
+        return {
+            reporter: defaultReporter,
+            reason: 'default',
+            message: 'No available reporter - assigned to Korea NEWS system account',
+        };
+    }
+
+    // Should never reach here if database is properly set up
+    throw new Error('No reporter available for assignment. Please check database setup.');
+}
+
+/**
+ * Get reporters by region for manual selection modal
+ */
+export async function getReportersByRegion(
+    region: string | null
+): Promise<{ regionReporters: Reporter[]; globalReporters: Reporter[] }> {
+    const supabase = await createClient();
+
+    // Get region-specific reporters
+    let regionReporters: Reporter[] = [];
+    if (region) {
+        const { data } = await supabase
+            .from('reporters')
+            .select('id, name, email, region, role, access_level')
+            .eq('region', region)
+            .eq('status', 'Active')
+            .neq('email', DEFAULT_EMAIL)
+            .order('name');
+
+        regionReporters = data || [];
+    }
+
+    // Get global reporters (editor and above)
+    const { data: globalData } = await supabase
+        .from('reporters')
+        .select('id, name, email, region, role, access_level')
+        .gte('access_level', ROLE_LEVELS.editor)
+        .eq('status', 'Active')
+        .neq('email', DEFAULT_EMAIL)
+        .order('access_level', { ascending: false });
+
+    return {
+        regionReporters,
+        globalReporters: globalData || [],
+    };
+}
+
+/**
+ * Get all active reporters for selection
+ */
+export async function getAllActiveReporters(): Promise<Reporter[]> {
+    const supabase = await createClient();
+
+    const { data } = await supabase
+        .from('reporters')
+        .select('id, name, email, region, role, access_level')
+        .eq('status', 'Active')
+        .order('access_level', { ascending: false })
+        .order('name');
+
+    return data || [];
+}
+
+/**
+ * Get auto-assign setting from site_settings
+ */
+export async function getAutoAssignSetting(): Promise<boolean> {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'auto_assign_reporter')
+        .single();
+
+    if (error || !data) {
+        // Default to true if setting not found
+        return true;
+    }
+
+    // Handle both string "true" and boolean true
+    return data.value === true || data.value === 'true';
+}
+
+/**
+ * Update auto-assign setting
+ */
+export async function setAutoAssignSetting(enabled: boolean): Promise<void> {
+    const supabase = await createClient();
+
+    await supabase
+        .from('site_settings')
+        .upsert({
+            key: 'auto_assign_reporter',
+            value: enabled,
+            updated_at: new Date().toISOString(),
+        }, {
+            onConflict: 'key',
+        });
+}
+
+/**
+ * Get reason message in Korean for toast display
+ */
+export function getAssignReasonKorean(reason: AssignResult['reason'], region?: string | null): string {
+    switch (reason) {
+        case 'region':
+            return `${region || ''} region reporter`;
+        case 'global':
+            return 'Global reporter (no region match)';
+        case 'default':
+            return 'System default (no available reporter)';
+        default:
+            return '';
+    }
+}

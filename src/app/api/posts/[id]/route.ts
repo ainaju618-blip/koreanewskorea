@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { v2 as cloudinary } from 'cloudinary';
+import { autoAssignReporter, getAutoAssignSetting, type AssignResult } from '@/lib/auto-assign';
 
 // Cloudinary 설정
 cloudinary.config({
@@ -21,13 +22,52 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         const { id } = await params;
         const body = await req.json();
 
-        // [Touch-to-Top Logic]
-        // 승인(published) 시, 시간을 현재로 갱신하여 메인 상단 노출 보장
-        // (기존 created_at 유지 원하면 created_at 줄은 삭제 가능, 하지만 '최신순' 정렬을 위해 보통 같이 갱신함)
+        let assignResult: AssignResult | null = null;
+
+        // [Touch-to-Top Logic + Auto-assign Reporter]
+        // When status changes to 'published':
+        // 1. Set published_at to now (for latest-first sorting)
+        // 2. Auto-assign reporter if enabled and no author specified
         if (body.status === 'published') {
             const now = new Date().toISOString();
             body.published_at = now;
-            // body.created_at = now; // 선택사항: 정렬 기준이 created_at이라면 이것도 갱신 필요
+            body.approved_at = now;
+
+            // Check if auto-assign is enabled and author not already specified
+            const shouldAutoAssign = !body.author_id && !body.skip_auto_assign;
+
+            if (shouldAutoAssign) {
+                try {
+                    const autoAssignEnabled = await getAutoAssignSetting();
+
+                    if (autoAssignEnabled) {
+                        // Get article's region for assignment
+                        const { data: article } = await supabaseAdmin
+                            .from('posts')
+                            .select('region')
+                            .eq('id', id)
+                            .single();
+
+                        const articleRegion = body.region || article?.region || null;
+
+                        // Auto-assign reporter
+                        assignResult = await autoAssignReporter(articleRegion);
+
+                        // Set author info
+                        body.author_id = assignResult.reporter.id;
+                        body.author_name = assignResult.reporter.name;
+
+                        console.log('[PATCH /api/posts] Auto-assigned:', {
+                            reporter: assignResult.reporter.name,
+                            reason: assignResult.reason,
+                            region: articleRegion,
+                        });
+                    }
+                } catch (assignError) {
+                    console.warn('[PATCH /api/posts] Auto-assign failed:', assignError);
+                    // Continue without auto-assign - don't block the approval
+                }
+            }
         }
 
         console.log('[PATCH /api/posts] ID:', id, 'Body:', JSON.stringify(body));
@@ -45,7 +85,16 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         }
 
         console.log('[PATCH /api/posts] Success:', data?.id);
-        return NextResponse.json(data);
+
+        // Include assignment info in response
+        return NextResponse.json({
+            ...data,
+            _assignment: assignResult ? {
+                reporter: assignResult.reporter.name,
+                reason: assignResult.reason,
+                message: assignResult.message,
+            } : null,
+        });
     } catch (error: unknown) {
         console.error('[PATCH /api/posts] Catch Error:', error);
         const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
