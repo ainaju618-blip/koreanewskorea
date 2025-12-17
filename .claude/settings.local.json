@@ -109,7 +109,8 @@
       "Bash(printf:*)",
       "Bash(gh workflow run:*)",
       "Bash(gh run list:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Fix sideArticles query in HomeHero component\n\n- Replace unreliable Supabase not-in query with client-side filtering\n- Fetch extra articles and filter out slider articles locally\n- Resolves \"Preparing...\" placeholder showing on homepage sidebar\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Fix sideArticles query in HomeHero component\n\n- Replace unreliable Supabase not-in query with client-side filtering\n- Fetch extra articles and filter out slider articles locally\n- Resolves \"Preparing...\" placeholder showing on homepage sidebar\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Remove CosmicPulse dropdown, make it simple link\n\n- Remove hover dropdown menu from CosmicPulse\n- Direct link to /cosmos landing page\n- Increase sideArticles query limit for reliability\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }

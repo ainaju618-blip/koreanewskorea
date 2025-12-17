@@ -284,70 +284,22 @@ export default function Header() {
                                 </div>
                             ))}
 
-                            {/* CosmicPulse Menu */}
-                            <div
-                                className="relative h-full flex items-center group/cosmos"
-                                onMouseEnter={() => setActiveMegaMenu('cosmos')}
-                                onMouseLeave={() => setActiveMegaMenu(null)}
+                            {/* CosmicPulse Link (no dropdown) */}
+                            <Link
+                                href="/cosmos"
+                                className={`h-full flex items-center gap-1.5 transition-colors relative
+                                    ${pathname.startsWith('/cosmos') ? 'text-purple-500' : 'text-slate-900'}
+                                    hover:text-purple-500
+                                `}
                             >
-                                <Link
-                                    href="/cosmos"
-                                    className={`h-full flex items-center gap-1.5 transition-colors relative
-                                        ${pathname.startsWith('/cosmos') || activeMegaMenu === 'cosmos' ? 'text-purple-500' : 'text-slate-900'}
-                                        hover:text-purple-500
-                                    `}
-                                >
-                                    <Rocket className="w-4 h-4" />
-                                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent font-bold">
-                                        CosmicPulse
-                                    </span>
-                                    {(pathname.startsWith('/cosmos') || activeMegaMenu === 'cosmos') && (
-                                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-pink-500"></span>
-                                    )}
-                                </Link>
-
-                                {/* Cosmos Dropdown */}
-                                <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[400px] bg-gray-900 rounded-2xl shadow-[0_20px_60px_-15px_rgba(139,92,246,0.4)] border border-purple-500/20 p-0 overflow-hidden
-                                    opacity-0 invisible translate-y-2 group-hover/cosmos:opacity-100 group-hover/cosmos:visible group-hover/cosmos:translate-y-0 transition-all duration-300 ease-out z-50
-                                `}>
-                                    {/* Header */}
-                                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex items-center gap-3">
-                                        <div className="p-2 bg-white/10 rounded-lg">
-                                            <Rocket className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-white text-lg">CosmicPulse</h3>
-                                            <p className="text-white/60 text-xs">Explore the Universe</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Menu Items */}
-                                    <div className="p-4 grid grid-cols-2 gap-2">
-                                        {COSMOS_CATEGORIES.map((cat) => {
-                                            const Icon = cat.icon;
-                                            return (
-                                                <Link
-                                                    key={cat.slug}
-                                                    href={`/cosmos/${cat.slug}`}
-                                                    className="group/item flex items-center gap-2 px-3 py-3 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-purple-500/20 rounded-xl transition-all duration-200 border border-transparent hover:border-purple-500/30"
-                                                >
-                                                    <Icon className="w-4 h-4 text-purple-400" />
-                                                    <span className="font-medium">{cat.name}</span>
-                                                </Link>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Footer */}
-                                    <div className="border-t border-purple-500/20 px-6 py-3 bg-black/30">
-                                        <Link href="/cosmos" className="text-xs text-gray-400 hover:text-purple-400 flex items-center justify-center gap-1.5 font-semibold transition-colors group/all">
-                                            <Sparkles className="w-3.5 h-3.5" />
-                                            Enter CosmicPulse
-                                            <ChevronRight className="w-3 h-3 group-hover/all:translate-x-0.5 transition-transform" />
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
+                                <Rocket className="w-4 h-4" />
+                                <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent font-bold">
+                                    CosmicPulse
+                                </span>
+                                {pathname.startsWith('/cosmos') && (
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 to-pink-500"></span>
+                                )}
+                            </Link>
 
                             {/* Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
