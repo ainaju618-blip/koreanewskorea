@@ -176,12 +176,23 @@ export async function GET(req: NextRequest) {
 
     } catch (error: unknown) {
         console.error('GET /api/reporter/articles error:', error);
+        console.error('Error type:', typeof error);
+        console.error('Error name:', error instanceof Error ? error.name : 'unknown');
+        console.error('Error message:', error instanceof Error ? error.message : String(error));
+
         const message = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
         const stack = error instanceof Error ? error.stack : undefined;
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
+
         return NextResponse.json({
             message,
-            // Include error details for debugging (remove in production)
-            _error: { message, stack: stack?.substring(0, 500) }
+            errorType: errorName,
+            // Include error details for debugging
+            _error: {
+                message,
+                stack: stack?.substring(0, 1000),
+                raw: String(error)
+            }
         }, { status: 500 });
     }
 }

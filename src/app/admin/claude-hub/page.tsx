@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import {
     Database, FolderGit2, BookOpen, MessageSquare, RefreshCw, ExternalLink, Trash2,
     ChevronRight, ChevronDown, Folder, FileText, Globe, Layers, Box, X,
-    Eye, Calendar, Tag, Plus, Save, Link, History, Clock, ArrowLeft, ArrowRight
+    Eye, Calendar, Tag, Plus, Save, Link, History, Clock, ArrowLeft, ArrowRight,
+    Upload, FileUp, CheckCircle, AlertCircle
 } from 'lucide-react';
 
 interface Project {
@@ -93,6 +94,26 @@ interface Session {
     created_at: string;
 }
 
+interface RawContent {
+    id: string;
+    title: string;
+    content: string;
+    source_url?: string;
+    source_type: string;
+    project_code?: string;
+    status: 'pending' | 'processed' | 'archived';
+    created_at: string;
+    processed_at?: string;
+}
+
+interface NewRawContent {
+    title: string;
+    content: string;
+    source_url: string;
+    source_type: string;
+    project_code: string;
+}
+
 interface NewSession {
     project_code: string;
     summary: string;
@@ -102,8 +123,8 @@ interface NewSession {
     knowledge_ids: string[];
 }
 
-type TabType = 'dashboard' | 'projects' | 'knowledge' | 'sessions';
-type ModalType = 'none' | 'addKnowledge' | 'addProject' | 'addUsage' | 'viewUsage' | 'addSession' | 'viewSession' | 'createKnowledgeFromSession';
+type TabType = 'dashboard' | 'projects' | 'knowledge' | 'sessions' | 'rawContent';
+type ModalType = 'none' | 'addKnowledge' | 'addProject' | 'addUsage' | 'viewUsage' | 'addSession' | 'viewSession' | 'createKnowledgeFromSession' | 'addRawContent' | 'viewRawContent';
 
 // Korean translations
 const SCOPE_LABELS: Record<string, string> = {
@@ -230,6 +251,17 @@ export default function ClaudeHubPage() {
         knowledge_ids: []
     });
 
+    // Raw Content
+    const [rawContents, setRawContents] = useState<RawContent[]>([]);
+    const [selectedRawContent, setSelectedRawContent] = useState<RawContent | null>(null);
+    const [newRawContent, setNewRawContent] = useState<NewRawContent>({
+        title: '',
+        content: '',
+        source_url: '',
+        source_type: 'manual',
+        project_code: ''
+    });
+
     useEffect(() => {
         fetchStats();
         fetchProjects();
@@ -242,6 +274,8 @@ export default function ClaudeHubPage() {
             fetchKnowledge();
         } else if (activeTab === 'sessions') {
             fetchSessions();
+        } else if (activeTab === 'rawContent') {
+            fetchRawContents();
         }
     }, [activeTab]);
 
@@ -394,6 +428,97 @@ export default function ClaudeHubPage() {
             tags: 'session',
             source_type: 'session',
             project_codes: session.project_code ? [session.project_code] : []
+        });
+        setActiveModal('addKnowledge');
+    };
+
+    // Raw Content functions
+    const fetchRawContents = async () => {
+        try {
+            const res = await fetch('/api/claude-hub/raw-contents');
+            if (res.ok) {
+                const data = await res.json();
+                setRawContents(data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch raw contents:', error);
+        }
+    };
+
+    const handleAddRawContent = async () => {
+        if (!newRawContent.title.trim() || !newRawContent.content.trim()) return;
+        setSaving(true);
+        try {
+            const res = await fetch('/api/claude-hub/raw-contents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: newRawContent.title.trim(),
+                    content: newRawContent.content.trim(),
+                    source_url: newRawContent.source_url.trim() || null,
+                    source_type: newRawContent.source_type,
+                    project_code: newRawContent.project_code || null
+                })
+            });
+            if (res.ok) {
+                setActiveModal('none');
+                setNewRawContent({
+                    title: '',
+                    content: '',
+                    source_url: '',
+                    source_type: 'manual',
+                    project_code: ''
+                });
+                fetchRawContents();
+            }
+        } catch (error) {
+            console.error('Failed to create raw content:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteRawContent = async (id: string) => {
+        if (!confirm('Delete this raw content?')) return;
+        try {
+            const res = await fetch(`/api/claude-hub/raw-contents/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchRawContents();
+                setSelectedRawContent(null);
+            }
+        } catch (error) {
+            console.error('Failed to delete raw content:', error);
+        }
+    };
+
+    const updateRawContentStatus = async (id: string, status: 'pending' | 'processed' | 'archived') => {
+        try {
+            const res = await fetch(`/api/claude-hub/raw-contents/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                fetchRawContents();
+                if (selectedRawContent?.id === id) {
+                    setSelectedRawContent({ ...selectedRawContent, status });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update raw content status:', error);
+        }
+    };
+
+    const createKnowledgeFromRawContent = (raw: RawContent) => {
+        setNewKnowledge({
+            title: raw.title,
+            scope: raw.project_code ? 'project' : 'global',
+            topic: 'reference',
+            summary: '',
+            content: raw.content,
+            tags: '',
+            source_type: raw.source_type,
+            project_codes: raw.project_code ? [raw.project_code] : []
         });
         setActiveModal('addKnowledge');
     };
@@ -645,6 +770,7 @@ export default function ClaudeHubPage() {
                     { id: 'projects', label: '프로젝트', icon: FolderGit2 },
                     { id: 'knowledge', label: '지식', icon: BookOpen },
                     { id: 'sessions', label: '세션', icon: MessageSquare },
+                    { id: 'rawContent', label: '원문올리기', icon: Upload },
                 ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -1363,6 +1489,224 @@ export default function ClaudeHubPage() {
                 </div>
             )}
 
+            {/* Raw Content Tab */}
+            {activeTab === 'rawContent' && (
+                <div className="grid grid-cols-2 gap-6">
+                    {/* Left Panel - Raw Content List */}
+                    <div className="space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-slate-200">원문 목록</h2>
+                            <button
+                                onClick={() => setActiveModal('addRawContent')}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                원문 올리기
+                            </button>
+                        </div>
+
+                        {/* Raw Content List */}
+                        <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+                            {rawContents.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Upload className="w-12 h-12 mx-auto mb-4 text-slate-600" />
+                                    <p className="text-slate-400 mb-4">등록된 원문이 없습니다</p>
+                                    <button
+                                        onClick={() => setActiveModal('addRawContent')}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        첫 원문 올리기
+                                    </button>
+                                </div>
+                            ) : (
+                                rawContents.map((raw) => (
+                                    <div
+                                        key={raw.id}
+                                        onClick={() => setSelectedRawContent(raw)}
+                                        className={`p-4 cursor-pointer transition-colors ${
+                                            selectedRawContent?.id === raw.id
+                                                ? 'bg-slate-700'
+                                                : 'hover:bg-slate-700/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs text-slate-500">
+                                                {formatDate(raw.created_at)}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {raw.status === 'pending' && (
+                                                    <span className="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 text-xs rounded flex items-center gap-1">
+                                                        <AlertCircle className="w-3 h-3" />
+                                                        대기중
+                                                    </span>
+                                                )}
+                                                {raw.status === 'processed' && (
+                                                    <span className="px-2 py-0.5 bg-emerald-900/50 text-emerald-400 text-xs rounded flex items-center gap-1">
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        처리됨
+                                                    </span>
+                                                )}
+                                                {raw.status === 'archived' && (
+                                                    <span className="px-2 py-0.5 bg-slate-600 text-slate-400 text-xs rounded">
+                                                        보관됨
+                                                    </span>
+                                                )}
+                                                {raw.project_code && (
+                                                    <span className="px-2 py-0.5 bg-purple-900/50 text-purple-400 text-xs rounded">
+                                                        {raw.project_code}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <h3 className="text-slate-200 font-medium">{raw.title}</h3>
+                                        <p className="text-slate-400 text-sm line-clamp-2 mt-1">{raw.content.substring(0, 100)}...</p>
+                                        <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                                            <span className="px-2 py-0.5 bg-slate-700 rounded">{raw.source_type}</span>
+                                            {raw.source_url && (
+                                                <a
+                                                    href={raw.source_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="text-blue-400 hover:underline flex items-center gap-1"
+                                                >
+                                                    <ExternalLink className="w-3 h-3" />
+                                                    URL
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Panel - Detail View */}
+                    <div>
+                        {selectedRawContent ? (
+                            <div className="bg-slate-800 rounded-xl border border-slate-700 h-full">
+                                {/* Detail Header */}
+                                <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            {selectedRawContent.status === 'pending' && (
+                                                <span className="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 text-xs rounded">대기중</span>
+                                            )}
+                                            {selectedRawContent.status === 'processed' && (
+                                                <span className="px-2 py-0.5 bg-emerald-900/50 text-emerald-400 text-xs rounded">처리됨</span>
+                                            )}
+                                            {selectedRawContent.status === 'archived' && (
+                                                <span className="px-2 py-0.5 bg-slate-600 text-slate-400 text-xs rounded">보관됨</span>
+                                            )}
+                                        </div>
+                                        <h2 className="text-xl font-bold text-slate-100">{selectedRawContent.title}</h2>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => createKnowledgeFromRawContent(selectedRawContent)}
+                                            className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                            title="Convert to Knowledge"
+                                        >
+                                            <BookOpen className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteRawContent(selectedRawContent.id)}
+                                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedRawContent(null)}
+                                            className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Detail Content */}
+                                <div className="p-4 space-y-4">
+                                    {/* Meta Info */}
+                                    <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="w-4 h-4" />
+                                            {formatDate(selectedRawContent.created_at)}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Tag className="w-4 h-4" />
+                                            {selectedRawContent.source_type}
+                                        </span>
+                                        {selectedRawContent.source_url && (
+                                            <a
+                                                href={selectedRawContent.source_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-400 hover:underline flex items-center gap-1"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                                Source URL
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    {/* Status Actions */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => updateRawContentStatus(selectedRawContent.id, 'pending')}
+                                            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                                selectedRawContent.status === 'pending'
+                                                    ? 'bg-yellow-600 text-white'
+                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            }`}
+                                        >
+                                            대기중
+                                        </button>
+                                        <button
+                                            onClick={() => updateRawContentStatus(selectedRawContent.id, 'processed')}
+                                            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                                selectedRawContent.status === 'processed'
+                                                    ? 'bg-emerald-600 text-white'
+                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            }`}
+                                        >
+                                            처리됨
+                                        </button>
+                                        <button
+                                            onClick={() => updateRawContentStatus(selectedRawContent.id, 'archived')}
+                                            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                                selectedRawContent.status === 'archived'
+                                                    ? 'bg-slate-500 text-white'
+                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            }`}
+                                        >
+                                            보관
+                                        </button>
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="bg-slate-700/50 rounded-lg p-4">
+                                        <pre className="text-slate-300 whitespace-pre-wrap text-sm font-mono max-h-[400px] overflow-y-auto">
+                                            {selectedRawContent.content}
+                                        </pre>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-800 rounded-xl border border-slate-700 h-full flex items-center justify-center min-h-[400px]">
+                                <div className="text-center text-slate-500 p-8">
+                                    <FileUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p className="text-lg font-medium mb-2">원문을 선택하세요</p>
+                                    <p className="text-sm">상세 내용을 보려면 원문을 클릭하세요</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Add Knowledge Modal */}
             {activeModal === 'addKnowledge' && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -1990,6 +2334,127 @@ export default function ClaudeHubPage() {
                                     <>
                                         <Save className="w-4 h-4" />
                                         저장
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Raw Content Modal */}
+            {activeModal === 'addRawContent' && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-700 sticky top-0 bg-slate-800">
+                            <h2 className="text-xl font-bold text-slate-100">원문 올리기</h2>
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            {/* Title */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    제목 <span className="text-red-400">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newRawContent.title}
+                                    onChange={(e) => setNewRawContent({ ...newRawContent, title: e.target.value })}
+                                    placeholder="원문 제목을 입력하세요"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Source Type & Project */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">소스 유형</label>
+                                    <select
+                                        value={newRawContent.source_type}
+                                        onChange={(e) => setNewRawContent({ ...newRawContent, source_type: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    >
+                                        <option value="manual">직접 입력</option>
+                                        <option value="web">웹 페이지</option>
+                                        <option value="document">문서</option>
+                                        <option value="code">코드</option>
+                                        <option value="other">기타</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">프로젝트</label>
+                                    <select
+                                        value={newRawContent.project_code}
+                                        onChange={(e) => setNewRawContent({ ...newRawContent, project_code: e.target.value })}
+                                        className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    >
+                                        <option value="">-- 프로젝트 선택 --</option>
+                                        {projects.map((proj) => (
+                                            <option key={proj.code} value={proj.code}>{proj.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Source URL */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    소스 URL (선택)
+                                </label>
+                                <input
+                                    type="url"
+                                    value={newRawContent.source_url}
+                                    onChange={(e) => setNewRawContent({ ...newRawContent, source_url: e.target.value })}
+                                    placeholder="https://example.com/document"
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                            </div>
+
+                            {/* Content */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">
+                                    원문 내용 <span className="text-red-400">*</span>
+                                </label>
+                                <textarea
+                                    value={newRawContent.content}
+                                    onChange={(e) => setNewRawContent({ ...newRawContent, content: e.target.value })}
+                                    placeholder="원문 내용을 붙여넣으세요..."
+                                    rows={12}
+                                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 sticky bottom-0 bg-slate-800">
+                            <button
+                                onClick={() => setActiveModal('none')}
+                                className="px-4 py-2 text-slate-400 hover:text-slate-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleAddRawContent}
+                                disabled={saving || !newRawContent.title.trim() || !newRawContent.content.trim()}
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        저장 중...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-4 h-4" />
+                                        올리기
                                     </>
                                 )}
                             </button>
