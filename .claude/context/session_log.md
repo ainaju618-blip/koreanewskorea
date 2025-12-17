@@ -5,6 +5,36 @@
 
 ---
 
+## [2025-12-18 10:00] 세션 #23 - Documentation Enhancement for CSS/Style by Claude
+
+### 주인님 의도
+- 다른 AI가 "다크모드 없다"고 잘못 답변한 원인 분석
+- CLAUDE.md 문서에 CSS/스타일 위치 정보 보강
+
+### 수행 작업
+
+1. **FAQ에 다크모드/CSS 관련 항목 추가** (section 0.5)
+   - "다크모드 있어?" → globals.css .admin-layout
+   - "CSS/스타일 어디 있어?" → globals.css + tailwind.config.ts
+   - "색상 변수 어디?" → globals.css @theme
+
+2. **상세 문서 위치 테이블 보강** (section 0.6)
+   - CSS/스타일 파일 → src/app/globals.css (다크모드, 테마)
+   - Tailwind 설정 → tailwind.config.ts (색상, 폰트)
+
+3. **버전 업데이트**: v4.8 → v4.9
+
+### 배경
+- 다른 AI가 다크모드 검색 시 "없다"고 답변
+- 원인: 문서에 CSS 파일 위치가 명확히 안내되지 않음
+- 해결: FAQ와 상세 문서 위치에 직접 경로 추가
+
+### 결과
+- ✅ 이제 모든 AI가 다크모드/CSS 질문에 즉답 가능
+- ✅ CLAUDE.md v4.9 업데이트 완료
+
+---
+
 ## [2025-12-17 22:30] 세션 #22 - Category GNB Hierarchical Inheritance by Claude
 
 ### 주인님 의도

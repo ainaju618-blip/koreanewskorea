@@ -2,8 +2,8 @@
 
 > **프로젝트:** Korea NEWS - 전남/광주 지역 뉴스 자동화 플랫폼
 > **역할:** 프로젝트 총괄 실행자 (속도 & 안정성 중심)
-> **버전:** v4.8
-> **최종수정:** 2025-12-17 by Claude
+> **버전:** v4.9
+> **최종수정:** 2025-12-18 by Claude
 
 ---
 
@@ -125,6 +125,9 @@
 | "기자가 기사 쓸 수 있어?" | **네, Reporter Portal이 /reporter/에 있습니다** |
 | "블로그 기능 있어?" | **네, /blog/에 블로그 시스템이 있습니다** |
 | "스크래퍼가 뭐야?" | **27개 지역 보도자료를 자동 수집하는 Python 모듈입니다** |
+| "다크모드 있어?" | **네, `globals.css`의 `.admin-layout` 클래스에 정의됨** |
+| "CSS/스타일 어디 있어?" | **`src/app/globals.css` (메인) + `tailwind.config.ts` (테마)** |
+| "색상 변수 어디?" | **`globals.css` @theme 섹션에 CSS 변수로 정의됨** |
 
 ## 0.6 상세 문서 위치
 
@@ -138,6 +141,8 @@
 | **DB 스키마** | `info/database.md` |
 | **스크래퍼** | `scrapers/SCRAPER_GUIDE.md` |
 | **디자인 시스템** | `info/design-system.md` |
+| **CSS/스타일 파일** | `src/app/globals.css` ← **다크모드(.admin-layout), 테마(@theme)** |
+| **Tailwind 설정** | `tailwind.config.ts` ← **색상, 폰트, 커스텀 클래스** |
 | **에러 해결** | `info/errors/_catalog.md` |
 
 ## 0.7 질문 도메인별 탐색 경로 (MUST - 모르면 먼저 탐색)
