@@ -131,7 +131,12 @@
       "Bash(fi)",
       "Bash(done)",
       "Bash(gh run view:*)",
-      "Bash(supabase --version:*)"
+      "Bash(supabase --version:*)",
+      "Bash(node temp_stats.js:*)",
+      "Bash(do if [ -f \"$region/$region_scraper.py\" ])",
+      "Bash(then echo \"=== $region ===\" grep \"^from utils\\.\" \"$region/$region_scraper.py\")",
+      "Bash(echo \"(no utils imports)\" grep \"^import \" \"$region/$region_scraper.py\")",
+      "Bash(python test_imports.py:*)"
     ]
   }
 }

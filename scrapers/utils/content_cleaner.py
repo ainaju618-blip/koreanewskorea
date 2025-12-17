@@ -141,3 +141,12 @@ def extract_clean_text(html_content: str) -> str:
     
     # 정리
     return clean_content(text)
+
+
+# ============================================================
+# Alias for compatibility with different import paths
+# ============================================================
+# scraper_utils.py의 clean_article_content를 사용하는 스크래퍼를 위한 alias
+from utils.scraper_utils import clean_article_content
+
+__all__ = ['clean_content', 'remove_date_from_content', 'extract_clean_text', 'clean_article_content']
