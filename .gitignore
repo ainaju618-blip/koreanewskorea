@@ -104,3 +104,8 @@ nul
 info/config/gemini_accounts.md
 korea-news-reporter-portal-v2.0/
 .playwright-mcp/
+
+# Claude Hub
+claude-hub/.env
+claude-hub/__pycache__/
+claude-hub/.claude/

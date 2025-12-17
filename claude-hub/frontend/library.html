@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .tree-item { transition: all 0.2s; }
+        .tree-item:hover { background: #f3f4f6; }
+        .tree-toggle { cursor: pointer; user-select: none; }
+        .tree-children { margin-left: 1.5rem; border-left: 2px solid #e5e7eb; }
+        .prose h1 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; }
+        .prose h2 { font-size: 1.25rem; font-weight: bold; margin: 1rem 0; color: #1e40af; }
+        .prose h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0; }
+        .prose p { margin: 0.5rem 0; line-height: 1.6; }
+        .prose ul, .prose ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+        .prose li { margin: 0.25rem 0; }
+        .prose code { background: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; }
+        .prose pre { background: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .prose blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-xl font-bold text-blue-600">Claude Hub</a>
+                    <div class="flex space-x-4">
+                        <a href="/" class="text-gray-600 hover:text-blue-600">Dashboard</a>
+                        <a href="/library" class="text-blue-600 font-medium">Library</a>
+                        <a href="/projects" class="text-gray-600 hover:text-blue-600">Projects</a>
+                    </div>
+                </div>
+                <button onclick="openAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    + New Document
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Knowledge Library</h1>
+                <p class="text-gray-500 text-sm mt-1">Raw documents and AI summaries in hierarchical view</p>
+            </div>
+            <div id="stats" class="text-sm text-gray-500"></div>
+        </div>
+
+        <!-- Tree View -->
+        <div id="tree-container" class="bg-white rounded-lg shadow">
+            <div class="p-8 text-center text-gray-500">Loading...</div>
+        </div>
+    </main>
+
+    <!-- Add Document Modal -->
+    <div id="add-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Add New Document</h3>
+                <button onclick="closeAddModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Title</label>
+                        <input type="text" id="doc-title" class="w-full border rounded-lg px-3 py-2" placeholder="Document title">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Topic</label>
+                        <select id="doc-topic" class="w-full border rounded-lg px-3 py-2">
+                            <option value="general">General</option>
+                            <option value="prompting">Prompting</option>
+                            <option value="development">Development</option>
+                            <option value="troubleshooting">Troubleshooting</option>
+                            <option value="workflow">Workflow</option>
+                            <option value="reference">Reference</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Content</label>
+                        <textarea id="doc-content" rows="12" class="w-full border rounded-lg px-3 py-2 font-mono text-sm" placeholder="Paste your document content here..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t flex justify-end space-x-3">
+                <button onclick="closeAddModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <button onclick="saveDocument()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div id="view-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex justify-between items-center sticky top-0 bg-white">
+                <h3 id="modal-title" class="text-lg font-semibold">Document</h3>
+                <button onclick="closeViewModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div id="modal-content" class="prose max-w-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load tree data
+        async function loadTree() {
+            try {
+                const res = await fetch('/api/summaries/tree/all');
+                const data = await res.json();
+                renderTree(data.tree);
+                document.getElementById('stats').textContent =
+                    `${data.total_raw} documents, ${data.total_summaries} summarized`;
+            } catch (err) {
+                console.error('Load error:', err);
+                document.getElementById('tree-container').innerHTML =
+                    '<div class="p-8 text-center text-red-500">Failed to load</div>';
+            }
+        }
+
+        function renderTree(tree) {
+            const container = document.getElementById('tree-container');
+
+            if (!tree || tree.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-gray-500 mb-4">No documents yet</p>
+                        <button onclick="openAddModal()" class="text-blue-600 hover:underline">Add your first document</button>
+                    </div>`;
+                return;
+            }
+
+            let html = '<div class="divide-y">';
+
+            for (const group of tree) {
+                html += `
+                    <div class="p-4">
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            ${group.date}
+                        </div>
+                        <div class="space-y-2">
+                `;
+
+                for (const item of group.items) {
+                    const hasSummary = item.summary !== null;
+                    const sizeKB = (item.size / 1024).toFixed(1);
+
+                    html += `
+                        <div class="tree-item rounded-lg border">
+                            <div class="p-3">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-start space-x-3">
+                                        <span class="text-xl">${hasSummary ? '&#128196;' : '&#128196;'}</span>
+                                        <div>
+                                            <div class="font-medium">${escapeHtml(item.title)}</div>
+                                            <div class="text-xs text-gray-400 mt-1">${sizeKB} KB</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="viewRaw('${item.filename}')" class="text-sm text-blue-600 hover:underline">
+                                        View Raw
+                                    </button>
+                                </div>
+
+                                ${hasSummary ? `
+                                    <div class="tree-children mt-3 pl-4 py-2">
+                                        <div class="flex items-start space-x-3">
+                                            <span class="text-lg">&#128221;</span>
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-sm font-medium text-blue-700">AI Summary</span>
+                                                    <button onclick="viewSummary('${item.summary.filename}')" class="text-sm text-blue-600 hover:underline">
+                                                        View Details
+                                                    </button>
+                                                </div>
+                                                <p class="text-sm text-gray-600 mt-1">${escapeHtml(item.summary.preview || '')}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="mt-3 pl-8">
+                                        <span class="inline-flex items-center text-sm text-gray-400">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Awaiting analysis
+                                        </span>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div></div>';
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // View raw file
+        async function viewRaw(filename) {
+            try {
+                const res = await fetch('/api/raw/' + filename);
+                const data = await res.json();
+                document.getElementById('modal-title').textContent = data.title;
+                document.getElementById('modal-content').innerHTML =
+                    '<pre class="whitespace-pre-wrap text-sm">' + escapeHtml(data.content) + '</pre>';
+                openViewModal();
+            } catch (err) {
+                alert('Failed to load document');
+            }
+        }
+
+        // View summary
+        async function viewSummary(filename) {
+            try {
+                const res = await fetch('/api/summaries/' + filename);
+                const data = await res.json();
+                document.getElementById('modal-title').textContent = data.title;
+                document.getElementById('modal-content').innerHTML = marked.parse(data.content);
+                openViewModal();
+            } catch (err) {
+                alert('Failed to load summary');
+            }
+        }
+
+        // Save new document
+        async function saveDocument() {
+            const title = document.getElementById('doc-title').value.trim();
+            const topic = document.getElementById('doc-topic').value;
+            const content = document.getElementById('doc-content').value.trim();
+
+            if (!title || !content) {
+                alert('Title and content are required');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, topic, content })
+                });
+
+                if (res.ok) {
+                    closeAddModal();
+                    loadTree();
+                    // Clear form
+                    document.getElementById('doc-title').value = '';
+                    document.getElementById('doc-content').value = '';
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (err) {
+                alert('Failed to save document');
+            }
+        }
+
+        // Modal controls
+        function openAddModal() {
+            document.getElementById('add-modal').classList.remove('hidden');
+            document.getElementById('add-modal').classList.add('flex');
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('add-modal').classList.remove('flex');
+        }
+
+        function openViewModal() {
+            document.getElementById('view-modal').classList.remove('hidden');
+            document.getElementById('view-modal').classList.add('flex');
+        }
+
+        function closeViewModal() {
+            document.getElementById('view-modal').classList.add('hidden');
+            document.getElementById('view-modal').classList.remove('flex');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeAddModal();
+                closeViewModal();
+            }
+        });
+
+        // Initial load
+        loadTree();
+    </script>
+</body>
+</html>

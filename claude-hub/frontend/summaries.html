@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .prose h1 { font-size: 1.5rem; font-weight: bold; margin: 1rem 0; }
+        .prose h2 { font-size: 1.25rem; font-weight: bold; margin: 1rem 0; color: #1e40af; }
+        .prose h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0; }
+        .prose p { margin: 0.5rem 0; line-height: 1.6; }
+        .prose ul, .prose ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+        .prose li { margin: 0.25rem 0; }
+        .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .prose th, .prose td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
+        .prose th { background: #f9fafb; font-weight: 600; }
+        .prose code { background: #f3f4f6; padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; }
+        .prose pre { background: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .prose pre code { background: transparent; color: inherit; }
+        .prose blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; color: #6b7280; }
+        .prose hr { margin: 1.5rem 0; border-color: #e5e7eb; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-xl font-bold text-blue-600">Claude Hub</a>
+                    <div class="flex space-x-4">
+                        <a href="/" class="text-gray-600 hover:text-blue-600">Dashboard</a>
+                        <a href="/library" class="text-gray-600 hover:text-blue-600">Library</a>
+                        <a href="/projects" class="text-gray-600 hover:text-blue-600">Projects</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">AI Summary Board</h1>
+            <span class="text-sm text-gray-500">Claude AI Analysis Results</span>
+        </div>
+
+        <!-- Summary Cards -->
+        <div id="summaries-list" class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">Loading...</div>
+        </div>
+    </main>
+
+    <!-- View Modal -->
+    <div id="view-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 my-8 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b flex justify-between items-center sticky top-0 bg-white">
+                <h3 id="modal-title" class="text-lg font-semibold">Summary Details</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div id="modal-content" class="prose max-w-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load summaries
+        async function loadSummaries() {
+            try {
+                const res = await fetch('/api/summaries');
+                const data = await res.json();
+                renderSummaries(data.files);
+            } catch (err) {
+                document.getElementById('summaries-list').innerHTML =
+                    '<div class="bg-white rounded-lg shadow p-8 text-center text-red-500">Failed to load</div>';
+            }
+        }
+
+        function renderSummaries(files) {
+            const list = document.getElementById('summaries-list');
+
+            if (!files || files.length === 0) {
+                list.innerHTML = '<div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">No summaries yet. Save raw content and Claude will analyze it.</div>';
+                return;
+            }
+
+            list.innerHTML = files.map(f => `
+                <div class="bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer" onclick="viewSummary('${f.filename}')">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-bold text-lg text-blue-800">${f.title}</h3>
+                            <span class="text-xs text-gray-400">${new Date(f.created_at).toLocaleDateString('ko-KR')}</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-3">${f.preview || 'Click to view full summary...'}</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">AI Summary</span>
+                            <span class="text-xs text-gray-400">${(f.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function viewSummary(filename) {
+            try {
+                const res = await fetch('/api/summaries/' + filename);
+                const data = await res.json();
+
+                document.getElementById('modal-title').textContent = data.title;
+                document.getElementById('modal-content').innerHTML = marked.parse(data.content);
+                document.getElementById('view-modal').classList.remove('hidden');
+                document.getElementById('view-modal').classList.add('flex');
+            } catch (err) {
+                alert('Failed to load summary');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('view-modal').classList.add('hidden');
+            document.getElementById('view-modal').classList.remove('flex');
+        }
+
+        // Close modal on escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initial load
+        loadSummaries();
+    </script>
+</body>
+</html>
