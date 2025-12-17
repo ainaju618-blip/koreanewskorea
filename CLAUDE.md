@@ -575,25 +575,29 @@ Step 2: get-library-docs로 최신 문서 조회
 주인님께 보고
 ```
 
-## B.4 작업 완료 Gate (MUST 모두 통과)
+## B.4 작업 완료 Gate (MUST 모두 통과 - 순서 중요!)
 
 > **⛔ Gate 미통과 시 완료 보고 불가**
+> **⚠️ 순서 주의: 모든 기록 완료 후 마지막에 Git!**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Gate 1: 배포 (MUST - Claude 담당)                           │
-│  ├── git add . && git commit && git push                    │
-│  └── vercel --prod (또는 자동 배포 확인)                    │
-│                                                              │
-│  Gate 2: 기록 (MUST - 에러 해결 시)                          │
+│  Gate 1: 에러 기록 (에러 해결 시 MUST)                       │
 │  ├── info/errors/[분야]/[파일].md 작성 (by Claude)          │
 │  └── info/errors/_catalog.md에 한 줄 추가                    │
 │                                                              │
-│  Gate 2.5: 반복 에러 지침화 (2회 이상 발생 시 MUST)          │
+│  Gate 1.5: 반복 에러 지침화 (2회 이상 발생 시 MUST)          │
 │  └── CLAUDE.md에 해당 에러 방지 규칙 추가                    │
 │                                                              │
-│  Gate 3: 세션 기록 (MUST)                                    │
+│  Gate 2: 세션 기록 (MUST - Git 전에 반드시!)                 │
 │  └── .claude/context/session_log.md 기록 (by Claude)        │
+│                                                              │
+│  Gate 3: 배포 (MUST - 마지막! 모든 기록 포함)                │
+│  ├── git add . && git commit && git push                    │
+│  └── vercel --prod (또는 자동 배포 확인)                    │
+│                                                              │
+│  ⚠️ 잘못된 순서: Git → 세션 기록 (로그가 Git에 안 들어감)   │
+│  ✅ 올바른 순서: 세션 기록 → Git (로그까지 함께 커밋)        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
