@@ -74,6 +74,14 @@
 - 반복되는 실수는 지침으로 문서화해야 다른 AI도 방지 가능
 - 구체적 규칙은 별도 문서, CLAUDE.md는 참조만
 
+7. **"Preparing..." 문제 해결**
+   - 증상: 메인 페이지 오른쪽 사이드바에 "Preparing..." 계속 표시
+   - 위치: `src/components/home/HomeHero.tsx` 206-220줄
+   - 근본 원인: `src/app/(site)/page.tsx`에 `revalidate` 없음
+   - Next.js 서버 컴포넌트는 기본적으로 빌드 타임 데이터 영구 캐시
+   - 빌드 당시 sideArticles가 비어있으면 계속 빈 상태 유지
+   - 해결: `export const revalidate = 60;` 추가 (60초마다 갱신)
+
 ---
 
 ## [2025-12-17 15:00] 세션 #21 - README FAQ System & Git Verification by Claude

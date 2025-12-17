@@ -3,6 +3,9 @@ import NewsGrid, { NewsGridSkeleton } from '@/components/NewsGrid';
 import Sidebar, { SidebarSkeleton } from '@/components/Sidebar';
 import HomeHero from '@/components/home/HomeHero';
 
+// Revalidate every 60 seconds - ensures fresh news data
+export const revalidate = 60;
+
 /**
  * Korea NEWS Homepage
  * ===================
