@@ -110,14 +110,23 @@ export function ScraperPanel() {
         // DB에서 실행 중인 작업 확인 (Supabase bot_logs 테이블)
         const checkRunningJobs = async () => {
             try {
-                // running 상태인 작업만 직접 조회
-                const res = await fetch('/api/bot/logs?status=running&limit=50');
+                console.log('[ScraperPanel] Checking for running jobs in DB...');
+
+                // Cache-busting timestamp to prevent browser caching
+                const timestamp = Date.now();
+                const res = await fetch(`/api/bot/logs?status=running&limit=50&_t=${timestamp}`, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
                 const data = await res.json();
 
-                console.log('[ScraperPanel] Running jobs from DB:', data.logs?.length || 0);
+                console.log('[ScraperPanel] Running jobs API response:', {
+                    logsCount: data.logs?.length || 0,
+                    logs: data.logs?.map((l: JobResult) => ({ id: l.id, region: l.region, status: l.status }))
+                });
 
                 if (!data.logs || data.logs.length === 0) {
-                    console.log('[ScraperPanel] No running jobs found');
+                    console.log('[ScraperPanel] No running jobs found in DB');
                     return;
                 }
 
@@ -125,16 +134,22 @@ export function ScraperPanel() {
                 const runningJobs: JobResult[] = data.logs;
                 const jobIds = runningJobs.map((j) => j.id);
 
-                console.log('[ScraperPanel] Restoring job IDs:', jobIds);
+                console.log('[ScraperPanel] Restoring state for running jobs:', {
+                    jobIds,
+                    regions: runningJobs.map(j => j.region)
+                });
 
+                // Batch state updates
                 setActiveJobIds(jobIds);
-                setIsRunning(true);
-                setStatusMessage(`진행 중인 작업 ${runningJobs.length}개 복원됨`);
-                setProgress({ total: runningJobs.length, completed: 0 });
                 setCurrentJobs(runningJobs);
+                setProgress({ total: runningJobs.length, completed: 0 });
+                setStatusMessage(`진행 중인 작업 ${runningJobs.length}개 복원됨`);
+                setIsRunning(true);
+
+                console.log('[ScraperPanel] State restoration triggered');
 
             } catch (e) {
-                console.error('Failed to check running jobs:', e);
+                console.error('[ScraperPanel] Failed to check running jobs:', e);
             }
         };
         checkRunningJobs();
@@ -144,10 +159,19 @@ export function ScraperPanel() {
     useEffect(() => {
         let interval: NodeJS.Timeout;
 
+        console.log('[ScraperPanel] Polling effect triggered:', { isRunning, activeJobIdsCount: activeJobIds.length, activeJobIds });
+
         if (isRunning && activeJobIds.length > 0) {
+            console.log('[ScraperPanel] Starting polling for jobs:', activeJobIds);
+
             const checkJobs = async () => {
                 try {
-                    const res = await fetch('/api/bot/logs?limit=50');
+                    // Cache-busting to prevent stale data
+                    const timestamp = Date.now();
+                    const res = await fetch(`/api/bot/logs?limit=50&_t=${timestamp}`, {
+                        cache: 'no-store',
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
                     const data = await res.json();
 
                     if (!data.logs) return;
@@ -156,6 +180,12 @@ export function ScraperPanel() {
                     const completed = jobs.filter((job: JobResult) =>
                         ['success', 'failed', 'failure', 'warning', 'error', 'stopped'].includes(job.status)
                     );
+
+                    console.log('[ScraperPanel] Poll result:', {
+                        matchedJobs: jobs.length,
+                        completedJobs: completed.length,
+                        statuses: jobs.map((j: JobResult) => ({ id: j.id, status: j.status }))
+                    });
 
                     setProgress({
                         total: activeJobIds.length,
@@ -169,6 +199,7 @@ export function ScraperPanel() {
                         setStatusMessage(`현재 실행 중... [${getRegionLabel(running.region)}] ${running.log_message || ''} (${completed.length}/${activeJobIds.length} 완료)`);
                     } else if (completed.length === activeJobIds.length) {
                         // 모든 작업 완료
+                        console.log('[ScraperPanel] All jobs completed, stopping polling');
                         setIsRunning(false);
                         setJobResults(jobs);
                         setStatusMessage("모든 작업이 완료되었습니다.");
@@ -176,7 +207,7 @@ export function ScraperPanel() {
                     }
 
                 } catch (e) {
-                    console.error("Polling error:", e);
+                    console.error("[ScraperPanel] Polling error:", e);
                 }
             };
 
@@ -184,7 +215,12 @@ export function ScraperPanel() {
             interval = setInterval(checkJobs, 2000);
         }
 
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) {
+                console.log('[ScraperPanel] Clearing polling interval');
+                clearInterval(interval);
+            }
+        };
     }, [isRunning, activeJobIds]);
 
     const handleRun = async () => {
