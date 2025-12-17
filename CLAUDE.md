@@ -227,6 +227,7 @@
 | **질문/대화 중 임의 실행** | 즉시 **중단** + 대화 모드 전환 |
 | **파일 추가/삭제 시 README FAQ 미동기화** | 작업 **REJECT** (아래 규칙 참조) |
 | **FAQ 답변 전 실제 파일 존재 미확인** | 답변 **REJECT** (검증 필수) |
+| **GNB/메뉴 하드코딩** | 코드 리뷰 **REJECT** (아래 규칙 참조) |
 
 > **⚠️ README FAQ 동기화 필수 규칙 (P1)**
 >
@@ -259,6 +260,25 @@
 > git log --oneline --all -- "**/filename*"
 > ```
 > → 상세 가이드: `info/guides/README_SYNC_GUIDE.md` Part 7
+
+> **⚠️ GNB/메뉴 하드코딩 금지 규칙 (P0)**
+>
+> Header.tsx 또는 네비게이션 수정 전 반드시 `info/guides/frontend/GNB_MENU_RULES.md` 참조!
+>
+> ```
+> [GNB_RULES_CHECK]
+> Step 1: info/guides/frontend/GNB_MENU_RULES.md 읽기
+> Step 2: 메뉴 항목이 카테고리로 관리되어야 하는지 확인
+> Step 3: 카테고리 항목 → Admin에서 추가 (코드 하드코딩 금지)
+> Step 4: UI 요소(검색, PWA 버튼 등)만 코드에서 직접 작성 가능
+> ```
+>
+> **핵심 원칙:**
+> - 메뉴 = DB 카테고리 기반 동적 렌더링
+> - Admin 설정 ↔ API ↔ Frontend 동기화 유지
+> - 하드코딩된 메뉴는 Admin 설정 무시 → 버그 원인
+>
+> → 상세 가이드: `info/guides/frontend/GNB_MENU_RULES.md`
 
 ---
 

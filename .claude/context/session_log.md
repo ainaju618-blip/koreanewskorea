@@ -55,6 +55,25 @@
 - 커밋: bc71f0a → dcadd67 → 821478c → 56c47ac
 - Vercel 자동 배포 완료
 
+### 추가 작업 (세션 후반)
+
+5. **Gate 순서 수정**
+   - 문제: Git 후 세션 로그 작성 → 로그가 Git에 안 들어감
+   - 해결: 세션 로그 먼저 → Git 마지막
+   - `CLAUDE.md` B.4 섹션 순서 변경
+   - 커밋: `f79a0d3`
+
+6. **GNB 메뉴 규칙 문서화**
+   - 주인님 지적: "하드코딩 하지 말아야 하는 규칙이 없다"
+   - 신규 문서: `info/guides/frontend/GNB_MENU_RULES.md`
+   - CLAUDE.md CRITICAL RULES에 참조 규칙 추가
+   - 핵심: 메뉴 = DB 카테고리 기반 동적 렌더링, 하드코딩 금지
+
+### 교훈
+- 세션 로그는 Git 전에 작성해야 함
+- 반복되는 실수는 지침으로 문서화해야 다른 AI도 방지 가능
+- 구체적 규칙은 별도 문서, CLAUDE.md는 참조만
+
 ---
 
 ## [2025-12-17 15:00] 세션 #21 - README FAQ System & Git Verification by Claude
