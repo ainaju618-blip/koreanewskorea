@@ -5,6 +5,49 @@
 
 ---
 
+## [2025-12-17 18:00] 세션 #16 - 봇 관리 센터 문제 해결 by Claude
+
+### 주인님 의도
+- 관리자 메뉴 "봇 관리 센터" 분석
+- 로그기록창 열리지 않는 문제 해결
+- 수동수집 실행 후 기사가 없는 문제 해결
+
+### 근본 원인 파악
+- **Vercel 서버리스 환경에서 Python 실행 불가**
+- `bot-service.ts`의 `spawn('python', ...)`이 프로덕션에서 실패
+- 따라서 수동 수집을 실행해도 실제 스크래퍼가 동작하지 않았음
+
+### 수행 작업
+
+1. **GitHub Actions 워크플로우 대폭 개선** (`daily_scrape.yml`)
+   - 기존 4개 → 27개 전체 지역 스크래퍼 추가
+   - `workflow_dispatch` 입력 추가: region, days, log_id
+   - 관리자 UI에서 특정 지역만 수집 가능
+
+2. **API 수정** (`/api/bot/run/route.ts`)
+   - Vercel 환경 감지 후 GitHub Actions 트리거
+   - 로컬 개발은 기존 Python spawn 방식 유지
+   - `triggerGitHubAction()` 함수 추가
+
+3. **GitHub Secrets 설정 가이드 작성**
+   - `info/guides/github-secrets.md` 생성
+   - 필수 Secrets: SUPABASE_URL, BOT_API_URL, GITHUB_TOKEN 등
+   - GitHub Token 생성 방법 문서화
+
+4. **이전 세션 수정 사항 (로그 API)**
+   - `/api/bot/logs/[id]/route.ts` 에러 핸들링 개선
+   - `.env`에 BOT_API_URL, BOT_LOG_API_URL 추가
+
+### 남은 작업 (주인님 필요)
+- GitHub Secrets 설정 (GITHUB_TOKEN 등)
+- Vercel 환경변수 설정 (GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO)
+
+### 결과
+- Git commit: `732c835` feat: Add GitHub Actions integration for Python scrapers
+- Vercel 자동 배포 진행 중
+
+---
+
 ## [2025-12-17 15:30] 세션 #15 - Header.tsx 인코딩 복구 by Claude
 
 ### 주인님 의도

@@ -99,7 +99,17 @@
       "Bash(dir:*)",
       "Bash(python gui.py:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nchore: Add bash command permissions to Claude settings\n\n- git fetch, dir, python gui.py commands allowed\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh secret set:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Re-save Header.tsx with clean UTF-8 encoding\n\n- Replaced Korean comments with English equivalents\n- Ensures valid UTF-8 encoding for Vercel build\n- Resolves \"stream did not contain valid UTF-8\" error\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(gh secret list:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\ndocs: Add UTF-8 encoding rule and repeated error management policy\n\n- Add Korean text prohibition in code/comments (P0 rule)\n- Add detailed encoding rules in C.3 section\n- Add Gate 2.5: Repeated error documentation rule (2+ occurrences)\n- Update Quick Reference Card with encoding warning\n- Bump version to v4.1\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(printf:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh run list:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Fix sideArticles query in HomeHero component\n\n- Replace unreliable Supabase not-in query with client-side filtering\n- Fetch extra articles and filter out slider articles locally\n- Resolves \"Preparing...\" placeholder showing on homepage sidebar\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }
