@@ -146,7 +146,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 department = safe_get_text(info_item)
 
     except Exception as e:
-        print(f"      ⚠️ 메타 정보 추출 실패: {e}")
+        print(f"      [WARN] Meta info extraction failed: {e}")
     
     # 2. 본문 추출 (.view-contents 클래스 활용)
     try:
@@ -193,7 +193,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = clean_article_content(content)
             
     except Exception as e:
-        print(f"      ⚠️ 본문 추출 실패: {e}")
+        print(f"      [WARN] Content extraction failed: {e}")
 
     # 3. 이미지 추출 (개선된 로직)
     try:
@@ -243,7 +243,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                             break
                             
     except Exception as e:
-        print(f"      ⚠️ 이미지 추출 실패: {e}")
+        print(f"      [WARN] Image extraction failed: {e}")
     
     return content, thumbnail_url, pub_date, department
 
@@ -330,7 +330,7 @@ def parse_list_page(page: Page) -> List[Dict]:
             })
             
     except Exception as e:
-        print(f"      ⚠️ 목록 파싱 실패: {e}")
+        print(f"      [WARN] List parsing failed: {e}")
     
     return articles
 
@@ -348,19 +348,19 @@ def validate_article(article_data: Dict) -> bool:
     title = article_data.get('title', '')
     content = article_data.get('content', '')
     
-    # 제목 검증
+    # Title validation
     if len(title) < 5:
-        print(f"         ⚠️ 검증 실패: 제목 너무 짧음 ({len(title)}자)")
+        print(f"         [WARN] Validation failed: title too short ({len(title)} chars)")
         return False
-    
-    # 본문 검증
+
+    # Content validation
     if len(content) < 50:
-        print(f"         ⚠️ 검증 실패: 본문 너무 짧음 ({len(content)}자)")
+        print(f"         [WARN] Validation failed: content too short ({len(content)} chars)")
         return False
-    
-    # 에러 메시지 포함 여부
+
+    # Check for error messages
     if "본문 내용을 가져올 수 없습니다" in content:
-        print(f"         ⚠️ 검증 실패: 본문 추출 실패")
+        print(f"         [WARN] Validation failed: content extraction failed")
         return False
     
     return True
@@ -379,17 +379,12 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
         start_date: 수집 시작일 (YYYY-MM-DD)
         end_date: 수집 종료일 (YYYY-MM-DD)
     """
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)
-    
+    print(f"[INFO] {REGION_NAME} 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
 
     # Ensure dev server is running before starting
-
     if not ensure_server_running():
-
         print("[ERROR] Dev server could not be started. Aborting.")
-
         return []
-")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v4.0 시작', 'info')
 
     if not end_date:
@@ -421,7 +416,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             else:
                 list_url = f'{LIST_URL}&wbb=md%3Alist%3B&page={page_num}'
             
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] Collecting page {page_num}...")
             log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
             if not safe_goto(page, list_url):
@@ -431,7 +426,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             time.sleep(1.5)  # 페이지 로딩 대기
             
             articles = parse_list_page(page)
-            print(f"      📰 {len(articles)}개 기사 발견")
+            print(f"      [FOUND] {len(articles)} articles found")
             
             for article in articles:
                 if len(all_links) >= max_articles:
@@ -449,12 +444,12 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             
             page_num += 1
             if stop:
-                print("      🛑 수집 기간 초과, 수집 종료")
+                print("      [STOP] Collection period exceeded, stopping collection")
                 break
             
             time.sleep(1)
         
-        print(f"   📋 총 {len(all_links)}개 기사 링크 수집 완료")
+        print(f"   [COMPLETE] Total {len(all_links)} article links collected")
         
         # Phase 2: Visit - 상세 페이지 방문 및 전송
         for item in all_links[:max_articles]:
@@ -462,7 +457,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             full_url = item['url']
             n_date = item['date'] or datetime.now().strftime('%Y-%m-%d')
             
-            print(f"      📰 {title[:35]}... ({n_date})")
+            print(f"      [ARTICLE] {title[:35]}... ({n_date})")
             log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
             
             content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
@@ -504,18 +499,18 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 success_count += 1
                 if thumbnail_url:
                     image_count += 1
-                img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                print(f"         ✅ 저장 완료 ({img_status})")
+                img_status = "[+image]" if thumbnail_url else "[-image]"
+                print(f"         [OK] Saved ({img_status})")
                 log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
             elif result.get('status') == 'exists':
-                print(f"         ⏩ 이미 존재")
+                print(f"         [SKIP] Already exists")
             
             time.sleep(0.5)  # Rate limiting
         
         browser.close()
     
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개, 이미지 {image_count}개)"
-    print(f"✅ {final_msg}")
+    final_msg = f"Collection complete (total {collected_count}, new {success_count}, images {image_count})"
+    print(f"[OK] {final_msg}")
     log_to_server(REGION_CODE, '성공', final_msg, 'success')
     
     return []

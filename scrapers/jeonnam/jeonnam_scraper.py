@@ -142,17 +142,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
 
 def collect_articles(days: int = 3, start_date: str = None, end_date: str = None) -> List[Dict]:
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)
-    
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
 
     # Ensure dev server is running before starting
-
     if not ensure_server_running():
-
         print("[ERROR] Dev server could not be started. Aborting.")
-
         return []
-")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v3.0 시작', 'info')
 
     collected_links = []

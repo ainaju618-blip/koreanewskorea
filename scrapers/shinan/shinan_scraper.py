@@ -280,17 +280,12 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
         start_date: 수집 시작일 (YYYY-MM-DD)
         end_date: 수집 종료일 (YYYY-MM-DD)
     """
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일)
-    
+    print(f"[INFO] {REGION_NAME} 보도자료 수집 시작 (최근 {days}일)")
 
     # Ensure dev server is running before starting
-
     if not ensure_server_running():
-
         print("[ERROR] Dev server could not be started. Aborting.")
-
         return []
-")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
 
     if not end_date:
@@ -323,7 +318,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             
             time.sleep(1.5)  # 페이지 로딩 대기
             
-            # 목록 항목 찾기
+            # Find list items
             items = None
             for sel in LIST_ITEM_SELECTORS:
                 try:
@@ -333,20 +328,20 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                         break
                 except:
                     continue
-            
+
             if not items:
-                # 대안: 모든 링크에서 /show/ 패턴 찾기
+                # Alternative: find /show/ pattern in all links
                 try:
                     items = page.locator('a[href*="/show/"]')
                     if items.count() == 0:
-                        print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                        print("      [WARN] Cannot find article list.")
                         break
                 except:
-                    print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                    print("      [WARN] Cannot find article list.")
                     break
             
             item_count = items.count()
-            print(f"      📰 {item_count}개 기사 발견")
+            print(f"      [FOUND] {item_count} articles found")
             
             # 링크 정보 수집
             link_data = []
@@ -430,7 +425,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 title = item['title']
                 full_url = item['url']
                 
-                print(f"      📰 {title[:35]}...")
+                print(f"      [ARTICLE] {title[:35]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
                 content, thumbnail_url, detail_date = fetch_detail(page, full_url)
@@ -470,25 +465,25 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 
                 if result.get('status') == 'created':
                     success_count += 1
-                    img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                    print(f"         ✅ 저장 완료 ({img_status})")
+                    img_status = "[+image]" if thumbnail_url else "[-image]"
+                    print(f"         [OK] Saved ({img_status})")
                     log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
-                    print(f"         ⏩ 이미 존재")
+                    print(f"         [SKIP] Already exists")
                 
                 time.sleep(0.5)  # Rate limiting
             
             page_num += 1
             if stop:
-                print("      🛑 수집 기간 초과, 종료합니다.")
+                print("      [STOP] Collection period exceeded, stopping.")
                 break
             
             time.sleep(1)
         
         browser.close()
     
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개)"
-    print(f"✅ {final_msg}")
+    final_msg = f"Collection complete (total {collected_count}, new {success_count})"
+    print(f"[OK] {final_msg}")
     log_to_server(REGION_CODE, '성공', final_msg, 'success')
     
     return []

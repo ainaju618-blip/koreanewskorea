@@ -95,17 +95,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date
 
 def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
-    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {days}일, 최대: {max_articles}개)
-    
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {days}일, 최대: {max_articles}개)")
 
     # Ensure dev server is running before starting
-
     if not ensure_server_running():
-
         print("[ERROR] Dev server could not be started. Aborting.")
-
         return []
-")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
     
     # 날짜 필터 계산
