@@ -125,7 +125,7 @@ def build_list_url(page: int = 1) -> str:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], Optional[str], str, Optional[str]]:
     """
     상세 페이지에서 본문, 부제목, 이미지, 날짜, 담당부서를 추출
 
@@ -439,7 +439,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 print(f"      [ARTICLE] {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
-                content, subtitle, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
+                content, subtitle, thumbnail_url, detail_date, department = fetch_detail(page, full_url, title)
                 
                 # 날짜 결정 (상세 > 목록 > 현재)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')

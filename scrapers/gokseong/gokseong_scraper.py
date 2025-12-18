@@ -110,7 +110,7 @@ def clean_content(content: str) -> str:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
+def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
     상세 페이지에서 본문, 이미지, 날짜, 담당부서, 부제목을 추출합니다.
     """
@@ -394,7 +394,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 print(f"      > {title[:30]}... ({n_date})")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
-                content, thumbnail_url, pub_date, department, subtitle = fetch_detail(page, full_url)
+                content, thumbnail_url, pub_date, department, subtitle = fetch_detail(page, full_url, title)
 
                 # 이미지 없는 기사 스킵
                 if content is None:
