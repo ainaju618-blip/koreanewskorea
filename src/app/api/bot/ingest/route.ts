@@ -163,12 +163,15 @@ export async function POST(request: Request) {
 
         // 3. Avoid Duplicates - 기존 기사가 있으면 thumbnail_url만 업데이트
         // 단, trash 상태 기사는 제외 (삭제 후 재수집 가능하도록)
-        const { data: existing } = await supabaseAdmin
+        // NOTE: .maybeSingle() 사용 - 중복이 이미 있어도 에러 안 남
+        const { data: existingList } = await supabaseAdmin
             .from('posts')
             .select('id, thumbnail_url')
             .eq('original_link', original_link)
-            .neq('status', 'trash')  // 휴지통 제외
-            .single();
+            .neq('status', 'trash')
+            .limit(1);
+
+        const existing = existingList?.[0];
 
         if (existing) {
             // 기존 기사에 thumbnail_url이 없고, 새 요청에 thumbnail_url이 있으면 업데이트
@@ -189,14 +192,16 @@ export async function POST(request: Request) {
         // 3-1. 추가 중복 방지: title + published_at(날짜만) 조합 체크
         if (published_at) {
             const publishedDate = published_at.split('T')[0]; // YYYY-MM-DD만 추출
-            const { data: duplicateByTitleDate } = await supabaseAdmin
+            const { data: duplicateList } = await supabaseAdmin
                 .from('posts')
                 .select('id')
                 .eq('title', title)
-                .neq('status', 'trash')  // 휴지통 제외
+                .neq('status', 'trash')
                 .gte('published_at', `${publishedDate}T00:00:00`)
-                .lt('published_at', `${publishedDate}T23:59:59`)
-                .single();
+                .lte('published_at', `${publishedDate}T23:59:59.999`)
+                .limit(1);
+
+            const duplicateByTitleDate = duplicateList?.[0];
 
             if (duplicateByTitleDate) {
                 return NextResponse.json({
@@ -212,24 +217,24 @@ export async function POST(request: Request) {
         const categorySlug = category_slug || category; // 우선순위: category_slug > category
 
         if (categorySlug) {
-            const { data: categoryData } = await supabaseAdmin
+            const { data: categoryList } = await supabaseAdmin
                 .from('categories')
                 .select('id')
                 .eq('slug', categorySlug.toLowerCase())
-                .single();
+                .limit(1);
 
-            if (categoryData) {
-                category_id = categoryData.id;
+            if (categoryList?.[0]) {
+                category_id = categoryList[0].id;
             } else {
                 // slug로 못 찾으면 name으로 시도
-                const { data: categoryByName } = await supabaseAdmin
+                const { data: categoryByNameList } = await supabaseAdmin
                     .from('categories')
                     .select('id')
                     .eq('name', categorySlug)
-                    .single();
+                    .limit(1);
 
-                if (categoryByName) {
-                    category_id = categoryByName.id;
+                if (categoryByNameList?.[0]) {
+                    category_id = categoryByNameList[0].id;
                 }
             }
         }
@@ -310,13 +315,29 @@ export async function POST(request: Request) {
                 thumbnail_url,
                 ai_summary: ai_summary || '',
                 status: dbStatus, // DB 호환 상태 (published/draft/hidden/trash)
-                // validation_errors: validation.errors.length > 0 ? validation.errors : null,
-                // validation_warnings: validation.warnings.length > 0 ? validation.warnings : null,
             })
             .select()
             .single();
 
         if (error) {
+            // Race condition 처리: 유니크 제약조건 위반 시 중복으로 처리
+            if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+                console.info(`[DUPLICATE] Race condition caught for: ${title?.substring(0, 30)}...`);
+                // 이미 존재하는 기사 찾기
+                const { data: raceExisting } = await supabaseAdmin
+                    .from('posts')
+                    .select('id')
+                    .eq('original_link', original_link)
+                    .neq('status', 'trash')
+                    .limit(1);
+
+                return NextResponse.json({
+                    message: 'Already exists (race condition)',
+                    id: raceExisting?.[0]?.id || null,
+                    status: 'exists'
+                }, { status: 200 });
+            }
+
             console.error('Supabase Insert Error:', error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
