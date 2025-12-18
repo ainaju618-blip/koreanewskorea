@@ -60,7 +60,7 @@ export default function BotLogsPage() {
             params.append("limit", String(pageSize));
             params.append("offset", String((currentPage - 1) * pageSize));
 
-            const res = await fetch(`/api/bot/logs?${params.toString()}`);
+            const res = await fetch(`/api/bot/bot-logs?${params.toString()}`);
             const data = await res.json();
             if (data.logs) {
                 setLogs(data.logs);

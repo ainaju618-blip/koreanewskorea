@@ -114,7 +114,7 @@ export function ScraperPanel() {
 
                 // Cache-busting timestamp to prevent browser caching
                 const timestamp = Date.now();
-                const res = await fetch(`/api/bot/logs?status=running&limit=50&_t=${timestamp}`, {
+                const res = await fetch(`/api/bot/bot-logs?status=running&limit=50&_t=${timestamp}`, {
                     cache: 'no-store',
                     headers: { 'Cache-Control': 'no-cache' }
                 });
@@ -168,7 +168,7 @@ export function ScraperPanel() {
                 try {
                     // Cache-busting to prevent stale data
                     const timestamp = Date.now();
-                    const res = await fetch(`/api/bot/logs?limit=50&_t=${timestamp}`, {
+                    const res = await fetch(`/api/bot/bot-logs?limit=50&_t=${timestamp}`, {
                         cache: 'no-store',
                         headers: { 'Cache-Control': 'no-cache' }
                     });

@@ -141,7 +141,7 @@ export default function BotSchedulePage() {
 
         const fetchHistory = async () => {
             try {
-                const res = await fetch('/api/bot/logs?limit=5');
+                const res = await fetch('/api/bot/bot-logs?limit=5');
                 if (res.ok) {
                     const data = await res.json();
                     if (data.logs) {

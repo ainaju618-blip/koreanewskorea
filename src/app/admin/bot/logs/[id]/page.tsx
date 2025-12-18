@@ -46,7 +46,7 @@ export default function LogDetailPage() {
 
     const fetchLog = async () => {
         try {
-            const res = await fetch(`/api/bot/logs/${params.id}`);
+            const res = await fetch(`/api/bot/bot-logs/${params.id}`);
             const data = await res.json();
 
             if (!res.ok) {

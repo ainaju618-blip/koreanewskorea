@@ -464,7 +464,7 @@ export default function AdminDashboardPage() {
                                             await new Promise(r => setTimeout(r, 2000)); // 2초마다 폴링
 
                                             try {
-                                                const res = await fetch('/api/bot/logs?limit=30');
+                                                const res = await fetch('/api/bot/bot-logs?limit=30');
                                                 const data = await res.json();
 
                                                 if (data.logs) {
