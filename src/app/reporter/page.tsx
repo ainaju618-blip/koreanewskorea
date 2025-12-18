@@ -278,35 +278,107 @@ export default function ReporterDashboard() {
 
     return (
         <div className="space-y-4 max-w-7xl mx-auto">
-            {/* Compact Header */}
+            {/* Header with Press Card */}
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    {/* Press Card Section */}
+                    <div className="flex items-start gap-4">
+                        {/* Press Card with Photo */}
+                        <div
+                            className="relative flex-shrink-0"
+                            style={{ width: '140px', height: '200px' }}
+                        >
+                            {/* Press Card Background */}
+                            <img
+                                src="/press-card.png"
+                                alt="Press Card"
+                                className="w-full h-full object-contain"
+                            />
+                            {/* Reporter Photo Overlay */}
+                            <div
+                                className="absolute overflow-hidden bg-white"
+                                style={{
+                                    top: '28%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    width: '55px',
+                                    height: '70px'
+                                }}
+                            >
+                                {reporter?.profile_image ? (
+                                    <img
+                                        src={reporter.profile_image}
+                                        alt={reporter.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                        <User className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                )}
+                            </div>
+                            {/* Name Overlay */}
+                            <div
+                                className="absolute text-white text-xs font-bold truncate text-center"
+                                style={{
+                                    bottom: '26%',
+                                    left: '35%',
+                                    right: '8%',
+                                    fontSize: '9px'
+                                }}
+                            >
+                                {reporter?.name}
+                            </div>
+                            {/* Region Overlay */}
+                            <div
+                                className="absolute text-white text-xs truncate text-center"
+                                style={{
+                                    bottom: '18%',
+                                    left: '35%',
+                                    right: '8%',
+                                    fontSize: '8px'
+                                }}
+                            >
+                                {reporter?.regionGroup || reporter?.region}
+                            </div>
+                        </div>
+
+                        {/* Reporter Info */}
+                        <div className="pt-2">
                             <h1 className="text-lg font-bold text-slate-900">
                                 {reporter?.name} {getPositionLabel(reporter?.position || "")}
                             </h1>
                             <p className="text-sm text-slate-500">
                                 {reporter?.regionGroup || reporter?.region} 담당
                             </p>
+                            <Link
+                                href="/reporter/profile"
+                                className="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:text-blue-700"
+                            >
+                                <Edit className="w-3 h-3" />
+                                프로필 수정
+                            </Link>
                         </div>
                     </div>
-                    {/* Compact Stats */}
-                    <div className="flex items-center gap-6 text-sm">
-                        <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-blue-500" />
-                            <span className="text-slate-600">기사</span>
-                            <span className="font-bold text-slate-900">{stats?.myRegionArticles || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Eye className="w-4 h-4 text-emerald-500" />
-                            <span className="text-slate-600">게시</span>
-                            <span className="font-bold text-slate-900">{stats?.publishedArticles || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-amber-500" />
-                            <span className="text-slate-600">대기</span>
-                            <span className="font-bold text-slate-900">{stats?.pendingArticles || 0}</span>
+
+                    {/* Stats & Actions */}
+                    <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-6 text-sm">
+                            <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-blue-500" />
+                                <span className="text-slate-600">기사</span>
+                                <span className="font-bold text-slate-900">{stats?.myRegionArticles || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Eye className="w-4 h-4 text-emerald-500" />
+                                <span className="text-slate-600">게시</span>
+                                <span className="font-bold text-slate-900">{stats?.publishedArticles || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-amber-500" />
+                                <span className="text-slate-600">대기</span>
+                                <span className="font-bold text-slate-900">{stats?.pendingArticles || 0}</span>
+                            </div>
                         </div>
                         <Link
                             href="/reporter/write"

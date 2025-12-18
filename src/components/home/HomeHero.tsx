@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cleanContentPreview } from '@/lib/contentUtils';
 import HeroSlider from './HeroSlider';
+import AdBanner from './AdBanner';
 import { createClient } from '@/lib/supabase-server';
 
 /**
@@ -201,24 +202,14 @@ export default async function HomeHero() {
                     />
                 </div>
 
-                {/* Side Stack (Right) - Server-rendered */}
+                {/* Side Stack (Right) - Ad Banners */}
                 <div className="lg:col-span-4 flex flex-col gap-4 h-full">
-                    {sideArticles.length > 0 ? (
-                        sideArticles.map((article, idx) => (
-                            <div key={article.id} className="flex-1 min-h-[140px]">
-                                <SideArticle article={article} priority={idx === 0} />
-                            </div>
-                        ))
-                    ) : (
-                        <>
-                            <div className="flex-1 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center">
-                                <span className="text-slate-400 text-sm">Preparing...</span>
-                            </div>
-                            <div className="flex-1 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center">
-                                <span className="text-slate-400 text-sm">Preparing...</span>
-                            </div>
-                        </>
-                    )}
+                    <div className="flex-1 min-h-[140px]">
+                        <AdBanner variant="polytechnic" />
+                    </div>
+                    <div className="flex-1 min-h-[140px]">
+                        <AdBanner variant="hitech" />
+                    </div>
                 </div>
             </div>
 
