@@ -202,13 +202,21 @@ export default async function HomeHero() {
                     />
                 </div>
 
-                {/* Side Stack (Right) - Ad Banners */}
+                {/* Side Stack (Right) - Ad Banner + Article */}
                 <div className="lg:col-span-4 flex flex-col gap-4 h-full">
+                    {/* Top: Ad Banner */}
                     <div className="flex-1 min-h-[140px]">
                         <AdBanner variant="polytechnic" />
                     </div>
+                    {/* Bottom: Side Article */}
                     <div className="flex-1 min-h-[140px]">
-                        <AdBanner variant="hitech" />
+                        {sideArticles[0] ? (
+                            <SideArticle article={sideArticles[0]} priority />
+                        ) : (
+                            <div className="h-full bg-slate-100 rounded-xl flex items-center justify-center">
+                                <span className="text-slate-400 text-sm">No articles</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 /**
  * Animated Advertisement Banner Component
@@ -18,57 +19,22 @@ export default function AdBanner({ variant }: AdBannerProps) {
                 href="https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex flex-col h-full bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+                className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
             >
-                {/* Animated background pattern */}
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl animate-pulse-slow" />
-                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-300 rounded-full blur-2xl animate-float" />
-                </div>
+                {/* Background Image */}
+                <Image
+                    src="/images/ads/naju01.png"
+                    alt="2026 Korea Polytechnic Admission"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 1024px) 100vw, 400px"
+                />
 
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                {/* Shimmer effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-between h-full p-4">
-                    {/* Top: Badge */}
-                    <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-bold">
-                            <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                            2025 Admission
-                        </span>
-                        <span className="text-white/60 text-xs">AD</span>
-                    </div>
-
-                    {/* Middle: Main text */}
-                    <div className="flex-1 flex flex-col justify-center py-2">
-                        <div className="text-white/80 text-xs font-medium mb-1 tracking-wide">
-                            KOREA POLYTECHNIC
-                        </div>
-                        <h3 className="text-white text-xl font-bold leading-tight mb-1">
-                            2025
-                        </h3>
-                        <p className="text-blue-100 text-sm font-medium">
-                            Apply Now
-                        </p>
-                    </div>
-
-                    {/* Bottom: CTA */}
-                    <div className="flex items-center justify-between">
-                        <span className="text-white/90 text-sm font-semibold group-hover:text-white transition-colors">
-                            Go to Application
-                        </span>
-                        <span className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-full group-hover:bg-white/30 transition-all group-hover:translate-x-1">
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-
-                {/* Decorative elements */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 border-4 border-white/10 rounded-full" />
-                <div className="absolute -bottom-8 -right-8 w-32 h-32 border-4 border-white/5 rounded-full" />
+                {/* Subtle overlay for depth */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
         );
     }
