@@ -314,7 +314,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                             </Link>
                         ) : (
                             <div className="font-bold text-gray-800 text-[15px]">
-                                {news.author_name || "취재기자"}
+                                {/* Only show author_name if it's not an email */}
+                                {news.author_name && !news.author_name.includes('@') ? news.author_name : '취재기자'}
                             </div>
                         )}
                         <span className="text-gray-300 mx-1">|</span>
@@ -324,11 +325,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="text-[13px] text-gray-500 flex flex-col md:flex-row md:gap-2">
-                            <span>입력: {formatDate(news.created_at)}</span>
-                            {news.published_at && news.published_at !== news.created_at && (
-                                <span className="text-gray-400"> (수정: {formatDate(news.published_at)})</span>
-                            )}
+                        <div className="text-[13px] text-gray-500">
+                            {/* Show only one date: published_at (original article time) or created_at */}
+                            <span>{formatDate(news.published_at || news.created_at)}</span>
                         </div>
 
                         {/* 공유 버튼 */}

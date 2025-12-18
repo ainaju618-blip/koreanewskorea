@@ -388,6 +388,8 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     title = safe_get_text(link)
                     if title:
                         title = title.strip()
+                        # Remove time prefix (e.g., "13:55\n\n" or "14:01 ")
+                        title = re.sub(r'^\d{1,2}:\d{2}\s*\n*', '', title).strip()
                     href = safe_get_attr(link, 'href')
                     
                     if not title or not href:

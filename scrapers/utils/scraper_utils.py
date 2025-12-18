@@ -275,6 +275,8 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         r'^\s*\[\s*포스터\s*\][^\n]*$',
         # (사진 N장 첨부) 형태
         r'\([^)]*사진[^)]*\d*[^)]*장?[^)]*첨부[^)]*\)',
+        # (xxx N장 첨부) 일반 형태 - 포스터, 홍보물 등 첨부 안내
+        r'^\s*\([^)]*\d*\s*장?\s*첨부\)\s*$',
     ]
 
     # 2. 메타데이터 패턴 제거
@@ -320,8 +322,11 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         r'^이전글\s*$',
         r'^인쇄\s*$',
         r'^목록\s*$',
+        r'^인쇄\s+목록\s*$',
         r'다음글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
         r'이전글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
+        # 관련 기사 링크 (기사제목 / YYYY-MM-DD 형태)
+        r'^[^\n]+\s*/\s*\d{4}-\d{2}-\d{2}\s*$',
     ]
 
     # 모든 패턴 적용 (MULTILINE 모드)
