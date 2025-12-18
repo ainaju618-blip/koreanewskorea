@@ -288,4 +288,50 @@ vercel env pull .env.local  # 로컬에 가져오기
 
 ---
 
-*최종 업데이트: 2025-12-15*
+## 11. 외부 서비스 의존성 (External Service Dependencies)
+
+> **기능별 외부 서비스 및 환경변수 매핑**
+
+### 11.1 서비스별 매핑
+
+| 기능 | 외부 서비스 | 환경변수 | 사용 위치 |
+|------|-------------|----------|-----------|
+| **봇 실행** | GitHub Actions | `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` | `/api/bot/run` |
+| **이미지 업로드** | Cloudinary | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | `/api/upload/*` |
+| **데이터베이스** | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | 전역 |
+| **AI 번역/리라이트** | OpenAI | `OPENAI_API_KEY` | `/api/ai/*` |
+| **지도** | Naver Map | `NEXT_PUBLIC_NAVER_MAP_CLIENT_ID` | `NaverMap.tsx` |
+| **자동 배포** | Vercel | `VERCEL_URL`, `VERCEL` | `/api/bot/cron` |
+
+### 11.2 GitHub Actions 트리거 메뉴
+
+| 메뉴 | 경로 | 설명 |
+|------|------|------|
+| **봇 실행** | `/admin/bot/run` | 수동 스크래퍼 실행 |
+| **스케줄 설정** | `/admin/bot/schedule` | Cron 스케줄 설정 |
+| **자동 실행** | Vercel Cron | 매일 09:00 UTC 자동 트리거 |
+
+**동작 흐름:**
+```
+수동: /admin/bot/run → /api/bot/run → GitHub Actions
+자동: vercel.json cron → /api/bot/cron → /api/bot/run → GitHub Actions
+```
+
+### 11.3 Cloudinary 사용 메뉴
+
+| 메뉴 | 경로 | 설명 |
+|------|------|------|
+| **이미지 업로드** | `/api/upload/image` | 파일 직접 업로드 |
+| **URL 업로드** | `/api/upload/from-url` | 외부 URL → Cloudinary 전송 |
+| **사용량 확인** | `/admin/usage` | Cloudinary 사용량 조회 |
+
+### 11.4 OpenAI 사용 메뉴
+
+| 메뉴 | 경로 | 설명 |
+|------|------|------|
+| **AI 번역** | `/api/ai/translate` | 텍스트 번역 |
+| **AI 리라이트** | `/api/ai/rewrite` | 기사 리라이트 |
+
+---
+
+*최종 업데이트: 2025-12-19*
