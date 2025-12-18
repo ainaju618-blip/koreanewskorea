@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { cleanContentPreview } from '@/lib/contentUtils';
 import HeroSlider from './HeroSlider';
 import AdBanner from './AdBanner';
 import { createClient } from '@/lib/supabase-server';
@@ -10,17 +9,6 @@ import { createClient } from '@/lib/supabase-server';
  * ================================================
  * Fetches data on server for instant LCP
  */
-
-interface Article {
-    id: string;
-    title: string;
-    summary?: string;
-    content?: string;
-    thumbnail_url?: string;
-    author?: string;
-    category?: string;
-    published_at?: string;
-}
 
 // Region mappings
 const REGION_DISPLAY_NAMES: Record<string, string> = {
@@ -108,88 +96,32 @@ async function getHeroData() {
         regionUsage[region] = index + 1;
     }
 
-    // 5. Fetch side articles (different from slider)
-    const sliderIds = sliderArticles.map(a => a.id);
-
-    // Fetch recent articles (relaxed conditions - no thumbnail requirement)
-    const { data: sideData } = await supabase
+    // 5. Fetch 2nd latest Gwangju article for sidebar
+    const { data: gwangjuArticles } = await supabase
         .from('posts')
-        .select('id, title, content, summary, thumbnail_url, category, published_at')
+        .select('id, title, thumbnail_url, category, published_at')
         .eq('status', 'published')
+        .or('category.eq.광주,region.eq.gwangju')
+        .not('thumbnail_url', 'is', null)
+        .neq('thumbnail_url', '')
+        .like('thumbnail_url', 'http%')
         .order('published_at', { ascending: false })
-        .limit(20);
+        .limit(2);
 
-    // Filter out slider articles and pick first 2
-    const filteredSideData = (sideData || [])
-        .filter(article => !sliderIds.includes(article.id))
-        .slice(0, 2);
+    // Get the 2nd article (index 1) for sidebar
+    const sidebarArticle = gwangjuArticles && gwangjuArticles.length > 1
+        ? gwangjuArticles[1]
+        : (gwangjuArticles && gwangjuArticles[0]) || null;
 
     return {
         sliderArticles,
-        sideArticles: filteredSideData,
+        sidebarArticle,
         settings: { interval: settings.interval }
     };
 }
 
-// Side Article Component (Server-rendered)
-function SideArticle({ article, priority = false }: { article: Article; priority?: boolean }) {
-    const displayCategory = (cat?: string) => {
-        if (!cat) return 'News';
-        const lowerCat = cat.toLowerCase().trim();
-        if (lowerCat.includes('society')) return 'AI';
-        return cat;
-    };
-
-    return (
-        <Link
-            href={`/news/${article.id}`}
-            className="group flex flex-col h-full bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300"
-        >
-            {/* Image Area */}
-            <div className="relative w-full h-24 overflow-hidden bg-slate-100 border-b border-slate-100">
-                {article.thumbnail_url ? (
-                    <Image
-                        src={article.thumbnail_url}
-                        alt={article.title}
-                        fill
-                        priority={priority}
-                        sizes="(max-width: 1024px) 100vw, 400px"
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-slate-300 text-xs font-bold">No Image</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Text Area */}
-            <div className="flex-1 p-3 flex flex-col justify-between">
-                <div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                            {displayCategory(article.category)}
-                        </span>
-                    </div>
-
-                    <h3 className="text-lg font-serif font-bold text-slate-900 leading-[1.25] mb-1 group-hover:text-primary transition-colors line-clamp-2">
-                        {article.title}
-                    </h3>
-                </div>
-
-                <p className="text-slate-700 text-sm line-clamp-2 leading-snug font-normal">
-                    {(!article.content || article.content.includes('Error'))
-                        ? (article.summary || '')
-                        : cleanContentPreview(article.content, 60)}...
-                </p>
-            </div>
-        </Link>
-    );
-}
-
 export default async function HomeHero() {
-    const { sliderArticles, sideArticles, settings } = await getHeroData();
+    const { sliderArticles, sidebarArticle, settings } = await getHeroData();
 
     return (
         <section className="container-kn mb-10">
@@ -208,10 +140,32 @@ export default async function HomeHero() {
                     <div className="flex-1 min-h-[140px]">
                         <AdBanner variant="polytechnic" />
                     </div>
-                    {/* Bottom: Side Article */}
+                    {/* Bottom: Gwangju Article Card */}
                     <div className="flex-1 min-h-[140px]">
-                        {sideArticles[0] ? (
-                            <SideArticle article={sideArticles[0]} priority />
+                        {sidebarArticle ? (
+                            <Link
+                                href={`/news/${sidebarArticle.id}`}
+                                className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+                            >
+                                <Image
+                                    src={sidebarArticle.thumbnail_url}
+                                    alt={sidebarArticle.title}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                    sizes="(max-width: 1024px) 100vw, 400px"
+                                />
+                                {/* Dark overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                {/* Content */}
+                                <div className="absolute bottom-0 left-0 right-0 p-4">
+                                    <span className="inline-block px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded mb-2">
+                                        Gwangju
+                                    </span>
+                                    <h3 className="text-white text-sm font-bold leading-tight line-clamp-2 group-hover:text-blue-200 transition-colors">
+                                        {sidebarArticle.title}
+                                    </h3>
+                                </div>
+                            </Link>
                         ) : (
                             <div className="h-full bg-slate-100 rounded-xl flex items-center justify-center">
                                 <span className="text-slate-400 text-sm">No articles</span>
