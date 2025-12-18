@@ -5,7 +5,7 @@ import { createBotLog, executeScraper } from '@/lib/bot-service';
 // GitHub Actions 트리거 함수
 async function triggerGitHubAction(region: string, days: number, logId: number): Promise<boolean> {
     const token = process.env.GITHUB_TOKEN;
-    const owner = process.env.GITHUB_OWNER || 'koreanews';
+    const owner = process.env.GITHUB_OWNER || 'korea-news';
     const repo = process.env.GITHUB_REPO || 'koreanewsone';
     const workflowId = 'daily_scrape.yml';
 

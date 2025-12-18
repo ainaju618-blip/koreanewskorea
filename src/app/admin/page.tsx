@@ -326,7 +326,7 @@ export default function AdminDashboardPage() {
                         </section>
 
                         {/* 서비스 사용량 - 간단 현황 */}
-                        <Link href="/admin/usage">
+                        <Link href="/admin/monitor">
                             <section className="admin-card p-6 hover:border-slate-300 transition-colors cursor-pointer">
                                 <div className="flex items-center justify-between mb-4">
                                     <h2 className="admin-section-title flex items-center gap-2">
