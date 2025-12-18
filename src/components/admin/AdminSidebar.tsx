@@ -28,7 +28,8 @@ import {
     Lightbulb,
     ExternalLink,
     Sparkles,
-    Globe
+    Globe,
+    Mail
 } from 'lucide-react';
 
 // --- 메뉴 아이템 타입 정의 ---
@@ -99,6 +100,7 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "발행됨", href: "/admin/ai-news?status=published", icon: CheckCircle },
                 ]
             },
+            { label: "이메일 기사 추출", icon: Mail, href: "/admin/email-extract" },
         ]
     },
     {
