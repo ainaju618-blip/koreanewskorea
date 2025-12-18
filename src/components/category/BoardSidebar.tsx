@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 interface PopularNews {
@@ -9,8 +10,25 @@ interface PopularNews {
 }
 
 interface SidebarProps {
-    regionName?: string; // 현재 지역명 (예: 전남, 광주 등)
+    regionName?: string;
+    regionCode?: string;
 }
+
+// Gwangju history content
+const GWANGJU_HISTORY = [
+    {
+        id: 1,
+        title: '5.18 Democratic Uprising - The Spirit of Gwangju',
+    },
+    {
+        id: 2,
+        title: 'Gwangju Student Independence Movement (1929)',
+    },
+    {
+        id: 3,
+        title: 'Mudeungsan and Historical Heritage of Gwangju',
+    },
+];
 
 /**
  * 게시판 공통 사이드바 컴포넌트 (강원일보 스타일)
@@ -19,9 +37,10 @@ interface SidebarProps {
  * - 전남의 역사
  * - 이코노미 플러스
  */
-export default function BoardSidebar({ regionName = '전남' }: SidebarProps) {
+export default function BoardSidebar({ regionName = '전남', regionCode }: SidebarProps) {
     const [popularNews, setPopularNews] = useState<PopularNews[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const isGwangju = regionCode === 'gwangju' || regionName === '광주';
 
     useEffect(() => {
         const fetchPopularNews = async () => {
@@ -86,27 +105,57 @@ export default function BoardSidebar({ regionName = '전남' }: SidebarProps) {
                 </div>
             </div>
 
-            {/* Widget 2: 이미지 배너 */}
-            <div className="w-full aspect-[4/3] bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 rounded-lg">
-                <span className="text-sm">이미지 배너</span>
-            </div>
+            {/* Widget 2: Ad Banner - Korea Polytechnic */}
+            <Link
+                href="https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block w-full aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+            >
+                <Image
+                    src="/images/ads/naju01.png"
+                    alt="2026 Korea Polytechnic Naju Campus Admission"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 1024px) 100vw, 300px"
+                />
+                {/* Shimmer effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+            </Link>
 
-            {/* Widget 3: 전남의 역사 */}
+            {/* Widget 3: Region History */}
             <div>
                 <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">
-                    {regionName}의 역사
+                    {isGwangju ? '광주의 역사' : `${regionName}의 역사`}
                 </h4>
                 <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex gap-3 cursor-pointer group">
-                            <div className="w-20 h-14 bg-slate-200 shrink-0 rounded"></div>
-                            <div className="flex-1">
-                                <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 leading-snug transition-colors">
-                                    [역사 기획 {i}] {regionName}의 역사 기사 제목이 들어갑니다
-                                </p>
+                    {isGwangju ? (
+                        GWANGJU_HISTORY.map((item) => (
+                            <div key={item.id} className="flex gap-3 cursor-pointer group">
+                                <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                                        <span className="text-white text-xs font-bold">{item.id}</span>
+                                    </div>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 leading-snug transition-colors">
+                                        {item.title}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        [1, 2, 3].map((i) => (
+                            <div key={i} className="flex gap-3 cursor-pointer group">
+                                <div className="w-20 h-14 bg-slate-200 shrink-0 rounded"></div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 leading-snug transition-colors">
+                                        [역사 기획 {i}] {regionName}의 역사 기사 제목이 들어갑니다
+                                    </p>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 

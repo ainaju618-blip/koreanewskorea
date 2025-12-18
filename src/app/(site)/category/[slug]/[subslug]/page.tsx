@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
@@ -198,12 +199,24 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                             </div>
                         </div>
 
-                        {/* Widget 2: Banner / Ad (Image) */}
-                        <div className="w-full aspect-[4/3] bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-200">
-                            <span className="text-sm">이미지 배너</span>
-                        </div>
+                        {/* Widget 2: Ad Banner - Korea Polytechnic */}
+                        <Link
+                            href="https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative block w-full aspect-[4/3] rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:scale-[1.02]"
+                        >
+                            <Image
+                                src="/images/ads/naju01.png"
+                                alt="2026 Korea Polytechnic Naju Campus Admission"
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                sizes="(max-width: 1024px) 100vw, 300px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                        </Link>
 
-                        {/* Widget 3: 전남의 역사 */}
+                        {/* Widget 3: Region History */}
                         <div className="">
                             <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">전남의 역사</h4>
                             <div className="space-y-3">
