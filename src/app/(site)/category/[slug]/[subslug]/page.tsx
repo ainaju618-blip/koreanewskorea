@@ -5,6 +5,20 @@ import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
 import { NoImagePlaceholder } from '@/components/ui/NoImagePlaceholder';
 
+// Jeonnam history content
+const JEONNAM_HISTORY = [
+    { id: 1, title: '명량해전, 이순신 장군의 기적의 승리' },
+    { id: 2, title: '다산 정약용의 강진 유배 18년' },
+    { id: 3, title: '판소리의 고장, 남도 소리의 뿌리' },
+];
+
+// Economy Plus content
+const ECONOMY_PLUS = [
+    { id: 1, title: '여수산단·광양제철, 남해안 산업벨트 현황' },
+    { id: 2, title: '전남 해상풍력, 신재생에너지 허브로 도약' },
+    { id: 3, title: '전남 농수산물, K-푸드 수출 최전선' },
+];
+
 export const dynamic = 'force-dynamic';
 
 interface SubCategoryPageProps {
@@ -220,12 +234,16 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                         <div className="">
                             <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">전남의 역사</h4>
                             <div className="space-y-3">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex gap-3 cursor-pointer group">
-                                        <div className="w-20 h-14 bg-slate-200 shrink-0"></div>
+                                {JEONNAM_HISTORY.map((item) => (
+                                    <div key={item.id} className="flex gap-3 cursor-pointer group">
+                                        <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden relative">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center">
+                                                <span className="text-white text-xs font-bold">{item.id}</span>
+                                            </div>
+                                        </div>
                                         <div className="flex-1">
                                             <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:underline leading-snug">
-                                                [역사 기획 {i}] 전남의 역사 기사 제목이 들어갑니다
+                                                {item.title}
                                             </p>
                                         </div>
                                     </div>
@@ -237,12 +255,16 @@ export default async function SubCategoryPage({ params }: SubCategoryPageProps) 
                         <div className="">
                             <h4 className="font-bold text-base mb-3 pb-2 border-b-2 border-slate-900">이코노미 플러스</h4>
                             <div className="space-y-3">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex gap-3 cursor-pointer group">
-                                        <div className="w-20 h-14 bg-slate-200 shrink-0"></div>
+                                {ECONOMY_PLUS.map((item) => (
+                                    <div key={item.id} className="flex gap-3 cursor-pointer group">
+                                        <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden relative">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                                <span className="text-white text-xs font-bold">{item.id}</span>
+                                            </div>
+                                        </div>
                                         <div className="flex-1">
                                             <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:underline leading-snug">
-                                                [경제 특집 {i}] 이코노미 플러스 제목입니다
+                                                {item.title}
                                             </p>
                                         </div>
                                     </div>

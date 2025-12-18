@@ -18,15 +18,47 @@ interface SidebarProps {
 const GWANGJU_HISTORY = [
     {
         id: 1,
-        title: '5.18 Democratic Uprising - The Spirit of Gwangju',
+        title: '5.18 민주화운동, 광주 민주주의의 성지',
     },
     {
         id: 2,
-        title: 'Gwangju Student Independence Movement (1929)',
+        title: '1929 광주학생독립운동, 항일의 불꽃',
     },
     {
         id: 3,
-        title: 'Mudeungsan and Historical Heritage of Gwangju',
+        title: '무등산과 광주의 천년 역사 유산',
+    },
+];
+
+// Jeonnam history content
+const JEONNAM_HISTORY = [
+    {
+        id: 1,
+        title: '명량해전, 이순신 장군의 기적의 승리',
+    },
+    {
+        id: 2,
+        title: '다산 정약용의 강진 유배 18년',
+    },
+    {
+        id: 3,
+        title: '판소리의 고장, 남도 소리의 뿌리',
+    },
+];
+
+// Economy Plus content
+const ECONOMY_PLUS = [
+    {
+        id: 1,
+        title: '여수산단·광양제철, 남해안 산업벨트 현황',
+    },
+    {
+        id: 2,
+        title: '전남 해상풍력, 신재생에너지 허브로 도약',
+    },
+    {
+        id: 3,
+        title: '전남 농수산물, K-푸드 수출 최전선',
     },
 ];
 
@@ -145,12 +177,16 @@ export default function BoardSidebar({ regionName = '전남', regionCode }: Side
                             </div>
                         ))
                     ) : (
-                        [1, 2, 3].map((i) => (
-                            <div key={i} className="flex gap-3 cursor-pointer group">
-                                <div className="w-20 h-14 bg-slate-200 shrink-0 rounded"></div>
+                        JEONNAM_HISTORY.map((item) => (
+                            <div key={item.id} className="flex gap-3 cursor-pointer group">
+                                <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center">
+                                        <span className="text-white text-xs font-bold">{item.id}</span>
+                                    </div>
+                                </div>
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 leading-snug transition-colors">
-                                        [역사 기획 {i}] {regionName}의 역사 기사 제목이 들어갑니다
+                                        {item.title}
                                     </p>
                                 </div>
                             </div>
@@ -165,12 +201,16 @@ export default function BoardSidebar({ regionName = '전남', regionCode }: Side
                     이코노미 플러스
                 </h4>
                 <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="flex gap-3 cursor-pointer group">
-                            <div className="w-20 h-14 bg-slate-200 shrink-0 rounded"></div>
+                    {ECONOMY_PLUS.map((item) => (
+                        <div key={item.id} className="flex gap-3 cursor-pointer group">
+                            <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                    <span className="text-white text-xs font-bold">{item.id}</span>
+                                </div>
+                            </div>
                             <div className="flex-1">
                                 <p className="text-xs font-bold text-slate-800 line-clamp-2 group-hover:text-blue-600 leading-snug transition-colors">
-                                    [경제 특집 {i}] 이코노미 플러스 제목입니다
+                                    {item.title}
                                 </p>
                             </div>
                         </div>
