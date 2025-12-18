@@ -53,14 +53,12 @@ interface MenuGroup {
     items: MenuItem[];
 }
 
-// --- Sidebar Navigation Structure ---
+// --- Sidebar Navigation Structure (Reorganized: 15 -> 8 menus) ---
 const MENU_ITEMS: MenuGroup[] = [
     {
         category: "메인",
         items: [
-            { label: "통합 대시보드", icon: LayoutDashboard, href: "/admin" },
-            { label: "기사 초안", icon: StickyNote, href: "/admin/drafts" },
-            { label: "수집처 관리", icon: Building2, href: "/admin/sources" }
+            { label: "대시보드", icon: LayoutDashboard, href: "/admin" }
         ]
     },
     {
@@ -71,27 +69,16 @@ const MENU_ITEMS: MenuGroup[] = [
                 icon: Newspaper,
                 href: "/admin/news",
                 subItems: [
-                    { label: "기사 통합관리", href: "/admin/news", icon: Newspaper },
+                    { label: "전체 기사", href: "/admin/news", icon: Newspaper },
+                    { label: "기사 초안", href: "/admin/drafts", icon: StickyNote },
                     { label: "승인 대기", href: "/admin/news?status=draft", icon: FileText },
-                    { label: "발행된 기사", href: "/admin/news?status=published", icon: CheckCircle },
+                    { label: "발행됨", href: "/admin/news?status=published", icon: CheckCircle },
                     { label: "휴지통", href: "/admin/news?status=trash", icon: Trash2 },
                     { label: "기사 작성", href: "/admin/news/write", icon: PenTool },
                 ]
             },
             {
-                label: "봇 관리 센터",
-                icon: Bot,
-                href: "/admin/bot",
-                highlight: true,
-                subItems: [
-                    { label: "스케줄 설정", href: "/admin/bot/schedule", icon: Calendar },
-                    { label: "수동 수집 실행", href: "/admin/bot/run", icon: PlayCircle },
-                    { label: "수집 로그 / 에러", href: "/admin/bot/logs", icon: Activity },
-                    { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
-                ]
-            },
-            {
-                label: "AI 뉴스 관리",
+                label: "AI 뉴스",
                 icon: Sparkles,
                 href: "/admin/ai-news",
                 subItems: [
@@ -99,49 +86,68 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "승인 대기", href: "/admin/ai-news?status=draft", icon: FileText },
                     { label: "발행됨", href: "/admin/ai-news?status=published", icon: CheckCircle },
                 ]
-            },
-            { label: "이메일 기사 추출", icon: Mail, href: "/admin/email-extract" },
+            }
         ]
     },
     {
-        category: "관리",
+        category: "수집 시스템",
+        items: [
+            {
+                label: "스크래퍼",
+                icon: Bot,
+                href: "/admin/bot",
+                highlight: true,
+                subItems: [
+                    { label: "수집처 관리", href: "/admin/sources", icon: Building2 },
+                    { label: "스케줄 설정", href: "/admin/bot/schedule", icon: Calendar },
+                    { label: "수동 실행", href: "/admin/bot/run", icon: PlayCircle },
+                    { label: "수집 로그", href: "/admin/bot/logs", icon: Activity },
+                    { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
+                ]
+            },
+            { label: "이메일 수집", icon: Mail, href: "/admin/email-extract" }
+        ]
+    },
+    {
+        category: "AI 도구",
+        items: [
+            { label: "Claude Hub", icon: Database, href: "/admin/claude-hub", highlight: true },
+            { label: "AI Idea", icon: Lightbulb, href: "/idea" }
+        ]
+    },
+    {
+        category: "시스템",
         items: [
             {
                 label: "사용자 관리",
                 icon: Users,
                 href: "/admin/users",
                 subItems: [
-                    { label: "기자 등록/관리", href: "/admin/users/reporters", icon: UserPlus },
+                    { label: "기자 관리", href: "/admin/users/reporters", icon: UserPlus },
                     { label: "회원 관리", href: "/admin/users/members", icon: Users },
                     { label: "권한 설정", href: "/admin/users/roles", icon: Settings },
                 ]
             },
             {
-                label: "시스템 설정",
+                label: "설정",
                 icon: Settings,
                 href: "/admin/settings",
                 subItems: [
                     { label: "사이트 정보", href: "/admin/settings/general" },
-                    { label: "카테고리 관리", href: "/admin/settings/categories" },
-                    { label: "레이아웃 관리", href: "/admin/settings/layouts" },
+                    { label: "카테고리", href: "/admin/settings/categories" },
+                    { label: "레이아웃", href: "/admin/settings/layouts" },
                     { label: "히어로 슬라이더", href: "/admin/settings/hero-slider" },
-                    { label: "API 키 설정", href: "/admin/settings/api" },
-                    { label: "PageSpeed 관리", href: "/admin/settings/performance", icon: Activity },
+                    { label: "API 키", href: "/admin/settings/api" },
+                    { label: "PageSpeed", href: "/admin/settings/performance", icon: Activity },
                 ]
             }
-        ]
-    },
-    {
-        category: "개발 도구",
-        items: [
-            { label: "Claude Hub", icon: Database, href: "/admin/claude-hub", highlight: true }
         ]
     },
     {
         category: "바로가기",
         items: [
             { label: "기자 페이지", icon: UserCircle, href: "/reporter" },
-            { label: "클로드사용량보기", icon: ExternalLink, href: "https://claude.ai/settings/usage", external: true }
+            { label: "클로드 사용량", icon: ExternalLink, href: "https://claude.ai/settings/usage", external: true }
         ]
     }
 ];
@@ -155,7 +161,7 @@ interface PendingCounts {
 }
 
 export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
-    const [expandedMenus, setExpandedMenus] = useState<string[]>(['기사 관리', '봇 관리 센터']);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>(['기사 관리', '스크래퍼']);
     const pathname = usePathname();
     const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ news: 0, aiNews: 0, drafts: 0 });
 
@@ -217,7 +223,7 @@ export default function AdminSidebarLayout({ children }: { children: React.React
     // 부모 메뉴 배지 카운트 (서브메뉴 합계)
     const getParentBadgeCount = (label: string): number => {
         if (label === '기사 관리') return pendingCounts.news;
-        if (label === 'AI 뉴스 관리') return pendingCounts.aiNews;
+        if (label === 'AI 뉴스') return pendingCounts.aiNews;
         return 0;
     };
 
