@@ -102,13 +102,63 @@ async function getRelatedNews(category: string, currentId: string) {
     }
 }
 
-// 조회수 증가 함수 (Phase 3에서 활성화)
-// 조회수 증가 함수 (Phase 3에서 활성화)
+// Get a random reporter for articles without assigned author
+// Prioritizes reporters matching the article region, falls back to "전체" region
+async function getRandomReporter(articleRegion?: string) {
+    try {
+        // First try to find reporter matching article region
+        if (articleRegion) {
+            const { data: regionReporters } = await supabaseAdmin
+                .from('reporters')
+                .select('id, name, slug, region, position')
+                .eq('status', 'Active')
+                .eq('type', 'Human')
+                .eq('region', articleRegion);
+
+            if (regionReporters && regionReporters.length > 0) {
+                const randomIndex = Math.floor(Math.random() * regionReporters.length);
+                return regionReporters[randomIndex];
+            }
+        }
+
+        // Fallback to reporters with "전체" region
+        const { data: allRegionReporters } = await supabaseAdmin
+            .from('reporters')
+            .select('id, name, slug, region, position')
+            .eq('status', 'Active')
+            .eq('type', 'Human')
+            .eq('region', '전체');
+
+        if (allRegionReporters && allRegionReporters.length > 0) {
+            const randomIndex = Math.floor(Math.random() * allRegionReporters.length);
+            return allRegionReporters[randomIndex];
+        }
+
+        // Final fallback: any active human reporter
+        const { data: anyReporters } = await supabaseAdmin
+            .from('reporters')
+            .select('id, name, slug, region, position')
+            .eq('status', 'Active')
+            .eq('type', 'Human')
+            .limit(10);
+
+        if (anyReporters && anyReporters.length > 0) {
+            const randomIndex = Math.floor(Math.random() * anyReporters.length);
+            return anyReporters[randomIndex];
+        }
+
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+// View count increment function (Phase 3)
 async function incrementViewCount(id: string) {
     try {
         // await supabaseAdmin.rpc('increment_view_count', { post_id: id });
     } catch {
-        // 무시
+        // ignored
     }
 }
 
@@ -201,15 +251,21 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         notFound();
     }
 
-    // 1. 기자 정보 조회 (Fetch Reporter Info)
+    // 1. Fetch Reporter Info
+    // If author_id exists, get that reporter; otherwise assign random reporter
     let reporter = null;
     if (news.author_id) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, slug, department, region') // 필요한 필드만 조회
+            .select('id, name, slug, region, position')
             .eq('id', news.author_id)
             .single();
         reporter = data;
+    }
+
+    // If no assigned reporter, get a random one based on article region
+    if (!reporter) {
+        reporter = await getRandomReporter(news.region);
     }
 
     const relatedNews = await getRelatedNews(news.category, news.id);
@@ -298,7 +354,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                 {/* 기자 및 메타 정보 (강원일보 스타일) */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between py-4 border-t border-b border-gray-200 mb-8 bg-gray-50/50 px-4 rounded-lg">
                     <div className="flex items-center gap-2 mb-2 md:mb-0">
-                        {/* 기자 정보 (Linked to Profile) */}
+                        {/* Reporter Info (Linked to Profile) */}
                         {reporter ? (
                             <Link
                                 href={`/author/${reporter.slug || reporter.id}`}
@@ -306,22 +362,17 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                                 className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline flex items-center gap-2"
                             >
                                 {reporter.name} 기자
-                                {reporter.department && (
+                                {reporter.region && reporter.region !== '전체' && (
                                     <span className="text-gray-500 font-normal text-xs no-underline">
-                                        | {reporter.department}
+                                        | {reporter.region}
                                     </span>
                                 )}
                             </Link>
                         ) : (
                             <div className="font-bold text-gray-800 text-[15px]">
-                                {/* Only show author_name if it's not an email */}
-                                {news.author_name && !news.author_name.includes('@') ? news.author_name : '취재기자'}
+                                코리아NEWS 취재팀
                             </div>
                         )}
-                        <span className="text-gray-300 mx-1">|</span>
-                        <a href={`mailto:news@koreanewsone.com`} className="text-gray-500 hover:text-blue-600 text-[14px]">
-                            news@koreanewsone.com
-                        </a>
                     </div>
 
                     <div className="flex items-center gap-4">

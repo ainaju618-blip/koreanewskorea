@@ -142,7 +142,9 @@
       "Bash(python jeonnam_edu/jeonnam_edu_scraper.py:*)",
       "Bash(timeout 30 python:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(timeout 5 npm run dev:*)"
+      "Bash(timeout 5 npm run dev:*)",
+      "Bash(node temp-query.mjs:*)",
+      "Bash(news@koreanewsone.com\" display\n- Show reporter name + region affiliation for all articles\n- Fallback to \"코리아NEWS 취재팀\" if no reporters available\n\n🤖 Generated with [Claude Code]\\(https://claude.ai/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
