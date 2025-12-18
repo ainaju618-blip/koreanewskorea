@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+// GET /api/bot/logs - Fetch bot logs with pagination
 export async function GET(req: NextRequest) {
+    console.log('[API] Bot logs GET request received');
     const searchParams = req.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
     // Limit validation: max 100 to prevent DoS

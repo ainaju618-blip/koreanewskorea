@@ -145,7 +145,21 @@
       "Bash(timeout 5 npm run dev:*)",
       "Bash(node temp-query.mjs:*)",
       "Bash(news@koreanewsone.com\" display\n- Show reporter name + region affiliation for all articles\n- Fallback to \"코리아NEWS 취재팀\" if no reporters available\n\n🤖 Generated with [Claude Code]\\(https://claude.ai/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git stash show:*)"
+      "Bash(git stash show:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nrefactor: Restructure admin menu \\(15 → 8 menus\\) & CLAUDE.md system\n\nAdmin Menu Changes:\n- Consolidate scattered menus into logical groups\n- Move \"기사 초안\" into \"기사 관리\" submenu\n- Move \"수집처 관리\" into \"스크래퍼\" submenu\n- Rename \"봇 관리 센터\" to \"스크래퍼\" for clarity\n- Add \"AI Idea\" to sidebar under \"AI 도구\"\n- Shorten labels for better UX\n\nCLAUDE.md System:\n- Slim down CLAUDE.md \\(1334 → 270 lines\\) as control tower\n- Create .claude/rules/ with 4 delegated rule files\n- Create .claude/decision_log/ for key discussions\n- Apply AGENTS.md best practices\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(printf \"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\")",
+      "Bash(python -c:*)",
+      "Bash(\"https://api.github.com/repos/korea-news/koreanewsone/actions/runs?per_page=5\")",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add unified monitoring center with 4 tabs\n\n- Create /admin/monitor page with tabs:\n  - Service Usage \\(Cloudinary, Supabase, Vercel, GitHub\\)\n  - Performance \\(PageSpeed, Core Web Vitals\\)\n  - Bot Status \\(27 region health check\\)\n  - GitHub Actions \\(workflow runs, usage tracking\\)\n- Add /api/admin/github-actions API endpoint\n- Redirect /admin/usage to new /admin/monitor\n- Update admin dashboard link to monitoring center\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(node check_duplicates.mjs:*)",
+      "Bash(node investigate_duplicates.mjs:*)",
+      "Bash(node fix_duplicates.mjs:*)",
+      "Bash(node add_unique_index.mjs:*)",
+      "Bash(python test_single_article.py:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(vercel --prod --force:*)",
+      "Bash(vercel teams list:*)"
     ]
   }
 }
