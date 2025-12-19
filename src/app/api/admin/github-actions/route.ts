@@ -76,9 +76,37 @@ export async function GET(req: NextRequest) {
             url: run.html_url,
         })) || [];
 
+        // Fetch jobs for the latest run to get detailed progress
+        let jobStats = { total: 0, completed: 0, in_progress: 0, queued: 0, failed: 0 };
+        if (runs.length > 0 && (runs[0].status === 'queued' || runs[0].status === 'in_progress')) {
+            const jobsResponse = await fetch(
+                `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${runs[0].id}/jobs`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                    },
+                    cache: 'no-store'
+                }
+            );
+
+            if (jobsResponse.ok) {
+                const jobsData = await jobsResponse.json();
+                const jobs = jobsData.jobs || [];
+                // Filter out scrape-single job (it's skipped when running all)
+                const scrapeJobs = jobs.filter((j: any) => j.name !== 'scrape-single');
+                jobStats.total = scrapeJobs.length;
+                jobStats.completed = scrapeJobs.filter((j: any) => j.status === 'completed' && j.conclusion === 'success').length;
+                jobStats.failed = scrapeJobs.filter((j: any) => j.status === 'completed' && j.conclusion === 'failure').length;
+                jobStats.in_progress = scrapeJobs.filter((j: any) => j.status === 'in_progress').length;
+                jobStats.queued = scrapeJobs.filter((j: any) => j.status === 'queued').length;
+            }
+        }
+
         return NextResponse.json({
             schedules,
             runs,
+            jobStats,
             workflowUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}`,
         });
 

@@ -325,7 +325,7 @@ export function ScraperPanel() {
         }
     };
 
-    // Poll GitHub Actions workflow status
+    // Poll GitHub Actions workflow status with job-level progress
     const pollGitHubActions = (regionCount: number) => {
         let pollCount = 0;
         const maxPolls = 120; // 10 minutes max (5s * 120)
@@ -337,19 +337,25 @@ export function ScraperPanel() {
 
                 if (data.runs && data.runs.length > 0) {
                     const latestRun = data.runs[0];
+                    const jobStats = data.jobStats || { total: 0, completed: 0, in_progress: 0, queued: 0, failed: 0 };
+
+                    // Update progress based on job stats
+                    if (jobStats.total > 0) {
+                        setProgress({ total: jobStats.total, completed: jobStats.completed });
+                    }
 
                     if (latestRun.status === 'completed') {
                         setIsRunning(false);
                         if (latestRun.conclusion === 'success') {
-                            setStatusMessage(`GitHub Actions 완료! ${regionCount}개 지역 수집 성공`);
-                            setProgress({ total: regionCount, completed: regionCount });
+                            setStatusMessage(`GitHub Actions 완료! ${jobStats.completed}개 지역 수집 성공`);
+                            setProgress({ total: jobStats.total || regionCount, completed: jobStats.completed || regionCount });
                         } else {
-                            setStatusMessage(`GitHub Actions 완료 (일부 실패). GitHub에서 상세 확인하세요.`);
+                            setStatusMessage(`GitHub Actions 완료 (${jobStats.completed} 성공, ${jobStats.failed} 실패)`);
                         }
                         return;
-                    } else if (latestRun.status === 'in_progress') {
-                        setStatusMessage(`GitHub Actions 실행 중... (${Math.floor(pollCount * 5 / 60)}분 경과)`);
-                    } else if (latestRun.status === 'queued') {
+                    } else if (latestRun.status === 'in_progress' || jobStats.in_progress > 0) {
+                        setStatusMessage(`실행 중: ${jobStats.completed}/${jobStats.total} 완료, ${jobStats.in_progress}개 진행중`);
+                    } else if (latestRun.status === 'queued' && jobStats.in_progress === 0) {
                         setStatusMessage(`GitHub Actions 대기 중...`);
                     }
                 }
