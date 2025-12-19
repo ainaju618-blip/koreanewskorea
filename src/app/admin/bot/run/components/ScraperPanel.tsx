@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw, FileText, ChevronDown, ChevronUp, Github, Zap } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { DetailedResultPanel } from "./DetailedResultPanel";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
@@ -223,25 +223,65 @@ export function ScraperPanel() {
         };
     }, [isRunning, activeJobIds]);
 
-    const handleRun = async () => {
+    // Local execution (original method - progress visible on screen)
+    const handleLocalRun = async () => {
+        if (selectedRegions.length === 0) return;
+
         setIsRunning(true);
         setJobResults([]);
         setActiveJobIds([]);
+        setStatusMessage(`${selectedRegions.length}개 지역 수집 시작...`);
+        setProgress({ total: selectedRegions.length, completed: 0 });
+
+        const jobIds: number[] = [];
+
+        for (const regionId of selectedRegions) {
+            try {
+                const res = await fetch('/api/bot/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        region: regionId,
+                        startDate,
+                        endDate,
+                        dryRun: false
+                    })
+                });
+                const data = await res.json();
+                if (data.id) {
+                    jobIds.push(data.id);
+                    console.log(`[ScraperPanel] Started job for ${regionId}: ${data.id}`);
+                }
+            } catch (e) {
+                console.error(`[ScraperPanel] Failed to start ${regionId}:`, e);
+            }
+        }
+
+        if (jobIds.length > 0) {
+            setActiveJobIds(jobIds);
+            setStatusMessage(`${jobIds.length}개 지역 수집 중...`);
+        } else {
+            setIsRunning(false);
+            setStatusMessage("작업 시작 실패");
+        }
+    };
+
+    // GitHub Actions execution (for large-scale parallel)
+    const handleGitHubRun = async () => {
+        setIsRunning(true);
+        setJobResults([]);
         setStatusMessage("GitHub Actions workflow triggering...");
-        setProgress({ total: 0, completed: 0 });
+        setProgress({ total: 26, completed: 0 });
 
         try {
-            // Calculate days from date range
             const start = new Date(startDate);
             const end = new Date(endDate);
             const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             const days = Math.min(Math.max(diffDays, 1), 7).toString();
 
-            // Determine region parameter
             const region = selectedRegions.length === allRegions.length ? 'all' :
                           selectedRegions.length === 1 ? selectedRegions[0] : 'all';
 
-            // Trigger GitHub Actions workflow
             const response = await fetch('/api/admin/github-actions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -250,17 +290,9 @@ export function ScraperPanel() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                setStatusMessage(`GitHub Actions workflow started! (region: ${region}, days: ${days})`);
-                setProgress({ total: 26, completed: 0 });
-
-                // Open GitHub Actions page in new tab
-                window.open('https://github.com/korea-news/koreanewsone/actions/workflows/daily_scrape.yml', '_blank');
-
-                // Reset after 5 seconds
-                setTimeout(() => {
-                    setIsRunning(false);
-                    setStatusMessage("GitHub Actions workflow triggered. Check progress on GitHub.");
-                }, 5000);
+                setStatusMessage(`GitHub Actions started! 26개 지역 병렬 실행 중... (약 5분 소요)`);
+                // Start polling GitHub Actions status
+                pollGitHubActions();
             } else {
                 setIsRunning(false);
                 setStatusMessage(`Error: ${data.error || data.message}`);
@@ -270,6 +302,56 @@ export function ScraperPanel() {
             setStatusMessage(`Failed: ${error.message}`);
         }
     };
+
+    // Poll GitHub Actions workflow status
+    const pollGitHubActions = async () => {
+        let pollCount = 0;
+        const maxPolls = 120; // 10 minutes max (5s * 120)
+
+        const poll = async () => {
+            try {
+                const res = await fetch('/api/admin/github-actions');
+                const data = await res.json();
+
+                if (data.runs && data.runs.length > 0) {
+                    const latestRun = data.runs[0];
+
+                    if (latestRun.status === 'completed') {
+                        setIsRunning(false);
+                        if (latestRun.conclusion === 'success') {
+                            setStatusMessage(`GitHub Actions 완료! 26개 지역 수집 성공`);
+                            setProgress({ total: 26, completed: 26 });
+                        } else {
+                            setStatusMessage(`GitHub Actions 완료 (일부 실패). GitHub에서 상세 확인하세요.`);
+                        }
+                        return;
+                    } else if (latestRun.status === 'in_progress') {
+                        setStatusMessage(`GitHub Actions 실행 중... (${Math.floor(pollCount * 5 / 60)}분 경과)`);
+                    } else if (latestRun.status === 'queued') {
+                        setStatusMessage(`GitHub Actions 대기 중...`);
+                    }
+                }
+
+                pollCount++;
+                if (pollCount < maxPolls) {
+                    setTimeout(poll, 5000);
+                } else {
+                    setIsRunning(false);
+                    setStatusMessage("Polling timeout. GitHub Actions 페이지에서 확인하세요.");
+                }
+            } catch (e) {
+                console.error('[ScraperPanel] GitHub polling error:', e);
+                pollCount++;
+                if (pollCount < maxPolls) {
+                    setTimeout(poll, 5000);
+                }
+            }
+        };
+
+        setTimeout(poll, 3000); // Start polling after 3s
+    };
+
+    const handleRun = handleLocalRun;
 
     // 전체 중지 버튼 핸들러
     const handleStop = async () => {
@@ -701,13 +783,31 @@ export function ScraperPanel() {
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-3 border-t border-gray-100">
                         <button
-                            onClick={handleRun}
+                            onClick={handleLocalRun}
                             disabled={isRunning || selectedRegions.length === 0}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-sm transition disabled:opacity-50"
                         >
                             {isRunning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
                             {isRunning ? '실행 중...' : '수집 시작'}
                         </button>
+                        <button
+                            onClick={handleGitHubRun}
+                            disabled={isRunning}
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 shadow-sm transition disabled:opacity-50"
+                            title="GitHub Actions로 26개 지역 병렬 실행 (약 5분)"
+                        >
+                            <Zap className="w-5 h-5" />
+                            전체 병렬
+                        </button>
+                        <a
+                            href="https://github.com/korea-news/koreanewsone/actions/workflows/daily_scrape.yml"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-700 text-white rounded-lg font-bold hover:bg-gray-800 shadow-sm transition"
+                            title="GitHub Actions 페이지에서 직접 확인"
+                        >
+                            <Github className="w-5 h-5" />
+                        </a>
                     </div>
                 </div>
             </div>
