@@ -2,10 +2,9 @@ name: Daily News Scrape
 
 on:
   schedule:
-    # Daily 09:00, 13:00, 17:00 KST (UTC+9) - Re-enabled 2025-12-19
-    - cron: '0 0 * * *'   # 09:00 KST (00:00 UTC)
-    - cron: '0 4 * * *'   # 13:00 KST (04:00 UTC)
-    - cron: '0 8 * * *'   # 17:00 KST (08:00 UTC)
+    # Daily 05:20, 06:20 KST (UTC+9) - Updated 2025-12-19
+    - cron: '20 20 * * *'   # 05:20 KST (20:20 UTC previous day)
+    - cron: '20 21 * * *'   # 06:20 KST (21:20 UTC previous day)
   workflow_dispatch:
     inputs:
       region:
