@@ -180,7 +180,10 @@
       "Bash(git rebase:*)",
       "Bash(for i in 1 2 3)",
       "Bash(npx:*)",
-      "Bash(timeout 3 npm run dev:*)"
+      "Bash(timeout 3 npm run dev:*)",
+      "Bash(Get-ChildItem -Path \"d:\\\\cbt\\\\koreanews\\\\src\\\\app\" -Recurse -Filter \"page.tsx\")",
+      "Bash(Where-Object { $_DirectoryName -match '\\\\[' })",
+      "Bash(Select-Object -First 10 -ExpandProperty FullName)"
     ]
   }
 }

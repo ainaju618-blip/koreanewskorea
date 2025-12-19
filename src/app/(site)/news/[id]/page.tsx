@@ -110,7 +110,7 @@ async function getRandomReporter(articleRegion?: string) {
         if (articleRegion) {
             const { data: regionReporters } = await supabaseAdmin
                 .from('reporters')
-                .select('id, name, slug, region, position')
+                .select('id, name, region, position')
                 .eq('status', 'Active')
                 .eq('type', 'Human')
                 .eq('region', articleRegion);
@@ -124,7 +124,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Fallback to reporters with "전체" region
         const { data: allRegionReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, slug, region, position')
+            .select('id, name, region, position')
             .eq('status', 'Active')
             .eq('type', 'Human')
             .eq('region', '전체');
@@ -137,7 +137,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Final fallback: any active human reporter
         const { data: anyReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, slug, region, position')
+            .select('id, name, region, position')
             .eq('status', 'Active')
             .eq('type', 'Human')
             .limit(10);
@@ -255,11 +255,13 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     // If author_id exists, get that reporter; otherwise assign random reporter
     let reporter = null;
     if (news.author_id) {
-        const { data } = await supabaseAdmin
+        // author_id references profiles.id, which maps to reporters.user_id
+        const { data, error } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, slug, region, position')
-            .eq('id', news.author_id)
+            .select('id, name, region, position')
+            .eq('user_id', news.author_id)
             .single();
+
         reporter = data;
     }
 
@@ -285,7 +287,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         author: {
             '@type': 'Person',
             name: reporter?.name || news.author_name || '코리아NEWS 취재팀',
-            url: reporter ? `https://koreanewsone.com/author/${reporter.slug || reporter.id}` : undefined,
+            url: reporter ? `https://koreanewsone.com/author/${reporter.id}` : undefined,
         },
         publisher: {
             '@type': 'Organization',
@@ -357,7 +359,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                         {/* Reporter Info (Linked to Profile) */}
                         {reporter ? (
                             <Link
-                                href={`/author/${reporter.slug || reporter.id}`}
+                                href={`/author/${reporter.id}`}
                                 rel="author"
                                 className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline flex items-center gap-2"
                             >

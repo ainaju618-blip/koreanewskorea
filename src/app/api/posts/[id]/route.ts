@@ -67,15 +67,31 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
                         // Set author info from assigned reporter
                         body.author_name = assignResult.reporter.name;
 
-                        // Set author_id if reporter has a valid user_id (FK to profiles)
+                        // Verify user_id exists in profiles before setting author_id (FK constraint)
                         if (assignResult.reporter.user_id) {
-                            body.author_id = assignResult.reporter.user_id;
+                            const { data: profile, error: profileError } = await supabaseAdmin
+                                .from('profiles')
+                                .select('id')
+                                .eq('id', assignResult.reporter.user_id)
+                                .single();
+
+                            if (!profileError && profile) {
+                                body.author_id = assignResult.reporter.user_id;
+                                console.log('[PATCH /api/posts] Profile verified, author_id set');
+                            } else {
+                                console.warn('[PATCH /api/posts] Reporter user_id not found in profiles:', {
+                                    user_id: assignResult.reporter.user_id,
+                                    error: profileError?.message
+                                });
+                                // Don't set author_id - only author_name will be set
+                            }
                         }
 
                         console.log('[PATCH /api/posts] Auto-assigned:', {
                             reporter: assignResult.reporter.name,
                             reporterId: assignResult.reporter.id,
                             userId: assignResult.reporter.user_id,
+                            authorIdSet: !!body.author_id,
                             reason: assignResult.reason,
                             region: articleRegion,
                         });
