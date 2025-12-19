@@ -13,13 +13,32 @@ interface AdBannerProps {
 }
 
 export default function AdBanner({ variant }: AdBannerProps) {
+    const handlePolytechnicClick = () => {
+        // Image ratio: 2752x1536 = 1.79:1, menu bar ~56px
+        const imageRatio = 2752 / 1536;
+        const menuBarHeight = 56;
+
+        // Calculate popup size based on screen size (max 90% of screen)
+        const maxWidth = Math.min(1100, window.screen.width * 0.9);
+        const imageHeight = maxWidth / imageRatio;
+        const popupWidth = Math.round(maxWidth);
+        const popupHeight = Math.round(imageHeight + menuBarHeight);
+
+        const left = (window.screen.width - popupWidth) / 2;
+        const top = (window.screen.height - popupHeight) / 2;
+
+        window.open(
+            '/popup/polytechnic',
+            'polytechnicPopup',
+            `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
+    };
+
     if (variant === 'polytechnic') {
         return (
-            <Link
-                href="https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
+            <button
+                onClick={handlePolytechnicClick}
+                className="group relative flex h-full w-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer"
             >
                 {/* Background Image */}
                 <Image
@@ -35,7 +54,7 @@ export default function AdBanner({ variant }: AdBannerProps) {
 
                 {/* Subtle overlay for depth */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            </Link>
+            </button>
         );
     }
 
