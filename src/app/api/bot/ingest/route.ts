@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { autoAssignReporter } from '@/lib/auto-assign';
+// NOTE: autoAssignReporter is now called in PATCH /api/posts/[id] on approval
 
 // Initialize Supabase Admin Client (Service Role)
 const supabaseAdmin = createClient(
@@ -277,21 +277,9 @@ export async function POST(request: Request) {
             finalRegion = SOURCE_TO_REGION[source] || null;
         }
 
-        // ============================================================
-        // 기자 자동 배정 (Auto-assign Reporter)
-        // ============================================================
-        let author_id: string | null = null;
-        let author_name: string | null = null;
-
-        try {
-            const assignResult = await autoAssignReporter(finalRegion);
-            author_id = assignResult.reporter.id;
-            author_name = assignResult.reporter.name;
-            console.info(`[ASSIGN] ${title?.substring(0, 30)}... -> ${author_name} (${assignResult.reason})`);
-        } catch (assignError) {
-            console.warn('[ASSIGN] Reporter auto-assign failed:', assignError);
-            // Continue without reporter assignment
-        }
+        // NOTE: Reporter auto-assignment is handled in PATCH /api/posts/[id]
+        // when article status changes to 'published' (approval time)
+        // This allows draft articles to remain unassigned until approved
 
         // ============================================================
         // 기사 검증 실행 (Article Validation)
@@ -333,8 +321,7 @@ export async function POST(request: Request) {
                 thumbnail_url,
                 ai_summary: ai_summary || '',
                 status: dbStatus, // DB compatible status
-                author_id, // Auto-assigned reporter ID
-                author_name, // Auto-assigned reporter name
+                // author_id/author_name: assigned on approval (PATCH)
             })
             .select()
             .single();
