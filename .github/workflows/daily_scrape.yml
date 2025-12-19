@@ -7,8 +7,8 @@ on:
     - cron: '20 20 * * *'
     # 06:20 KST (21:20 UTC)
     - cron: '20 21 * * *'
-    # 14:51 KST (05:51 UTC)
-    - cron: '51 5 * * *'
+    # 14:46 KST (05:46 UTC)
+    - cron: '46 5 * * *'
     # 17:42 KST (08:42 UTC)
     - cron: '42 8 * * *'
   workflow_dispatch:
