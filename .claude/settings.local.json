@@ -162,7 +162,9 @@
       "Bash(vercel teams list:*)",
       "Bash(TZ=Asia/Seoul date:*)",
       "Bash(gh api:*)",
-      "Bash(gh repo view:*)"
+      "Bash(gh repo view:*)",
+      "Bash(timeout /t 8 /nobreak)",
+      "Bash(ping:*)"
     ]
   }
 }

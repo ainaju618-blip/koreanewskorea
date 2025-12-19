@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             const updates: any = {
                 status: status === '실패' ? 'failure' : (status === '성공' ? 'success' : 'running'),
                 log_message: updatedMessage,
-                collected_count: activeLog.collected_count // 스크래퍼가 보내준 count로 업데이트하면 좋겠지만 지금은 유지
+                articles_count: activeLog.articles_count || 0
             };
 
             if (isFinished) {
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
                     status: status === '실패' ? 'failure' : (status === '성공' ? 'success' : 'running'),
                     started_at: new Date().toISOString(),
                     log_message: `[${new Date().toLocaleTimeString('ko-KR')}] ${message}`,
-                    collected_count: 0
+                    articles_count: 0
                 });
 
             if (error) throw error;
