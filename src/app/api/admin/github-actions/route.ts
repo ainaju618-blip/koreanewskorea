@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
         const runsData = await runsResponse.json();
 
-        // Fetch workflow file content to get schedule
+        // Fetch workflow file content to get schedule (no cache for fresh data after save)
         const workflowResponse = await fetch(
             `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/workflows/${WORKFLOW_FILE}`,
             {
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
                     'Authorization': `Bearer ${GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                 },
-                next: { revalidate: 300 }
+                cache: 'no-store'
             }
         );
 

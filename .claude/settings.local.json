@@ -167,7 +167,11 @@
       "Bash(ping:*)",
       "Bash(cd:*)",
       "Bash(powershell -c:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(for region in mokpo gwangyang goheung yeongam muan shinan)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(git log:*)"
     ]
   }
 }
