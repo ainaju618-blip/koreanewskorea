@@ -528,7 +528,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v4.0')
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
-    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
+    parser.add_argument('--max-articles', type=int, default=30, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
     # bot-service.ts 호환 인자 (필수)
     parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')

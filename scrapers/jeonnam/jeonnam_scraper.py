@@ -226,8 +226,8 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
         success_count = 0
         processed_count = 0
 
-        # 안정화를 위해 최대 10개까지만 처리
-        target_links = collected_links[:10]
+        # 전체 링크 처리 (max_articles는 bot-service에서 제어)
+        target_links = collected_links
 
         for item in target_links:
             url = item['url']
@@ -291,7 +291,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
-    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
+    parser.add_argument('--max-articles', type=int, default=30, help='최대 수집 기사 수')
     parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
     # bot-service.ts 호환 인자 (필수)
     parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
