@@ -383,7 +383,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼')
     parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
     parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
-    parser.add_argument('--dry-run', action='store_true, help='테스트 모드')
+    parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
     # bot-service.ts compatible arguments (required)
     parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
     parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')

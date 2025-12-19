@@ -123,9 +123,18 @@ export default function BotSchedulePage() {
         }
     }, [data?.schedules]);
 
+    // Schedule limits
+    const MAX_SCHEDULES = 10;
+
     // Add new schedule time
     const handleAddTime = () => {
         if (!newTime) return;
+
+        // Check max limit
+        if (editedSchedules.length >= MAX_SCHEDULES) {
+            showError(`최대 ${MAX_SCHEDULES}개까지만 추가할 수 있습니다.`);
+            return;
+        }
 
         // Validate time format
         const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
@@ -360,7 +369,10 @@ export default function BotSchedulePage() {
                                 <div className="flex items-start gap-2 text-sm text-gray-400 bg-gray-700/30 p-3 rounded-lg">
                                     <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <p>한국 시간(KST) 기준으로 시간을 추가하세요. 스크래퍼가 매일 지정된 시간에 자동 실행됩니다.</p>
+                                        <p>
+                                            한국 시간(KST) 기준으로 시간을 추가하세요. 스크래퍼가 매일 지정된 시간에 자동 실행됩니다.
+                                            <span className="ml-2 text-purple-400">({editedSchedules.length}/{MAX_SCHEDULES})</span>
+                                        </p>
                                         <p className="mt-1 text-xs text-gray-500">
                                             저장 시 <code className="text-purple-400">.github/workflows/daily_scrape.yml</code> 파일이 업데이트됩니다.
                                         </p>

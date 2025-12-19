@@ -296,8 +296,9 @@ export async function POST(request: Request) {
         }
 
         // 5. Insert (검증 결과 포함)
-        // DB 체크 제약조건 호환: rejected→hidden, limited→draft
-        const dbStatus = validation.status === 'rejected' ? 'hidden'
+        // DB 체크 제약조건 호환: draft, review, published, rejected, archived, trash
+        // rejected와 limited는 DB 허용 값으로 매핑
+        const dbStatus = validation.status === 'rejected' ? 'rejected'
             : validation.status === 'limited' ? 'draft'
                 : validation.status;
 

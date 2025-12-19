@@ -429,9 +429,9 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 if collected_count >= max_articles or stop_scraping:
                     break
                 
-                title = item['title']
+                title = item['title'].replace('\xa0', ' ')  # Replace NBSP to avoid encoding errors
                 full_url = item['url']
-                
+
                 print(f"      [ARTICLE] {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
