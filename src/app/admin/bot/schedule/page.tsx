@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
     Calendar, Clock, Loader2, Play, History, AlertCircle,
-    RefreshCw, ExternalLink, GitBranch, CheckCircle2, XCircle, Timer
+    RefreshCw, ExternalLink, GitBranch, CheckCircle2, XCircle, Timer,
+    Plus, X, Save
 } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
@@ -80,6 +81,12 @@ export default function BotSchedulePage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Schedule editor states
+    const [editedSchedules, setEditedSchedules] = useState<string[]>([]);
+    const [newTime, setNewTime] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+
     const fetchData = useCallback(async (showRefresh = false) => {
         if (showRefresh) setIsRefreshing(true);
         try {
@@ -106,6 +113,81 @@ export default function BotSchedulePage() {
         const interval = setInterval(() => fetchData(), 30000);
         return () => clearInterval(interval);
     }, [fetchData]);
+
+    // Initialize edited schedules when data is loaded
+    useEffect(() => {
+        if (data?.schedules) {
+            const kstTimes = data.schedules.map(cron => cronToKST(cron).time);
+            setEditedSchedules(kstTimes);
+            setHasChanges(false);
+        }
+    }, [data?.schedules]);
+
+    // Add new schedule time
+    const handleAddTime = () => {
+        if (!newTime) return;
+
+        // Validate time format
+        const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+        if (!timeRegex.test(newTime)) {
+            showError('시간 형식이 올바르지 않습니다. HH:MM 형식으로 입력하세요.');
+            return;
+        }
+
+        // Format to ensure HH:MM
+        const [h, m] = newTime.split(':');
+        const formattedTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+
+        // Check for duplicates
+        if (editedSchedules.includes(formattedTime)) {
+            showError('이미 추가된 시간입니다.');
+            return;
+        }
+
+        // Add and sort
+        const newSchedules = [...editedSchedules, formattedTime].sort();
+        setEditedSchedules(newSchedules);
+        setNewTime('');
+        setHasChanges(true);
+    };
+
+    // Remove schedule time
+    const handleRemoveTime = (timeToRemove: string) => {
+        const newSchedules = editedSchedules.filter(t => t !== timeToRemove);
+        setEditedSchedules(newSchedules);
+        setHasChanges(true);
+    };
+
+    // Save schedules to GitHub
+    const handleSaveSchedules = async () => {
+        if (editedSchedules.length === 0) {
+            showError('최소 1개 이상의 스케줄 시간이 필요합니다.');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const res = await fetch('/api/admin/github-actions', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schedules: editedSchedules })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || '스케줄 저장에 실패했습니다.');
+            }
+
+            showSuccess('스케줄이 저장되었습니다! 다음 실행부터 적용됩니다.');
+            setHasChanges(false);
+            // Refresh data after save
+            setTimeout(() => fetchData(true), 2000);
+        } catch (err: any) {
+            showError(err.message || '스케줄 저장에 실패했습니다.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleTriggerWorkflow = async () => {
         setIsTriggering(true);
@@ -197,40 +279,94 @@ export default function BotSchedulePage() {
             <div className="grid grid-cols-3 gap-6">
                 {/* Left Column - Schedule Info */}
                 <div className="col-span-2 space-y-6">
-                    {/* Current Schedule Card */}
+                    {/* Schedule Editor Card */}
                     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                         <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
                                 <Clock className="w-5 h-5 text-purple-400" />
-                                Current Schedule (GitHub Actions)
+                                스케줄 설정
+                                {hasChanges && (
+                                    <span className="text-xs bg-yellow-600 text-yellow-100 px-2 py-0.5 rounded-full ml-2">
+                                        미저장
+                                    </span>
+                                )}
                             </h3>
                         </div>
                         <div className="p-6">
-                            {data?.schedules && data.schedules.length > 0 ? (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {data.schedules.map((cron, idx) => {
-                                            const { time, description } = cronToKST(cron);
-                                            return (
-                                                <div key={idx} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-                                                    <div className="text-3xl font-bold text-purple-400">{time}</div>
-                                                    <div className="text-xs text-gray-400 mt-1">{description}</div>
-                                                    <div className="text-xs text-gray-500 mt-2 font-mono">{cron}</div>
-                                                </div>
-                                            );
-                                        })}
+                            {/* Schedule Editor UI */}
+                            <div className="space-y-4">
+                                {/* Time chips row */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {editedSchedules.map((time) => (
+                                        <div
+                                            key={time}
+                                            className="flex items-center gap-1 bg-purple-900/50 border border-purple-600 text-purple-200 px-3 py-2 rounded-lg"
+                                        >
+                                            <span className="text-lg font-bold">{time}</span>
+                                            <button
+                                                onClick={() => handleRemoveTime(time)}
+                                                className="ml-1 text-purple-400 hover:text-red-400 transition"
+                                                title="Remove"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {/* Add time input */}
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="time"
+                                            value={newTime}
+                                            onChange={(e) => setNewTime(e.target.value)}
+                                            className="bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTime()}
+                                        />
+                                        <button
+                                            onClick={handleAddTime}
+                                            className="flex items-center gap-1 bg-gray-700 border border-gray-600 text-gray-300 px-3 py-2 rounded-lg hover:bg-gray-600 hover:text-white transition"
+                                            title="Add time"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            <span className="text-sm">추가</span>
+                                        </button>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span>Schedule is managed in <code className="text-purple-400">.github/workflows/daily_scrape.yml</code></span>
+
+                                    {/* Save button */}
+                                    <button
+                                        onClick={handleSaveSchedules}
+                                        disabled={!hasChanges || isSaving}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ml-auto ${
+                                            hasChanges
+                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                저장 중...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4" />
+                                                저장
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Help text */}
+                                <div className="flex items-start gap-2 text-sm text-gray-400 bg-gray-700/30 p-3 rounded-lg">
+                                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p>한국 시간(KST) 기준으로 시간을 추가하세요. 스크래퍼가 매일 지정된 시간에 자동 실행됩니다.</p>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            저장 시 <code className="text-purple-400">.github/workflows/daily_scrape.yml</code> 파일이 업데이트됩니다.
+                                        </p>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <Clock className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                                    <p>No schedules configured</p>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     </div>
 

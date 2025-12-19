@@ -1,19 +1,19 @@
 """
-진도군 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
-- 담당: AI Agent
+Jindo County Press Release Scraper
+- Version: v1.0
+- Last Updated: 2025-12-13
+- Author: AI Agent
 
-변경점 (v1.0):
-- 사용자 제공 상세 분석 데이터 기반 최초 작성
-- URL 패턴: /home/board/B0016.cs?act=read&articleId={ID}&categoryId=0&m=626
-- 첨부파일: /cms/download.cs?atchFile={암호화파일ID}
-- 카드형 리스트 레이아웃 (썸네일 + 제목 + 카테고리)
-- 정적 HTML, UTF-8 인코딩
+Changes (v1.0):
+- Initial version based on user-provided detailed analysis data
+- URL pattern: /home/board/B0016.cs?act=read&articleId={ID}&categoryId=0&m=626
+- Attachments: /cms/download.cs?atchFile={encrypted_file_id}
+- Card-style list layout (thumbnail + title + category)
+- Static HTML, UTF-8 encoding
 """
 
 # ============================================================
-# 1. 표준 라이브러리
+# 1. Standard Library Imports
 # ============================================================
 import sys
 import os
@@ -24,12 +24,12 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin, parse_qs, urlparse
 
 # ============================================================
-# 2. 외부 라이브러리
+# 2. External Library Imports
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
 
 # ============================================================
-# 3. 로컬 모듈
+# 3. Local Module Imports
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
@@ -38,28 +38,28 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_classifier import detect_category
 
 # ============================================================
-# 4. 상수 정의
+# 4. Constants
 # ============================================================
 REGION_CODE = 'jindo'
 REGION_NAME = '진도군'
 CATEGORY_NAME = '전남'
 BASE_URL = 'https://www.jindo.go.kr'
 
-# 목록 페이지 URL (군정소식/보도자료)
+# List page URL (Government News/Press Releases)
 BOARD_ID = 'B0016'
 MENU_CODE = '626'
 LIST_PATH = f'/home/board/{BOARD_ID}.cs?m={MENU_CODE}'
 LIST_URL = f'{BASE_URL}{LIST_PATH}'
 
-# 상세 페이지 URL 패턴: ?act=read&articleId={ID}&categoryId=0&m=626
+# Detail page URL pattern: ?act=read&articleId={ID}&categoryId=0&m=626
 
-# 목록 페이지 셀렉터 (카드형 리스트 레이아웃)
+# List page selectors (card-style list layout)
 LIST_ITEM_SELECTORS = [
-    'a[href*="act=read"][href*="articleId="]',  # 기사 링크
+    'a[href*="act=read"][href*="articleId="]',  # Article links
     'a[href*="B0016.cs"][href*="articleId="]',
 ]
 
-# 상세 페이지/본문 셀렉터 (우선순위 순)
+# Detail page/content selectors (in priority order)
 CONTENT_SELECTORS = [
     '.view_content',
     '.board_view_content',
@@ -68,17 +68,17 @@ CONTENT_SELECTORS = [
     '.content',
 ]
 
-# 날짜 패턴: YYYY-MM-DD HH:mm 또는 YYYY-MM-DD
+# Date patterns: YYYY-MM-DD HH:mm or YYYY-MM-DD
 DATE_PATTERNS = [
     r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})',
 ]
 
 
 # ============================================================
-# 5. 유틸리티 함수
+# 5. Utility Functions
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -94,11 +94,11 @@ def normalize_date(date_str: str) -> str:
 
 
 def extract_article_id(href: str) -> Optional[str]:
-    """href에서 articleId(게시글 ID) 추출"""
+    """Extract articleId (post ID) from href"""
     if not href:
         return None
-    
-    # URL 파라미터에서 추출
+
+    # Extract from URL parameters
     try:
         parsed = urlparse(href)
         params = parse_qs(parsed.query)
@@ -106,79 +106,79 @@ def extract_article_id(href: str) -> Optional[str]:
             return params['articleId'][0]
     except:
         pass
-    
-    # 정규식으로 추출
+
+    # Extract with regex
     match = re.search(r'articleId[=]?(\d+)', href)
     if match:
         return match.group(1)
-    
+
     return None
 
 
 def build_detail_url(article_id: str) -> str:
-    """게시글 ID(articleId)로 상세 페이지 URL 생성"""
+    """Generate detail page URL from article ID"""
     return f'{BASE_URL}/home/board/{BOARD_ID}.cs?act=read&articleId={article_id}&categoryId=0&m={MENU_CODE}'
 
 
 def build_list_url(page: int = 1) -> str:
-    """page 기반 목록 페이지 URL 생성 (pageIndex 파라미터)"""
+    """Generate list page URL with page parameter (pageIndex)"""
     if page == 1:
         return LIST_URL
     return f'{LIST_URL}&pageIndex={page}'
 
 
 # ============================================================
-# 6. 상세 페이지 수집 함수
+# 6. Detail Page Scraping Functions
 # ============================================================
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    Extract content, image, date, and department from detail page
 
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (content text, thumbnail URL, date, department)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
     
-    time.sleep(1.5)  # 페이지 안정화
-    
-    # 1. 날짜 추출 (형식: YYYY-MM-DD HH:mm)
+    time.sleep(1.5)  # Page stabilization
+
+    # 1. Date extraction (format: YYYY-MM-DD HH:mm)
     pub_date = datetime.now().strftime('%Y-%m-%d')
-    
+
     try:
         page_text = page.locator('body').inner_text()
-        # "작성일: YYYY-MM-DD HH:mm" 패턴 찾기
+        # Find "Created: YYYY-MM-DD HH:mm" pattern
         date_match = re.search(r'작성일[:\s]*(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
         if date_match:
             y, m, d = date_match.groups()
             pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
         else:
-            # 일반 날짜 패턴
+            # General date pattern
             date_match = re.search(r'(\d{4})-(\d{1,2})-(\d{1,2})', page_text[:3000])
             if date_match:
                 y, m, d = date_match.groups()
                 pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     except Exception as e:
         print(f"      [WARN] Date extraction failed: {e}")
-    
-    # 2. 담당부서 추출 (진도군은 본문에 표시되지 않음 - 기획홍보실 관리)
-    department = "기획홍보실"  # 기본값
-    
-    # 3. 본문 추출
+
+    # 2. Department extraction (Jindo County: not displayed in content - managed by Planning & Public Relations)
+    department = "기획홍보실"  # Default value
+
+    # 3. Content extraction
     content = ""
-    
+
     try:
-        # JavaScript로 본문 추출
+        # Extract content with JavaScript
         js_code = """
         () => {
-            // 진도군 특화: 본문 콘텐츠 영역 찾기
-            
-            // 방법 1: 일반적인 콘텐츠 선택자
+            // Jindo County specific: Find content area
+
+            // Method 1: Common content selectors
             const contentSelectors = [
                 '.view_content', '.board_view_content', '.view_body',
                 '.con_detail', '.content'
             ];
-            
+
             for (const sel of contentSelectors) {
                 const elem = document.querySelector(sel);
                 if (elem) {
@@ -188,8 +188,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     }
                 }
             }
-            
-            // 방법 2: div[class*="view"], div[class*="content"] 탐색
+
+            // Method 2: Search div[class*="view"], div[class*="content"]
             const viewDivs = document.querySelectorAll('div[class*="view"], div[class*="content"]');
             for (const div of viewDivs) {
                 const text = div.innerText?.trim();
@@ -197,35 +197,35 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     return text;
                 }
             }
-            
-            // 방법 3: 가장 긴 텍스트를 가진 div 찾기 (폴백)
+
+            // Method 3: Find div with longest text (fallback)
             const divs = document.querySelectorAll('div');
             let maxText = '';
-            
+
             for (const div of divs) {
                 const text = div.innerText?.trim();
-                if (text && text.length > maxText.length && 
+                if (text && text.length > maxText.length &&
                     !text.includes('로그인') && !text.includes('회원가입') &&
                     text.length < 10000) {
                     maxText = text;
                 }
             }
-            
+
             if (maxText.length > 100) {
                 return maxText;
             }
-            
+
             return '';
         }
         """
         content = page.evaluate(js_code)
         if content:
-            # clean_article_content 함수로 정제
+            # Clean with clean_article_content function
             content = clean_article_content(content)
     except Exception as e:
         print(f"      [WARN] JS content extraction failed: {e}")
-    
-    # Fallback: 일반 셀렉터
+
+    # Fallback: General selectors
     if not content or len(content) < 50:
         for sel in CONTENT_SELECTORS:
             try:
@@ -237,24 +237,24 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                         break
             except:
                 continue
-    
-    # 4. 이미지 추출
+
+    # 4. Image extraction
     thumbnail_url = None
-    
-    # 전략 1: 첨부파일에서 이미지 다운로드 (/cms/download.cs)
+
+    # Strategy 1: Download images from attachments (/cms/download.cs)
     try:
         attach_links = page.locator('a[href*="/cms/download.cs"], a[href*="atchFile="]')
         for i in range(min(attach_links.count(), 5)):
             link = attach_links.nth(i)
             link_text = safe_get_text(link) or ''
             href = safe_get_attr(link, 'href')
-            
-            # 이미지 파일 확장자 확인 (.jpg, .png)
+
+            # Check image file extensions (.jpg, .png)
             if href and any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
                 full_url = href if href.startswith('http') else urljoin(BASE_URL, href)
                 print(f"      [DOWNLOAD] Attempting attachment download: {link_text[:50]}...")
 
-                # Local save
+                # Save to Cloudinary
                 saved_path = download_and_upload_image(full_url, url, REGION_CODE)
                 if saved_path:
                     thumbnail_url = saved_path
@@ -262,8 +262,8 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     break
     except Exception as e:
         print(f"      [WARN] Error processing attachments: {e}")
-    
-    # 전략 2: 본문 내 img 태그에서 추출
+
+    # Strategy 2: Extract from img tags in content
     if not thumbnail_url:
         try:
             imgs = page.locator('img[src*=".jpg"], img[src*=".png"], img[src*=".jpeg"], img[src*=".JPG"]')
@@ -278,23 +278,23 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                         break
         except Exception as e:
             print(f"      [WARN] Content image extraction failed: {e}")
-    
+
     return content, thumbnail_url, pub_date, department
 
 
 # ============================================================
-# 7. 메인 수집 함수
+# 7. Main Collection Function
 # ============================================================
 def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송 (개수 기반)
+    Collect press releases and send to server (count-based)
 
     Args:
-        max_articles: 최대 수집 기사 수 (기본 10개)
-        days: 선택적 날짜 필터 (None이면 비활성화)
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
-        dry_run: 테스트 모드 (서버 전송 안함)
+        max_articles: Maximum number of articles to collect (default 10)
+        days: Optional date filter (disabled if None)
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
+        dry_run: Test mode (do not send to server)
     """
     if not start_date and days:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')

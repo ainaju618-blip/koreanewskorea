@@ -1,5 +1,5 @@
 """
-영암군 보도자료 스크래퍼
+Yeongam County Press Release Scraper
 - 버전: v1.0
 - 최종수정: 2025-12-13
 - 담당: AI Agent
@@ -8,12 +8,12 @@
 - 사용자 제공 상세 분석 데이터 기반 최초 작성
 - URL 패턴: /home/www/open_information/yeongam_news/bodo/show/{고유ID}
 - 이미지: 본문 내 직접 삽입 방식 (별도 첨부파일 없음)
-- 카드형 리스트 레이아웃 (썸네일 + 제목 + 요약)
+- Card-style list layout (thumbnail + title + summary)
 - GOV-Webware 기반 CMS
 """
 
 # ============================================================
-# 1. 표준 라이브러리
+# 1. Standard Libraries
 # ============================================================
 import sys
 import os
@@ -24,12 +24,12 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin
 
 # ============================================================
-# 2. 외부 라이브러리
+# 2. External Libraries
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
 
 # ============================================================
-# 3. 로컬 모듈
+# 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
@@ -38,46 +38,46 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
 
 # ============================================================
-# 4. 상수 정의
+# 4. Constants
 # ============================================================
 REGION_CODE = 'yeongam'
 REGION_NAME = '영암군'
 CATEGORY_NAME = '전남'
 BASE_URL = 'https://www.yeongam.go.kr'
 
-# 목록 페이지 URL (보도자료)
+# List page URL (press releases)
 LIST_PATH = '/home/www/open_information/yeongam_news/bodo/yeongam.go'
 LIST_URL = f'{BASE_URL}{LIST_PATH}'
 
-# 상세 페이지 URL 패턴: /home/www/open_information/yeongam_news/bodo/show/{고유ID}
+# Detail page URL pattern: /home/www/open_information/yeongam_news/bodo/show/{고유ID}
 DETAIL_PATH_PREFIX = '/home/www/open_information/yeongam_news/bodo/show'
 
-# 목록 페이지 셀렉터 (카드형 리스트 레이아웃)
+# List page selectors (card-style list layout)
 LIST_ITEM_SELECTORS = [
-    'a[href*="/bodo/show/"]',  # 기사 링크
+    'a[href*="/bodo/show/"]',  # Article link
     'a[href*="yeongam_news/bodo/show"]',
 ]
 
-# 상세 페이지/본문 셀렉터 (우선순위 순) - 영암군 특화
+# Detail page/content selectors (priority order) - Yeongam specific
 CONTENT_SELECTORS = [
-    '.con_detail',        # 영암군 본문 (최우선)
-    '.show_info',         # 영암군 정보 영역
+    '.con_detail',        # Yeongam content (top priority)
+    '.show_info',         # Yeongam information area
     '.view_content',
     '.board_view_content',
     '.view_body',
 ]
 
-# 날짜 패턴: YYYY-MM-DD HH:mm 또는 YYYY-MM-DD
+# Date pattern: YYYY-MM-DD HH:mm 또는 YYYY-MM-DD
 DATE_PATTERNS = [
     r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})',
 ]
 
 
 # ============================================================
-# 5. 유틸리티 함수
+# 5. Utility Functions
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -93,11 +93,11 @@ def normalize_date(date_str: str) -> str:
 
 
 def extract_article_id(href: str) -> Optional[str]:
-    """href에서 게시글 고유 ID 추출 (영문+숫자 조합 랜덤 문자열)"""
+    """href에서 게시글 고유 ID extract (영문+숫자 조합 랜덤 문자열)"""
     if not href:
         return None
     
-    # /bodo/show/{ID} 패턴에서 ID 추출
+    # /bodo/show/{ID} 패턴에서 ID extract
     match = re.search(r'/bodo/show/([a-zA-Z0-9]+)', href)
     if match:
         return match.group(1)
@@ -111,33 +111,33 @@ def extract_article_id(href: str) -> Optional[str]:
 
 
 def build_detail_url(article_id: str) -> str:
-    """게시글 ID로 상세 페이지 URL 생성"""
+    """Generate detail page URL from article ID"""
     return f'{BASE_URL}{DETAIL_PATH_PREFIX}/{article_id}'
 
 
 def build_list_url(page: int = 1) -> str:
-    """page 기반 목록 페이지 URL 생성 (?page=N 파라미터)"""
+    """Generate list page URL based on page number (?page=N 파라미터)"""
     if page == 1:
         return LIST_URL
     return f'{LIST_URL}?page={page}'
 
 
 # ============================================================
-# 6. 상세 페이지 수집 함수
+# 6. Detail Page Collection Function
 # ============================================================
 def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 부제목, 이미지, 날짜, 담당부서를 추출
+    상세 페이지에서 본문, 부제목, 이미지, 날짜, 담당부서를 extract
 
     Returns:
-        (본문 텍스트, 부제목, 썸네일 URL, 날짜, 담당부서)
+        (content text, subtitle, thumbnail URL, date, department)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, None, datetime.now().strftime('%Y-%m-%d'), None
     
-    time.sleep(1.5)  # 페이지 안정화
+    time.sleep(1.5)  # Page stabilization
     
-    # 1. 날짜 추출 (형식: YYYY-MM-DD)
+    # 1. 날짜 extract (형식: YYYY-MM-DD)
     pub_date = datetime.now().strftime('%Y-%m-%d')
     
     try:
@@ -150,7 +150,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     except Exception as e:
         print(f"      [WARN] Date extraction failed: {e}")
     
-    # 2. 담당부서 추출 (본문 하단 "(부서명 담당자 전화번호)" 패턴)
+    # 2. 담당부서 extract (본문 하단 "(부서명 담당자 전화번호)" 패턴)
     department = None
     try:
         page_text = page.locator('body').inner_text()
@@ -159,18 +159,18 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
         if dept_match:
             department = dept_match.group(1).strip()
         else:
-            # 다른 패턴: "(부서명 전화번호)" 
+            # Other pattern: "(부서명 전화번호)" 
             dept_match = re.search(r'\(([가-힣]+(?:과|실|팀|면|읍|동))\s+\d{3}', page_text)
             if dept_match:
                 department = dept_match.group(1).strip()
     except Exception as e:
         print(f"      [WARN] Department extraction failed: {e}")
     
-    # 3. 본문 추출
+    # 3. 본문 extract
     content = ""
     
     try:
-        # JavaScript로 본문 추출 (영암군 특화)
+        # JavaScript로 본문 extract (영암군 특화)
         js_code = """
         () => {
             // 영암군 특화: .con_detail, .show_info 우선 탐색
@@ -207,13 +207,13 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
         """
         content = page.evaluate(js_code)
         if content:
-            # 메타정보 제거
+            # Remove meta information
             content = re.sub(r'조회수\s*[:\s]*\d+', '', content)
             content = content.strip()[:5000]
     except Exception as e:
         print(f"      [WARN] JS content extraction failed: {e}")
     
-    # Fallback: 일반 셀렉터
+    # Fallback: General selectors
     if not content or len(content) < 50:
         for sel in CONTENT_SELECTORS:
             try:
@@ -226,19 +226,19 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
             except:
                 continue
 
-    # 본문 정제 (clean_article_content 적용)
+    # Clean content (clean_article_content 적용)
     if content:
         content = clean_article_content(content)
 
-    # 부제목 추출
+    # Extract subtitle
     subtitle, content = extract_subtitle(content, title)
 
-    # 4. 이미지 추출 (본문 내 직접 삽입 방식 - 영암군은 이미지가 없음)
+    # 4. 이미지 extract (본문 내 직접 삽입 방식 - 영암군은 이미지가 없음)
     thumbnail_url = None
     
-    # 전략 1: 본문 영역(.con_detail, .show_info) 내 이미지
+    # Strategy 1: 본문 영역(.con_detail, .show_info) 내 이미지
     try:
-        # 영암군 본문 내 이미지는 거의 없음 - 아이콘/로고만 있음
+        # Yeongam content rarely has images - only icons/logos
         # SSL 인증서 오류로 다운로드가 실패할 수 있음
         imgs = page.locator('.con_detail img, .show_info img')
         for i in range(min(imgs.count(), 5)):
@@ -253,7 +253,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     except Exception as e:
         print(f"      [WARN] Content image extraction failed: {e}")
     
-    # 전략 2: 일반 콘텐츠 이미지 (본문에 없는 경우)
+    # Strategy 2: 일반 콘텐츠 이미지 (본문에 없는 경우)
     if not thumbnail_url:
         try:
             all_imgs = page.locator('img')
@@ -274,18 +274,18 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
 
 
 # ============================================================
-# 7. 메인 수집 함수
+# 7. Main Collection Function
 # ============================================================
 def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송 (개수 기반)
+    Collect press releases and send to server (count-based)
 
     Args:
-        max_articles: 최대 수집 기사 수 (기본 10개)
-        days: 선택적 날짜 필터 (None이면 비활성화)
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
-        dry_run: 테스트 모드 (서버 전송 안함)
+        max_articles: Maximum number of articles to collect (기본 10개)
+        days: Optional date filter (disabled if None)
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
+        dry_run: Test mode (no server transmission)
     """
     if not start_date and days:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
@@ -326,7 +326,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         page = context.new_page()
         
         page_num = 1
-        max_pages = 10  # 최대 10페이지까지 탐색
+        max_pages = 10  # Search up to 10 pages
         
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)
@@ -337,14 +337,14 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 page_num += 1
                 continue
             
-            time.sleep(1.5)  # 페이지 로딩 대기
+            time.sleep(1.5)  # Wait for page load
             
-            # 목록에서 기사 링크 찾기 (카드형 리스트)
+            # Find article links in list (카드형 리스트)
             article_links = page.locator('a[href*="/bodo/show/"]')
             article_count = article_links.count()
             
             if article_count == 0:
-                # Fallback: 다른 셀렉터 시도
+                # Fallback: Try other selectors
                 for sel in LIST_ITEM_SELECTORS:
                     article_links = page.locator(sel)
                     article_count = article_links.count()
@@ -357,9 +357,9 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
             
             print(f"      [FOUND] {article_count} article links found")
             
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
-            seen_ids = set()  # 중복 ID 체크용
+            seen_ids = set()  # Duplicate ID check
             
             for i in range(article_count):
                 if collected_count + len(link_data) >= max_articles:
@@ -368,7 +368,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 try:
                     link = article_links.nth(i)
                     
-                    # 제목과 URL 추출
+                    # Extract title and URL
                     title = safe_get_text(link)
                     if title:
                         title = title.strip()
@@ -377,23 +377,23 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     if not title or not href:
                         continue
                     
-                    # 게시글 ID 추출
+                    # article ID extract
                     article_id = extract_article_id(href)
                     if not article_id:
                         continue
                     
-                    # 중복 ID 체크
+                    # Duplicate ID check
                     if article_id in seen_ids:
                         continue
                     seen_ids.add(article_id)
                     
-                    # 상세 페이지 URL 구성
+                    # Construct detail page URL
                     full_url = build_detail_url(article_id)
                     
-                    # 목록에서 날짜 추출 시도 (작성자 / YYYY-MM-DD HH:mm 형식)
+                    # Try extracting date from list (작성자 / YYYY-MM-DD HH:mm 형식)
                     list_date = None
                     try:
-                        # 부모 요소에서 날짜 찾기
+                        # Find date in parent element
                         parent = link.locator('xpath=ancestor::*[1]')
                         if parent.count() > 0:
                             parent_text = safe_get_text(parent)
@@ -425,8 +425,8 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 print("      [STOP] No valid articles on this page, stopping search")
                 break
             
-            # 상세 페이지 수집 및 전송
-            consecutive_old = 0  # 연속 오래된 기사 카운터
+            # Collect and send detail pages
+            consecutive_old = 0  # Consecutive old article counter
             stop_scraping = False
             
             for item in link_data:
@@ -441,7 +441,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
 
                 content, subtitle, thumbnail_url, detail_date, department = fetch_detail(page, full_url, title)
                 
-                # 날짜 결정 (상세 > 목록 > 현재)
+                # Determine date (detail > list > current)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 
                 # Date filter + early termination logic
@@ -455,13 +455,13 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                         break
                     continue
                 
-                # 유효한 기사 발견 시 카운터 리셋
+                # Reset counter when valid article found
                 consecutive_old = 0
                 
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 카테고리 자동 분류
+                # Automatic category classification
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -485,7 +485,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     print(f"         [DRY-RUN] {img_status}, {content_status}")
                     collected_articles.append(article_data)
                 else:
-                    # 서버로 전송
+                    # Send to server
                     result = send_article_to_server(article_data)
                     collected_count += 1
                     
@@ -501,7 +501,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 
                 time.sleep(1)  # Rate limiting
             
-            # 조기 종료 시 루프 탈출
+            # Break loop on early termination
             if stop_scraping:
                 break
             
@@ -518,17 +518,17 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
 
 
 # ============================================================
-# 8. CLI 진입점
+# 8. CLI Entry Point
 # ============================================================
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v1.0')
-    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수 (기본 10)')
-    parser.add_argument('--days', type=int, default=None, help='선택적 날짜 필터 (일). 지정하지 않으면 날짜 필터 없음')
-    parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
-    # bot-service.ts 호환 인자 (필수!)
-    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
-    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
+    parser.add_argument('--max-articles', type=int, default=10, help='Maximum number of articles to collect (default 10)')
+    parser.add_argument('--days', type=int, default=None, help='Optional date filter (days). No filter if not specified')
+    parser.add_argument('--dry-run', action='store_true', help='Test mode (no server transmission)')
+    # bot-service.ts compatible arguments (required!)
+    parser.add_argument('--start-date', type=str, default=None, help='Collection start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='Collection end date (YYYY-MM-DD)')
     args = parser.parse_args()
 
     collect_articles(

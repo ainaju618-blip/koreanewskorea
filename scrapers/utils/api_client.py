@@ -103,20 +103,29 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         return {'success': False, 'status': 'error', 'message': str(e)}
 
 
-def log_to_server(region: str, status: str, message: str, type: str = 'info') -> None:
+def log_to_server(
+    region: str,
+    status: str,
+    message: str,
+    type: str = 'info',
+    created_count: int = 0,
+    skipped_count: int = 0
+) -> None:
     """
-    서버로 실시간 로그 전송
-    
+    Send real-time log to server
+
     Args:
-        region: 지역 코드 (jeonnam)
-        status: 현재 상태 (실행중, 성공, 실패)
-        message: 로그 메시지
-        type: 로그 타입 (info, error, warning, success)
+        region: Region code (e.g., 'naju', 'mokpo')
+        status: Current status ('running', 'success', 'failed')
+        message: Log message
+        type: Log type ('info', 'error', 'warning', 'success')
+        created_count: Number of newly created articles (for completion log)
+        skipped_count: Number of skipped/duplicate articles (for completion log)
     """
     try:
-        # Phase 3: BOT_LOG_ID 환경변수가 있으면 사용 (정확한 로그 매칭)
+        # Phase 3: Use BOT_LOG_ID env var if available (exact log matching)
         log_id = os.getenv('BOT_LOG_ID')
-        
+
         data = {
             'region': region,
             'status': status,
@@ -124,21 +133,26 @@ def log_to_server(region: str, status: str, message: str, type: str = 'info') ->
             'type': type,
             'timestamp': str(time.time())
         }
-        
-        # log_id가 있으면 추가 (API에서 우선 매칭에 사용)
+
+        # Add log_id if available (for API priority matching)
         if log_id:
             data['log_id'] = int(log_id)
-        
+
+        # Add article counts on completion (for GitHub Actions)
+        if status == 'success' or status == 'failed':
+            data['created_count'] = created_count
+            data['skipped_count'] = skipped_count
+
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {API_KEY}'
         }
-        
-        # 로그는 실패해도 프로세스를 중단하지 않음 (타임아웃 짧게 설정)
+
+        # Log failures should not stop the process (short timeout)
         requests.post(LOG_API_URL, json=data, headers=headers, timeout=2)
-        
+
     except:
-        pass  # 로그 전송 실패는 무시
+        pass  # Ignore log sending failures
 
 
 def check_server_health() -> bool:
@@ -331,7 +345,7 @@ def retry_request(
             logger.info(f"   {delay}초 후 재시도...")
             time.sleep(delay)
     
-    logger.error(f"❌ 최대 재시도 횟수 초과: {url[:50]}...")
+    logger.error(f"[FAIL] 최대 재시도 횟수 초과: {url[:50]}...")
     return None
 
 

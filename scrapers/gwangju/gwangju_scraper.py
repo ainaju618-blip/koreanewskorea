@@ -155,6 +155,7 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
         
         # 2. 상세 방문 단계 (Visit Phase)
         success_count = 0
+        skipped_count = 0
         processed_count = 0
         
         # 최신순으로 처리하기 위해 (보통 목록이 최신순이므로 그대로 진행)
@@ -205,6 +206,9 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
                     print(f"      [OK] DB 저장 완료 ID: {result.get('id', 'Unknown')}")
                     success_count += 1
                     log_to_server(REGION_CODE, '실행중', f"성공: {title[:10]}...", 'success')
+                elif result and result.get('status') == 'exists':
+                    skipped_count += 1
+                    print(f"      [SKIP] Already exists")
                 else:
                     print(f"      [WARN] DB 저장 실패 API 응답: {result}")
             
@@ -213,9 +217,12 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
 
         browser.close()
         
-    final_msg = f"작업 종료: 총 {processed_count}건 처리 / {success_count}건 저장 성공"
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
     print(f"[완료] {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     return []
 
 def main():

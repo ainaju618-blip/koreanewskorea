@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""무안군청 보도자료 스크래퍼 v1.4
+"""Muan County Press Release Scraper v1.4
 - 사이트: https://www.muan.go.kr/
 - 대상: 보도자료 게시판 (/www/openmuan/new/report)
 - 최종수정: 2025-12-14
 - 변경사항: 
-  - v1.4: 이미지 추출 로직 일반화 (더 다양한 경로 지원, 첨부파일 이미지 추출)
-  - v1.3: 본문 추출 전면 재설계 (시작/종료점 기반)
+  - v1.4: 이미지 extract 로직 일반화 (더 다양한 경로 지원, 첨부파일 이미지 extract)
+  - v1.3: 본문 extract 전면 재설계 (시작/종료점 기반)
   - 첨부파일 정보 완전 제거
 """
 
@@ -27,7 +27,7 @@ from utils.category_detector import detect_category
 from utils.scraper_utils import extract_subtitle
 
 # ============================================
-# 상수 정의
+# Constants
 # ============================================
 REGION_CODE = 'muan'
 REGION_NAME = '무안군'
@@ -40,7 +40,7 @@ TITLE_LINK_SELECTOR = 'a.title_cont'
 
 
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     try:
@@ -58,7 +58,7 @@ def normalize_date(date_str: str) -> str:
 
 
 def validate_article(article_data: Dict) -> Tuple[bool, str]:
-    """데이터 검증"""
+    """Data validation"""
     if not article_data.get('title') or len(article_data['title']) < 5:
         return False, "[검증 실패] 제목이 너무 짧거나 없습니다."
     content = article_data.get('content', '')
@@ -68,7 +68,7 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
 
 
 def clean_content_v3(content: str) -> str:
-    """본문 정제 v3 - 더 엄격한 필터링"""
+    """Content cleaning v3 - more strict filtering"""
     if not content:
         return ""
     
@@ -78,16 +78,16 @@ def clean_content_v3(content: str) -> str:
     for line in lines:
         line_stripped = line.strip()
         
-        # 빈 줄은 적당히 유지
+        # Maintain reasonable blank lines
         if not line_stripped:
-            if cleaned_lines and cleaned_lines[-1].strip():  # 연속 빈줄 방지
+            if cleaned_lines and cleaned_lines[-1].strip():  # Prevent consecutive blank lines
                 cleaned_lines.append("")
             continue
         
         # === 제거할 패턴들 (v1.3 강화) ===
         should_skip = False
         
-        # 첨부파일 관련 (무안군 특화)
+        # Attachment related (Muan specific)
         if re.match(r'^이미지\s*\d*번?\s*붙임', line_stripped):  # "이미지 2번 붙임"
             should_skip = True
         elif re.match(r'^붙임\s*\d*', line_stripped):  # "붙임 1"
@@ -99,7 +99,7 @@ def clean_content_v3(content: str) -> str:
         elif line_stripped == '다운로드':
             should_skip = True
         
-        # 메타 정보 헤더
+        # Meta information header
         elif re.match(r'^작성일\s*\d{4}', line_stripped):
             should_skip = True
         elif re.match(r'^등록자\s', line_stripped):
@@ -109,14 +109,14 @@ def clean_content_v3(content: str) -> str:
         elif line_stripped.startswith('첨부파일'):
             should_skip = True
         
-        # 하단 메타 정보 (종료 지점)
+        # Bottom meta information (end point)
         elif line_stripped == '목록':
             should_skip = True
         elif re.match(r'^.{2,10}(실|과|팀|센터)\s*$', line_stripped):  # "기획실 홍보팀"
             should_skip = True
         elif line_stripped.startswith('담당전화번호'):
             should_skip = True
-        elif re.match(r'^061-\d{3}-\d{4}', line_stripped):  # 전화번호
+        elif re.match(r'^061-\d{3}-\d{4}', line_stripped):  # Phone number
             should_skip = True
         elif line_stripped.startswith('최종업데이트'):
             should_skip = True
@@ -125,7 +125,7 @@ def clean_content_v3(content: str) -> str:
         elif line_stripped in ['만족', '보통', '불만족', '매우불만족', '의견남기기', '제출하기', '결과보기']:
             should_skip = True
         
-        # 저작권/공공누리
+        # Copyright/KOGL
         elif '공공누리' in line_stripped:
             should_skip = True
         elif '출처표시' in line_stripped:
@@ -133,7 +133,7 @@ def clean_content_v3(content: str) -> str:
         elif '이용할 수 있습니다' in line_stripped:
             should_skip = True
         
-        # 파일명만 있는 줄 (확장자로 끝남)
+        # Lines with only filename (ends with extension)
         elif re.match(r'^.*\.(jpg|jpeg|png|gif|hwp|pdf|xlsx?|docx?|pptx?)$', line_stripped.lower()) and len(line_stripped) < 150:
             should_skip = True
         
@@ -142,7 +142,7 @@ def clean_content_v3(content: str) -> str:
     
     result = '\n'.join(cleaned_lines).strip()
     
-    # 연속된 빈 줄 정리
+    # Clean up consecutive blank lines
     while '\n\n\n' in result:
         result = result.replace('\n\n\n', '\n\n')
     
@@ -150,7 +150,7 @@ def clean_content_v3(content: str) -> str:
 
 
 def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], Optional[str]]:
-    """상세 페이지에서 본문/이미지/날짜 추출 (v1.3)"""
+    """상세 페이지에서 본문/이미지/날짜 extract (v1.3)"""
     try:
         page.goto(url, timeout=20000, wait_until='networkidle')
         page.wait_for_timeout(2000)
@@ -158,7 +158,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
         print(f"   [WARN] 페이지 접속 실패: {url}")
         return "", None, None
 
-    # 1. 본문 추출 (v1.3 - 시작/종료점 기반)
+    # 1. 본문 extract (v1.3 - 시작/종료점 기반)
     content = ""
     try:
         js_code = """
@@ -234,7 +234,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
                 }
             }
             
-            // 본문 추출
+            // 본문 extract
             const bodyLines = lines.slice(startIdx, endIdx);
             return bodyLines.join('\\n').trim();
         }
@@ -245,9 +245,9 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
             content = clean_article_content(content)
             content = content[:5000]
     except Exception as e:
-        print(f"   [WARN] 본문 추출 에러: {str(e)}")
+        print(f"   [WARN] 본문 extract 에러: {str(e)}")
 
-    # 2. 날짜 추출
+    # 2. 날짜 extract
     pub_date = None
     try:
         page_text = page.locator('div.sub_inner').inner_text()[:2000]
@@ -257,21 +257,21 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
     except:
         pass
 
-    # 3. 이미지 추출 (v1.4: 더 일반화된 이미지 추출)
+    # 3. 이미지 extract (v1.4: 더 일반화된 이미지 extract)
     thumbnail_url = None
     original_image_url = None
     
     try:
-        # 전략 1: 본문 영역 내 모든 이미지 (아이콘 등 제외)
+        # Strategy 1: 본문 영역 내 모든 이미지 (아이콘 등 제외)
         imgs = page.locator('div.sub_inner img')
         for i in range(min(imgs.count(), 15)):
             src = imgs.nth(i).get_attribute('src') or ''
             
-            # 제외할 이미지 패턴
+            # Image patterns to exclude
             if any(x in src.lower() for x in ['icon', 'logo', 'kogl', 'opentype', 'btn', 'qr', 'banner', 'bg_']):
                 continue
             
-            # 작은 이미지 제외 (width/height 체크)
+            # Exclude small images (check width/height)
             try:
                 width = imgs.nth(i).get_attribute('width')
                 height = imgs.nth(i).get_attribute('height')
@@ -282,7 +282,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
             except:
                 pass
             
-            # 유효한 이미지 경로인지 확인
+            # Check if valid image path
             if src and ('ybmodule' in src or 'file' in src or 'upload' in src or 
                        'board' in src or 'www_report' in src or 
                        src.endswith(('.jpg', '.jpeg', '.png', '.gif'))):
@@ -297,7 +297,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
                 print(f"      [IMG] 본문 이미지 발견: {src[:50]}...")
                 break
         
-        # 전략 2: 첨부파일 영역에서 이미지 링크 찾기
+        # Strategy 2: 첨부파일 영역에서 이미지 링크 찾기
         if not original_image_url:
             file_links = page.locator('a[href*=".jpg"], a[href*=".jpeg"], a[href*=".png"], a[href*=".gif"]')
             for i in range(min(file_links.count(), 5)):
@@ -313,9 +313,9 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
                     break
                     
     except Exception as e:
-        print(f"   [WARN] 이미지 추출 에러: {str(e)}")
+        print(f"   [WARN] 이미지 extract 에러: {str(e)}")
 
-    # 로컬 저장
+    # Save locally
     if original_image_url:
         try:
             local_path = download_and_upload_image(original_image_url, BASE_URL, REGION_CODE)
@@ -332,7 +332,7 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
 
 
 def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
-    """기사 수집"""
+    """Collect articles"""
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
 
     # Ensure dev server is running before starting
@@ -404,6 +404,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
 
         # Phase 2: 상세 수집
         success_count = 0
+        skipped_count = 0
         for idx, item in enumerate(collected_links[:max_articles]):
             title = item['title']
             url = item['url']
@@ -414,10 +415,10 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
             content, thumbnail_url, pub_date = fetch_detail(page, url, title)
             final_date = pub_date or list_date
 
-            # 부제목 추출
+            # Extract subtitle
             subtitle, content = extract_subtitle(content, title)
 
-            # 카테고리 자동 분류
+            # Automatic category classification
             cat_code, cat_name = detect_category(title, content)
 
             article_data = {
@@ -446,19 +447,25 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
                     if result and result.get('status') == 'created':
                         success_count += 1
                         log_to_server(REGION_CODE, '실행중', f"성공: {title[:15]}...", 'success')
+                    elif result and result.get('status') == 'exists':
+                        skipped_count += 1
 
             time.sleep(1)
 
         browser.close()
 
-    print(f"[완료] {success_count}건 저장")
-    log_to_server(REGION_CODE, '성공', f'{success_count}건 저장', 'success')
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
+    print(f"[완료] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     return []
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description='무안군청 보도자료 스크래퍼')
+    parser = argparse.ArgumentParser(description='Muan County Press Release Scraper')
     parser.add_argument('--days', type=int, default=7)
     parser.add_argument('--max-articles', type=int, default=10)
     parser.add_argument('--dry-run', action='store_true')

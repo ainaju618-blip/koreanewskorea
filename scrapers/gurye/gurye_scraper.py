@@ -1,11 +1,11 @@
 """
-구례군 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
-- 담당: AI Agent
+Gurye County Press Release Scraper
+- Version: v1.0
+- Last Modified: 2025-12-13
+- Maintainer: AI Agent
 
-변경점 (v1.0):
-- 사용자 제공 상세 분석 데이터 기반 최초 작성
+Changes (v1.0):
+- Initial version based on user-provided detailed analysis data
 - URL 패턴: /board/view.do?bbsId=BBS_0000000000000300&pageIndex=1&nttId={ID}&menuNo=115004006000
 - 첨부파일: /board/FileDown.do?atchFileId={fileId}&fileSn={seq}
 - 카드형 그리드 레이아웃 (3열 배치)
@@ -89,7 +89,7 @@ DATE_PATTERNS = [
 # 5. 유틸리티 함수
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -143,10 +143,10 @@ def build_list_url(page: int = 1) -> str:
 # ============================================================
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    Extract content, images, date, and department from detail page
 
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (content text, thumbnail URL, date, department)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
@@ -164,7 +164,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             y, m, d = date_match.groups()
             pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     except Exception as e:
-        print(f"      ⚠️ 날짜 추출 실패: {e}")
+        print(f"      [WARN] 날짜 추출 실패: {e}")
     
     # 2. 담당부서 추출 (형식: "작성자 : {부서명}")
     department = None
@@ -175,7 +175,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         if dept_match:
             department = dept_match.group(1).strip()
     except Exception as e:
-        print(f"      ⚠️ 담당부서 추출 실패: {e}")
+        print(f"      [WARN] 담당부서 추출 실패: {e}")
     
     # 3. 본문 추출
     content = ""
@@ -258,7 +258,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = re.sub(r'재생|정지|이전|다음', '', content)  # bxSlider 컨트롤
             content = content.strip()[:5000]
     except Exception as e:
-        print(f"      ⚠️ JS 본문 추출 실패: {e}")
+        print(f"      [WARN] JS 본문 추출 실패: {e}")
     
     # Fallback: 일반 셀렉터
     if not content or len(content) < 50:
@@ -291,7 +291,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             # 이미지 파일 확장자 확인
             if href and any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
                 full_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
-                print(f"      📥 첨부파일 다운로드 시도: {link_text[:50]}...")
+                print(f"      [DOWNLOAD] 첨부파일 다운로드 시도: {link_text[:50]}...")
                 
                 # 로컬 저장
                 saved_path = download_and_upload_image(full_url, url, REGION_CODE)
@@ -299,7 +299,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     thumbnail_url = saved_path
                     break
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 처리 중 오류: {e}")
+        print(f"      [WARN] 첨부파일 처리 중 오류: {e}")
     
     # 전략 2: 구례군 이미지 컨테이너 (.img-cont img) 또는 bxSlider
     if not thumbnail_url:
@@ -314,12 +314,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                         saved_path = download_and_upload_image(download_url, url, REGION_CODE)
                         if saved_path:
                             thumbnail_url = saved_path
-                            print(f"      💾 이미지 컨테이너에서 저장: {saved_path}")
+                            print(f"      [SAVED] 이미지 컨테이너에서 저장: {saved_path}")
                             break
                 if thumbnail_url:
                     break
         except Exception as e:
-            print(f"      ⚠️ 이미지 컨테이너 추출 실패: {e}")
+            print(f"      [WARN] 이미지 컨테이너 추출 실패: {e}")
     
     # 전략 3: 본문 내 img 태그에서 추출
     if not thumbnail_url:
@@ -334,7 +334,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                         thumbnail_url = saved_path
                         break
         except Exception as e:
-            print(f"      ⚠️ 본문 이미지 추출 실패: {e}")
+            print(f"      [WARN] 본문 이미지 추출 실패: {e}")
     
     return content, thumbnail_url, pub_date, department
 
@@ -344,14 +344,14 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
 # ============================================================
 def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송 (개수 기반)
+    Collect press releases and send to server (count-based)
 
     Args:
-        max_articles: 최대 수집 기사 수 (기본 10개)
-        days: 선택적 날짜 필터 (None이면 비활성화)
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
-        dry_run: 테스트 모드 (서버 전송 안함)
+        max_articles: Maximum number of articles to collect (default 10)
+        days: Optional date filter (disabled if None)
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
+        dry_run: Test mode (no server transmission)
     """
     if not start_date and days:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
@@ -360,9 +360,9 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         end_date = datetime.now().strftime('%Y-%m-%d')
 
     if start_date:
-        print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최대 {max_articles}개, {start_date} ~ {end_date})")
+        print(f"[{REGION_NAME}] 보도자료 수집 시작 (최대 {max_articles}개, {start_date} ~ {end_date})")
     else:
-        print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최대 {max_articles}개, 날짜 필터 없음)")
+        print(f"[{REGION_NAME}] 보도자료 수집 시작 (최대 {max_articles}개, 날짜 필터 없음)")
 
     # Ensure dev server is running before starting
     if not ensure_server_running():
@@ -370,12 +370,13 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         return []
 
     if dry_run:
-        print("   🧪 DRY-RUN 모드: 서버 전송 안함")
+        print("   [TEST] DRY-RUN 모드: 서버 전송 안함")
     
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
     
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     collected_articles = []  # dry-run 시 반환용
     
     with sync_playwright() as p:
@@ -396,7 +397,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] 페이지 {page_num} 수집 중...")
             log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
             if not safe_goto(page, list_url):
@@ -419,12 +420,12 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                         break
             
             if article_count == 0:
-                print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                print("      [WARN] 기사 목록을 찾을 수 없습니다.")
                 break
             
-            print(f"      📰 {article_count}개 기사 링크 발견")
+            print(f"      [FOUND] {article_count}개 기사 링크 발견")
             
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
             seen_ids = set()  # 중복 nttId 체크용
             
@@ -474,7 +475,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     
                     # 날짜 필터 (목록 단계)
                     if start_date and list_date and list_date < start_date:
-                        print(f"      ⏩ 목록에서 날짜 필터: {list_date} < {start_date}")
+                        print(f"      [SKIP] 목록에서 날짜 필터: {list_date} < {start_date}")
                         continue
                     
                     link_data.append({
@@ -489,10 +490,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
             
             # 이 페이지에서 유효한 기사가 없으면 탐색 중지
             if len(link_data) == 0:
-                print("      ⏹️ 이 페이지에 유효한 기사가 없음, 탐색 중지")
+                print("      [STOP] 이 페이지에 유효한 기사가 없음, 탐색 중지")
                 break
             
-            # 상세 페이지 수집 및 전송
+            # Collect and send detail pages
             consecutive_old = 0  # 연속 오래된 기사 카운터
             stop_scraping = False
             
@@ -503,7 +504,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 title = item['title']
                 full_url = item['url']
                 
-                print(f"      📰 {title[:40]}...")
+                print(f"      [ARTICLE] {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
                 content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
@@ -514,10 +515,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 # 날짜 필터 + 조기 종료 로직
                 if start_date and final_date < start_date:
                     consecutive_old += 1
-                    print(f"         ⏩ 날짜 필터로 스킵: {final_date} (연속 {consecutive_old}개)")
+                    print(f"         [SKIP] 날짜 필터로 스킵: {final_date} (연속 {consecutive_old}개)")
                     
                     if consecutive_old >= 3:
-                        print("         ⏹️ 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
+                        print("         [STOP] 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
                         stop_scraping = True
                         break
                     continue
@@ -528,10 +529,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 부제목 추출
+                # Extract subtitle
                 subtitle, content = extract_subtitle(content, title)
 
-                # 카테고리 자동 분류
+                # Auto-categorize
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -550,24 +551,25 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     # 테스트 모드: 서버 전송 안함
                     collected_count += 1
                     success_count += 1
-                    img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                    content_status = f"✓본문({len(content)}자)" if content and len(content) > 50 else "✗본문"
-                    print(f"         🧪 [DRY-RUN] {img_status}, {content_status}")
+                    img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                    content_status = f"[+TXT:{len(content)}]" if content and len(content) > 50 else "[-TXT]"
+                    print(f"         [DRY-RUN] {img_status}, {content_status}")
                     collected_articles.append(article_data)
                 else:
-                    # 서버로 전송
+                    # Send to server
                     result = send_article_to_server(article_data)
                     collected_count += 1
                     
                     if result.get('status') == 'created':
                         success_count += 1
-                        img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                        print(f"         ✅ 저장 완료 ({img_status})")
+                        img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                        print(f"         [OK] 저장 완료 ({img_status})")
                         log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                     elif result.get('status') == 'exists':
-                        print(f"         ⏩ 이미 존재")
+                        skipped_count += 1
+                        print(f"         [SKIP] 이미 존재")
                     else:
-                        print(f"         ⚠️ 전송 실패: {result}")
+                        print(f"         [WARN] 전송 실패: {result}")
                 
                 time.sleep(1)  # Rate limiting
             
@@ -580,9 +582,12 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         
         browser.close()
     
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개)"
-    print(f"✅ {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     
     return collected_articles
 

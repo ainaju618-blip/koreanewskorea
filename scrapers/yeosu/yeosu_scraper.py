@@ -1,21 +1,21 @@
 """
-여수시 보도자료 스크래퍼
-- 버전: v2.0
-- 최종수정: 2025-12-12
-- 담당: AI Agent
+Yeosu City Press Release Scraper
+- Version: v2.0
+- Last Modified: 2025-12-12
+- Responsible: AI Agent
 
-특이사항:
+Special Notes:
 - URL 패턴: ?idx={ID}&mode=view
 - 페이지네이션: ?page={N}
-- 이미지: 첨부파일 → web/public/images/yeosu/ 로컬 저장
+- 이미지: 첨부파days → web/public/images/yeosu/ 로컬 저장
 
-변경점 (v2.0):
+Changes (v2.0):
 - cloudinary_uploader → local_image_saver 전환
 - 이미지 경로: /images/yeosu/{filename} 형태로 반환
 """
 
 # ============================================================
-# 1. 표준 라이브러리
+# 1. Standard Library
 # ============================================================
 import sys
 import os
@@ -26,12 +26,12 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin, unquote
 
 # ============================================================
-# 2. 외부 라이브러리
+# 2. External Libraries
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
 
 # ============================================================
-# 3. 로컬 모듈
+# 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
@@ -40,7 +40,7 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_classifier import detect_category
 
 # ============================================================
-# 4. 상수 정의
+# 4. Constants Definition
 # ============================================================
 REGION_CODE = 'yeosu'
 REGION_NAME = '여수시'
@@ -48,16 +48,16 @@ CATEGORY_NAME = '전남'
 BASE_URL = 'https://www.yeosu.go.kr'
 LIST_URL = 'https://www.yeosu.go.kr/www/govt/news/release/press'
 
-# 페이지네이션: ?page={N}
-# 상세 페이지: ?idx={게시물ID}&mode=view
+# Pagination: ?page={N}
+# Detail page: ?idx={게시물ID}&mode=view
 
-# 목록 페이지 링크 셀렉터
+# List link selectors
 LIST_LINK_SELECTORS = [
     'a[href*="idx="][href*="mode=view"]',
     'a.basic_cont',
 ]
 
-# 본문 페이지 셀렉터
+# Content page selectors
 CONTENT_SELECTORS = [
     '.view_cont',
     '.board_view',
@@ -67,16 +67,16 @@ CONTENT_SELECTORS = [
 
 
 # ============================================================
-# 5. 유틸리티 함수
+# 5. Utility Functions
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
     date_str = date_str.strip().replace('.', '-').replace('/', '-')
     try:
-        # YYYY-MM-DD 또는 YYYY.MM.DD 패턴
+        # YYYY-MM-DD or YYYY.MM.DD 패턴
         match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_str)
         if match:
             y, m, d = match.groups()
@@ -87,7 +87,7 @@ def normalize_date(date_str: str) -> str:
 
 
 def extract_article_id(href: str) -> Optional[str]:
-    """href에서 idx 파라미터 추출"""
+    """Extract idx parameter from href"""
     if not href:
         return None
     match = re.search(r'idx=(\d+)', href)
@@ -95,19 +95,19 @@ def extract_article_id(href: str) -> Optional[str]:
 
 
 # ============================================================
-# 6. 상세 페이지 수집 함수
+# 6. Detail Page Collection Function
 # ============================================================
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    Extract content, images, date, and department from detail page
     
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (content text, thumbnail URL, date, department)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
     
-    time.sleep(1.5)  # 페이지 로딩 대기
+    time.sleep(1.5)  # Wait for page loading
     
     pub_date = datetime.now().strftime('%Y-%m-%d')
     department = None
@@ -130,7 +130,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             // 2. board_view 내에서 메타정보와 추가 본문 추출
             const boardView = document.querySelector('.board_view, div.board_view');
             if (boardView) {
-                // dl 내에서 날짜, 담당부서 추출
+                // dl 내에서 date, department 추출
                 const dlInfo = boardView.querySelector('dl');
                 if (dlInfo) {
                     const dts = dlInfo.querySelectorAll('dt');
@@ -140,16 +140,16 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                         const dtText = dts[i]?.innerText?.trim() || '';
                         const ddText = dds[i]?.innerText?.trim() || '';
                         
-                        if (dtText.includes('등록일')) {
+                        if (dtText.includes('registration date')) {
                             result.date = ddText;
                         }
-                        if (dtText.includes('담당부서')) {
+                        if (dtText.includes('department')) {
                             result.department = ddText;
                         }
                     }
                 }
                 
-                // og:description이 비어있으면 p 태그들에서 본문 추출
+                // If og:description is empty, extract content from p tags
                 if (!result.content || result.content.length < 50) {
                     const paragraphs = boardView.querySelectorAll('p');
                     let pTexts = [];
@@ -164,26 +164,26 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     }
                 }
                 
-                // 여전히 비어있으면 board_view 전체에서 추출 (메타정보 제외)
+                // If still empty, extract from entire board_view (exclude meta info)
                 if (!result.content || result.content.length < 50) {
                     const fullText = boardView.innerText || '';
-                    // 연락처 이후 텍스트 추출
+                    // Extract text after contact info
                     const lines = fullText.split('\\n');
                     let contentLines = [];
                     let foundContact = false;
                     
                     for (const line of lines) {
-                        // 연락처 라인 이후부터 수집
+                        // Collect from after contact line
                         if (line.match(/\\d{2,4}-\\d{3,4}-\\d{4}/)) {
                             foundContact = true;
                             continue;
                         }
                         if (foundContact && line.trim().length > 5) {
-                            // 푸터/메뉴 텍스트 제외
+                            // Exclude footer/menu text
                             if (!line.includes('사이트맵') && 
                                 !line.includes('개인정보') && 
                                 !line.includes('만족하십니까') &&
-                                !line.includes('첨부파일')) {
+                                !line.includes('첨부파days')) {
                                 contentLines.push(line.trim());
                             }
                         }
@@ -206,9 +206,9 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         if data.get('content'):
             content = data['content'][:5000]
     except Exception as e:
-        print(f"      ⚠️ JS 추출 실패: {e}")
+        print(f"      [WARN] JS 추출 실패: {e}")
     
-    # Fallback: 일반 셀렉터
+    # Fallback: days반 셀렉터
     if not content or len(content) < 50:
         for sel in CONTENT_SELECTORS:
             try:
@@ -221,12 +221,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             except:
                 continue
     
-    # 2. 이미지 추출 (첨부파일 다운로드 링크에서)
+    # 2. 이미지 추출 (첨부파days 다운로드 링크에서)
     # 여수시 패턴: https://www.yeosu.go.kr/ybscript.io/common/file_download/{idx}/{file_id}/{filename}
     try:
         attach_links = page.locator('a[href*="file_download"]')
         attach_count = attach_links.count()
-        print(f"      🔍 첨부파일 링크 {attach_count}개 발견")
+        print(f"      [INFO] 첨부파days 링크 {attach_count}개 발견")
         
         if attach_count > 0:
             for i in range(min(attach_count, 5)):
@@ -238,24 +238,24 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 except:
                     link_text = safe_get_text(link) or ''
                 
-                print(f"      📄 첨부 #{i}: {link_text[:40]}...")
+                print(f"      [FILE] 첨부 #{i}: {link_text[:40]}...")
                 
-                # 이미지 파일인지 확인 (URL 또는 텍스트에서)
+                # 이미지 파days인지 확인 (URL or 텍스트에서)
                 is_image = any(ext in link_text.lower() or ext in href.lower() 
                               for ext in ['.jpg', '.jpeg', '.png', '.gif'])
                 
                 if is_image and href:
                     full_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
-                    print(f"      📎 이미지 첨부파일 발견!")
+                    print(f"      [IMG] 이미지 첨부파days 발견!")
                     
-                    # 로컬 이미지 저장 (web/public/images/yeosu/)
+                    # Save image locally (web/public/images/yeosu/)
                     local_path = download_and_upload_image(full_url, BASE_URL, REGION_CODE)
                     if local_path:
                         thumbnail_url = local_path
-                        print(f"      💾 로컬 저장 완료: {local_path}")
+                        print(f"      [SAVED] 로컬 저장 완료: {local_path}")
                     break
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 처리 실패: {e}")
+        print(f"      [WARN] 첨부파days 처리 실패: {e}")
     
     # 3. 본문 내 이미지 (fallback)
     if not thumbnail_url:
@@ -265,38 +265,38 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 src = safe_get_attr(imgs.nth(i), 'src')
                 if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet']):
                     full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                    print(f"      📷 본문 이미지 발견: {src[:50]}...")
+                    print(f"      [IMG] 본문 이미지 발견: {src[:50]}...")
                     local_path = download_and_upload_image(full_url, BASE_URL, REGION_CODE)
                     if local_path:
                         thumbnail_url = local_path
-                        print(f"      💾 로컬 저장 완료")
+                        print(f"      [SAVED] 로컬 저장 완료")
                     else:
                         thumbnail_url = full_url  # 로컬 저장 실패 시 원본 URL 사용
                     break
         except:
             pass
 
-    # 본문 정제
+    # Clean content
     content = clean_article_content(content)
 
     return content, thumbnail_url, pub_date, department
 
 
 # ============================================================
-# 7. 메인 수집 함수
+# 7. Main Collection Function
 # ============================================================
 def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = False, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송
+    Collect press releases and send to server
 
     Args:
-        days: 수집할 기간 (일)
-        max_articles: 최대 수집 기사 수
-        dry_run: 테스트 모드 (서버 전송 안함)
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
+        days: Collection period (days)
+        max_articles: Maximum number of articles to collect
+        dry_run: Test mode (no server transmission)
+        start_date: 수집 시작days (YYYY-MM-DD)
+        end_date: 수집 종료days (YYYY-MM-DD)
     """
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일)")
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}days)")
 
     # Ensure dev server is running before starting
     if not ensure_server_running():
@@ -328,7 +328,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
         while page_num <= 5 and not stop and collected_count < max_articles:
             # 여수시 페이지네이션: ?page={N}
             list_url = f'{LIST_URL}?page={page_num}' if page_num > 1 else LIST_URL
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] 페이지 {page_num} 수집 중...")
             if not dry_run:
                 log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
@@ -336,18 +336,18 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
                 page_num += 1
                 continue
             
-            time.sleep(1.5)  # 페이지 로딩 대기
+            time.sleep(1.5)  # Wait for page loading
             
-            # 목록 링크 찾기
+            # Find list links
             links = wait_and_find(page, LIST_LINK_SELECTORS, timeout=10000)
             if not links:
-                print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                print("      [WARN] 기사 목록을 찾을 수 없습니다.")
                 break
-            
+
             link_count = links.count()
-            print(f"      📰 {link_count}개 기사 발견")
+            print(f"      [FOUND] {link_count}articles found")
             
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
             seen_urls = set()  # ★ 중복 URL 체크용
 
@@ -372,7 +372,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
                     if 'idx=' not in href:
                         continue
 
-                    # 상세 페이지 URL 구성
+                    # Build detail page URL
                     if href.startswith('http'):
                         full_url = href
                     else:
@@ -391,7 +391,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
                 except Exception as e:
                     continue
             
-            # 상세 페이지 수집 및 전송
+            # Collect and send detail pages
             for item in link_data:
                 if collected_count >= max_articles:
                     break
@@ -399,24 +399,24 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
                 title = item['title']
                 full_url = item['url']
                 
-                print(f"      📰 {title[:40]}...")
+                print(f"      [ARTICLE] {title[:40]}...")
                 if not dry_run:
                     log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
                 content, thumbnail_url, pub_date, department = fetch_detail(page, full_url)
 
-                # 날짜 필터링
+                # date 필터링
                 if pub_date < start_date:
                     stop = True
                     break
 
                 if not content:
-                    content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
+                    content = f"본문 content을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 부제목 추출
+                # 부title 추출
                 subtitle, content = extract_subtitle(content, title)
 
-                # 카테고리 자동 분류
+                # Auto-classify category
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -432,29 +432,29 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
                 }
                 
                 if dry_run:
-                    print(f"         [DRY-RUN] 제목: {title[:30]}...")
-                    print(f"         [DRY-RUN] 날짜: {pub_date}")
+                    print(f"         [DRY-RUN] title: {title[:30]}...")
+                    print(f"         [DRY-RUN] date: {pub_date}")
                     print(f"         [DRY-RUN] 본문: {len(content)}자")
                     print(f"         [DRY-RUN] 이미지: {'있음' if thumbnail_url else '없음'}")
                     success_count += 1
                 else:
-                    # 서버로 전송
+                    # Send to server
                     result = send_article_to_server(article_data)
                     
                     if result.get('status') == 'created':
                         success_count += 1
-                        img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                        print(f"         ✅ 저장 완료 ({img_status})")
+                        img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                        print(f"         [OK] 저장 완료 ({img_status})")
                         log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                     elif result.get('status') == 'exists':
-                        print(f"         ⏩ 이미 존재")
+                        print(f"         [SKIP] 이미 존재")
                 
                 collected_count += 1
                 time.sleep(0.5)  # Rate limiting
             
             page_num += 1
             if stop:
-                print("      🛑 수집 기간 초과, 종료합니다.")
+                print("      [STOP] 수집 기간 초과, 종료합니다.")
                 break
             
             time.sleep(1)
@@ -462,7 +462,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
         browser.close()
     
     final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개)"
-    print(f"✅ {final_msg}")
+    print(f"[OK] {final_msg}")
     if not dry_run:
         log_to_server(REGION_CODE, '성공', final_msg, 'success')
     
@@ -470,17 +470,17 @@ def collect_articles(days: int = 3, max_articles: int = 10, dry_run: bool = Fals
 
 
 # ============================================================
-# 8. CLI 진입점
+# 8. CLI Entry Point
 # ============================================================
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v2.0')
-    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
-    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
-    parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
-    # bot-service.ts 호환 인자 (필수)
-    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
-    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
+    parser.add_argument('--days', type=int, default=3, help='수집 기간 (days)')
+    parser.add_argument('--max-articles', type=int, default=10, help='Maximum number of articles to collect')
+    parser.add_argument('--dry-run', action='store_true', help='Test mode (no server transmission)')
+    # bot-service.ts compatible arguments (required)
+    parser.add_argument('--start-date', type=str, default=None, help='수집 시작days (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='수집 종료days (YYYY-MM-DD)')
     args = parser.parse_args()
 
     collect_articles(

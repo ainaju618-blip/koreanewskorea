@@ -116,6 +116,113 @@ export async function GET(req: NextRequest) {
     }
 }
 
+// PUT: Update workflow schedules
+export async function PUT(req: NextRequest) {
+    if (!GITHUB_TOKEN) {
+        return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
+    }
+
+    try {
+        const body = await req.json();
+        const { schedules } = body; // Array of KST times like ["05:20", "06:20", "12:30"]
+
+        if (!Array.isArray(schedules) || schedules.length === 0) {
+            return NextResponse.json({ error: 'At least one schedule time is required' }, { status: 400 });
+        }
+
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+        for (const time of schedules) {
+            if (!timeRegex.test(time)) {
+                return NextResponse.json({ error: `Invalid time format: ${time}. Use HH:MM` }, { status: 400 });
+            }
+        }
+
+        // Fetch current workflow file to get SHA
+        const workflowResponse = await fetch(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/workflows/${WORKFLOW_FILE}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                },
+                cache: 'no-store'
+            }
+        );
+
+        if (!workflowResponse.ok) {
+            throw new Error(`Failed to fetch workflow file: ${workflowResponse.status}`);
+        }
+
+        const workflowData = await workflowResponse.json();
+        const currentContent = Buffer.from(workflowData.content, 'base64').toString('utf-8');
+        const sha = workflowData.sha;
+
+        // Convert KST times to UTC cron expressions
+        const cronLines: string[] = [];
+        const today = new Date().toISOString().split('T')[0];
+
+        for (const time of schedules) {
+            const [kstHour, kstMinute] = time.split(':').map(Number);
+            // KST to UTC: subtract 9 hours
+            let utcHour = kstHour - 9;
+            if (utcHour < 0) utcHour += 24;
+
+            const cronExpr = `${kstMinute} ${utcHour} * * *`;
+            const comment = `# ${String(kstHour).padStart(2, '0')}:${String(kstMinute).padStart(2, '0')} KST (${String(utcHour).padStart(2, '0')}:${String(kstMinute).padStart(2, '0')} UTC)`;
+            cronLines.push(`    ${comment}`);
+            cronLines.push(`    - cron: '${cronExpr}'`);
+        }
+
+        // Build new schedule section
+        const scheduleSection = `on:
+  schedule:
+    # Daily schedules - Updated ${today}
+${cronLines.join('\n')}
+  workflow_dispatch:`;
+
+        // Replace the schedule section in the workflow file
+        const newContent = currentContent.replace(
+            /on:\s*\n\s*schedule:\s*\n[\s\S]*?workflow_dispatch:/,
+            scheduleSection
+        );
+
+        // Update the file via GitHub API
+        const updateResponse = await fetch(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/workflows/${WORKFLOW_FILE}`,
+            {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: `Update scraper schedule: ${schedules.join(', ')} KST`,
+                    content: Buffer.from(newContent).toString('base64'),
+                    sha: sha,
+                    branch: 'master',
+                }),
+            }
+        );
+
+        if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            throw new Error(`Failed to update workflow: ${updateResponse.status} - ${errorText}`);
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Schedule updated successfully',
+            schedules: schedules
+        });
+
+    } catch (error: any) {
+        console.error('[GitHub Actions API] Update schedule error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 // POST: Trigger workflow dispatch
 export async function POST(req: NextRequest) {
     if (!GITHUB_TOKEN) {

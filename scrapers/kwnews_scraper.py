@@ -71,7 +71,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumb, pub_date
 
 def collect_articles(days: int = 3):
-    print(f"📰 {REGION_NAME} 기사 수집 시작")
+    print(f"[{REGION_NAME}] 기사 수집 시작")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 시작', 'info')
     collected = 0
     
@@ -88,7 +88,7 @@ def collect_articles(days: int = 3):
             if not links:
                 break
                 
-            print(f"   📄 페이지 {pn}: {links.count()}개 기사")
+            print(f"   [PAGE] 페이지 {pn}: {links.count()}개 기사")
             
             for i in range(min(links.count(), 10)):
                 try:
@@ -127,7 +127,7 @@ def collect_articles(days: int = 3):
         browser.close()
         
     log_to_server(REGION_CODE, '성공', '완료', 'success')
-    print(f"✅ 완료 ({collected}개)")
+    print(f"[OK] 완료 ({collected}개)")
 
 def main():
     import argparse

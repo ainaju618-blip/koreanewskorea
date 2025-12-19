@@ -302,6 +302,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
 
         success_count = 0
         skip_count = 0
+        skipped_count = 0
         fail_count = 0
         processed_count = 0
 
@@ -355,6 +356,7 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
                 elif result and result.get('status') == 'skipped':
                     print(f"      [SKIP] Article already exists in DB")
                     skip_count += 1
+                    skipped_count += 1
                     stats.add_article(final_date, 'skipped', title, 'Duplicate in DB')
                 else:
                     print(f"      [WARN] DB save failed: {result}")
@@ -372,9 +374,12 @@ def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = No
     # Output detailed stats (parsed by bot-service.ts)
     stats.output()
 
-    final_msg = f"Completed: {processed_count} processed / {success_count} created / {skip_count} skipped"
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
     print(f"[DONE] {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     return []
 
 

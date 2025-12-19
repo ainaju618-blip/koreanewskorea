@@ -1,22 +1,22 @@
 ﻿"""
-순천시 보도자료 스크래퍼
-- 버전: v3.1
-- 최종수정: 2025-12-14
-- 담당: AI Agent
+Suncheon City Press Release Scraper
+- Version: v3.1
+- Last Modified: 2025-12-14
+- Author: AI Agent
 
-변경점 (v3.1):
-- 이미지 추출 로직 개선 (로컬 저장 우선, 다양한 셀렉터 시도) - Claude 작업 지시
+Changes (v3.1):
+- Improved image extraction logic (local save priority, try multiple selectors) - Claude work directive
 
-변경점 (v3.0):
-- 사용자 제공 상세 가이드 기반 완전 재작성
-- URL 패턴: ?mode=view&seq={ID}
-- 페이지네이션: ?x=1&pageIndex={N}
-- 본문: 테이블 세 번째 행 td
-- 이미지: 첨부파일 다운로드 (핫링크 불가)
+Changes (v3.0):
+- Complete rewrite based on user-provided detailed guide
+- URL pattern: ?mode=view&seq={ID}
+- Pagination: ?x=1&pageIndex={N}
+- Content: Third row td in table
+- Images: Attachment download (hotlink not allowed)
 """
 
 # ============================================================
-# 1. 표준 라이브러리
+# 1. Standard Libraries
 # ============================================================
 import sys
 import os
@@ -27,12 +27,12 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin
 
 # ============================================================
-# 2. 외부 라이브러리
+# 2. External Libraries
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
 
 # ============================================================
-# 3. 로컬 모듈
+# 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
@@ -41,7 +41,7 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
 
 # ============================================================
-# 4. 상수 정의
+# 4. Constants
 # ============================================================
 REGION_CODE = 'suncheon'
 REGION_NAME = '순천시'
@@ -49,22 +49,22 @@ CATEGORY_NAME = '전남'
 BASE_URL = 'http://www.suncheon.go.kr'
 LIST_URL = 'http://www.suncheon.go.kr/kr/news/0006/0001/'
 
-# 페이지네이션: ?x=1&pageIndex={N}
-# 상세 페이지: ?mode=view&seq={게시물ID}
+# Pagination: ?x=1&pageIndex={N}
+# Detail page: ?mode=view&seq={article_id}
 
-# 목록 페이지 셀렉터
+# List page selectors
 LIST_LINK_SELECTORS = [
-    'table tr td:nth-child(2) a',  # 가이드 기반 정확한 셀렉터
+    'table tr td:nth-child(2) a',  # Accurate selector based on guide
     'tbody tr td a[href*="mode=view"]',
     'a[href*="seq="]',
 ]
 
 
 # ============================================================
-# 5. 유틸리티 함수
+# 5. Utility Functions
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -80,7 +80,7 @@ def normalize_date(date_str: str) -> str:
 
 
 def extract_article_id(href: str) -> Optional[str]:
-    """href에서 seq 파라미터 추출"""
+    """Extract seq parameter from href"""
     if not href:
         return None
     match = re.search(r'seq=(\d+)', href)
@@ -89,162 +89,162 @@ def extract_article_id(href: str) -> Optional[str]:
 
 def download_attachment_image(page: Page, link_locator) -> Optional[str]:
     """
-    JavaScript 다운로드 링크를 클릭하여 이미지를 다운로드하고 Cloudinary에 업로드
-    
-    순천시 특수 처리:
-    - goDownLoad() 함수 사용 → Playwright expect_download()로 캡처
-    - 또는 POST 요청으로 직접 다운로드
-    
+    Click JavaScript download link to download image and upload to Cloudinary
+
+    Suncheon-specific handling:
+    - Uses goDownLoad() function -> Capture with Playwright expect_download()
+    - Or direct download via POST request
+
     Args:
-        page: Playwright Page 객체
-        link_locator: 다운로드 링크 Locator
-        
+        page: Playwright Page object
+        link_locator: Download link Locator
+
     Returns:
-        Cloudinary URL 또는 None
+        Cloudinary URL or None
     """
     import tempfile
     import requests
-    
+
     try:
-        # 방법 1: Playwright expect_download()로 클릭 다운로드 시도
+        # Method 1: Try click download with Playwright expect_download()
         try:
             with page.expect_download(timeout=15000) as download_info:
                 link_locator.click()
-            
+
             download = download_info.value
-            
-            # 임시 파일로 저장
+
+            # Save to temporary file
             temp_dir = tempfile.mkdtemp()
             temp_path = os.path.join(temp_dir, download.suggested_filename)
             download.save_as(temp_path)
-            
-            print(f"      📥 다운로드 완료: {download.suggested_filename}")
-            
-            # 이미지 파일인지 확인
+
+            print(f"      [DOWNLOAD] Complete: {download.suggested_filename}")
+
+            # Check if image file
             if any(temp_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif']):
-                # Cloudinary에 업로드
+                # Upload to Cloudinary
                 from utils.cloudinary_uploader import upload_local_image
                 cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
-                
-                # 임시 파일 정리
+
+                # Clean up temporary file
                 try:
                     os.remove(temp_path)
                     os.rmdir(temp_dir)
                 except:
                     pass
-                
+
                 if cloudinary_url:
-                    print(f"      ☁️ Cloudinary 업로드 완료")
+                    print(f"      [CLOUD] Cloudinary upload complete")
                     return cloudinary_url
-            
+
             return None
-            
+
         except Exception as e:
-            print(f"      ⚠️ 클릭 다운로드 실패, POST 방식 시도: {e}")
-        
-        # 방법 2: goDownLoad() 파라미터 파싱 후 POST 요청
+            print(f"      [WARN] Click download failed, trying POST method: {e}")
+
+        # Method 2: Parse goDownLoad() parameters and POST request
         try:
-            # onclick 또는 href에서 goDownLoad 파라미터 추출
+            # Extract goDownLoad parameters from onclick or href
             onclick = link_locator.get_attribute('href') or link_locator.get_attribute('onclick') or ''
-            
-            # goDownLoad('param1', 'param2', 'param3') 패턴 파싱
+
+            # Parse goDownLoad('param1', 'param2', 'param3') pattern
             match = re.search(r"goDownLoad\s*\(\s*'([^']*)'\s*,\s*'([^']*)'\s*,\s*'([^']*)'\s*\)", onclick)
             if match:
                 param1, param2, param3 = match.groups()
-                
-                # POST 요청으로 이미지 다운로드
+
+                # Download image via POST request
                 download_url = 'http://eminwon.suncheon.go.kr/emwp/jsp/ofr/FileDownNew.jsp'
-                
+
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Referer': 'http://www.suncheon.go.kr/kr/news/0006/0001/',
                     'Content-Type': 'application/x-www-form-urlencoded',
                 }
-                
-                # 쿠키 가져오기
+
+                # Get cookies
                 cookies = {}
                 for cookie in page.context.cookies():
                     cookies[cookie['name']] = cookie['value']
-                
-                # POST 데이터 (파라미터 구조에 따라 조정 필요)
+
+                # POST data (adjust structure as needed)
                 data = {
                     'param1': param1,
                     'param2': param2,
                     'param3': param3,
                 }
-                
+
                 response = requests.post(
-                    download_url, 
-                    headers=headers, 
-                    data=data, 
+                    download_url,
+                    headers=headers,
+                    data=data,
                     cookies=cookies,
                     timeout=30,
                     verify=False
                 )
-                
+
                 if response.status_code == 200 and len(response.content) > 1000:
-                    # 임시 파일로 저장
+                    # Save to temporary file
                     temp_dir = tempfile.mkdtemp()
                     temp_path = os.path.join(temp_dir, 'downloaded_image.jpg')
-                    
+
                     with open(temp_path, 'wb') as f:
                         f.write(response.content)
-                    
-                    print(f"      📥 POST 다운로드 완료: {len(response.content)} bytes")
-                    
-                    # Cloudinary에 업로드
+
+                    print(f"      [DOWNLOAD] POST complete: {len(response.content)} bytes")
+
+                    # Upload to Cloudinary
                     from utils.cloudinary_uploader import upload_local_image
                     cloudinary_url = upload_local_image(temp_path, folder=REGION_CODE)
-                    
-                    # 임시 파일 정리
+
+                    # Clean up temporary file
                     try:
                         os.remove(temp_path)
                         os.rmdir(temp_dir)
                     except:
                         pass
-                    
+
                     if cloudinary_url:
-                        print(f"      ☁️ Cloudinary 업로드 완료")
+                        print(f"      [CLOUD] Cloudinary upload complete")
                         return cloudinary_url
-                        
+
         except Exception as e:
-            print(f"      ⚠️ POST 다운로드 실패: {e}")
-        
+            print(f"      [WARN] POST download failed: {e}")
+
         return None
-        
+
     except Exception as e:
-        print(f"      ⚠️ 이미지 다운로드 실패: {e}")
+        print(f"      [WARN] Image download failed: {e}")
         return None
 
 
 # ============================================================
-# 6. 상세 페이지 수집 함수
+# 6. Detail Page Collection Function
 # ============================================================
 def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서, 제목을 추출
-    
+    Extract content, image, date, department, and title from detail page
+
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서, 제목)
+        (content text, thumbnail URL, date, department, title)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
-    
-    time.sleep(3)  # 페이지 및 스크립트 로딩 충분히 대기
-    print(f"      👀 상세 페이지 진입 성공", flush=True)
-    
-    # 순천시 상세 페이지 구조:
-    # - 첫 번째 행: 담당부서(2열), 등록일(4열)
-    # - 두 번째 행: 제목
-    # - 세 번째 행: 본문
+
+    time.sleep(3)  # Wait sufficiently for page and script loading
+    print(f"      [OK] Detail page loaded", flush=True)
+
+    # Suncheon detail page structure:
+    # - First row: Department (column 2), Date (column 4)
+    # - Second row: Title
+    # - Third row: Content
     
     pub_date = datetime.now().strftime('%Y-%m-%d')
     department = None
     content = ""
     thumbnail_url = None
-    detail_title = None  # 상세 페이지에서 추출한 제목
-    
-    # 1. 테이블 기반 정보 추출 (JavaScript)
+    detail_title = None  # Title extracted from detail page
+
+    # 1. Extract information based on table (JavaScript)
     try:
         js_code = """
         () => {
@@ -297,65 +297,65 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         if data.get('title'):
             detail_title = data['title']
     except Exception as e:
-        print(f"      ⚠️ JS 추출 실패: {e}")
+        print(f"      [WARN] JS extraction failed: {e}")
     
-    # Fallback: 일반 텍스트 추출
+    # Fallback: Extract general text
     if not content or len(content) < 50:
         try:
             body_text = page.locator('body').inner_text()
-            # 본문 영역 찾기 시도
+            # Try to find content area
             if body_text:
                 content = clean_article_content(body_text[:5000])
         except:
             pass
-    
-    # 2. 이미지 추출 (첨부파일에서 - JavaScript 다운로드 방식)
-    # Playwright expect_download()로 클릭 다운로드 후 Cloudinary 업로드
+
+    # 2. Extract images (from attachments - JavaScript download method)
+    # Click download via Playwright expect_download() then upload to Cloudinary
     try:
-        # 첨부파일 영역에서 이미지 파일 찾기
-        # 대기 시간 추가
+        # Find image files in attachment area
+        # Add wait time
         try:
             page.wait_for_selector('a[href*="goDownLoad"]', timeout=3000)
         except:
             pass
-            
+
         attach_links = page.locator('a[href*="goDownLoad"], a[onclick*="goDownLoad"]')
         attach_count = attach_links.count()
-        print(f"      🔍 첨부파일 링크 개수: {attach_count}", flush=True)
-        
+        print(f"      [SEARCH] Attachment link count: {attach_count}", flush=True)
+
         if attach_count > 0:
             for i in range(min(attach_count, 5)):
                 link = attach_links.nth(i)
-                # safe_get_text 대신 text_content() 사용 (전체 텍스트 확보)
+                # Use text_content() instead of safe_get_text (get full text)
                 try:
                     link_text = link.text_content() or ''
                     link_text = link_text.strip()
                 except:
                     link_text = safe_get_text(link) or ''
-                
+
                 onclick = link.get_attribute('href') or link.get_attribute('onclick') or ''
-                print(f"      📄 첨부파일 #{i+1}: {link_text} | Link: {onclick[:30]}...", flush=True)
-                
-                # 이미지 파일인지 확인 (텍스트 기반)
+                print(f"      [ATTACH] File #{i+1}: {link_text} | Link: {onclick[:30]}...", flush=True)
+
+                # Check if image file (text-based)
                 is_image = any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif'])
-                
+
                 if is_image:
-                    print(f"      📎 이미지 첨부파일 발견: {link_text}", flush=True)
-                    # JavaScript 다운로드 클릭으로 이미지 다운로드 후 업로드
+                    print(f"      [IMG] Image attachment found: {link_text}", flush=True)
+                    # Download image via JavaScript download click and upload
                     cloudinary_url = download_attachment_image(page, link)
                     if cloudinary_url:
                         thumbnail_url = cloudinary_url
                     break
         else:
-             print(f"      ⚠️ 첨부파일 링크를 찾을 수 없음 (selector: a[href*='goDownLoad'])", flush=True)
-             
+             print(f"      [WARN] Attachment link not found (selector: a[href*='goDownLoad'])", flush=True)
+
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 처리 실패: {e}", flush=True)
-    
-    # 3. 본문 내 이미지 추출 (v3.1: 로컬 저장 우선, 다양한 셀렉터)
+        print(f"      [WARN] Attachment processing failed: {e}", flush=True)
+
+    # 3. Extract content images (v3.1: local save priority, multiple selectors)
     if not thumbnail_url:
         try:
-            # 더 다양한 이미지 셀렉터 시도
+            # Try more diverse image selectors
             img_selectors = [
                 'td img[src*=".jpg"]',
                 'td img[src*=".png"]',
@@ -365,48 +365,48 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                 'img[src*="upload"]',
                 'img[src*="file"]',
             ]
-            
+
             for sel in img_selectors:
                 imgs = page.locator(sel)
                 for i in range(min(imgs.count(), 3)):
                     src = safe_get_attr(imgs.nth(i), 'src')
-                    # 공공누리(opentype/kor_type) 이미지 및 기타 비콘텐츠 이미지 제외
+                    # Exclude public domain (opentype/kor_type) and other non-content images
                     exclude_patterns = [
                         'icon', 'btn', 'logo', 'banner', 'bg', 'bullet', 'blank', 'spacer',
                         'opentype', 'copyright', 'license', 'footer', 'kor_', 'type0', 'type1', 'type2', 'type3', 'type4'
                     ]
                     if src and not any(x in src.lower() for x in exclude_patterns):
                         full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                        
-                        # Cloudinary 업로드
+
+                        # Upload to Cloudinary
                         cloudinary_url = download_and_upload_image(full_url, BASE_URL, folder=REGION_CODE)
                         if cloudinary_url:
                             thumbnail_url = cloudinary_url
-                            print(f"      [IMG] 본문 이미지 Cloudinary: {cloudinary_url[:50]}...")
+                            print(f"      [IMG] Content image Cloudinary: {cloudinary_url[:50]}...")
                             break
-                
+
                 if thumbnail_url:
                     break
         except Exception as e:
-            print(f"      [WARN] 본문 이미지 추출 실패: {e}")
+            print(f"      [WARN] Content image extraction failed: {e}")
     
     return content, thumbnail_url, pub_date, department, detail_title
 
 
 # ============================================================
-# 7. 메인 수집 함수
+# 7. Main Collection Function
 # ============================================================
 def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송
+    Collect press releases and send to server
 
     Args:
-        days: 수집할 기간 (일)
-        max_articles: 최대 수집 기사 수
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
+        days: Collection period (days)
+        max_articles: Maximum number of articles to collect
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
     """
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일)")
+    print(f"[{REGION_NAME}] Press release collection started (last {days} days)")
 
     # Ensure dev server is running before starting
     if not ensure_server_running():
@@ -419,9 +419,10 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
         end_date = datetime.now().strftime('%Y-%m-%d')
     if not start_date:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-    
+
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -437,7 +438,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
         while page_num <= 5 and not stop and collected_count < max_articles:
             # 순천시 페이지네이션: ?x=1&pageIndex={N}
             list_url = f'{LIST_URL}?x=1&pageIndex={page_num}'
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] Collecting page {page_num}...")
             log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
             if not safe_goto(page, list_url):
@@ -449,15 +450,15 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             # 목록 링크 찾기
             links = wait_and_find(page, LIST_LINK_SELECTORS, timeout=10000)
             if not links:
-                print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                print("      [WARN] Article list not found.")
                 break
             
             link_count = links.count()
-            print(f"      📰 {link_count}개 기사 발견")
+            print(f"      [FOUND] {link_count} articles found")
             
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
-            seen_urls = set()  # ★ 중복 URL 체크용
+            seen_urls = set()  # For duplicate URL checking
 
             for i in range(link_count):
                 if collected_count + len(link_data) >= max_articles:
@@ -474,22 +475,22 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     if not title or not href:
                         continue
 
-                    # seq= 파라미터 확인
+                    # Check seq= parameter
                     if 'seq=' not in href and 'mode=view' not in href:
                         continue
 
-                    # 상세 페이지 URL 구성
+                    # Build detail page URL
                     if href.startswith('http'):
                         full_url = href
                     else:
                         full_url = urljoin(LIST_URL, href)
 
-                    # ★ 중복 URL 체크
+                    # Check for duplicate URLs
                     if full_url in seen_urls:
                         continue
                     seen_urls.add(full_url)
 
-                    # 날짜는 상세 페이지에서 추출
+                    # Date will be extracted from detail page
                     link_data.append({
                         'title': title,
                         'url': full_url,
@@ -497,36 +498,36 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
 
                 except Exception as e:
                     continue
-            
-            # 상세 페이지 수집 및 전송
+
+            # Collect detail pages and send to server
             for item in link_data:
                 if collected_count >= max_articles:
                     break
-                    
+
                 title = item['title']
                 full_url = item['url']
-                
-                print(f"      📰 {title[:35]}...")
+
+                print(f"      [ARTICLE] {title[:35]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
-                
+
                 content, thumbnail_url, pub_date, department, detail_title = fetch_detail(page, full_url)
-                
-                # 상세 페이지 제목이 있으면 사용 (목록에서 잘린 제목 대체)
+
+                # Use detail page title if available (replace truncated list title)
                 if detail_title and len(detail_title) > len(title):
                     title = detail_title
-                
-                # 날짜 필터링
+
+                # Date filtering
                 if pub_date < start_date:
                     stop = True
                     break
-                
+
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 부제목 추출
+                # Extract subtitle
                 subtitle, content = extract_subtitle(content, title)
 
-                # 카테고리 자동 분류
+                # Auto-classify category
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -540,49 +541,53 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     'region': REGION_CODE,
                     'thumbnail_url': thumbnail_url,
                 }
-                
-                # 서버로 전송
+
+                # Send to server
                 result = send_article_to_server(article_data)
                 collected_count += 1
-                
+
                 if result.get('status') == 'created':
                     success_count += 1
-                    img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                    print(f"         ✅ 저장 완료 ({img_status})")
+                    img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                    print(f"         [OK] Saved ({img_status})")
                     log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
-                    print(f"         ⏩ 이미 존재")
-                
+                    skipped_count += 1
+                    print(f"         [SKIP] Already exists")
+
                 time.sleep(0.5)  # Rate limiting
-            
+
             page_num += 1
             if stop:
-                print("      🛑 수집 기간 초과, 종료합니다.")
+                print("      [STOP] Collection period exceeded.")
                 break
             
             time.sleep(1)
         
         browser.close()
-    
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개)"
-    print(f"✅ {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     
     return []
 
 
 # ============================================================
-# 8. CLI 진입점
+# 8. CLI Entry Point
 # ============================================================
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v3.0')
-    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
-    parser.add_argument('--max-articles', type=int, default=10, help='최대 수집 기사 수')
-    parser.add_argument('--dry-run', action='store_true', help='테스트 모드 (서버 전송 안함)')
-    # bot-service.ts 호환 인자 (필수)
-    parser.add_argument('--start-date', type=str, default=None, help='수집 시작일 (YYYY-MM-DD)')
-    parser.add_argument('--end-date', type=str, default=None, help='수집 종료일 (YYYY-MM-DD)')
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} Press Release Scraper v3.0')
+    parser.add_argument('--days', type=int, default=3, help='Collection period (days)')
+    parser.add_argument('--max-articles', type=int, default=10, help='Maximum number of articles to collect')
+    parser.add_argument('--dry-run', action='store_true', help='Test mode (no server transmission)')
+    # bot-service.ts compatible arguments (required)
+    parser.add_argument('--start-date', type=str, default=None, help='Collection start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='Collection end date (YYYY-MM-DD)')
     args = parser.parse_args()
 
     collect_articles(

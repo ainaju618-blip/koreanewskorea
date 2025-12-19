@@ -63,14 +63,14 @@ def fetch_detail(page: Page, url: str, config: dict) -> Tuple[str, Optional[str]
 def collect_from_site(site_key: str, days: int = 3) -> List[Dict]:
     config = SITE_CONFIGS.get(site_key)
     if not config:
-        print(f"❌ Unknown site: {site_key}")
+        print(f"[ERROR] Unknown site: {site_key}")
         return []
     
     region_name = config['name']
     base_url = config['base_url']
     list_url = config['list_url']
     
-    print(f"🏛️ {region_name} 수집 시작")
+    print(f"[{region_name}] 수집 시작")
     log_to_server(site_key, '실행중', f'{region_name} 스크래퍼 시작', 'info')
     
     collected_count = 0
@@ -93,7 +93,7 @@ def collect_from_site(site_key: str, days: int = 3) -> List[Dict]:
             if not links:
                 break
             
-            print(f"   📄 페이지 {page_num}: {links.count()}개 기사")
+            print(f"   [PAGE] 페이지 {page_num}: {links.count()}개 기사")
             
             for i in range(min(links.count(), 10)):
                 try:
@@ -129,7 +129,7 @@ def collect_from_site(site_key: str, days: int = 3) -> List[Dict]:
         browser.close()
     
     log_to_server(site_key, '성공', f'완료 ({collected_count}개)', 'success')
-    print(f"✅ 완료 ({collected_count}개)")
+    print(f"[OK] 완료 ({collected_count}개)")
     return []
 
 def main():

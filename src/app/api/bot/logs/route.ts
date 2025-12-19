@@ -54,16 +54,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { log_id, region, status, message, type } = body;
+        const { log_id, region, status, message, type, created_count, skipped_count } = body;
 
         if (!region || !status) {
             return NextResponse.json({ message: 'Missing fields' }, { status: 400 });
         }
 
-        // Phase 3: log_id가 있으면 직접 해당 로그 업데이트 (경쟁 조건 방지)
+        // Phase 3: log_id is available, update that specific log (prevents race conditions)
         if (log_id) {
             const timeStr = new Date().toLocaleTimeString('ko-KR');
-            const isFinished = status === '성공' || status === '실패';
+            const isFinished = status === 'success' || status === 'failed';
 
             const { data: existingLog } = await supabaseAdmin
                 .from('bot_logs')
@@ -77,12 +77,25 @@ export async function POST(req: NextRequest) {
                 : newLogLine;
 
             const updates: any = {
-                status: status === '실패' ? 'failed' : (status === '성공' ? 'success' : 'running'),
+                status: status === 'failed' ? 'failed' : (status === 'success' ? 'success' : 'running'),
                 log_message: updatedMessage,
             };
 
             if (isFinished) {
                 updates.ended_at = new Date().toISOString();
+
+                // Update articles_count on completion (for GitHub Actions)
+                if (typeof created_count === 'number') {
+                    updates.articles_count = created_count;
+                }
+
+                // Store skipped_count in metadata
+                if (typeof skipped_count === 'number' && skipped_count > 0) {
+                    updates.metadata = {
+                        skipped_count: skipped_count,
+                        updated_at: new Date().toISOString()
+                    };
+                }
             }
 
             await supabaseAdmin
@@ -93,8 +106,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, matched_by: 'log_id' });
         }
 
-        // 기존 방식: region으로 최신 running 로그 찾기 (fallback)
-        // 1. 해당 지역의 'running' 상태인 최신 로그 찾기
+        // Fallback: Find latest running log by region (when log_id is not available)
         const { data: activeLogs } = await supabaseAdmin
             .from('bot_logs')
             .select('*')
@@ -106,24 +118,36 @@ export async function POST(req: NextRequest) {
         const activeLog = activeLogs && activeLogs.length > 0 ? activeLogs[0] : null;
 
         if (activeLog) {
-            // 2. 이미 실행 중인 로그가 있으면 업데이트 (메시지 누적)
-            // 타임스탬프 추가
+            // Update existing running log
             const timeStr = new Date().toLocaleTimeString('ko-KR');
             const newLogLine = `[${timeStr}] ${message}`;
-
-            // 기존 메시지가 너무 길면 앞부분 자르기 (선택사항, DB 용량 고려)
             let updatedMessage = activeLog.log_message ? activeLog.log_message + '\n' + newLogLine : newLogLine;
 
-            // 상태가 '성공'이나 '실패'로 바뀌면 finished_at 업데이트
-            const isFinished = status === '성공' || status === '실패';
+            // Check if finished (support both Korean and English status)
+            const isFinished = status === 'success' || status === 'failed';
             const updates: any = {
-                status: status === '실패' ? 'failure' : (status === '성공' ? 'success' : 'running'),
+                status: status === 'failed' ? 'failed' : (status === 'success' ? 'success' : 'running'),
                 log_message: updatedMessage,
-                articles_count: activeLog.articles_count || 0
             };
 
             if (isFinished) {
-                updates.finished_at = new Date().toISOString();
+                updates.ended_at = new Date().toISOString();
+
+                // Update articles_count on completion
+                if (typeof created_count === 'number') {
+                    updates.articles_count = created_count;
+                } else {
+                    updates.articles_count = activeLog.articles_count || 0;
+                }
+
+                // Store skipped_count in metadata
+                if (typeof skipped_count === 'number' && skipped_count > 0) {
+                    updates.metadata = {
+                        ...(activeLog.metadata || {}),
+                        skipped_count: skipped_count,
+                        updated_at: new Date().toISOString()
+                    };
+                }
             }
 
             const { error } = await supabaseAdmin
@@ -133,16 +157,15 @@ export async function POST(req: NextRequest) {
 
             if (error) throw error;
         } else {
-            // 3. 없으면 새로 시작 (하지만 스크래퍼는 중간부터 로그를 보낼 수도 있음)
-            // 보통 '스크래퍼 시작' 메시지와 함께 옴.
+            // Create new log entry
             const { error } = await supabaseAdmin
                 .from('bot_logs')
                 .insert({
                     region: region,
-                    status: status === '실패' ? 'failure' : (status === '성공' ? 'success' : 'running'),
+                    status: status === 'failed' ? 'failed' : (status === 'success' ? 'success' : 'running'),
                     started_at: new Date().toISOString(),
                     log_message: `[${new Date().toLocaleTimeString('ko-KR')}] ${message}`,
-                    articles_count: 0
+                    articles_count: typeof created_count === 'number' ? created_count : 0
                 });
 
             if (error) throw error;

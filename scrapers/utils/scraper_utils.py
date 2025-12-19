@@ -1,6 +1,6 @@
 """
-스크래퍼 안정화 유틸리티 모듈
-- 재시도 로직, 동적 대기, Fallback 셀렉터 체인
+Scraper Stabilization Utility Module
+- Retry logic, dynamic wait, fallback selector chains
 """
 
 import time
@@ -8,72 +8,72 @@ import logging
 from typing import Optional, List, Callable, Any
 from playwright.sync_api import Page, Locator, TimeoutError as PlaywrightTimeout
 
-# 로깅 설정
+# Logging setup
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# 설정 상수
+# Configuration Constants
 # ============================================================
 MAX_RETRIES = 3
-BASE_WAIT_MS = 2000  # 기본 대기 시간 (ms)
-ELEMENT_TIMEOUT_MS = 10000  # 요소 대기 타임아웃 (ms)
+BASE_WAIT_MS = 2000  # Base wait time (ms)
+ELEMENT_TIMEOUT_MS = 10000  # Element wait timeout (ms)
 
 
 def safe_goto(page: Page, url: str, retries: int = MAX_RETRIES, timeout: int = 30000) -> bool:
     """
-    안전한 페이지 이동 (재시도 포함)
-    
-    변경점:
-    - networkidle 대신 domcontentloaded 사용 (더 안정적)
-    - 실패 시 exponential backoff로 재시도
+    Safe page navigation with retries.
+
+    Notes:
+    - Uses domcontentloaded instead of networkidle (more stable)
+    - Retries with exponential backoff on failure
     """
     for attempt in range(retries):
         try:
             page.goto(url, wait_until='domcontentloaded', timeout=timeout)
-            # 추가 안정화 대기
+            # Additional stabilization wait
             time.sleep(BASE_WAIT_MS / 1000)
             return True
         except PlaywrightTimeout:
             wait_time = (attempt + 1) * 2
-            logger.warning(f"[Retry {attempt+1}/{retries}] 페이지 로드 타임아웃: {url[:50]}... ({wait_time}초 후 재시도)")
+            logger.warning(f"[Retry {attempt+1}/{retries}] Page load timeout: {url[:50]}... (retry in {wait_time}s)")
             time.sleep(wait_time)
         except Exception as e:
-            logger.error(f"[Retry {attempt+1}/{retries}] 페이지 로드 오류: {str(e)[:50]}")
+            logger.error(f"[Retry {attempt+1}/{retries}] Page load error: {str(e)[:50]}")
             time.sleep(2)
-    
-    logger.error(f"❌ 페이지 로드 실패 (최대 재시도 초과): {url[:50]}...")
+
+    logger.error(f"[FAIL] Page load failed (max retries exceeded): {url[:50]}...")
     return False
 
 
 def wait_and_find(page: Page, selectors: List[str], timeout: int = ELEMENT_TIMEOUT_MS) -> Optional[Locator]:
     """
-    Fallback 셀렉터 체인으로 요소 찾기
-    
-    여러 셀렉터를 순차 시도하여 첫 번째 성공한 것 반환
+    Find element using fallback selector chain.
+
+    Tries multiple selectors sequentially, returns first successful match.
     """
     for selector in selectors:
         try:
             locator = page.locator(selector)
-            # 요소가 실제로 존재하는지 대기
+            # Wait for element to actually exist
             locator.first.wait_for(timeout=timeout, state='attached')
             count = locator.count()
             if count > 0:
-                logger.info(f"   ✅ 셀렉터 성공: '{selector}' ({count}개)")
+                logger.info(f"   [OK] Selector success: '{selector}' ({count} items)")
                 return locator
         except PlaywrightTimeout:
-            logger.debug(f"   ⚪ 셀렉터 타임아웃: '{selector}'")
+            logger.debug(f"   [-] Selector timeout: '{selector}'")
             continue
         except Exception as e:
-            logger.debug(f"   ⚪ 셀렉터 실패: '{selector}' - {str(e)[:30]}")
+            logger.debug(f"   [-] Selector failed: '{selector}' - {str(e)[:30]}")
             continue
-    
-    logger.warning(f"   ⚠️ 모든 셀렉터 실패: {selectors}")
+
+    logger.warning(f"   [WARN] All selectors failed: {selectors}")
     return None
 
 
 def safe_get_text(locator: Locator, default: str = "") -> str:
-    """안전한 텍스트 추출"""
+    """Safe text extraction from locator."""
     try:
         if locator.count() > 0:
             return locator.first.inner_text().strip()
@@ -83,7 +83,7 @@ def safe_get_text(locator: Locator, default: str = "") -> str:
 
 
 def safe_get_attr(locator: Locator, attr: str, default: str = "") -> str:
-    """안전한 속성 추출"""
+    """Safe attribute extraction from locator."""
     try:
         if locator.count() > 0:
             value = locator.first.get_attribute(attr)
@@ -94,27 +94,27 @@ def safe_get_attr(locator: Locator, attr: str, default: str = "") -> str:
 
 
 def safe_click_and_wait(page: Page, locator: Locator, wait_ms: int = BASE_WAIT_MS) -> bool:
-    """안전한 클릭 및 대기"""
+    """Safe click with wait."""
     try:
         locator.click()
         time.sleep(wait_ms / 1000)
         return True
     except Exception as e:
-        logger.warning(f"클릭 실패: {str(e)[:30]}")
+        logger.warning(f"Click failed: {str(e)[:30]}")
         return False
 
 
 def extract_with_fallback(page: Page, selectors: List[str], extract_fn: Callable[[Locator], Any]) -> Any:
     """
-    Fallback 셀렉터 체인으로 데이터 추출
-    
+    Extract data using fallback selector chain.
+
     Args:
-        page: Playwright Page 객체
-        selectors: 시도할 CSS 셀렉터 리스트 (우선순위 순)
-        extract_fn: Locator를 받아 데이터를 추출하는 함수
-    
+        page: Playwright Page object
+        selectors: List of CSS selectors to try (in priority order)
+        extract_fn: Function that takes Locator and extracts data
+
     Returns:
-        추출된 데이터 또는 None
+        Extracted data or None
     """
     for selector in selectors:
         try:
@@ -129,33 +129,33 @@ def extract_with_fallback(page: Page, selectors: List[str], extract_fn: Callable
 
 
 def collect_links_from_list(
-    page: Page, 
+    page: Page,
     list_selectors: List[str],
     max_items: int = 10
 ) -> List[dict]:
     """
-    목록 페이지에서 링크들을 안전하게 수집
-    
+    Safely collect links from list page.
+
     Returns:
         [{'title': str, 'href': str, 'date': str}, ...]
     """
     links = wait_and_find(page, list_selectors)
     if not links:
         return []
-    
+
     results = []
     count = min(links.count(), max_items)
-    
+
     for i in range(count):
         try:
             item = links.nth(i)
-            
-            # 텍스트 추출 (제목)
+
+            # Extract text (title)
             title = safe_get_text(item)
-            
-            # href 추출
+
+            # Extract href
             href = safe_get_attr(item, 'href')
-            
+
             if title and href:
                 results.append({
                     'title': title,
@@ -163,23 +163,23 @@ def collect_links_from_list(
                     'index': i
                 })
         except Exception as e:
-            logger.debug(f"링크 {i} 추출 실패: {str(e)[:30]}")
+            logger.debug(f"Link {i} extraction failed: {str(e)[:30]}")
             continue
-    
+
     return results
 
 
 def log_scraper_result(region_name: str, total: int, images: int = 0):
-    """스크래퍼 결과 로깅"""
-    img_info = f" (이미지: {images}개)" if images else ""
-    logger.info(f"✅ {region_name}: 총 {total}개 기사 수집 완료{img_info}")
+    """Log scraper result summary."""
+    img_info = f" (images: {images})" if images else ""
+    logger.info(f"[OK] {region_name}: {total} articles collected{img_info}")
 
 
 # ============================================================
-# 공통 셀렉터 패턴 (지자체 사이트 분석 기반)
+# Common Selector Patterns (based on local government site analysis)
 # ============================================================
 
-# 목록 페이지 링크 셀렉터들 (우선순위 순)
+# List page link selectors (in priority order)
 COMMON_LIST_SELECTORS = [
     'a[href*="boardView"]',
     'a[href*="idx="]',
@@ -192,7 +192,7 @@ COMMON_LIST_SELECTORS = [
     '.list_item a',
 ]
 
-# 본문 컨텐츠 셀렉터들
+# Content selectors
 COMMON_CONTENT_SELECTORS = [
     'div.board_view_body',
     'div.board_view_cont',
@@ -204,7 +204,7 @@ COMMON_CONTENT_SELECTORS = [
     '.content_view',
 ]
 
-# 본문 이미지 셀렉터들
+# Content image selectors
 COMMON_IMAGE_SELECTORS = [
     'div.board_view_body img',
     'div.board_view_cont img',
@@ -216,108 +216,193 @@ COMMON_IMAGE_SELECTORS = [
 
 
 # ============================================================
-# 본문 정제 유틸리티 (v1.2)
+# Content Cleaning Utility (v1.2)
 # ============================================================
 import re
 
 def clean_article_content(content: str, max_length: int = 5000) -> str:
     """
-    기사 본문에서 불필요한 메타데이터, 첨부파일 정보 등을 제거
+    Clean article content by removing metadata, attachments, and noise.
 
-    제거 대상:
-    - 첨부파일 목록 (1.[사진1], 2.[홍보물], *.jpg, *.hwp 등)
-    - 메타데이터 (조회수, 작성일, 작성자, 담당자 등)
-    - 파일 크기/다운로드 정보 (123.45 KB, Hit: 0 등)
-    - 기관 정보 (기관명, 전화번호 등)
-    - 담당자 정보 (【과장 홍길동 123-4567】 형태)
-    - 사진 설명 섹션 전체
-    - 저작권/공공누리 문구
-    - 네비게이션 (다음글, 이전글, 인쇄, 목록)
-    - 불필요한 공백/줄바꿈
-    - 빈 번호 (1. 2. 3. 등)
+    Removes:
+    - Attachment lists (1.[photo1], 2.[promo], *.jpg, *.hwp, etc.)
+    - Metadata (view count, date, author, department info)
+    - File size/download info (123.45 KB, Hit: 0, etc.)
+    - Organization info (name, phone numbers)
+    - Staff info (Manager Hong 123-4567 format)
+    - Photo description sections
+    - Copyright/public license notices
+    - Navigation (next/prev article, print, list)
+    - Excessive whitespace/newlines
+    - Empty numbered lines (1. 2. 3. etc.)
+    - Region-specific START lines (Gokseong, Jangseong, Hampyeong)
 
     Args:
-        content: 원본 본문 텍스트
-        max_length: 최대 문자 수 (기본 5000자)
+        content: Original article text
+        max_length: Maximum characters (default 5000)
 
     Returns:
-        정제된 본문 텍스트
+        Cleaned article text
     """
     if not content:
         return ""
 
-    # 0. 사진 설명 섹션 이후 전체 제거 (가장 먼저 처리)
+    # =================================================================
+    # STEP 0: Remove START-of-content noise (region-specific first lines)
+    # =================================================================
+    lines = content.split('\n')
+
+    # Gokseong: Remove first 4 lines (team name / time / department / title repeat)
+    # Pattern: line starts with team name like "과수특작팀" or time like "16:05"
+    gokseong_start_patterns = [
+        r'^[가-힣]+(?:팀|과|실|센터)\s*$',  # Team/dept name only line
+        r'^\d{1,2}:\d{2}\s*$',  # Time only line (16:05)
+        r'^담당부서\s*$',  # "담당부서" only line
+    ]
+
+    # Jangseong: Remove first 3 lines (title / date | dept / bracket line)
+    jangseong_start_patterns = [
+        r'^\d{4}-\d{2}-\d{2}\s*\|\s*[가-힣]+',  # 2025-12-19 | 기획실
+        r'^\[\s*$',  # Opening bracket only
+    ]
+
+    # Hampyeong: Remove first line if it's preview photo info (expanded patterns)
+    hampyeong_start_patterns = [
+        r'^미리보기\s*\(사진자료\)',
+        r'^미리보기\s*\([^)]*사진[^)]*\)',
+        r'^미리보기\s+\(사진자료\)\s*함평군',
+    ]
+
+    # Check and remove Gokseong first 4 lines pattern
+    if len(lines) >= 4:
+        matches = 0
+        for i in range(min(4, len(lines))):
+            for pattern in gokseong_start_patterns:
+                if re.match(pattern, lines[i].strip()):
+                    matches += 1
+                    break
+        if matches >= 2:  # At least 2 patterns matched in first 4 lines
+            lines = lines[4:]
+
+    # Check and remove Jangseong first 3 lines pattern
+    if len(lines) >= 3:
+        for pattern in jangseong_start_patterns:
+            if re.match(pattern, lines[0].strip()) or re.match(pattern, lines[1].strip()):
+                lines = lines[3:]
+                break
+
+    # Check and remove Hampyeong first line (expanded)
+    if len(lines) >= 1:
+        for pattern in hampyeong_start_patterns:
+            if re.match(pattern, lines[0].strip()):
+                lines = lines[1:]
+                break
+
+    content = '\n'.join(lines)
+
+    # =================================================================
+    # STEP 1: Remove everything after photo description section
+    # =================================================================
     section_cutoff_patterns = [
-        r'[\u25C7\u25C6\u25CB\u25CF]\s*사진\s*설명.*',  # ◇◆○● 사진 설명 이후
-        r'사진\s*설명\s*[:.]?.*',  # 사진 설명 이후
+        r'[\u25C7\u25C6\u25CB\u25CF]\s*사진\s*설명.*',  # After diamond/circle + photo desc
+        r'사진\s*설명\s*[:.]?.*',  # After photo description
     ]
     for pattern in section_cutoff_patterns:
         content = re.sub(pattern, '', content, flags=re.DOTALL | re.IGNORECASE)
 
-    # 1. 첨부파일 관련 패턴 제거
+    # =================================================================
+    # STEP 2: Attachment patterns
+    # =================================================================
     attachment_patterns = [
-        # 광주교육청 등 특수 형식: N.[태그] 파일명.확장자 (크기) Hit: N
-        # 예: 2.[홍보물1] 광주시교육청, 제77주년 세계인권선언 기념주간 운영.jpg (530.66 Kb) Hit: 0
+        # Gwangju Edu format: N.[tag] filename.ext (size) Hit: N
         r'^\d+\s*\.\s*\[[^\]]+\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]+\)\s*Hit\s*:\s*\d+',
         r'\d+\s*\.\s*\[[^\]]+\][^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\([^)]+\)\s*Hit\s*:\s*\d+',
-        # 일반 파일명.확장자 (크기) Hit: N 형태 (파일명에 공백/한글 포함)
+        # General filename.ext (size) Hit: N
         r'^[^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|doc|docx|xls|xlsx|ppt|pptx|zip)\s*\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit\s*:\s*\d+',
-        # 번호.[파일명] 형태 (한 줄 전체) - 확장자 없어도 제거
+        # N.[filename] format (entire line)
         r'^\d+\s*\.\s*\[[^\]]+\][^\n]*$',
-        # 단순 파일 정보 (크기) Hit: N
+        # Simple file info (size) Hit: N
         r'\(\d+\.?\d*\s*(KB|MB|Kb|Mb|kb|mb)\)\s*Hit\s*:\s*\d+',
-        # 첨부파일 (N개) 형태
+        # Attachment count
         r'첨부파일\s*\(?\d*\)?',
-        # [사진], [사진1], [홍보물] 등 캡션 (한 줄 전체)
+        # [photo], [photo1], [promo] captions (entire line)
         r'^\s*\[\s*사진\d*\s*\][^\n]*$',
         r'^\s*\[\s*홍보물\d*\s*\][^\n]*$',
         r'^\s*\[\s*보도자료\s*\][^\n]*$',
         r'^\s*\[\s*포스터\s*\][^\n]*$',
-        # (사진 N장 첨부) 형태
+        # (N photos attached) format
         r'\([^)]*사진[^)]*\d*[^)]*장?[^)]*첨부[^)]*\)',
-        # (xxx N장 첨부) 일반 형태 - 포스터, 홍보물 등 첨부 안내
         r'^\s*\([^)]*\d*\s*장?\s*첨부\)\s*$',
+        # Gurye: file.jpg (size KB) download: N download preview
+        r'[^\s]+\.(jpg|jpeg|png|gif|hwp|pdf)\s*\(\d+\.?\d*\s*(KB|MB)\)\s*다운로드\s*:\s*\d+\s*다운로드\s*미리보기',
+        r'[^\s]+\.(jpg|jpeg|png|gif|hwp|pdf)\s*\(\d+\.?\d*\s*(KB|MB)\)\s*다운로드\s*:\s*\d+',
+        # Hampyeong: preview (photo) filename.jpg [size: X KB, Download: N]
+        r'^미리보기\s*\([^)]*\)[^\n]*\[size:\s*[\d\.]+\s*KB[^\]]*\]',
+        r'\[size:\s*[\d\.]+\s*(KB|MB)[^\]]*Download:\s*\d+\]',
     ]
 
-    # 2. 메타데이터 패턴 제거
+    # =================================================================
+    # STEP 3: Metadata patterns
+    # =================================================================
     metadata_patterns = [
-        # 조회/추천 정보
+        # View/recommend counts
         r'조회수?\s*[:]\s*\d+',
         r'조회\s*[:]\s*\d+',
         r'추천수?\s*[:]\s*\d+',
         r'추천\s*[:]\s*\d+',
-        # 날짜/작성자 정보
+        # Date/author info
         r'작성일\s*[:]\s*[\d\-\.\/]+',
         r'등록일\s*[:]\s*[\d\-\.\/]+',
         r'수정일\s*[:]\s*[\d\-\.\/]+',
         r'작성자\s*[:]\s*[^\s\n]+',
         r'담당자\s*[:]\s*[^\n]+',
-        # 기관 정보
+        # Organization info
         r'기관명\s*[:]\s*[^\n]+',
         r'기관주소\s*[:]\s*[^\n]+',
         r'전화번호\s*[:]\s*[\d\-]+',
         r'팩스\s*[:]\s*[\d\-]+',
         r'문의\s*[:]\s*[^\n]+',
-        # 업무담당자 정보 (예: 업무담당자 창평면사무소 조경화 061-380-3801)
+        # Staff info
         r'업무담당자\s*[^\n]+',
-        r'\([업업무무담담당당자자]?\s*[가-힣]+\s*[가-힣]+\s*[\d\-]+\)',
-        # 【담당자 정보】 형태 (예: 【친환경수산과장 전창우 286-6910, ...】)
+        r'\([업무담당자]?\s*[가-힣]+\s*[가-힣]+\s*[\d\-]+\)',
+        # Bracket format staff info
         r'[\u3010\u3011【】\[\]][^【】\[\]\u3010\u3011]*?(?:과장|팀장|담당|주무관)[^【】\[\]\u3010\u3011]*?[\d\-]{7,}[^【】\[\]\u3010\u3011]*[\u3010\u3011【】\[\]]',
+
+        # === REGIONAL SPECIFIC: Department/Contact ===
+        # Mokpo: (name position, name position phone) - entire parenthetical block
+        r'\([가-힣]+\s*[가-힣]{2,4},\s*[가-힣]+\s*[가-힣]{2,4}\s*[\d\-]+[^)]*\)',
+        r'\([가-힣]+(?:동장|과장|팀장|계장|주무관)\s*[가-힣]{2,4}[^)]*[\d\-]{3,}[^)]*\)',
+        # Gwangyang: 담당부서 : XX과 / 연락처 : 061)XXX-XXXX (entire line)
+        r'^담당부서\s*:\s*[가-힣]+(?:과|팀|실)?\s*/?\s*연락처\s*:\s*[\d\)\(\-]+\s*$',
+        r'담당부서\s*:\s*[^\n]+연락처\s*:\s*[\d\)\(\-]+',
+        # Goheung: 관련부서 : 고흥군 XX과(description phone)
+        r'^관련부서\s*:\s*[^\n]+$',
+        r'관련부서\s*:\s*[가-힣]+군?\s*[가-힣]+(?:과|팀|실)[^\n]*',
+        # General department/contact line
+        r'^담당부서\s*:\s*[^\n]+$',
+        r'^연락처\s*:\s*[\d\)\(\-]+\s*$',
     ]
 
-    # 3. 기타 불필요한 패턴
+    # =================================================================
+    # STEP 4: Miscellaneous patterns
+    # =================================================================
     misc_patterns = [
-        # 사진 캡션 패턴
+        # Photo caption patterns
         r'사진\s*[:]\s*[^\n]+',
-        r'[\u25B2\u25BC\u25C0\u25B6]\s*[^\n]+',  # ▲▼◀▶ 로 시작하는 캡션
-        r'[\u25B3\u25BD]\s*[^\n]+',  # △▽ 로 시작하는 캡션
-        # 저작권/면책 문구
+        r'[\u25B2\u25BC\u25C0\u25B6]\s*[^\n]+',  # Arrow captions
+        r'[\u25B3\u25BD]\s*[^\n]+',  # Triangle captions
+        # Copyright/disclaimer
         r'개인정보처리방침.*',
         r'Copyright.*',
         r'저작권.*',
-        # 공공누리 문구
+
+        # === PUBLIC LICENSE (Gonggongnuri) - expanded patterns ===
         r'본\s*저작물은\s*[""\']?공공누리[""\']?[^\n]*',
-        # 네비게이션
+        r'본\s*공공저작물은\s*공공누리[^\n]*',
+        r'공공누리\s*제?\s*\d?\s*유형[^\n]*',
+        r'\(?\s*공공누리\s*[^\n)]*\)?',
+
+        # Navigation
         r'^다음글\s*$',
         r'^이전글\s*$',
         r'^인쇄\s*$',
@@ -325,33 +410,117 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
         r'^인쇄\s+목록\s*$',
         r'다음글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
         r'이전글\s+[^\n]+\s+\d{4}-\d{2}-\d{2}',
-        # 관련 기사 링크 (기사제목 / YYYY-MM-DD 형태)
+        # Related article links
         r'^[^\n]+\s*/\s*\d{4}-\d{2}-\d{2}\s*$',
+
+        # === REGIONAL SPECIFIC: End markers ===
+        # Damyang: ※ 사진 있음. (
+        r'※\s*사진\s*있음[^\n]*',
+        r'^\s*※\s*사진[^\n]*$',
+        # Yeongam: <끝> or 끝
+        r'<\s*끝\s*>',
+        r'^끝\s*$',
+        r'^<끝>$',
+        # Muan: ※ at end (standalone)
+        r'^※\s*$',
+        r'※\s*문의[^\n]*',
+        # Yeonggwang: paragraph spacing - handle in cleanup step
+
+        # === REGIONAL SPECIFIC: Preview/Download info ===
+        # Hampyeong: preview photo line
+        r'^미리보기\s*\([^)]*사진[^)]*\)[^\n]*',
+        r'^\s*미리보기\s+\(사진자료\)[^\n]*',
+        # Gurye: pagination
+        r'^\d+\s*/\s*\d+\s*$',  # 1 / 1 format
+        r'다운로드\s*:\s*\d+\s*다운로드\s*미리보기',
+        r'^전체다운로드\s*$',
+        r'다운로드\s*미리보기\s*$',
+
+        # === COMMON: Phone in parentheses at end ===
+        r'\([^)]*☎[^)]+\)',  # (XXX ☎ 123-4567)
+        r'☎\s*[\d\-]+',  # ☎ 123-4567
     ]
 
-    # 모든 패턴 적용 (MULTILINE 모드)
+    # Apply all patterns (MULTILINE mode)
     all_patterns = attachment_patterns + metadata_patterns + misc_patterns
     for pattern in all_patterns:
         content = re.sub(pattern, '', content, flags=re.MULTILINE | re.IGNORECASE)
 
-    # 4. 빈 번호만 있는 줄 제거 (1. 2. 3. 등) - 여러 번 반복 적용
+    # =================================================================
+    # STEP 5: Remove empty numbered lines (1. 2. 3.) - apply multiple times
+    # =================================================================
     for _ in range(3):
         content = re.sub(r'^\d+\.\s*$', '', content, flags=re.MULTILINE)
 
-    # 5. 공백/줄바꿈 정리
-    # 3줄 이상 연속 줄바꿈 -> 2줄로
+    # =================================================================
+    # STEP 6: Whitespace/newline cleanup
+    # =================================================================
+    # 3+ consecutive newlines -> 2
     content = re.sub(r'\n{3,}', '\n\n', content)
-    # 연속 공백 정리
+    # Multiple spaces -> single
     content = re.sub(r'[ \t]+', ' ', content)
-    # 각 줄 앞뒤 공백 제거
+    # Strip each line
     lines = [line.strip() for line in content.split('\n')]
-    # 빈 줄 또는 번호만 있는 줄 필터링
+    # Filter empty/numbered-only lines
     lines = [line for line in lines if line and not re.match(r'^\d+\.\s*$', line)]
     content = '\n'.join(lines)
-    # 빈 줄만 있는 경우 제거
+    # Clean excessive blank lines
     content = re.sub(r'\n\s*\n', '\n\n', content)
 
-    # 6. 앞뒤 공백 제거 및 길이 제한
+    # =================================================================
+    # STEP 7: END-of-content cleanup (last lines removal)
+    # =================================================================
+    lines = content.split('\n')
+
+    # Remove problematic last lines (check last 3 lines)
+    end_line_patterns = [
+        # Mokpo: (Name position, Name position phone...) pattern
+        r'^\s*\([가-힣]+\s*[가-힣]{2,4},\s*[가-힣]+\s*[가-힣]{2,4}\s*[\d\-]+',
+        r'^\s*\([가-힣]+(?:동장|과장|팀장|계장|주무관)\s*[가-힣]{2,4}',
+        # Gwangyang: 담당부서 : XX과 / 연락처 : 061)XXX-XXXX
+        r'^\s*담당부서\s*:\s*[가-힣]+(?:과|팀|실)',
+        r'^\s*담당\s*:\s*[가-힣]+(?:과|팀|실)',
+        # Goheung: 관련부서 : 고흥군 XX과
+        r'^\s*관련부서\s*:\s*',
+        # Goheung/General: 공공누리 copyright
+        r'^\s*본\s*저작물은\s*["\']?공공누리',
+        r'^\s*본\s*공공저작물은\s*공공누리',
+        r'^\s*\(?\s*공공누리',
+        # Damyang: ※ 사진 있음. (
+        r'^\s*※\s*사진\s*있음',
+        r'^\s*※\s*사진',
+        # Yeongam: <끝> or 끝
+        r'^\s*<\s*끝\s*>\s*$',
+        r'^\s*끝\s*$',
+        # Muan: ※ at end
+        r'^\s*※\s*$',
+        r'^\s*※\s*문의',
+        # General: contact with phone
+        r'^\s*문의\s*:\s*[\d\-\(\)]+',
+        r'^\s*☎\s*[\d\-]+',
+        r'^\s*전화\s*:\s*[\d\-\(\)]+',
+    ]
+
+    # Check and remove last 3 lines if they match patterns
+    lines_to_remove = 0
+    for i in range(min(3, len(lines))):
+        line_idx = len(lines) - 1 - i
+        if line_idx < 0:
+            break
+        line = lines[line_idx]
+        for pattern in end_line_patterns:
+            if re.match(pattern, line, re.IGNORECASE):
+                lines_to_remove = i + 1
+                break
+
+    if lines_to_remove > 0:
+        lines = lines[:-lines_to_remove]
+
+    content = '\n'.join(lines)
+
+    # =================================================================
+    # STEP 8: Final trim and length limit
+    # =================================================================
     content = content.strip()
     if len(content) > max_length:
         content = content[:max_length]
@@ -361,38 +530,38 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
 
 def extract_clean_text_from_html(html_content: str) -> str:
     """
-    HTML에서 텍스트만 추출하고 정제
+    Extract and clean text from HTML content.
 
     Args:
-        html_content: HTML 문자열
+        html_content: HTML string
 
     Returns:
-        정제된 텍스트
+        Cleaned text content
     """
     if not html_content:
         return ""
 
-    # HTML 태그 제거 (간단한 방식)
+    # Remove HTML tags (simple approach)
     text = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<[^>]+>', ' ', text)
 
-    # HTML 엔티티 변환
+    # Convert HTML entities
     text = text.replace('&nbsp;', ' ')
     text = text.replace('&lt;', '<')
     text = text.replace('&gt;', '>')
     text = text.replace('&amp;', '&')
     text = text.replace('&quot;', '"')
 
-    # 본문 정제 적용
+    # Apply content cleaning
     return clean_article_content(text)
 
 
 # ============================================================
-# 카테고리 자동 분류 (v1.0)
+# Category Auto-Classification (v1.0)
 # ============================================================
 
-# 카테고리 키워드 매핑
+# Category keyword mapping
 CATEGORY_KEYWORDS = {
     'education': {
         'name': '교육',
@@ -468,45 +637,45 @@ CATEGORY_KEYWORDS = {
     }
 }
 
-# 기본 카테고리 (매칭 안될 경우)
+# Default category (when no match)
 DEFAULT_CATEGORY = 'general'
 DEFAULT_CATEGORY_NAME = '일반'
 
 
 def detect_category(title: str, content: str = '') -> tuple:
     """
-    제목과 본문을 분석하여 카테고리를 자동 분류
+    Analyze title and content to auto-classify category.
 
     Args:
-        title: 기사 제목
-        content: 기사 본문 (선택)
+        title: Article title
+        content: Article content (optional)
 
     Returns:
         tuple: (category_code, category_name)
-               예: ('education', '교육')
+               e.g., ('education', '교육')
     """
     if not title:
         return DEFAULT_CATEGORY, DEFAULT_CATEGORY_NAME
 
-    # 제목 + 본문 앞부분(500자) 결합하여 분석
+    # Combine title + first 500 chars of content for analysis
     text = title.lower()
     if content:
         text += ' ' + content[:500].lower()
 
-    # 각 카테고리별 매칭 점수 계산
+    # Calculate matching score for each category
     scores = {}
     for cat_code, cat_data in CATEGORY_KEYWORDS.items():
         score = 0
         for keyword in cat_data['keywords']:
-            # 제목에 있으면 가중치 3배
+            # 3x weight if in title
             if keyword in title:
                 score += 3
-            # 본문에 있으면 가중치 1배
+            # 1x weight if in content
             elif keyword in text:
                 score += 1
         scores[cat_code] = score
 
-    # 최고 점수 카테고리 선택
+    # Select highest scoring category
     if scores:
         best_category = max(scores, key=scores.get)
         if scores[best_category] > 0:
@@ -516,34 +685,34 @@ def detect_category(title: str, content: str = '') -> tuple:
 
 
 def get_category_name(category_code: str) -> str:
-    """카테고리 코드로 한글 이름 반환"""
+    """Get Korean category name from category code."""
     if category_code in CATEGORY_KEYWORDS:
         return CATEGORY_KEYWORDS[category_code]['name']
     return DEFAULT_CATEGORY_NAME
 
 
 # ============================================================
-# 부제목 추출 유틸리티 (v1.1)
+# Subtitle Extraction Utility (v1.1)
 # ============================================================
 
 def extract_subtitle(content: str, title: str = '') -> tuple:
     """
-    본문에서 부제목을 추출하고 본문에서 제거
-    제목이 본문에 반복되는 경우도 제거
+    Extract subtitle from content and remove it from body.
+    Also removes title if repeated in content.
 
-    부제목 패턴:
-    - "- 부제목 내용 -"       (앞뒤 -, 공백 허용)
-    - "-- 부제목 내용 --"     (앞뒤 --)
-    - "- 부제목 내용"         (앞에 - 만)
+    Subtitle patterns:
+    - "- subtitle content -"    (dashes on both sides)
+    - "-- subtitle content --"  (double dashes)
+    - "- subtitle content"      (leading dash only)
 
     Args:
-        content: 원본 본문 텍스트
-        title: 기사 제목 (본문에서 중복 제거용)
+        content: Original article text
+        title: Article title (for duplicate removal)
 
     Returns:
         tuple: (subtitle, cleaned_content)
-               - subtitle: 추출된 부제목 (없으면 None)
-               - cleaned_content: 부제목이 제거된 본문
+               - subtitle: Extracted subtitle (None if not found)
+               - cleaned_content: Content with subtitle removed
     """
     if not content:
         return None, ""
@@ -552,12 +721,12 @@ def extract_subtitle(content: str, title: str = '') -> tuple:
     subtitle = None
     lines_to_remove = []
 
-    # 1. 제목이 본문에 반복되는 경우 제거 (처음 3줄 내에서)
+    # 1. Remove title if repeated in content (within first 3 lines)
     if title:
         title_normalized = title.strip()
         for i, line in enumerate(lines[:3]):
             line_stripped = line.strip()
-            # 제목과 동일하거나 매우 유사한 경우
+            # Identical or very similar to title
             if line_stripped and (
                 line_stripped == title_normalized or
                 line_stripped.replace(' ', '') == title_normalized.replace(' ', '')
@@ -565,7 +734,7 @@ def extract_subtitle(content: str, title: str = '') -> tuple:
                 lines_to_remove.append(i)
                 break
 
-    # 2. 부제목 패턴 검색 (처음 5줄 내에서)
+    # 2. Search for subtitle pattern (within first 5 lines)
     subtitle_line_index = None
     for i, line in enumerate(lines[:5]):
         if i in lines_to_remove:
@@ -574,33 +743,33 @@ def extract_subtitle(content: str, title: str = '') -> tuple:
         if not line_stripped:
             continue
 
-        # 패턴 1: "- 부제목 내용 -" (앞뒤 -, 끝에 공백 허용)
+        # Pattern 1: "- subtitle -" (dashes on both sides)
         match = re.match(r'^-+\s*(.+?)\s*-+\s*$', line_stripped)
         if match:
             subtitle = match.group(1).strip()
             subtitle_line_index = i
             break
 
-        # 패턴 2: "- 부제목 내용" (앞에 - 만, 최소 5자 이상)
+        # Pattern 2: "- subtitle" (leading dash only, min 5 chars)
         match = re.match(r'^-\s+(.{5,})$', line_stripped)
         if match:
             potential_subtitle = match.group(1).strip()
-            # 부제목 특성: 보통 100자 미만이고 마침표로 안 끝남
+            # Subtitle characteristic: usually under 100 chars, doesn't end with period
             if len(potential_subtitle) < 100 and not potential_subtitle.endswith('.'):
                 subtitle = potential_subtitle
                 subtitle_line_index = i
                 break
 
-    # 제거할 줄 목록에 부제목 줄 추가
+    # Add subtitle line to removal list
     if subtitle_line_index is not None:
         lines_to_remove.append(subtitle_line_index)
 
-    # 3. 줄 제거 (역순으로 제거해야 인덱스 꼬이지 않음)
+    # 3. Remove lines (in reverse order to avoid index issues)
     for idx in sorted(lines_to_remove, reverse=True):
         if idx < len(lines):
             lines.pop(idx)
 
-    # 4. 앞쪽 빈 줄 정리
+    # 4. Clean leading empty lines
     while lines and not lines[0].strip():
         lines.pop(0)
 
@@ -611,22 +780,22 @@ def extract_subtitle(content: str, title: str = '') -> tuple:
 
 def extract_subtitle_and_clean(content: str, title: str = '') -> dict:
     """
-    본문에서 부제목을 추출하고 본문을 정제하여 반환
+    Extract subtitle from content and return cleaned content
 
     Args:
-        content: 원본 본문 텍스트
-        title: 기사 제목 (본문에서 중복 제거용)
+        content: Original article content text
+        title: Article title (for duplicate removal)
 
     Returns:
         dict: {
-            'subtitle': 추출된 부제목 (없으면 None),
-            'content': 정제된 본문
+            'subtitle': Extracted subtitle (None if not found),
+            'content': Cleaned article content
         }
     """
-    # 1. 부제목 추출 (제목 중복 제거 포함)
+    # 1. Extract subtitle (includes title duplicate removal)
     subtitle, content_without_subtitle = extract_subtitle(content, title)
 
-    # 2. 본문 정제
+    # 2. Clean article content
     cleaned_content = clean_article_content(content_without_subtitle)
 
     return {

@@ -1,11 +1,11 @@
 """
-고흥군 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
-- 담당: AI Agent
+Goheung County Press Release Scraper
+- Version: v1.0
+- Last Modified: 2025-12-13
+- Maintainer: AI Agent
 
-변경점 (v1.0):
-- 사용자 제공 상세 분석 데이터 기반 최초 작성
+Changes (v1.0):
+- Initial version based on user-provided detailed analysis data
 - URL 패턴: boardView.do?pageId=www102&boardId=BD_00025&seq={ID}&movePage=1
 - 첨부파일: /fileDownload.do?action=fileDown&mode=&boardId=BD_00025&seq={ID}&fileSn={순번}
 - 정적 HTML 서버 렌더링 방식 (JavaScript 동적 로딩 없음)
@@ -83,7 +83,7 @@ DATE_PATTERNS = [
 # 5. 유틸리티 함수
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -144,10 +144,10 @@ def build_file_download_url(seq: str, file_sn: int = 1) -> str:
 # ============================================================
 def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str], str, Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서를 추출
+    Extract content, images, date, and department from detail page
 
     Returns:
-        (본문 텍스트, 썸네일 URL, 날짜, 담당부서)
+        (content text, thumbnail URL, date, department)
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
@@ -184,7 +184,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
         if dept_match:
             department = dept_match.group(1).strip()
     except Exception as e:
-        print(f"      ⚠️ 담당부서 추출 실패: {e}")
+        print(f"      [WARN] 담당부서 추출 실패: {e}")
     
     # 3. 본문 추출
     content = ""
@@ -250,7 +250,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
             content = re.sub(r'조회수\s*[:\s]+\d+', '', content)
             content = content.strip()[:5000]
     except Exception as e:
-        print(f"      ⚠️ JS 본문 추출 실패: {e}")
+        print(f"      [WARN] JS 본문 추출 실패: {e}")
     
     # Fallback: 일반 셀렉터
     if not content or len(content) < 50:
@@ -285,7 +285,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
             # 이미지 파일 확장자 확인
             if href and any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
                 full_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
-                print(f"      📥 첨부파일 다운로드 시도: {link_text[:50]}...")
+                print(f"      [DOWNLOAD] 첨부파일 다운로드 시도: {link_text[:50]}...")
                 
                 # 로컬 저장
                 saved_path = download_and_upload_image(full_url, url, REGION_CODE)
@@ -293,7 +293,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
                     thumbnail_url = saved_path
                     break
     except Exception as e:
-        print(f"      ⚠️ 첨부파일 처리 중 오류: {e}")
+        print(f"      [WARN] 첨부파일 처리 중 오류: {e}")
     
     # 전략 2: seq 기반으로 직접 첨부파일 URL 구성하여 다운로드 시도
     if not thumbnail_url and seq:
@@ -305,7 +305,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
             if saved_path:
                 thumbnail_url = saved_path
         except Exception as e:
-            print(f"      ⚠️ 첨부파일 직접 다운로드 실패: {e}")
+            print(f"      [WARN] 첨부파일 직접 다운로드 실패: {e}")
     
     # 전략 3: 본문 내 img 태그에서 추출
     if not thumbnail_url:
@@ -320,7 +320,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
                         thumbnail_url = saved_path
                         break
         except Exception as e:
-            print(f"      ⚠️ 본문 이미지 추출 실패: {e}")
+            print(f"      [WARN] 본문 이미지 추출 실패: {e}")
     
     return content, thumbnail_url, pub_date, department
 
@@ -330,14 +330,14 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
 # ============================================================
 def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송 (개수 기반)
+    Collect press releases and send to server (count-based)
 
     Args:
-        max_articles: 최대 수집 기사 수 (기본 10개)
-        days: 선택적 날짜 필터 (None이면 비활성화)
-        start_date: 수집 시작일 (YYYY-MM-DD)
-        end_date: 수집 종료일 (YYYY-MM-DD)
-        dry_run: 테스트 모드 (서버 전송 안함)
+        max_articles: Maximum number of articles to collect (default 10)
+        days: Optional date filter (disabled if None)
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
+        dry_run: Test mode (no server transmission)
     """
     if not start_date and days:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
@@ -362,6 +362,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
     
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     collected_articles = []  # dry-run 시 반환용
     
     with sync_playwright() as p:
@@ -409,7 +410,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
 
             print(f"      [INFO] {article_count}개 기사 링크 발견")
             
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
             seen_seqs = set()  # 중복 seq 체크용
             
@@ -477,7 +478,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 print("      [STOP] 이 페이지에 유효한 기사가 없음, 탐색 중지")
                 break
             
-            # 상세 페이지 수집 및 전송
+            # Collect and send detail pages
             consecutive_old = 0  # 연속 오래된 기사 카운터
             stop_scraping = False
             
@@ -514,10 +515,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 부제목 추출
+                # Extract subtitle
                 subtitle, content = extract_subtitle(content, title)
 
-                # 카테고리 자동 분류
+                # Auto-categorize
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -541,7 +542,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     print(f"         [DRY-RUN] {img_status}, {content_status}")
                     collected_articles.append(article_data)
                 else:
-                    # 서버로 전송
+                    # Send to server
                     result = send_article_to_server(article_data)
                     collected_count += 1
 

@@ -1,11 +1,11 @@
 """
-곡성군 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-12
-- 담당: AI Agent
+Gokseong County Press Release Scraper
+- Version: v1.0
+- Last Modified: 2025-12-12
+- Maintainer: AI Agent
 
-변경점 (v1.0):
-- 초기 버전 생성
+Changes (v1.0):
+- Initial version created
 - 목록 페이지: https://www.gokseong.go.kr/kr/board/list.do?bbsId=BBS_000000000000151
 - 상세 페이지: nttId 파라미터로 개별 기사 식별
 """
@@ -64,7 +64,7 @@ CONTENT_SELECTORS = [
 # 5. 유틸리티 함수
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
 
@@ -80,11 +80,11 @@ def normalize_date(date_str: str) -> str:
 
 
 def clean_content(content: str) -> str:
-    """본문에서 불필요한 메타 정보 제거"""
+    """Remove unnecessary metadata from content"""
     if not content:
         return content
 
-    # 제거할 패턴들
+    # Patterns to remove
     patterns_to_remove = [
         r'작성자\s*:\s*[^\n]+',
         r'작성일\s*:\s*[^\n]+',
@@ -100,7 +100,7 @@ def clean_content(content: str) -> str:
     for pattern in patterns_to_remove:
         content = re.sub(pattern, '', content)
 
-    # 연속된 공백/줄바꿈 정리
+    # Clean up consecutive spaces/newlines
     content = re.sub(r'\n{3,}', '\n\n', content)
     content = re.sub(r'^\s+', '', content)
 
@@ -112,7 +112,7 @@ def clean_content(content: str) -> str:
 # ============================================================
 def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
-    상세 페이지에서 본문, 이미지, 날짜, 담당부서, 부제목을 추출합니다.
+    Extract content, images, date, department, and subtitle from detail page.
     """
     if not safe_goto(page, url, timeout=20000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
@@ -124,7 +124,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     pub_date = datetime.now().strftime('%Y-%m-%d')
     department = None
 
-    # 1. 본문 추출
+    # 1. Extract content
     for sel in CONTENT_SELECTORS:
         content_elem = page.locator(sel)
         if content_elem.count() > 0:
@@ -133,7 +133,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
                 content = text[:5000]
                 break
 
-    # 본문이 없으면 전체 페이지에서 추출 시도
+    # If no content, try extracting from entire page
     if not content:
         try:
             # 곡성군 상세 페이지 구조에 맞게 추출
@@ -143,7 +143,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
         except:
             pass
 
-    # 2. 날짜 추출 (상세 페이지에서)
+    # 2. Extract date (from detail page)
     try:
         # 곡성군: 작성일 정보 추출
         date_selectors = [
@@ -165,7 +165,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     except:
         pass
 
-    # 3. 담당부서 추출
+    # 3. Extract department
     try:
         dept_selectors = [
             'th:has-text("담당부서") + td',
@@ -184,8 +184,8 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     except:
         pass
 
-    # 4. 이미지 추출 및 Cloudinary 업로드
-    # 방법 A: 본문 내 이미지 찾기
+    # 4. Extract images and upload to Cloudinary
+    # Method A: Find images within content
     try:
         img_selectors = [
             'div.view_con img',
@@ -214,7 +214,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     except Exception as e:
         print(f"      이미지 추출 오류: {e}")
 
-    # 방법 B: 첨부파일에서 이미지 찾기
+    # Method B: Find images from attachments
     if not thumbnail_url:
         try:
             download_links = page.locator('a[href*="download"], a[href*="fileDown"], a[onclick*="download"]')
@@ -232,15 +232,21 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
         except:
             pass
 
-    # 이미지 없으면 스킵
+    # Skip if no image
     if not thumbnail_url:
         print(f"      [스킵] 이미지 없음")
         return None, None, None, None, None
 
-    # 본문에서 불필요한 메타 정보 제거
+    # Remove unnecessary metadata from content
     content = clean_article_content(content)
 
-    # 부제목 추출
+    # 곡성군 특수 처리: 본문 상단 4줄 제거 (메타 정보 포함)
+    if content:
+        lines = content.split('\n')
+        if len(lines) > 4:
+            content = '\n'.join(lines[4:]).strip()
+
+    # Extract subtitle
     subtitle, content = extract_subtitle(content, title)
 
     return content, thumbnail_url, pub_date, department, subtitle
@@ -251,7 +257,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
 # ============================================================
 def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
-    보도자료를 수집하고 서버로 전송합니다.
+    Collect press releases and send to server.
     """
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
 
@@ -271,6 +277,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
     success_count = 0
     image_count = 0
     skip_count = 0
+    skipped_count = 0
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -295,7 +302,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
 
             time.sleep(1)
 
-            # 목록 아이템 찾기
+            # Find list items
             rows = wait_and_find(page, LIST_SELECTORS, timeout=10000)
             if not rows:
                 print("      [!] 기사 목록을 찾을 수 없습니다.")
@@ -304,9 +311,9 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
             count = rows.count()
             print(f"      [{count}개 기사 발견]")
 
-            # 링크 정보 수집
+            # Collect link information
             link_data = []
-            seen_urls = set()  # ★ 중복 URL 체크용
+            seen_urls = set()  # Duplicate URL check
 
             for i in range(count):
                 if collected_count + len(link_data) >= max_articles:
@@ -315,7 +322,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 try:
                     row = rows.nth(i)
 
-                    # 공지사항 제외 (번호가 '공지'인 경우)
+                    # Exclude notices (number is  '공지'인 경우)
                     try:
                         num_cell = row.locator('td').first
                         num_text = safe_get_text(num_cell)
@@ -324,7 +331,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     except:
                         pass
 
-                    # 제목/링크 추출
+                    # Extract title/link
                     link_elem = row.locator('a').first
                     if not link_elem or link_elem.count() == 0:
                         continue
@@ -350,7 +357,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     if not full_url:
                         continue
 
-                    # 날짜 추출 (목록에서)
+                    # Extract date (from list)
                     try:
                         # 곡성군: 테이블 구조에서 날짜 컬럼 (보통 4번째 또는 5번째)
                         cells = row.locator('td')
@@ -364,7 +371,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     except:
                         n_date = datetime.now().strftime('%Y-%m-%d')
 
-                    # 날짜 필터링
+                    # Date filtering
                     if n_date < start_date:
                         stop = True
                         break
@@ -382,7 +389,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     print(f"      행 파싱 오류: {e}")
                     continue
 
-            # 상세 페이지 수집 및 전송
+            # Collect and send detail pages
             for item in link_data:
                 if collected_count >= max_articles:
                     break
@@ -396,19 +403,19 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
 
                 content, thumbnail_url, pub_date, department, subtitle = fetch_detail(page, full_url, title)
 
-                # 이미지 없는 기사 스킵
+                # Skip articles without images
                 if content is None:
                     skip_count += 1
                     continue
 
-                # 상세 페이지에서 추출한 날짜가 있으면 사용
+                # Use date extracted from detail page if available
                 if pub_date and pub_date != datetime.now().strftime('%Y-%m-%d'):
                     n_date = pub_date
 
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
-                # 카테고리 자동 분류
+                # Auto-categorize
                 cat_code, cat_name = detect_category(title, content)
 
                 article_data = {
@@ -423,7 +430,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     'thumbnail_url': thumbnail_url,
                 }
 
-                # 서버로 전송
+                # Send to server
                 result = send_article_to_server(article_data)
                 collected_count += 1
 
@@ -435,9 +442,10 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                     print(f"         [OK] 저장 완료 ({img_status})")
                     log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
+                    skipped_count += 1
                     print(f"         [SKIP] 이미 존재")
 
-                # 목록 페이지로 복귀
+                # Return to list page
                 safe_goto(page, list_url)
                 time.sleep(0.5)
 
@@ -450,8 +458,11 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
 
         browser.close()
 
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개, 이미지 {image_count}개, 스킵 {skip_count}개)"
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     print(f"[완료] {final_msg}")
     return []
 

@@ -4,7 +4,7 @@
 - 최종수정: 2025-12-12
 - 담당: AI Agent
 
-⚠️ 사용법:
+[USAGE]:
 1. 이 파일을 복사하여 scrapers/{region}/{region}_scraper.py로 저장
 2. TODO 주석을 찾아 해당 지역에 맞게 수정
 3. 테스트: python {region}_scraper.py --days 1 --max-articles 3
@@ -224,7 +224,7 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
     Returns:
         수집된 기사 리스트 (이미 전송됨)
     """
-    print(f"🏛️ {REGION_NAME} 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
+    print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     end_date = datetime.now().strftime('%Y-%m-%d')
@@ -232,6 +232,7 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
 
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     image_count = 0
 
     with sync_playwright() as p:
@@ -248,7 +249,7 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
         while page_num <= 5 and not stop and collected_count < max_articles:
             # TODO: 페이지네이션 URL 패턴 확인
             list_url = f'{LIST_URL}?page={page_num}'
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] 페이지 {page_num} 수집 중...")
             log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
 
             if not safe_goto(page, list_url):
@@ -260,11 +261,11 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
             # 목록 아이템 찾기
             rows = wait_and_find(page, LIST_SELECTORS, timeout=10000)
             if not rows:
-                print("      ⚠️ 기사 목록을 찾을 수 없습니다.")
+                print("      [WARN] 기사 목록을 찾을 수 없습니다.")
                 break
 
             count = rows.count()
-            print(f"      📰 {count}개 기사 발견")
+            print(f"      [FOUND] {count}개 기사 발견")
 
             # 링크 정보 수집
             link_data = []
@@ -309,7 +310,7 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
                 full_url = item['url']
                 n_date = item['date']
 
-                print(f"      📰 {title[:30]}... ({n_date})")
+                print(f"      [ARTICLE] {title[:30]}... ({n_date})")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
                 content, thumbnail_url, pub_date, department = fetch_detail(page, full_url)
@@ -340,11 +341,12 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
                     success_count += 1
                     if thumbnail_url:
                         image_count += 1
-                    img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                    print(f"         ✅ 저장 완료 ({img_status})")
-                    log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
+                    img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                    print(f"         [OK] saved ({img_status})")
+                    log_to_server(REGION_CODE, 'running', f"Saved: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
-                    print(f"         ⏩ 이미 존재")
+                    skipped_count += 1
+                    print(f"         [SKIP] Already exists (duplicate)")
 
                 # 목록 페이지로 복귀
                 safe_goto(page, list_url)
@@ -352,16 +354,25 @@ def collect_articles(days: int = 3, max_articles: int = 10) -> List[Dict]:
 
             page_num += 1
             if stop:
-                print("      🛑 수집 기간 초과, 종료합니다.")
+                print("      [STOP] 수집 기간 초과, 종료합니다.")
                 break
 
             time.sleep(1)
 
         browser.close()
 
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개, 이미지 {image_count}개)"
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
-    print(f"✅ {final_msg}")
+    # Build final message with duplicate info
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
+
+    # Send completion log with stats (for GitHub Actions)
+    log_to_server(
+        REGION_CODE, 'success', final_msg, 'success',
+        created_count=success_count, skipped_count=skipped_count
+    )
+    print(f"[OK] {final_msg}")
     return []
 
 

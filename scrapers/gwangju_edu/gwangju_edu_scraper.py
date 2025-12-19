@@ -394,6 +394,7 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
     
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     image_count = 0
     
     with sync_playwright() as p:
@@ -503,15 +504,19 @@ def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = No
                 print(f"         [OK] Saved ({img_status})")
                 log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
             elif result.get('status') == 'exists':
+                skipped_count += 1
                 print(f"         [SKIP] Already exists")
             
             time.sleep(0.5)  # Rate limiting
         
         browser.close()
     
-    final_msg = f"Collection complete (total {collected_count}, new {success_count}, images {image_count})"
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
     print(f"[OK] {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
     
     return []
 

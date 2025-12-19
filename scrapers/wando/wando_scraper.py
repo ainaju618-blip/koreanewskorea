@@ -1,19 +1,19 @@
 """
-완도군 보도자료 스크래퍼
-- 버전: v1.0
-- 최종수정: 2025-12-13
-- 담당: AI Agent
+Wando County Press Release Scraper
+- Version: v1.0
+- Last Modified: 2025-12-13
+- Maintainer: AI Agent
 
-변경점 (v1.0):
-- 사용자 제공 상세 분석 데이터 기반 최초 작성
-- URL 패턴: /wando/sub.cs?m=1023&nttId={ID}&pBoardId=BBSMSTR_000000000036
-- 첨부파일: ws.wando.go.kr/ext/html5fileupload/fileDownload.do
-- 카드형 그리드 레이아웃 (상단 2개 큰 카드 + 리스트형)
-- 정적 HTML, UTF-8 인코딩
+Changes (v1.0):
+- Initial implementation based on user-provided detailed analysis data
+- URL Pattern: /wando/sub.cs?m=1023&nttId={ID}&pBoardId=BBSMSTR_000000000036
+- Attachments: ws.wando.go.kr/ext/html5fileupload/fileDownload.do
+- Card-style grid layout (2 large cards at top + list view)
+- Static HTML, UTF-8 encoding
 """
 
 # ============================================================
-# 1. 표준 라이브러리
+# 1. Standard Library
 # ============================================================
 import sys
 import os
@@ -24,12 +24,12 @@ from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin, parse_qs, urlparse
 
 # ============================================================
-# 2. 외부 라이브러리
+# 2. External Libraries
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
 
 # ============================================================
-# 3. 로컬 모듈
+# 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
@@ -38,7 +38,7 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.category_detector import detect_category
 
 # ============================================================
-# 4. 상수 정의
+# 4. Constants
 # ============================================================
 REGION_CODE = 'wando'
 REGION_NAME = '완도군'
@@ -46,22 +46,22 @@ CATEGORY_NAME = '전남'
 BASE_URL = 'https://www.wando.go.kr'
 FILE_SERVER_URL = 'https://ws.wando.go.kr'
 
-# 목록 페이지 URL (보도자료)
+# List page URL (press releases)
 LIST_MENU = '299'
 DETAIL_MENU = '1023'
 BOARD_ID = 'BBSMSTR_000000000036'
 LIST_PATH = f'/wando/sub.cs?m={LIST_MENU}'
 LIST_URL = f'{BASE_URL}{LIST_PATH}'
 
-# 상세 페이지 URL 패턴: /wando/sub.cs?m=1023&nttId={ID}&pBoardId=BBSMSTR_000000000036
+# Detail page URL pattern: /wando/sub.cs?m=1023&nttId={ID}&pBoardId=BBSMSTR_000000000036
 
-# 목록 페이지 셀렉터 (카드형 그리드 레이아웃)
+# List page selectors (card-style grid layout)
 LIST_ITEM_SELECTORS = [
-    'a[href*="nttId="][href*="pBoardId="]',  # 기사 링크
+    'a[href*="nttId="][href*="pBoardId="]',  # Article links
     'a[href*="sub.cs"][href*="nttId="]',
 ]
 
-# 상세 페이지/본문 셀렉터 (우선순위 순)
+# Detail page/content selectors (priority order)
 CONTENT_SELECTORS = [
     '.view_content',
     '.board_view_content',
@@ -70,17 +70,17 @@ CONTENT_SELECTORS = [
     'article',
 ]
 
-# 날짜 패턴: YYYY-MM-DD
+# Date patterns: YYYY-MM-DD
 DATE_PATTERNS = [
     r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})',
 ]
 
 
 # ============================================================
-# 5. 유틸리티 함수
+# 5. Utility Functions
 # ============================================================
 def normalize_date(date_str: str) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 정규화"""
+    """Normalize date string to YYYY-MM-DD format"""
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
     
@@ -268,13 +268,13 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             # 이미지 파일 확장자 확인 (.jpg, .JPG, .png)
             if href and any(ext in link_text.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif']):
                 full_url = href if href.startswith('http') else urljoin(FILE_SERVER_URL, href)
-                print(f"      📥 첨부파일 다운로드 시도: {link_text[:50]}...")
+                print(f"      [DOWNLOAD] 첨부파일 다운로드 시도: {link_text[:50]}...")
                 
                 # 로컬 저장
                 saved_path = download_and_upload_image(full_url, url, REGION_CODE)
                 if saved_path:
                     thumbnail_url = saved_path
-                    print(f"      💾 첨부파일 이미지 저장: {saved_path}")
+                    print(f"      [SAVED] 첨부파일 이미지 저장: {saved_path}")
                     break
     except Exception as e:
         print(f"      [WARN] 첨부파일 처리 중 오류: {e}")
@@ -290,7 +290,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     saved_path = download_and_upload_image(download_url, url, REGION_CODE)
                     if saved_path:
                         thumbnail_url = saved_path
-                        print(f"      💾 본문 이미지 저장: {saved_path}")
+                        print(f"      [SAVED] 본문 이미지 저장: {saved_path}")
                         break
         except Exception as e:
             print(f"      [WARN] 본문 이미지 추출 실패: {e}")
@@ -347,9 +347,10 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         print("   [TEST] DRY-RUN mode: No server transmission")
     
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
-    
+
     collected_count = 0
     success_count = 0
+    skipped_count = 0
     collected_articles = []  # dry-run 시 반환용
     
     with sync_playwright() as p:
@@ -370,7 +371,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
         
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)
-            print(f"   📄 페이지 {page_num} 수집 중...")
+            print(f"   [PAGE] 페이지 {page_num} 수집 중...")
             log_to_server(REGION_CODE, '실행중', f'페이지 {page_num} 탐색', 'info')
             
             if not safe_goto(page, list_url):
@@ -395,7 +396,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 print("      [WARN] 기사 목록을 찾을 수 없습니다.")
                 break
             
-            print(f"      📰 {article_count}개 기사 링크 발견")
+            print(f"      [FOUND] {article_count}개 기사 링크 발견")
             
             # 링크 정보 수집
             link_data = []
@@ -462,7 +463,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
             
             # 이 페이지에서 유효한 기사가 없으면 탐색 중지
             if len(link_data) == 0:
-                print("      ⏹️ 이 페이지에 유효한 기사가 없음, 탐색 중지")
+                print("      [STOP] 이 페이지에 유효한 기사가 없음, 탐색 중지")
                 break
             
             # 상세 페이지 수집 및 전송
@@ -476,7 +477,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 title = item['title']
                 full_url = item['url']
                 
-                print(f"      📰 {title[:40]}...")
+                print(f"      [ARTICLE] {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
                 content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
@@ -490,7 +491,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     print(f"         [SKIP] 날짜 필터로 스킵: {final_date} (연속 {consecutive_old}개)")
                     
                     if consecutive_old >= 3:
-                        print("         ⏹️ 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
+                        print("         [STOP] 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
                         stop_scraping = True
                         break
                     continue
@@ -523,22 +524,23 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     # 테스트 모드: 서버 전송 안함
                     collected_count += 1
                     success_count += 1
-                    img_status = "✓이미지" if thumbnail_url else "✗이미지"
-                    content_status = f"✓본문({len(content)}자)" if content and len(content) > 50 else "✗본문"
-                    print(f"         🧪 [DRY-RUN] {img_status}, {content_status}")
+                    img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
+                    content_status = f"[+TXT:{len(content)}]" if content and len(content) > 50 else "[-TXT]"
+                    print(f"         [DRY-RUN] {img_status}, {content_status}")
                     collected_articles.append(article_data)
                 else:
                     # 서버로 전송
                     result = send_article_to_server(article_data)
                     collected_count += 1
-                    
+
                     if result.get('status') == 'created':
                         success_count += 1
-                        img_status = "✓이미지" if thumbnail_url else "✗이미지"
+                        img_status = "[+IMG]" if thumbnail_url else "[-IMG]"
                         print(f"         [OK] 저장 완료 ({img_status})")
                         log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                     elif result.get('status') == 'exists':
                         print(f"         [SKIP] 이미 존재")
+                        skipped_count += 1
                     else:
                         print(f"         [WARN] 전송 실패: {result}")
                 
@@ -552,11 +554,14 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
             time.sleep(1)
         
         browser.close()
-    
-    final_msg = f"수집 완료 (총 {collected_count}개, 신규 {success_count}개)"
+
+    if skipped_count > 0:
+        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
+    else:
+        final_msg = f"Completed: {success_count} new articles"
     print(f"[OK] {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
-    
+    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
+
     return collected_articles
 
 

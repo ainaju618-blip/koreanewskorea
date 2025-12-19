@@ -30,9 +30,9 @@ def backup_scrapers():
             
             shutil.copy2(source_path, backup_path)
             copied += 1
-            print(f"   ✅ {filename}")
+            print(f"   [OK] {filename}")
     
-    print(f"\n✅ 백업 완료!")
+    print(f"\n[OK] 백업 완료!")
     print(f"   복사됨: {copied}개 파일")
     print(f"   위치: {backup_dir}")
     
@@ -48,17 +48,17 @@ def list_backups():
         print("백업 폴더가 없습니다.")
         return
     
-    print("📦 백업 목록:")
+    print("[BACKUP] 백업 목록:")
     for date_folder in sorted(os.listdir(backup_root), reverse=True):
         date_path = os.path.join(backup_root, date_folder)
         if os.path.isdir(date_path):
             count = len([f for f in os.listdir(date_path) if f.endswith('.py')])
-            print(f"   📁 {date_folder} ({count}개 파일)")
+            print(f"   [DIR] {date_folder} ({count}개 파일)")
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--list":
         list_backups()
     else:
-        print("🔄 스크래퍼 백업 시작...")
+        print("[BACKUP] 스크래퍼 백업 시작...")
         backup_scrapers()
