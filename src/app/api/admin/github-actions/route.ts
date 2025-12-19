@@ -205,9 +205,9 @@ ${cronLines.join('\n')}
         }
 
         // Replace the schedule section in the workflow file
-        // Pattern handles both active schedule and commented-out schedule
+        // Pattern handles: active schedule, commented-out schedule, or any comment before workflow_dispatch
         const newContent = currentContent.replace(
-            /on:\s*\n\s*(?:schedule:\s*\n[\s\S]*?|# schedule:.*\n\s*)workflow_dispatch:/,
+            /on:\s*\n\s*(?:schedule:\s*\n[\s\S]*?|#[^\n]*\n\s*)workflow_dispatch:/,
             scheduleSection
         );
 
