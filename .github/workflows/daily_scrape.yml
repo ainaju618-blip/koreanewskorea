@@ -5,6 +5,8 @@ on:
     # Daily schedules - Updated 2025-12-19
     # 18:12 KST (09:12 UTC)
     - cron: '12 9 * * *'
+    # 20:02 KST (11:02 UTC)
+    - cron: '2 11 * * *'
   workflow_dispatch:
     inputs:
       region:
