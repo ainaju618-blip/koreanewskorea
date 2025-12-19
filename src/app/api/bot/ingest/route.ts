@@ -319,31 +319,23 @@ export async function POST(request: Request) {
             : validation.status === 'limited' ? 'draft'
                 : validation.status;
 
-        // Build insert object - only include author fields if they exist in DB
-        // TODO: Add author_id and author_name columns to posts table in Supabase
-        const insertData: Record<string, unknown> = {
-            title,
-            content: content || '',
-            original_link,
-            source: source || 'Bot',
-            category: category || '뉴스', // Legacy TEXT field
-            category_id, // New FK field (CMS v2.0)
-            region: finalRegion, // Region code for filtering
-            published_at: published_at || new Date().toISOString(),
-            thumbnail_url,
-            ai_summary: ai_summary || '',
-            status: dbStatus, // DB compatible status
-        };
-
-        // Note: author_id and author_name are prepared but NOT inserted
-        // until the columns are added to the posts table in Supabase
-        if (author_id) {
-            console.info(`[ASSIGN] Would assign ${author_name} but columns not in DB yet`);
-        }
-
         const { data, error } = await supabaseAdmin
             .from('posts')
-            .insert(insertData)
+            .insert({
+                title,
+                content: content || '',
+                original_link,
+                source: source || 'Bot',
+                category: category || '뉴스', // Legacy TEXT field
+                category_id, // New FK field (CMS v2.0)
+                region: finalRegion, // Region code for filtering
+                published_at: published_at || new Date().toISOString(),
+                thumbnail_url,
+                ai_summary: ai_summary || '',
+                status: dbStatus, // DB compatible status
+                author_id, // Auto-assigned reporter ID
+                author_name, // Auto-assigned reporter name
+            })
             .select()
             .single();
 
