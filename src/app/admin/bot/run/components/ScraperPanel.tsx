@@ -153,7 +153,89 @@ export function ScraperPanel() {
             }
         };
         checkRunningJobs();
+
+        // GitHub Actions 진행 중인 작업 확인 및 자동 복원
+        const checkGitHubActionsStatus = async () => {
+            try {
+                const res = await fetch('/api/admin/github-actions');
+                const data = await res.json();
+
+                if (data.runs && data.runs.length > 0) {
+                    const latestRun = data.runs[0];
+                    const jobStats = data.jobStats || { total: 0, completed: 0, in_progress: 0, queued: 0, failed: 0 };
+
+                    // 진행 중인 GitHub Actions가 있으면 폴링 시작
+                    if (latestRun.status === 'queued' || latestRun.status === 'in_progress' || jobStats.in_progress > 0) {
+                        console.log('[ScraperPanel] Found running GitHub Actions, starting polling');
+                        setIsRunning(true);
+                        setProgress({ total: jobStats.total || 26, completed: jobStats.completed });
+                        if (jobStats.in_progress > 0) {
+                            setStatusMessage(`실행 중: ${jobStats.completed}/${jobStats.total} 완료, ${jobStats.in_progress}개 진행중`);
+                        } else {
+                            setStatusMessage('GitHub Actions 대기 중...');
+                        }
+                        // 폴링 시작
+                        pollGitHubActionsOnLoad(jobStats.total || 26);
+                    }
+                }
+            } catch (e) {
+                console.error('[ScraperPanel] Failed to check GitHub Actions status:', e);
+            }
+        };
+        checkGitHubActionsStatus();
     }, []);
+
+    // 페이지 로드 시 GitHub Actions 폴링 (useEffect에서 호출)
+    const pollGitHubActionsOnLoad = (regionCount: number) => {
+        let pollCount = 0;
+        const maxPolls = 120;
+
+        const poll = async () => {
+            try {
+                const res = await fetch('/api/admin/github-actions');
+                const data = await res.json();
+
+                if (data.runs && data.runs.length > 0) {
+                    const latestRun = data.runs[0];
+                    const jobStats = data.jobStats || { total: 0, completed: 0, in_progress: 0, queued: 0, failed: 0 };
+
+                    if (jobStats.total > 0) {
+                        setProgress({ total: jobStats.total, completed: jobStats.completed });
+                    }
+
+                    if (latestRun.status === 'completed') {
+                        setIsRunning(false);
+                        if (latestRun.conclusion === 'success') {
+                            setStatusMessage(`GitHub Actions 완료! ${jobStats.completed}개 지역 수집 성공`);
+                        } else {
+                            setStatusMessage(`GitHub Actions 완료 (${jobStats.completed} 성공, ${jobStats.failed} 실패)`);
+                        }
+                        return;
+                    } else if (latestRun.status === 'in_progress' || jobStats.in_progress > 0) {
+                        setStatusMessage(`실행 중: ${jobStats.completed}/${jobStats.total} 완료, ${jobStats.in_progress}개 진행중`);
+                    } else if (latestRun.status === 'queued') {
+                        setStatusMessage('GitHub Actions 대기 중...');
+                    }
+                }
+
+                pollCount++;
+                if (pollCount < maxPolls) {
+                    setTimeout(poll, 5000);
+                } else {
+                    setIsRunning(false);
+                    setStatusMessage("Polling timeout.");
+                }
+            } catch (e) {
+                console.error('[ScraperPanel] GitHub polling error:', e);
+                pollCount++;
+                if (pollCount < maxPolls) {
+                    setTimeout(poll, 5000);
+                }
+            }
+        };
+
+        setTimeout(poll, 1000);
+    };
 
     // 다중 작업 폴링 로직 (DB 기반)
     useEffect(() => {
