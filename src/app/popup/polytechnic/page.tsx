@@ -7,6 +7,8 @@ type TabType = 'image' | 'recruitment' | 'video' | 'application';
 
 export default function PolytechnicPopup() {
     const [activeTab, setActiveTab] = useState<TabType>('image');
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = 2;
 
     const handleTabClick = (tab: TabType) => {
         if (tab === 'application') {
@@ -29,12 +31,38 @@ export default function PolytechnicPopup() {
     );
 
     const renderRecruitmentContent = () => (
-        <div className="flex-1 w-full h-full">
-            <iframe
-                src="https://docs.google.com/viewer?url=https://www.koreanewsone.com/files/mojib.pdf&embedded=true"
-                className="w-full h-full border-0"
-                title="Recruitment Guide PDF"
-            />
+        <div className="flex-1 flex flex-col w-full h-full bg-gray-100">
+            {/* Page navigation */}
+            <div className="flex items-center justify-center gap-4 py-2 bg-white border-b">
+                <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+                >
+                    이전
+                </button>
+                <span className="text-sm font-medium">
+                    {currentPage} / {totalPages} 페이지
+                </span>
+                <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+                >
+                    다음
+                </button>
+            </div>
+            {/* Image display */}
+            <div className="flex-1 overflow-auto flex items-start justify-center p-2">
+                <Image
+                    src={`/images/ads/mojib_0${currentPage}.png`}
+                    alt={`Recruitment Guide Page ${currentPage}`}
+                    width={1191}
+                    height={1701}
+                    className="max-w-full h-auto shadow-lg"
+                    priority
+                />
+            </div>
         </div>
     );
 
