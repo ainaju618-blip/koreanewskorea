@@ -328,74 +328,49 @@ export function ScraperPanel() {
         };
     }, [isRunning, activeJobIds]);
 
-    // GitHub Actions execution for selected regions
+    // Local Python execution for selected regions (real-time monitoring)
     const handleRun = async () => {
         if (selectedRegions.length === 0) return;
 
-        const runStartTime = new Date();
         setIsRunning(true);
         setJobResults([]);
         setActiveJobIds([]);
-        setGhActionsResult(null); // Clear previous result
+        setGhActionsResult(null);
+        setStatusMessage(`${selectedRegions.length}개 지역 수집 시작...`);
+        setProgress({ total: selectedRegions.length, completed: 0 });
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const days = Math.min(Math.max(diffDays, 1), 7).toString();
+        try {
+            const response = await fetch('/api/bot/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    regions: selectedRegions,
+                    startDate,
+                    endDate,
+                    dryRun: false
+                })
+            });
+            const data = await response.json();
 
-        // If all regions selected, use 'all' for parallel execution
-        if (selectedRegions.length === allRegions.length) {
-            setStatusMessage(`GitHub Actions: 26개 지역 병렬 실행 중...`);
-            setProgress({ total: 26, completed: 0 });
+            if (response.ok && data.jobIds) {
+                console.log('[ScraperPanel] Local scraper started:', data);
+                setActiveJobIds(data.jobIds);
+                setProgress({ total: data.jobIds.length, completed: 0 });
 
-            try {
-                const response = await fetch('/api/admin/github-actions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ region: 'all', days })
-                });
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    pollGitHubActions(26, runStartTime);
+                if (data.mode === 'local') {
+                    setStatusMessage(`로컬 Python 실행 시작 (${data.jobCount}개 지역)`);
+                } else if (data.mode === 'github-actions') {
+                    setStatusMessage(`GitHub Actions 트리거됨 (${data.jobCount}개 지역)`);
                 } else {
-                    setIsRunning(false);
-                    setStatusMessage(`Error: ${data.error || data.message}`);
+                    setStatusMessage(data.message);
                 }
-            } catch (error: any) {
-                setIsRunning(false);
-                setStatusMessage(`Failed: ${error.message}`);
-            }
-        } else {
-            // Trigger workflow for each selected region
-            setStatusMessage(`GitHub Actions: ${selectedRegions.length}개 지역 실행 중...`);
-            setProgress({ total: selectedRegions.length, completed: 0 });
-
-            let successCount = 0;
-            for (const regionId of selectedRegions) {
-                try {
-                    const response = await fetch('/api/admin/github-actions', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ region: regionId, days })
-                    });
-                    const data = await response.json();
-                    if (response.ok && data.success) {
-                        successCount++;
-                        console.log(`[ScraperPanel] Triggered GitHub Actions for ${regionId}`);
-                    }
-                } catch (e) {
-                    console.error(`[ScraperPanel] Failed to trigger ${regionId}:`, e);
-                }
-            }
-
-            if (successCount > 0) {
-                setStatusMessage(`GitHub Actions: ${successCount}개 지역 트리거 완료! 진행 상황은 GitHub에서 확인하세요.`);
-                pollGitHubActions(successCount, runStartTime);
             } else {
                 setIsRunning(false);
-                setStatusMessage("작업 시작 실패");
+                setStatusMessage(`Error: ${data.message || 'Unknown error'}`);
             }
+        } catch (error: any) {
+            setIsRunning(false);
+            setStatusMessage(`Failed: ${error.message}`);
         }
     };
 
@@ -1033,10 +1008,11 @@ export function ScraperPanel() {
                         <button
                             onClick={handleRun}
                             disabled={isRunning || selectedRegions.length === 0}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-sm transition disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-sm transition disabled:opacity-50"
+                            title="로컬 개발 서버에서만 동작 (병렬 실행 + 실시간 모니터링)"
                         >
                             {isRunning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-                            {isRunning ? '실행 중...' : '수집 시작'}
+                            {isRunning ? '실행 중...' : '로컬 병렬 실행'}
                         </button>
                         <button
                             onClick={handleGitHubRunAll}
@@ -1045,7 +1021,7 @@ export function ScraperPanel() {
                             title="GitHub Actions로 26개 지역 병렬 실행 (약 5분)"
                         >
                             <Zap className="w-5 h-5" />
-                            전체 병렬
+                            GitHub 병렬
                         </button>
                         <a
                             href="https://github.com/korea-news/koreanewsone/actions/workflows/daily_scrape.yml"

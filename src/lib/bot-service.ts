@@ -182,6 +182,28 @@ export async function executeScraper(
 
     let stdoutData = '';
     let stderrData = '';
+    let lastLogUpdate = Date.now();
+    const LOG_UPDATE_INTERVAL = 1000; // 1초마다 DB 업데이트
+
+    // ★ 실시간 로그 업데이트 함수 (debounced)
+    const updateLogRealtime = async (message: string) => {
+        const now = Date.now();
+        if (now - lastLogUpdate < LOG_UPDATE_INTERVAL) return; // throttle
+        lastLogUpdate = now;
+
+        try {
+            // 마지막 3줄만 표시 (실시간 모니터링용)
+            const lines = message.trim().split('\n');
+            const recentLines = lines.slice(-3).join('\n');
+
+            await supabaseAdmin
+                .from('bot_logs')
+                .update({ log_message: recentLines || 'Processing...' })
+                .eq('id', logId);
+        } catch (e) {
+            // Silently ignore update errors to not interrupt scraping
+        }
+    };
 
     child.stdout.on('data', (data: Buffer) => {
         const text = data.toString();
@@ -190,6 +212,9 @@ export async function executeScraper(
             stdoutData += text.slice(0, MAX_BUFFER_SIZE - stdoutData.length);
         }
         console.log(`[${region} STDOUT]`, text.trim());
+
+        // ★ 실시간 로그 업데이트
+        updateLogRealtime(stdoutData);
     });
 
     child.stderr.on('data', (data: Buffer) => {
