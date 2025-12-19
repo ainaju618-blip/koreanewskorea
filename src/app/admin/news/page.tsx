@@ -355,50 +355,58 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Approve 실행 - Promise.allSettled로 개별 응답 확인
+    // Batch processing helper - processes items in chunks to prevent overload
+    const processBatch = async <T,>(
+        items: T[],
+        processor: (item: T) => Promise<any>,
+        batchSize: number = 5
+    ): Promise<PromiseSettledResult<any>[]> => {
+        const results: PromiseSettledResult<any>[] = [];
+        for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            const batchResults = await Promise.allSettled(batch.map(processor));
+            results.push(...batchResults);
+            // Small delay between batches to prevent overload
+            if (i + batchSize < items.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        return results;
+    };
+
+    // Bulk Approve 실행 - 배치 처리로 과부하 방지
     const executeBulkApprove = async () => {
         console.log('=== 선택 승인 시작 ===');
         console.log('선택된 ID 개수:', selectedIds.size);
-        console.log('선택된 ID 목록:', Array.from(selectedIds));
 
         setIsBulkProcessing(true);
         try {
-            const results = await Promise.allSettled(
-                Array.from(selectedIds).map(async (id) => {
-                    console.log(`[승인 요청] ID: ${id}`);
-                    const targetArticle = articles.find(a => a.id === id);
-                    const bodyData: any = { status: 'published' };
-                    // 이미 published_at이 있으면(원본 작성일) 유지, 없으면 현재 시간
-                    if (!targetArticle?.published_at) {
-                        bodyData.published_at = new Date().toISOString();
-                    }
+            const ids = Array.from(selectedIds);
+            const results = await processBatch(ids, async (id) => {
+                const targetArticle = articles.find(a => a.id === id);
+                const bodyData: any = { status: 'published' };
+                if (!targetArticle?.published_at) {
+                    bodyData.published_at = new Date().toISOString();
+                }
 
-                    const res = await fetch(`/api/posts/${id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(bodyData)
-                    });
+                const res = await fetch(`/api/posts/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
 
+                if (!res.ok) {
                     const responseData = await res.json();
-                    console.log(`[응답] ID: ${id}, Status: ${res.status}, Data:`, responseData);
-
-                    if (!res.ok) {
-                        throw new Error(`ID ${id} 승인 실패: ${responseData.message || res.statusText}`);
-                    }
-                    return id;
-                })
-            );
+                    throw new Error(`ID ${id} 승인 실패: ${responseData.message || res.statusText}`);
+                }
+                return id;
+            }, 5); // 5 concurrent requests per batch
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
 
             console.log('=== 승인 결과 ===');
             console.log(`성공: ${succeeded}, 실패: ${failed}`);
-            results.forEach((r, i) => {
-                if (r.status === 'rejected') {
-                    console.error(`실패 항목 ${i}:`, r.reason);
-                }
-            });
 
             if (failed > 0) {
                 showWarning(`${succeeded}개 승인 완료, ${failed}개 실패`);
@@ -415,19 +423,18 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Delete 실행 - Promise.allSettled로 개별 응답 확인
+    // Bulk Delete 실행 - 배치 처리로 과부하 방지
     const executeBulkDelete = async () => {
         setIsBulkProcessing(true);
         const isTrash = filterStatus === 'trash';
         try {
-            const results = await Promise.allSettled(
-                Array.from(selectedIds).map(async (id) => {
-                    const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
-                    const res = await fetch(url, { method: 'DELETE' });
-                    if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
-                    return id;
-                })
-            );
+            const ids = Array.from(selectedIds);
+            const results = await processBatch(ids, async (id) => {
+                const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
+                const res = await fetch(url, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
+                return id;
+            }, 5);
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
@@ -447,21 +454,20 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Restore 실행
+    // Bulk Restore 실행 - 배치 처리로 과부하 방지
     const executeBulkRestore = async () => {
         setIsBulkProcessing(true);
         try {
-            const results = await Promise.allSettled(
-                Array.from(selectedIds).map(async (id) => {
-                    const res = await fetch(`/api/posts/${id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'draft' }) // 복구 시 draft 상태로
-                    });
-                    if (!res.ok) throw new Error(`ID ${id} 복구 실패`);
-                    return id;
-                })
-            );
+            const ids = Array.from(selectedIds);
+            const results = await processBatch(ids, async (id) => {
+                const res = await fetch(`/api/posts/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'draft' })
+                });
+                if (!res.ok) throw new Error(`ID ${id} 복구 실패`);
+                return id;
+            }, 5);
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
@@ -481,21 +487,20 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Hold 실행 (published -> draft)
+    // Bulk Hold 실행 (published -> draft) - 배치 처리
     const executeBulkHold = async () => {
         setIsBulkProcessing(true);
         try {
-            const results = await Promise.allSettled(
-                Array.from(selectedIds).map(async (id) => {
-                    const res = await fetch(`/api/posts/${id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'draft' }) // 보류 시 draft 상태로
-                    });
-                    if (!res.ok) throw new Error(`ID ${id} 보류 실패`);
-                    return id;
-                })
-            );
+            const ids = Array.from(selectedIds);
+            const results = await processBatch(ids, async (id) => {
+                const res = await fetch(`/api/posts/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'draft' })
+                });
+                if (!res.ok) throw new Error(`ID ${id} 보류 실패`);
+                return id;
+            }, 5);
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
@@ -515,7 +520,7 @@ function AdminNewsListPage() {
         }
     };
 
-    // 일괄 승인 실행 (현재 필터의 모든 기사)
+    // 일괄 승인 실행 (현재 필터의 모든 기사) - 배치 처리
     const executeBulkAllApprove = async () => {
         setIsBulkProcessing(true);
         try {
@@ -524,7 +529,7 @@ function AdminNewsListPage() {
             const res = await fetch(`/api/posts?limit=1000${statusParam}`);
             if (!res.ok) throw new Error('기사 목록 조회 실패');
             const data = await res.json();
-            const allIds = (data.posts || []).map((p: any) => p.id);
+            const allIds: string[] = (data.posts || []).map((p: any) => p.id);
 
             if (allIds.length === 0) {
                 showWarning('승인할 기사가 없습니다.');
@@ -532,38 +537,17 @@ function AdminNewsListPage() {
                 return;
             }
 
-            const results = await Promise.allSettled(
-                allIds.map(async (id: string) => {
-                    // 데이터 조회는 안되어 있으므로, 굳이 원본 날짜 유지가 중요하다면
-                    // 개별 조회 후 업데이트하거나, 백엔드에서 처리해야 함.
-                    // 여기서는 '일괄 승인' 특성상 현재 시간으로 통일하거나, 
-                    // 리스트에 있는 정보를 활용할 수 없음 (전체 대상이므로).
-                    // -> 개선: 상세 구현이 복잡하므로, 일단 API 호출 시 published_at이 null인 경우에만 업데이트하도록 
-                    // 백엔드 수정이 이상적이나, 클라이언트에서는 현재 시간 전송을 생략하여 백엔드/DB의 기존 값을 유지하도록 시도.
-                    // (단, 기존 값이 없으면 백엔드가 처리 안할 수 있음. 안전하게 현재 시간 보냄 - 사용자 요구사항 재확인 필요하지만
-                    //  일괄 승인은 보통 '지금 발행' 의미가 강함. 단, 원본 날짜 유지가 핵심이므로)
+            showInfo(`${allIds.length}개 기사 일괄 승인 시작...`);
 
-                    // * 중요: API fetchArticles에서 전체 리스트를 가져온 게 아니므로(페이지네이션 됨), 
-                    // 'bulk-all'은 현재 상태에서 위험할 수 있음. 
-                    // 그러나 기존 로직이 '현재 필터의 모든 기사 ID 조회' -> '개별 PATCH' 방식임.
-
-                    // 여기서는 기존 로직 유지하되, published_at 파라미터를 아예 안 보내서 
-                    // 기존 값이 있으면 유지되도록 의도함 (API가 PATCH이므로).
-                    // 만약 기존 값이 없으면? -> 백엔드나 DB 기본값 의존. 
-                    // 안전장치: 일단은 기존처럼 현재 시간을 보내지 않고, status만 보냄.
-
-                    const res = await fetch(`/api/posts/${id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            status: 'published'
-                            // published_at: new Date().toISOString() // 제거: 기존 값 유지 의도
-                        })
-                    });
-                    if (!res.ok) throw new Error(`ID ${id} 승인 실패`);
-                    return id;
-                })
-            );
+            const results = await processBatch(allIds, async (id) => {
+                const res = await fetch(`/api/posts/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'published' })
+                });
+                if (!res.ok) throw new Error(`ID ${id} 승인 실패`);
+                return id;
+            }, 5); // 5 concurrent requests per batch
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;
@@ -583,7 +567,7 @@ function AdminNewsListPage() {
         }
     };
 
-    // 일괄 삭제 실행 (현재 필터의 모든 기사)
+    // 일괄 삭제 실행 (현재 필터의 모든 기사) - 배치 처리
     const executeBulkAllDelete = async () => {
         setIsBulkProcessing(true);
         const isTrash = filterStatus === 'trash';
@@ -593,7 +577,7 @@ function AdminNewsListPage() {
             const res = await fetch(`/api/posts?limit=1000${statusParam}`);
             if (!res.ok) throw new Error('기사 목록 조회 실패');
             const data = await res.json();
-            const allIds = (data.posts || []).map((p: any) => p.id);
+            const allIds: string[] = (data.posts || []).map((p: any) => p.id);
 
             if (allIds.length === 0) {
                 showWarning('삭제할 기사가 없습니다.');
@@ -601,14 +585,14 @@ function AdminNewsListPage() {
                 return;
             }
 
-            const results = await Promise.allSettled(
-                allIds.map(async (id: string) => {
-                    const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
-                    const res = await fetch(url, { method: 'DELETE' });
-                    if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
-                    return id;
-                })
-            );
+            showInfo(`${allIds.length}개 기사 일괄 삭제 시작...`);
+
+            const results = await processBatch(allIds, async (id) => {
+                const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
+                const res = await fetch(url, { method: 'DELETE' });
+                if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
+                return id;
+            }, 5);
 
             const succeeded = results.filter(r => r.status === 'fulfilled').length;
             const failed = results.filter(r => r.status === 'rejected').length;

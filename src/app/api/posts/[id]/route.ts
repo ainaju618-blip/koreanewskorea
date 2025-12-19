@@ -35,20 +35,31 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
             // Check if auto-assign is enabled and author not already specified
             const shouldAutoAssign = !body.author_id && !body.skip_auto_assign;
+            console.log('[PATCH /api/posts] Auto-assign check:', {
+                shouldAutoAssign,
+                hasAuthorId: !!body.author_id,
+                skipAutoAssign: !!body.skip_auto_assign
+            });
 
             if (shouldAutoAssign) {
                 try {
                     const autoAssignEnabled = await getAutoAssignSetting();
+                    console.log('[PATCH /api/posts] Auto-assign setting:', autoAssignEnabled);
 
                     if (autoAssignEnabled) {
                         // Get article's region for assignment
-                        const { data: article } = await supabaseAdmin
+                        const { data: article, error: articleError } = await supabaseAdmin
                             .from('posts')
                             .select('region')
                             .eq('id', id)
                             .single();
 
+                        if (articleError) {
+                            console.error('[PATCH /api/posts] Failed to get article region:', articleError);
+                        }
+
                         const articleRegion = body.region || article?.region || null;
+                        console.log('[PATCH /api/posts] Article region:', articleRegion);
 
                         // Auto-assign reporter
                         assignResult = await autoAssignReporter(articleRegion);
@@ -62,9 +73,11 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
                             reason: assignResult.reason,
                             region: articleRegion,
                         });
+                    } else {
+                        console.log('[PATCH /api/posts] Auto-assign is disabled in settings');
                     }
                 } catch (assignError) {
-                    console.warn('[PATCH /api/posts] Auto-assign failed:', assignError);
+                    console.error('[PATCH /api/posts] Auto-assign failed:', assignError);
                     // Continue without auto-assign - don't block the approval
                 }
             }

@@ -35,6 +35,8 @@ export interface AssignResult {
 export async function autoAssignReporter(
     articleRegion: string | null
 ): Promise<AssignResult> {
+    console.log('[autoAssignReporter] Starting with region:', articleRegion);
+
     // Step 1: Find region-specific reporters
     if (articleRegion) {
         const { data: regionReporters, error: regionError } = await supabaseAdmin
@@ -44,9 +46,15 @@ export async function autoAssignReporter(
             .eq('status', 'Active')
             .neq('email', DEFAULT_EMAIL);
 
+        console.log('[autoAssignReporter] Region reporters query:', {
+            count: regionReporters?.length || 0,
+            error: regionError?.message
+        });
+
         if (!regionError && regionReporters && regionReporters.length > 0) {
             // Single reporter - assign directly
             if (regionReporters.length === 1) {
+                console.log('[autoAssignReporter] Assigned region reporter:', regionReporters[0].name);
                 return {
                     reporter: regionReporters[0],
                     reason: 'region',
@@ -56,6 +64,7 @@ export async function autoAssignReporter(
 
             // Multiple reporters - random selection
             const randomIndex = Math.floor(Math.random() * regionReporters.length);
+            console.log('[autoAssignReporter] Random region reporter:', regionReporters[randomIndex].name);
             return {
                 reporter: regionReporters[randomIndex],
                 reason: 'region',
@@ -72,8 +81,15 @@ export async function autoAssignReporter(
         .eq('status', 'Active')
         .neq('email', DEFAULT_EMAIL);
 
+    console.log('[autoAssignReporter] Global reporters query:', {
+        count: globalReporters?.length || 0,
+        error: globalError?.message,
+        requiredLevel: ROLE_LEVELS.editor
+    });
+
     if (!globalError && globalReporters && globalReporters.length > 0) {
         const randomIndex = Math.floor(Math.random() * globalReporters.length);
+        console.log('[autoAssignReporter] Random global reporter:', globalReporters[randomIndex].name);
         return {
             reporter: globalReporters[randomIndex],
             reason: 'global',
@@ -88,7 +104,13 @@ export async function autoAssignReporter(
         .eq('email', DEFAULT_EMAIL)
         .single();
 
+    console.log('[autoAssignReporter] Default reporter query:', {
+        found: !!defaultReporter,
+        error: defaultError?.message
+    });
+
     if (!defaultError && defaultReporter) {
+        console.log('[autoAssignReporter] Using default reporter:', defaultReporter.name);
         return {
             reporter: defaultReporter,
             reason: 'default',
@@ -97,6 +119,7 @@ export async function autoAssignReporter(
     }
 
     // Should never reach here if database is properly set up
+    console.error('[autoAssignReporter] No reporter available!');
     throw new Error('No reporter available for assignment. Please check database setup.');
 }
 
