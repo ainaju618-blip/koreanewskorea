@@ -5,16 +5,18 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { ROLE_LEVELS } from './permissions';
+import { getRegionByCode } from '@/constants/regions';
 
 // Default system email for fallback assignment
 const DEFAULT_EMAIL = 'news@koreanewsone.com';
 
 export interface Reporter {
     id: string;
+    user_id: string | null;  // References profiles.id (for posts.author_id FK)
     name: string;
     email: string;
     region: string | null;
-    role: string;
+    position: string;
     access_level: number;
 }
 
@@ -37,13 +39,22 @@ export async function autoAssignReporter(
 ): Promise<AssignResult> {
     console.log('[autoAssignReporter] Starting with region:', articleRegion);
 
-    // Step 1: Find region-specific reporters
+    // Convert English region code to Korean name for matching with reporters table
+    let koreanRegionName: string | null = null;
     if (articleRegion) {
+        const regionInfo = getRegionByCode(articleRegion);
+        koreanRegionName = regionInfo?.name || null;
+        console.log('[autoAssignReporter] Region code conversion:', articleRegion, '->', koreanRegionName);
+    }
+
+    // Step 1: Find region-specific reporters (must have user_id for FK to profiles)
+    if (koreanRegionName) {
         const { data: regionReporters, error: regionError } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, role, access_level')
-            .eq('region', articleRegion)
+            .select('id, user_id, name, email, region, position, access_level')
+            .eq('region', koreanRegionName)
             .eq('status', 'Active')
+            .not('user_id', 'is', null)
             .neq('email', DEFAULT_EMAIL);
 
         console.log('[autoAssignReporter] Region reporters query:', {
@@ -73,12 +84,13 @@ export async function autoAssignReporter(
         }
     }
 
-    // Step 2: Find global reporters (editor and above, access_level >= 60)
+    // Step 2: Find global reporters (editor and above, access_level >= 60, must have user_id)
     const { data: globalReporters, error: globalError } = await supabaseAdmin
         .from('reporters')
-        .select('id, name, email, region, role, access_level')
+        .select('id, user_id, name, email, region, position, access_level')
         .gte('access_level', ROLE_LEVELS.editor)
         .eq('status', 'Active')
+        .not('user_id', 'is', null)
         .neq('email', DEFAULT_EMAIL);
 
     console.log('[autoAssignReporter] Global reporters query:', {
@@ -97,10 +109,10 @@ export async function autoAssignReporter(
         };
     }
 
-    // Step 3: Fallback to default system account
+    // Step 3: Fallback to default system account (may have null user_id)
     const { data: defaultReporter, error: defaultError } = await supabaseAdmin
         .from('reporters')
-        .select('id, name, email, region, role, access_level')
+        .select('id, user_id, name, email, region, position, access_level')
         .eq('email', DEFAULT_EMAIL)
         .single();
 
@@ -129,13 +141,20 @@ export async function autoAssignReporter(
 export async function getReportersByRegion(
     region: string | null
 ): Promise<{ regionReporters: Reporter[]; globalReporters: Reporter[] }> {
+    // Convert English region code to Korean name
+    let koreanRegionName: string | null = null;
+    if (region) {
+        const regionInfo = getRegionByCode(region);
+        koreanRegionName = regionInfo?.name || region; // Fallback to original if not found
+    }
+
     // Get region-specific reporters
     let regionReporters: Reporter[] = [];
-    if (region) {
+    if (koreanRegionName) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, role, access_level')
-            .eq('region', region)
+            .select('id, user_id, name, email, region, position, access_level')
+            .eq('region', koreanRegionName)
             .eq('status', 'Active')
             .neq('email', DEFAULT_EMAIL)
             .order('name');
@@ -146,7 +165,7 @@ export async function getReportersByRegion(
     // Get global reporters (editor and above)
     const { data: globalData } = await supabaseAdmin
         .from('reporters')
-        .select('id, name, email, region, role, access_level')
+        .select('id, user_id, name, email, region, position, access_level')
         .gte('access_level', ROLE_LEVELS.editor)
         .eq('status', 'Active')
         .neq('email', DEFAULT_EMAIL)
@@ -164,7 +183,7 @@ export async function getReportersByRegion(
 export async function getAllActiveReporters(): Promise<Reporter[]> {
     const { data } = await supabaseAdmin
         .from('reporters')
-        .select('id, name, email, region, role, access_level')
+        .select('id, user_id, name, email, region, position, access_level')
         .eq('status', 'Active')
         .order('access_level', { ascending: false })
         .order('name');

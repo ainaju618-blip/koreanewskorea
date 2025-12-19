@@ -64,12 +64,18 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
                         // Auto-assign reporter
                         assignResult = await autoAssignReporter(articleRegion);
 
-                        // Set author info
-                        body.author_id = assignResult.reporter.id;
+                        // Set author info from assigned reporter
                         body.author_name = assignResult.reporter.name;
+
+                        // Set author_id if reporter has a valid user_id (FK to profiles)
+                        if (assignResult.reporter.user_id) {
+                            body.author_id = assignResult.reporter.user_id;
+                        }
 
                         console.log('[PATCH /api/posts] Auto-assigned:', {
                             reporter: assignResult.reporter.name,
+                            reporterId: assignResult.reporter.id,
+                            userId: assignResult.reporter.user_id,
                             reason: assignResult.reason,
                             region: articleRegion,
                         });
@@ -83,11 +89,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
             }
         }
 
-        console.log('[PATCH /api/posts] ID:', id, 'Body:', JSON.stringify(body));
+        // Remove non-DB fields before update
+        const { skip_auto_assign, ...updateData } = body;
+
+        console.log('[PATCH /api/posts] ID:', id, 'Body:', JSON.stringify(updateData));
 
         const { data, error } = await supabaseAdmin
             .from('posts')
-            .update(body)
+            .update(updateData)
             .eq('id', id)
             .select()
             .single();

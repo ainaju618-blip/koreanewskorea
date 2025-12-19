@@ -178,7 +178,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add stealth mode to Boseong scraper, temporarily disable\n\n- Add playwright-stealth to requirements.txt\n- Boseong scraper v1.2: stealth mode, UA rotation, random delays\n- Temporarily disable Boseong in workflow \\(connection refused\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(for i in 1 2 3 4 5 6 7 8 9 10)",
       "Bash(git rebase:*)",
-      "Bash(for i in 1 2 3)"
+      "Bash(for i in 1 2 3)",
+      "Bash(npx:*)",
+      "Bash(timeout 3 npm run dev:*)"
     ]
   }
 }
