@@ -1,107 +1,131 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * GitHub Actions Usage & Status API
- * Returns workflow run history and usage statistics
- */
-export async function GET() {
-    const token = process.env.GITHUB_TOKEN;
-    const owner = process.env.GITHUB_OWNER || 'korea-news';
-    const repo = process.env.GITHUB_REPO || 'koreanewsone';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const REPO_OWNER = 'korea-news';
+const REPO_NAME = 'koreanewsone';
+const WORKFLOW_FILE = 'daily_scrape.yml';
 
-    if (!token) {
-        return NextResponse.json({
-            error: 'GITHUB_TOKEN not configured',
-            runs: [],
-            usage: null
-        });
+interface WorkflowRun {
+    id: number;
+    status: string;
+    conclusion: string | null;
+    created_at: string;
+    updated_at: string;
+    event: string;
+    html_url: string;
+}
+
+// GET: Fetch workflow runs and schedule info
+export async function GET(req: NextRequest) {
+    if (!GITHUB_TOKEN) {
+        return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
     }
 
     try {
-        // Get recent workflow runs
+        // Fetch recent workflow runs
         const runsResponse = await fetch(
-            `https://api.github.com/repos/${owner}/${repo}/actions/runs?per_page=10`,
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}/runs?per_page=10`,
             {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
                 },
-                next: { revalidate: 60 } // 1 minute cache
+                next: { revalidate: 60 }
             }
         );
 
-        let runs: any[] = [];
-        let totalRuns = 0;
-
-        if (runsResponse.ok) {
-            const runsData = await runsResponse.json();
-            runs = runsData.workflow_runs?.map((run: any) => ({
-                id: run.id,
-                name: run.name,
-                status: run.status,
-                conclusion: run.conclusion,
-                created_at: run.created_at,
-                updated_at: run.updated_at,
-                run_started_at: run.run_started_at,
-                html_url: run.html_url,
-                event: run.event,
-                run_number: run.run_number
-            })) || [];
-            totalRuns = runsData.total_count || 0;
+        if (!runsResponse.ok) {
+            throw new Error(`GitHub API error: ${runsResponse.status}`);
         }
 
-        // Get billing/usage for the current month (only works for orgs or enterprise)
-        // For personal repos, we estimate based on run history
-        let usage = {
-            total_minutes_used: 0,
-            included_minutes: 2000, // Free tier for private repos
-            used_this_month: 0,
-            remaining: 2000
-        };
+        const runsData = await runsResponse.json();
 
-        // Calculate estimated usage from recent runs
-        // Average scraper run takes about 2-5 minutes
-        const thisMonth = new Date().toISOString().slice(0, 7);
-        const monthlyRuns = runs.filter(run =>
-            run.created_at?.startsWith(thisMonth) &&
-            run.conclusion === 'success'
+        // Fetch workflow file content to get schedule
+        const workflowResponse = await fetch(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/workflows/${WORKFLOW_FILE}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                },
+                next: { revalidate: 300 }
+            }
         );
 
-        // Estimate 3 minutes per successful run
-        const estimatedMinutes = monthlyRuns.length * 3;
-        usage.used_this_month = estimatedMinutes;
-        usage.total_minutes_used = estimatedMinutes;
-        usage.remaining = Math.max(0, usage.included_minutes - estimatedMinutes);
+        let schedules: string[] = [];
+        if (workflowResponse.ok) {
+            const workflowData = await workflowResponse.json();
+            const content = Buffer.from(workflowData.content, 'base64').toString('utf-8');
 
-        // Get success/failure stats
-        const successRuns = runs.filter(r => r.conclusion === 'success').length;
-        const failedRuns = runs.filter(r => r.conclusion === 'failure').length;
-        const inProgressRuns = runs.filter(r => r.status === 'in_progress').length;
+            const cronMatches = content.match(/cron:\s*'([^']+)'/g);
+            if (cronMatches) {
+                schedules = cronMatches.map(match => {
+                    const cronMatch = match.match(/cron:\s*'([^']+)'/);
+                    return cronMatch ? cronMatch[1] : '';
+                }).filter(Boolean);
+            }
+        }
+
+        const runs = runsData.workflow_runs?.map((run: WorkflowRun) => ({
+            id: run.id,
+            status: run.status,
+            conclusion: run.conclusion,
+            createdAt: run.created_at,
+            updatedAt: run.updated_at,
+            event: run.event,
+            url: run.html_url,
+        })) || [];
 
         return NextResponse.json({
+            schedules,
             runs,
-            totalRuns,
-            usage,
-            stats: {
-                success: successRuns,
-                failed: failedRuns,
-                inProgress: inProgressRuns,
-                total: runs.length
-            },
-            config: {
-                owner,
-                repo,
-                hasToken: true
-            },
-            timestamp: new Date().toISOString()
+            workflowUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}`,
         });
 
     } catch (error: any) {
-        console.error('[GitHub Actions API Error]', error);
-        return NextResponse.json({
-            error: error.message,
-            runs: [],
-            usage: null
-        }, { status: 500 });
+        console.error('[GitHub Actions API] Error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+// POST: Trigger workflow dispatch
+export async function POST(req: NextRequest) {
+    if (!GITHUB_TOKEN) {
+        return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
+    }
+
+    try {
+        const body = await req.json();
+        const { region = 'all', days = '1' } = body;
+
+        const response = await fetch(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ref: 'master',
+                    inputs: {
+                        region,
+                        days: String(days),
+                    },
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+        }
+
+        return NextResponse.json({ success: true, message: 'Workflow triggered successfully' });
+
+    } catch (error: any) {
+        console.error('[GitHub Actions API] Trigger error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

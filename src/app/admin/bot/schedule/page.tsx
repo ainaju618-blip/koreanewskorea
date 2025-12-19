@@ -1,100 +1,70 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Calendar, Clock, Save, CheckCircle2, Loader2, Power, Play, History, AlertCircle, Zap } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+    Calendar, Clock, Loader2, Play, History, AlertCircle,
+    RefreshCw, ExternalLink, GitBranch, CheckCircle2, XCircle, Timer
+} from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
-interface ScheduleConfig {
-    enabled: boolean;
-    cronExpression: string;
-    lastRun?: string;
-    nextRun?: string;
+interface WorkflowRun {
+    id: number;
+    status: string;
+    conclusion: string | null;
+    createdAt: string;
+    updatedAt: string;
+    event: string;
+    url: string;
 }
 
-interface ScheduleHistory {
-    date: string;
-    time: string;
-    status: 'success' | 'failed' | 'running';
-    articlesCount?: number;
+interface GitHubActionsData {
+    schedules: string[];
+    runs: WorkflowRun[];
+    workflowUrl: string;
 }
 
-// Parse cron expression to human-readable format (Korean)
-function parseCronToHuman(cron: string): string {
-    if (!cron) return '설정 안됨';
+// Convert UTC cron to KST time display
+function cronToKST(cron: string): { time: string; description: string } {
     const parts = cron.split(' ');
-    if (parts.length !== 5) return cron;
+    if (parts.length !== 5) return { time: cron, description: '' };
 
-    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+    const [minute, hour] = parts;
+    const utcHour = parseInt(hour);
+    const utcMinute = parseInt(minute);
 
-    // Handle common patterns
-    if (minute === '0' && hour.includes(',')) {
-        const hours = hour.split(',');
-        return `매일 ${hours.map(h => `${h}시`).join(', ')}`;
-    }
-    if (minute === '0' && hour === '*') {
-        return '매시 정각';
-    }
-    if (minute === '0' && hour !== '*') {
-        return `매일 ${hour}시`;
-    }
-    if (minute === '*/30') {
-        return '30분마다';
-    }
+    // UTC to KST (+9)
+    let kstHour = utcHour + 9;
+    if (kstHour >= 24) kstHour -= 24;
 
-    return cron;
+    const timeStr = `${String(kstHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')}`;
+    return {
+        time: timeStr,
+        description: `KST (UTC ${String(utcHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')})`
+    };
 }
 
-// Calculate next run times from cron expression
-function getNextRunTimes(cron: string, count: number = 5): Date[] {
-    if (!cron) return [];
+// Calculate next run times from multiple cron expressions
+function getNextRunTimes(schedules: string[], count: number = 5): Date[] {
     const now = new Date();
-    const parts = cron.split(' ');
-    if (parts.length !== 5) return [];
-
-    const [minutePart, hourPart] = parts;
     const results: Date[] = [];
 
-    // Parse hours
-    let hours: number[] = [];
-    if (hourPart === '*') {
-        hours = Array.from({ length: 24 }, (_, i) => i);
-    } else if (hourPart.includes(',')) {
-        hours = hourPart.split(',').map(Number);
-    } else if (hourPart.includes('-')) {
-        const [start, end] = hourPart.split('-').map(Number);
-        hours = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    } else {
-        hours = [parseInt(hourPart)];
-    }
+    for (const cron of schedules) {
+        const parts = cron.split(' ');
+        if (parts.length !== 5) continue;
 
-    // Parse minutes
-    let minutes: number[] = [];
-    if (minutePart === '*') {
-        minutes = Array.from({ length: 60 }, (_, i) => i);
-    } else if (minutePart.startsWith('*/')) {
-        const interval = parseInt(minutePart.slice(2));
-        minutes = Array.from({ length: Math.floor(60 / interval) }, (_, i) => i * interval);
-    } else if (minutePart.includes(',')) {
-        minutes = minutePart.split(',').map(Number);
-    } else {
-        minutes = [parseInt(minutePart)];
-    }
+        const [minutePart, hourPart] = parts;
+        const minute = parseInt(minutePart);
+        const hour = parseInt(hourPart);
 
-    // Generate next run times
-    let checkDate = new Date(now);
-    checkDate.setSeconds(0);
-    checkDate.setMilliseconds(0);
+        // Generate next 7 days of this schedule
+        for (let day = 0; day < 7; day++) {
+            const runTime = new Date(now);
+            runTime.setDate(now.getDate() + day);
+            // UTC time
+            runTime.setUTCHours(hour, minute, 0, 0);
 
-    for (let day = 0; day < 7 && results.length < count; day++) {
-        for (const hour of hours) {
-            for (const minute of minutes) {
-                const runTime = new Date(checkDate);
-                runTime.setDate(now.getDate() + day);
-                runTime.setHours(hour, minute, 0, 0);
-
-                if (runTime > now && results.length < count) {
-                    results.push(runTime);
-                }
+            if (runTime > now) {
+                results.push(runTime);
             }
         }
     }
@@ -104,120 +74,69 @@ function getNextRunTimes(cron: string, count: number = 5): Date[] {
 
 export default function BotSchedulePage() {
     const { showSuccess, showError } = useToast();
-    const [config, setConfig] = useState<ScheduleConfig>({
-        enabled: false,
-        cronExpression: "0 9,13,17 * * *",
-    });
+    const [data, setData] = useState<GitHubActionsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
-    const [recentHistory, setRecentHistory] = useState<ScheduleHistory[]>([]);
+    const [isTriggering, setIsTriggering] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Calculate next run times
-    const nextRunTimes = useMemo(() => {
-        return getNextRunTimes(config.cronExpression, 5);
-    }, [config.cronExpression]);
-
-    // Parse cron to human readable
-    const humanReadable = useMemo(() => {
-        return parseCronToHuman(config.cronExpression);
-    }, [config.cronExpression]);
-
-    // Fetch Config
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                const res = await fetch('/api/bot/schedule');
-                if (res.ok) {
-                    const data = await res.json();
-                    setConfig(data);
-                }
-            } catch (err) {
-                console.error("Failed to load config:", err);
-            } finally {
-                setIsLoading(false);
+    const fetchData = useCallback(async (showRefresh = false) => {
+        if (showRefresh) setIsRefreshing(true);
+        try {
+            const res = await fetch('/api/admin/github-actions');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Failed to fetch data');
             }
-        };
-
-        const fetchHistory = async () => {
-            try {
-                const res = await fetch('/api/bot/bot-logs?limit=5');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.logs) {
-                        setRecentHistory(data.logs.map((log: any) => ({
-                            date: new Date(log.started_at).toLocaleDateString('ko-KR'),
-                            time: new Date(log.started_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                            status: log.status === 'success' ? 'success' : log.status === 'running' ? 'running' : 'failed',
-                            articlesCount: log.articles_count
-                        })));
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to load history:", err);
-            }
-        };
-
-        fetchConfig();
-        fetchHistory();
+            const result = await res.json();
+            setData(result);
+            setError(null);
+        } catch (err: any) {
+            setError(err.message);
+            console.error("Failed to load GitHub Actions data:", err);
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
     }, []);
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        setSaveSuccess(false);
+    useEffect(() => {
+        fetchData();
+        // Auto-refresh every 30 seconds
+        const interval = setInterval(() => fetchData(), 30000);
+        return () => clearInterval(interval);
+    }, [fetchData]);
 
+    const handleTriggerWorkflow = async () => {
+        setIsTriggering(true);
         try {
-            const res = await fetch('/api/bot/schedule', {
+            const res = await fetch('/api/admin/github-actions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify({ region: 'all', days: '1' })
             });
 
-            if (!res.ok) throw new Error('Save failed');
-
-            const data = await res.json();
-            if (data.success && data.config) {
-                setConfig(data.config);
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Failed to trigger workflow');
             }
 
-            setSaveSuccess(true);
-            showSuccess('스케줄 설정이 저장되었습니다');
-            setTimeout(() => setSaveSuccess(false), 3000);
-        } catch (err) {
-            showError('설정 저장에 실패했습니다');
+            showSuccess('GitHub Actions workflow triggered successfully');
+            // Refresh after 3 seconds to show new run
+            setTimeout(() => fetchData(true), 3000);
+        } catch (err: any) {
+            showError(err.message || 'Failed to trigger workflow');
         } finally {
-            setIsSaving(false);
+            setIsTriggering(false);
         }
     };
 
-    // Time slot selection helper
-    const toggleHour = (hour: number) => {
-        if (!config.cronExpression) return;
-        const parts = config.cronExpression.split(' ');
-        const currentHours = parts[1] === '*' ? [] : parts[1].split(',').map(Number);
-
-        let newHours: number[];
-        if (currentHours.includes(hour)) {
-            newHours = currentHours.filter(h => h !== hour);
-        } else {
-            newHours = [...currentHours, hour].sort((a, b) => a - b);
-        }
-
-        const newCron = `0 ${newHours.length === 0 ? '9' : newHours.join(',')} * * *`;
-        setConfig({ ...config, cronExpression: newCron });
-    };
-
-    const getSelectedHours = (): number[] => {
-        if (!config.cronExpression) return [];
-        const parts = config.cronExpression.split(' ');
-        if (parts[1] === '*') return [];
-        return parts[1].split(',').map(Number);
-    };
+    const nextRunTimes = data?.schedules ? getNextRunTimes(data.schedules, 5) : [];
 
     if (isLoading) {
         return (
             <div className="flex h-64 items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
             </div>
         );
     }
@@ -227,190 +146,196 @@ export default function BotSchedulePage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 className="text-2xl font-bold flex items-center gap-3">
                         <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
-                            <Calendar className="w-6 h-6 text-white" />
+                            <GitBranch className="w-6 h-6 text-white" />
                         </div>
-                        스케줄러 설정
+                        GitHub Actions Scheduler
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
-                        자동 뉴스 수집 스케줄을 설정합니다
+                    <p className="text-sm text-gray-400 mt-2">
+                        GitHub Actions workflow schedule and execution status
                     </p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-sm transition disabled:opacity-50"
-                >
-                    {isSaving ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            저장 중...
-                        </>
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4" />
-                            설정 저장
-                        </>
-                    )}
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => fetchData(true)}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-gray-200 rounded-lg font-medium hover:bg-gray-600 transition disabled:opacity-50"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </button>
+                    <button
+                        onClick={handleTriggerWorkflow}
+                        disabled={isTriggering}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 shadow-sm transition disabled:opacity-50"
+                    >
+                        {isTriggering ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Starting...
+                            </>
+                        ) : (
+                            <>
+                                <Play className="w-4 h-4" />
+                                Run Now
+                            </>
+                        )}
+                    </button>
+                </div>
             </header>
 
-            {/* Success Message */}
-            {saveSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 animate-fade-in-down">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    <p className="text-sm font-medium text-green-900">
-                        스케줄 설정이 저장되었습니다
-                    </p>
+            {/* Error Message */}
+            {error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400" />
+                    <p className="text-sm text-red-300">{error}</p>
                 </div>
             )}
 
             {/* Main Grid */}
             <div className="grid grid-cols-3 gap-6">
-                {/* Left Column - Main Settings */}
+                {/* Left Column - Schedule Info */}
                 <div className="col-span-2 space-y-6">
-                    {/* Power Toggle Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="p-6 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.enabled ? 'bg-green-100' : 'bg-gray-100'}`}>
-                                    <Power className={`w-6 h-6 ${config.enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                    {/* Current Schedule Card */}
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                        <div className="p-4 border-b border-gray-700 bg-gray-750">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-purple-400" />
+                                Current Schedule (GitHub Actions)
+                            </h3>
+                        </div>
+                        <div className="p-6">
+                            {data?.schedules && data.schedules.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {data.schedules.map((cron, idx) => {
+                                            const { time, description } = cronToKST(cron);
+                                            return (
+                                                <div key={idx} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+                                                    <div className="text-3xl font-bold text-purple-400">{time}</div>
+                                                    <div className="text-xs text-gray-400 mt-1">{description}</div>
+                                                    <div className="text-xs text-gray-500 mt-2 font-mono">{cron}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>Schedule is managed in <code className="text-purple-400">.github/workflows/daily_scrape.yml</code></span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold text-gray-900">스케줄러 상태</h3>
-                                    <p className={`text-sm ${config.enabled ? 'text-green-600' : 'text-gray-500'}`}>
-                                        {config.enabled ? '활성 - 자동 실행 중' : '비활성 - 수동 실행만'}
-                                    </p>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <Clock className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                                    <p>No schedules configured</p>
                                 </div>
-                            </div>
-                            <button
-                                onClick={() => setConfig({ ...config, enabled: !config.enabled })}
-                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 ${config.enabled ? 'bg-green-600' : 'bg-gray-300'}`}
-                            >
-                                <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${config.enabled ? 'translate-x-7' : 'translate-x-1'}`} />
-                            </button>
+                            )}
                         </div>
                     </div>
 
-                    {/* Time Selection Card */}
-                    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${!config.enabled ? 'opacity-60' : ''}`}>
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-purple-600" />
-                                실행 시간
+                    {/* Recent Runs Card */}
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                        <div className="p-4 border-b border-gray-700 bg-gray-750 flex justify-between items-center">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <History className="w-5 h-5 text-green-400" />
+                                Recent Workflow Runs
                             </h3>
+                            {data?.workflowUrl && (
+                                <a
+                                    href={data.workflowUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                                >
+                                    View on GitHub <ExternalLink className="w-3 h-3" />
+                                </a>
+                            )}
                         </div>
-
-                        <div className="p-6 space-y-6">
-                            {/* Visual Time Selector */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                    시간 선택 (클릭하여 전환)
-                                </label>
-                                <div className="grid grid-cols-12 gap-2">
-                                    {Array.from({ length: 24 }, (_, i) => {
-                                        const isSelected = getSelectedHours().includes(i);
-                                        const isPeakHour = [9, 12, 13, 17, 18].includes(i);
-                                        return (
-                                            <button
-                                                key={i}
-                                                onClick={() => config.enabled && toggleHour(i)}
-                                                disabled={!config.enabled}
-                                                className={`py-2 rounded-lg text-sm font-medium transition-all ${
-                                                    isSelected
-                                                        ? 'bg-purple-600 text-white shadow-md'
-                                                        : isPeakHour
-                                                            ? 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-                                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                } ${!config.enabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                {String(i).padStart(2, '0')}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    보라색 강조 시간대는 뉴스 피크 시간입니다
-                                </p>
-                            </div>
-
-                            {/* Preset Buttons */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    빠른 설정
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        { label: '하루 3회 (9,13,17시)', value: '0 9,13,17 * * *', icon: Zap },
-                                        { label: '오전 (9시)', value: '0 9 * * *', icon: Play },
-                                        { label: '매시간', value: '0 * * * *', icon: Clock },
-                                        { label: '업무시간 (9-18시)', value: '0 9,12,15,18 * * *', icon: Calendar }
-                                    ].map((preset) => (
-                                        <button
-                                            key={preset.label}
-                                            onClick={() => config.enabled && setConfig({ ...config, cronExpression: preset.value })}
-                                            disabled={!config.enabled}
-                                            className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg transition ${
-                                                config.cronExpression === preset.value
-                                                    ? 'bg-purple-600 text-white border-purple-600'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                                            } ${!config.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                        <div className="p-4">
+                            {data?.runs && data.runs.length > 0 ? (
+                                <div className="space-y-2">
+                                    {data.runs.map((run) => (
+                                        <a
+                                            key={run.id}
+                                            href={run.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition"
                                         >
-                                            <preset.icon className="w-4 h-4" />
-                                            {preset.label}
-                                        </button>
+                                            <div className="flex items-center gap-3">
+                                                {run.status === 'completed' ? (
+                                                    run.conclusion === 'success' ? (
+                                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                                    ) : (
+                                                        <XCircle className="w-5 h-5 text-red-500" />
+                                                    )
+                                                ) : (
+                                                    <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
+                                                )}
+                                                <div>
+                                                    <div className="text-sm font-medium">
+                                                        {new Date(run.createdAt).toLocaleDateString('ko-KR', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {run.event === 'schedule' ? 'Scheduled' : 'Manual'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                                    run.status === 'completed'
+                                                        ? run.conclusion === 'success'
+                                                            ? 'bg-green-900/50 text-green-400'
+                                                            : 'bg-red-900/50 text-red-400'
+                                                        : 'bg-yellow-900/50 text-yellow-400'
+                                                }`}>
+                                                    {run.status === 'completed' ? run.conclusion : run.status}
+                                                </span>
+                                                <ExternalLink className="w-4 h-4 text-gray-500" />
+                                            </div>
+                                        </a>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* Cron Expression (Advanced) */}
-                            <div className="pt-4 border-t border-gray-100">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    크론 표현식 (고급)
-                                </label>
-                                <div className="flex gap-3">
-                                    <input
-                                        type="text"
-                                        value={config.cronExpression}
-                                        onChange={(e) => config.enabled && setConfig({ ...config, cronExpression: e.target.value })}
-                                        disabled={!config.enabled}
-                                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm bg-gray-50 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                        placeholder="0 9,13,17 * * *"
-                                    />
-                                    <div className="flex items-center px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg">
-                                        <span className="text-sm text-purple-700 font-medium">{humanReadable}</span>
-                                    </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <History className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                                    <p>No recent runs</p>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column - Info & History */}
+                {/* Right Column - Next Runs & Info */}
                 <div className="space-y-6">
                     {/* Next Runs Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                                <Play className="w-5 h-5 text-blue-600" />
-                                예정된 실행
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                        <div className="p-4 border-b border-gray-700 bg-gray-750">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <Timer className="w-5 h-5 text-blue-400" />
+                                Upcoming Runs
                             </h3>
                         </div>
                         <div className="p-4">
-                            {config.enabled && nextRunTimes.length > 0 ? (
+                            {nextRunTimes.length > 0 ? (
                                 <div className="space-y-2">
                                     {nextRunTimes.map((time, idx) => (
                                         <div
                                             key={idx}
-                                            className={`flex items-center justify-between p-2 rounded-lg ${
-                                                idx === 0 ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
+                                            className={`flex items-center justify-between p-3 rounded-lg ${
+                                                idx === 0 ? 'bg-purple-900/30 border border-purple-700' : 'bg-gray-700/50'
                                             }`}
                                         >
-                                            <span className={`text-sm ${idx === 0 ? 'text-blue-700 font-semibold' : 'text-gray-600'}`}>
+                                            <span className={`text-sm ${idx === 0 ? 'text-purple-300 font-semibold' : 'text-gray-400'}`}>
                                                 {time.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
                                             </span>
-                                            <span className={`text-sm font-mono ${idx === 0 ? 'text-blue-700' : 'text-gray-500'}`}>
+                                            <span className={`text-sm font-mono ${idx === 0 ? 'text-purple-300' : 'text-gray-500'}`}>
                                                 {time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
@@ -418,65 +343,60 @@ export default function BotSchedulePage() {
                                 </div>
                             ) : (
                                 <div className="text-center py-6 text-gray-500">
-                                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                    <p className="text-sm">스케줄러가 비활성화되어 있습니다</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Recent History Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                                <History className="w-5 h-5 text-green-600" />
-                                최근 실행
-                            </h3>
-                        </div>
-                        <div className="p-4">
-                            {recentHistory.length > 0 ? (
-                                <div className="space-y-2">
-                                    {recentHistory.map((item, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`w-2 h-2 rounded-full ${
-                                                    item.status === 'success' ? 'bg-green-500' :
-                                                    item.status === 'running' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'
-                                                }`} />
-                                                <span className="text-sm text-gray-600">{item.date}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">{item.time}</span>
-                                                {item.articlesCount !== undefined && (
-                                                    <span className="text-xs px-2 py-0.5 bg-gray-200 rounded-full">
-                                                        {item.articlesCount}건
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-6 text-gray-500">
-                                    <History className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                    <p className="text-sm">최근 실행 기록이 없습니다</p>
+                                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                                    <p className="text-sm">No upcoming runs</p>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Info Box */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                            <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
                             <div>
-                                <h4 className="font-bold text-blue-900 text-sm">참고</h4>
-                                <ul className="mt-1 space-y-1 text-xs text-blue-800">
-                                    <li>27개 지역 스크래퍼 모두 실행</li>
-                                    <li>Vercel 크론 작업 (vercel.json 참조)</li>
-                                    <li>프로덕션 모드 (테스트 아님)</li>
+                                <h4 className="font-bold text-blue-300 text-sm">Info</h4>
+                                <ul className="mt-2 space-y-1 text-xs text-blue-200">
+                                    <li>26 regions scraped in parallel</li>
+                                    <li>Max 10 concurrent jobs</li>
+                                    <li>Auto-refresh every 30 seconds</li>
                                 </ul>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                        <div className="p-4 border-b border-gray-700 bg-gray-750">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-orange-400" />
+                                Quick Actions
+                            </h3>
+                        </div>
+                        <div className="p-4 space-y-2">
+                            <a
+                                href={data?.workflowUrl || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
+                            >
+                                <span>View Workflow on GitHub</span>
+                                <ExternalLink className="w-4 h-4 text-gray-500" />
+                            </a>
+                            <a
+                                href="/admin/bot/logs"
+                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
+                            >
+                                <span>View Bot Logs</span>
+                                <History className="w-4 h-4 text-gray-500" />
+                            </a>
+                            <a
+                                href="/admin/bot/run"
+                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
+                            >
+                                <span>Manual Scraper</span>
+                                <Play className="w-4 h-4 text-gray-500" />
+                            </a>
                         </div>
                     </div>
                 </div>

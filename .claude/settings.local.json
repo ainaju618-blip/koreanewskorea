@@ -159,7 +159,10 @@
       "Bash(python test_single_article.py:*)",
       "Bash(python -m py_compile:*)",
       "Bash(vercel --prod --force:*)",
-      "Bash(vercel teams list:*)"
+      "Bash(vercel teams list:*)",
+      "Bash(TZ=Asia/Seoul date:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo view:*)"
     ]
   }
 }
