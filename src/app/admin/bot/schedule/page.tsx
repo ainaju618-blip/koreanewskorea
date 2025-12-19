@@ -136,16 +136,24 @@ export default function BotSchedulePage() {
             return;
         }
 
-        // Validate time format
-        const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
-        if (!timeRegex.test(newTime)) {
-            showError('시간 형식이 올바르지 않습니다. HH:MM 형식으로 입력하세요.');
+        // Parse time from input (handles "HH:MM" or "HH:MM:SS" formats)
+        const timeParts = newTime.split(':');
+        if (timeParts.length < 2) {
+            showError('시간 형식이 올바르지 않습니다.');
             return;
         }
 
-        // Format to ensure HH:MM
-        const [h, m] = newTime.split(':');
-        const formattedTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+        const h = parseInt(timeParts[0], 10);
+        const m = parseInt(timeParts[1], 10);
+
+        // Validate hour and minute ranges
+        if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+            showError('시간 형식이 올바르지 않습니다. 00:00 ~ 23:59 범위로 입력하세요.');
+            return;
+        }
+
+        // Format to HH:MM
+        const formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
         // Check for duplicates
         if (editedSchedules.includes(formattedTime)) {
