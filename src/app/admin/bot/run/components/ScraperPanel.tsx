@@ -227,33 +227,47 @@ export function ScraperPanel() {
         setIsRunning(true);
         setJobResults([]);
         setActiveJobIds([]);
-        setStatusMessage("작업 큐 등록 중...");
+        setStatusMessage("GitHub Actions workflow triggering...");
         setProgress({ total: 0, completed: 0 });
 
         try {
-            const response = await fetch('/api/bot/run', {
+            // Calculate days from date range
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            const days = Math.min(Math.max(diffDays, 1), 7).toString();
+
+            // Determine region parameter
+            const region = selectedRegions.length === allRegions.length ? 'all' :
+                          selectedRegions.length === 1 ? selectedRegions[0] : 'all';
+
+            // Trigger GitHub Actions workflow
+            const response = await fetch('/api/admin/github-actions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    regions: selectedRegions,
-                    startDate,
-                    endDate,
-                    dryRun: false
-                })
+                body: JSON.stringify({ region, days })
             });
             const data = await response.json();
 
-            if (response.ok && data.jobIds) {
-                setStatusMessage(`작업 시작! 총 ${data.jobCount}개 지역 수집 대기 중...`);
-                setActiveJobIds(data.jobIds);
-                setProgress({ total: data.jobCount, completed: 0 });
+            if (response.ok && data.success) {
+                setStatusMessage(`GitHub Actions workflow started! (region: ${region}, days: ${days})`);
+                setProgress({ total: 26, completed: 0 });
+
+                // Open GitHub Actions page in new tab
+                window.open('https://github.com/korea-news/koreanewsone/actions/workflows/daily_scrape.yml', '_blank');
+
+                // Reset after 5 seconds
+                setTimeout(() => {
+                    setIsRunning(false);
+                    setStatusMessage("GitHub Actions workflow triggered. Check progress on GitHub.");
+                }, 5000);
             } else {
                 setIsRunning(false);
-                setStatusMessage(`오류 발생: ${data.message}`);
+                setStatusMessage(`Error: ${data.error || data.message}`);
             }
         } catch (error: any) {
             setIsRunning(false);
-            setStatusMessage(`전송 실패: ${error.message}`);
+            setStatusMessage(`Failed: ${error.message}`);
         }
     };
 
