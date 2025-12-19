@@ -29,7 +29,8 @@ import {
     ExternalLink,
     Sparkles,
     Globe,
-    Mail
+    Mail,
+    GitBranch
 } from 'lucide-react';
 
 // --- 메뉴 아이템 타입 정의 ---
@@ -128,6 +129,7 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "권한 설정", href: "/admin/users/roles", icon: Settings },
                 ]
             },
+            { label: "깃관리", icon: GitBranch, href: "/admin/git-status" },
             {
                 label: "설정",
                 icon: Settings,
