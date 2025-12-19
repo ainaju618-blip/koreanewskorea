@@ -104,6 +104,7 @@ Main Content:
 | **Do it/Make it/Fix it** | Execute | Perform work immediately | If needed |
 | **Progress/Status/Current** | Status | Part 0 or STATUS file | Minimal |
 | **What is/Is there/Where** | Question | Answer from Part 0 memory | NO |
+| **External service/Env var/Token** | Lookup | info/backend.md Section 11 | MUST |
 
 ---
 
