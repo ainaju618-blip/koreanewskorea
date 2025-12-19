@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { autoAssignReporter, getAutoAssignSetting } from '@/lib/auto-assign';
 
 // GET /api/posts - 기사 목록 조회
 export async function GET(req: NextRequest) {
@@ -94,6 +95,175 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(data, { status: 201 });
     } catch (error: any) {
         console.error('POST /api/posts error:', error);
+        return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+}
+
+// PATCH /api/posts - Bulk update (approve, hold, etc.)
+export async function PATCH(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const { ids, status: newStatus, action } = body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return NextResponse.json({ message: 'IDs array required' }, { status: 400 });
+        }
+
+        console.log(`[PATCH /api/posts] Bulk update: ${ids.length} items, status=${newStatus}, action=${action}`);
+
+        const now = new Date().toISOString();
+        let updateData: Record<string, any> = {};
+
+        // Determine update data based on action/status
+        if (newStatus === 'published' || action === 'approve') {
+            updateData = {
+                status: 'published',
+                published_at: now,
+                approved_at: now,
+            };
+
+            // Check if auto-assign is enabled
+            const autoAssignEnabled = await getAutoAssignSetting();
+
+            if (autoAssignEnabled) {
+                // Get articles to find their regions
+                const { data: articles } = await supabaseAdmin
+                    .from('posts')
+                    .select('id, region, author_id, author_name')
+                    .in('id', ids);
+
+                if (articles && articles.length > 0) {
+                    // Process auto-assign for each article that needs it
+                    const updates = await Promise.all(
+                        articles.map(async (article) => {
+                            // Skip if already has author
+                            if (article.author_id || article.author_name) {
+                                return { id: article.id, ...updateData };
+                            }
+
+                            try {
+                                const assignResult = await autoAssignReporter(article.region);
+
+                                // Verify profile exists before setting author_id
+                                let authorId = null;
+                                if (assignResult.reporter.user_id) {
+                                    const { data: profile } = await supabaseAdmin
+                                        .from('profiles')
+                                        .select('id')
+                                        .eq('id', assignResult.reporter.user_id)
+                                        .single();
+                                    if (profile) {
+                                        authorId = assignResult.reporter.user_id;
+                                    }
+                                }
+
+                                return {
+                                    id: article.id,
+                                    ...updateData,
+                                    author_name: assignResult.reporter.name,
+                                    ...(authorId ? { author_id: authorId } : {}),
+                                };
+                            } catch {
+                                return { id: article.id, ...updateData };
+                            }
+                        })
+                    );
+
+                    // Update each article with its specific data
+                    let successCount = 0;
+                    let failCount = 0;
+
+                    await Promise.all(
+                        updates.map(async (update) => {
+                            const { id, ...data } = update;
+                            const { error } = await supabaseAdmin
+                                .from('posts')
+                                .update(data)
+                                .eq('id', id);
+                            if (error) {
+                                console.error(`[Bulk approve] Failed for ${id}:`, error.message);
+                                failCount++;
+                            } else {
+                                successCount++;
+                            }
+                        })
+                    );
+
+                    return NextResponse.json({
+                        message: `${successCount} approved, ${failCount} failed`,
+                        success: successCount,
+                        failed: failCount,
+                    });
+                }
+            }
+        } else if (newStatus === 'draft' || action === 'hold') {
+            updateData = { status: 'draft' };
+        } else if (newStatus === 'trash' || action === 'trash') {
+            updateData = { status: 'trash' };
+        } else if (newStatus) {
+            updateData = { status: newStatus };
+        }
+
+        // Simple bulk update (no auto-assign needed)
+        const { data, error, count } = await supabaseAdmin
+            .from('posts')
+            .update(updateData)
+            .in('id', ids)
+            .select('id');
+
+        if (error) throw error;
+
+        console.log(`[PATCH /api/posts] Bulk updated ${count || data?.length || 0} items`);
+
+        return NextResponse.json({
+            message: `${count || data?.length || 0} items updated`,
+            success: count || data?.length || 0,
+            failed: 0,
+        });
+    } catch (error: any) {
+        console.error('PATCH /api/posts error:', error);
+        return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+}
+
+// DELETE /api/posts - Bulk delete (soft or hard)
+export async function DELETE(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const force = searchParams.get('force') === 'true';
+        const body = await req.json();
+        const { ids } = body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return NextResponse.json({ message: 'IDs array required' }, { status: 400 });
+        }
+
+        console.log(`[DELETE /api/posts] Bulk delete: ${ids.length} items, force=${force}`);
+
+        let result;
+        if (force) {
+            // Hard delete
+            result = await supabaseAdmin
+                .from('posts')
+                .delete()
+                .in('id', ids);
+        } else {
+            // Soft delete (move to trash)
+            result = await supabaseAdmin
+                .from('posts')
+                .update({ status: 'trash' })
+                .in('id', ids);
+        }
+
+        if (result.error) throw result.error;
+
+        return NextResponse.json({
+            message: `${ids.length} items ${force ? 'permanently deleted' : 'moved to trash'}`,
+            success: ids.length,
+            failed: 0,
+        });
+    } catch (error: any) {
+        console.error('DELETE /api/posts error:', error);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }

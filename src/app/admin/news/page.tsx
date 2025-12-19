@@ -355,63 +355,32 @@ function AdminNewsListPage() {
         }
     };
 
-    // Batch processing helper - processes items in chunks to prevent overload
-    const processBatch = async <T,>(
-        items: T[],
-        processor: (item: T) => Promise<any>,
-        batchSize: number = 5
-    ): Promise<PromiseSettledResult<any>[]> => {
-        const results: PromiseSettledResult<any>[] = [];
-        for (let i = 0; i < items.length; i += batchSize) {
-            const batch = items.slice(i, i + batchSize);
-            const batchResults = await Promise.allSettled(batch.map(processor));
-            results.push(...batchResults);
-            // Small delay between batches to prevent overload
-            if (i + batchSize < items.length) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-        return results;
-    };
-
-    // Bulk Approve 실행 - 배치 처리로 과부하 방지
+    // Bulk Approve - Single API call for all selected items
     const executeBulkApprove = async () => {
         console.log('=== 선택 승인 시작 ===');
-        console.log('선택된 ID 개수:', selectedIds.size);
+        const ids = Array.from(selectedIds);
+        console.log('선택된 ID 개수:', ids.length);
 
         setIsBulkProcessing(true);
         try {
-            const ids = Array.from(selectedIds);
-            const results = await processBatch(ids, async (id) => {
-                const targetArticle = articles.find(a => a.id === id);
-                const bodyData: any = { status: 'published' };
-                if (!targetArticle?.published_at) {
-                    bodyData.published_at = new Date().toISOString();
-                }
+            const res = await fetch('/api/posts', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, action: 'approve' })
+            });
 
-                const res = await fetch(`/api/posts/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyData)
-                });
+            const data = await res.json();
 
-                if (!res.ok) {
-                    const responseData = await res.json();
-                    throw new Error(`ID ${id} 승인 실패: ${responseData.message || res.statusText}`);
-                }
-                return id;
-            }, 5); // 5 concurrent requests per batch
+            if (!res.ok) {
+                throw new Error(data.message || 'Bulk approve failed');
+            }
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+            console.log('=== 승인 결과 ===', data);
 
-            console.log('=== 승인 결과 ===');
-            console.log(`성공: ${succeeded}, 실패: ${failed}`);
-
-            if (failed > 0) {
-                showWarning(`${succeeded}개 승인 완료, ${failed}개 실패`);
+            if (data.failed > 0) {
+                showWarning(`${data.success}개 승인 완료, ${data.failed}개 실패`);
             } else {
-                showSuccess(`${succeeded}개 기사가 승인되었습니다.`);
+                showSuccess(`${data.success}개 기사가 승인되었습니다.`);
             }
             setSelectedIds(new Set());
             fetchArticles();
@@ -423,26 +392,27 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Delete 실행 - 배치 처리로 과부하 방지
+    // Bulk Delete - Single API call
     const executeBulkDelete = async () => {
         setIsBulkProcessing(true);
         const isTrash = filterStatus === 'trash';
+        const ids = Array.from(selectedIds);
+
         try {
-            const ids = Array.from(selectedIds);
-            const results = await processBatch(ids, async (id) => {
-                const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
-                const res = await fetch(url, { method: 'DELETE' });
-                if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
-                return id;
-            }, 5);
+            const url = `/api/posts${isTrash ? '?force=true' : ''}`;
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+            });
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
 
-            if (failed > 0) {
-                showWarning(`${succeeded}개 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${failed}개 실패`);
+            if (data.failed > 0) {
+                showWarning(`${data.success}개 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${data.failed}개 실패`);
             } else {
-                showSuccess(`${succeeded}개 기사가 ${isTrash ? '영구 삭제' : '휴지통으로 이동'}되었습니다.`);
+                showSuccess(`${data.success}개 기사가 ${isTrash ? '영구 삭제' : '휴지통으로 이동'}되었습니다.`);
             }
             setSelectedIds(new Set());
             fetchArticles();
@@ -454,28 +424,25 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Restore 실행 - 배치 처리로 과부하 방지
+    // Bulk Restore - Single API call
     const executeBulkRestore = async () => {
         setIsBulkProcessing(true);
+        const ids = Array.from(selectedIds);
+
         try {
-            const ids = Array.from(selectedIds);
-            const results = await processBatch(ids, async (id) => {
-                const res = await fetch(`/api/posts/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'draft' })
-                });
-                if (!res.ok) throw new Error(`ID ${id} 복구 실패`);
-                return id;
-            }, 5);
+            const res = await fetch('/api/posts', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, status: 'draft' })
+            });
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
 
-            if (failed > 0) {
-                showWarning(`${succeeded}개 복구 완료, ${failed}개 실패`);
+            if (data.failed > 0) {
+                showWarning(`${data.success}개 복구 완료, ${data.failed}개 실패`);
             } else {
-                showSuccess(`${succeeded}개 기사가 복구되었습니다 (승인 대기 상태).`);
+                showSuccess(`${data.success}개 기사가 복구되었습니다 (승인 대기 상태).`);
             }
             setSelectedIds(new Set());
             fetchArticles();
@@ -487,23 +454,23 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Hold 실행 (published -> draft) - 배치 처리
+    // Bulk Hold - Single API call
     const executeBulkHold = async () => {
         setIsBulkProcessing(true);
-        try {
-            const ids = Array.from(selectedIds);
-            const results = await processBatch(ids, async (id) => {
-                const res = await fetch(`/api/posts/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'draft' })
-                });
-                if (!res.ok) throw new Error(`ID ${id} 보류 실패`);
-                return id;
-            }, 5);
+        const ids = Array.from(selectedIds);
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+        try {
+            const res = await fetch('/api/posts', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids, action: 'hold' })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const succeeded = data.success || 0;
+            const failed = data.failed || 0;
 
             if (failed > 0) {
                 showWarning(`${succeeded}개 보류 완료, ${failed}개 실패`);
@@ -520,16 +487,16 @@ function AdminNewsListPage() {
         }
     };
 
-    // 일괄 승인 실행 (현재 필터의 모든 기사) - 배치 처리
+    // Bulk All Approve - Single API call (no batch processing)
     const executeBulkAllApprove = async () => {
         setIsBulkProcessing(true);
         try {
-            // 현재 필터 상태로 모든 기사 가져오기 (페이지네이션 없이)
+            // Get all articles for current filter (no pagination)
             const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
-            const res = await fetch(`/api/posts?limit=1000${statusParam}`);
-            if (!res.ok) throw new Error('기사 목록 조회 실패');
-            const data = await res.json();
-            const allIds: string[] = (data.posts || []).map((p: any) => p.id);
+            const listRes = await fetch(`/api/posts?limit=1000${statusParam}`);
+            if (!listRes.ok) throw new Error('Failed to fetch articles');
+            const listData = await listRes.json();
+            const allIds: string[] = (listData.posts || []).map((p: any) => p.id);
 
             if (allIds.length === 0) {
                 showWarning('승인할 기사가 없습니다.');
@@ -537,20 +504,20 @@ function AdminNewsListPage() {
                 return;
             }
 
-            showInfo(`${allIds.length}개 기사 일괄 승인 시작...`);
+            showInfo(`${allIds.length}개 기사 일괄 승인 중...`);
 
-            const results = await processBatch(allIds, async (id) => {
-                const res = await fetch(`/api/posts/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'published' })
-                });
-                if (!res.ok) throw new Error(`ID ${id} 승인 실패`);
-                return id;
-            }, 5); // 5 concurrent requests per batch
+            // Single bulk API call
+            const res = await fetch('/api/posts', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: allIds, action: 'approve' })
+            });
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const succeeded = data.success || 0;
+            const failed = data.failed || 0;
 
             if (failed > 0) {
                 showWarning(`${succeeded}개 일괄 승인 완료, ${failed}개 실패`);
@@ -560,24 +527,24 @@ function AdminNewsListPage() {
             setSelectedIds(new Set());
             fetchArticles();
         } catch (error) {
-            console.error('일괄 승인 처리 오류:', error);
+            console.error('Bulk all approve error:', error);
             showError('일괄 승인 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }
     };
 
-    // 일괄 삭제 실행 (현재 필터의 모든 기사) - 배치 처리
+    // Bulk All Delete - Single API call (no batch processing)
     const executeBulkAllDelete = async () => {
         setIsBulkProcessing(true);
         const isTrash = filterStatus === 'trash';
         try {
-            // 현재 필터 상태로 모든 기사 가져오기 (페이지네이션 없이)
+            // Get all articles for current filter (no pagination)
             const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
-            const res = await fetch(`/api/posts?limit=1000${statusParam}`);
-            if (!res.ok) throw new Error('기사 목록 조회 실패');
-            const data = await res.json();
-            const allIds: string[] = (data.posts || []).map((p: any) => p.id);
+            const listRes = await fetch(`/api/posts?limit=1000${statusParam}`);
+            if (!listRes.ok) throw new Error('Failed to fetch articles');
+            const listData = await listRes.json();
+            const allIds: string[] = (listData.posts || []).map((p: any) => p.id);
 
             if (allIds.length === 0) {
                 showWarning('삭제할 기사가 없습니다.');
@@ -585,17 +552,21 @@ function AdminNewsListPage() {
                 return;
             }
 
-            showInfo(`${allIds.length}개 기사 일괄 삭제 시작...`);
+            showInfo(`${allIds.length}개 기사 일괄 ${isTrash ? '영구 삭제' : '삭제'} 중...`);
 
-            const results = await processBatch(allIds, async (id) => {
-                const url = `/api/posts/${id}${isTrash ? '?force=true' : ''}`;
-                const res = await fetch(url, { method: 'DELETE' });
-                if (!res.ok) throw new Error(`ID ${id} 삭제 실패`);
-                return id;
-            }, 5);
+            // Single bulk API call
+            const url = `/api/posts${isTrash ? '?force=true' : ''}`;
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: allIds })
+            });
 
-            const succeeded = results.filter(r => r.status === 'fulfilled').length;
-            const failed = results.filter(r => r.status === 'rejected').length;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const succeeded = data.success || 0;
+            const failed = data.failed || 0;
 
             if (failed > 0) {
                 showWarning(`${succeeded}개 일괄 ${isTrash ? '영구 삭제' : '삭제'} 완료, ${failed}개 실패`);
@@ -605,7 +576,7 @@ function AdminNewsListPage() {
             setSelectedIds(new Set());
             fetchArticles();
         } catch (error) {
-            console.error('일괄 삭제 처리 오류:', error);
+            console.error('Bulk all delete error:', error);
             showError('일괄 삭제 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
