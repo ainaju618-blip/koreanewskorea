@@ -369,7 +369,7 @@ def validate_article(article_data: Dict) -> bool:
 # ============================================================
 # 9. 메인 수집 함수
 # ============================================================
-def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
+def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
     보도자료를 수집하고 서버로 전송
 

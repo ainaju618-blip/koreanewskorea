@@ -248,7 +248,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
 
     return content, thumbnail_url, pub_date, department, subtitle
 
-def collect_articles(days: int = 3, max_articles: int = 10, start_date: str = None, end_date: str = None):
+def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None):
     print(f"[{REGION_NAME}] Press release collection started")
 
     # Ensure dev server is running before starting

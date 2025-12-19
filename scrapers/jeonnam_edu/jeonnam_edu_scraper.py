@@ -197,7 +197,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     return content, thumbnail_url, pub_date, department
 
 
-def collect_articles(days: int = 7, max_articles: int = 10, start_date: str = None, end_date: str = None) -> List[Dict]:
+def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     """기사 수집 메인 함수"""
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (최근 {days}일, 최대 {max_articles}개)")
 

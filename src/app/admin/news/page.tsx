@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle, PauseCircle } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
 
 // 공통 컴포넌트 import
@@ -70,7 +70,7 @@ function AdminNewsListPage() {
     // 확인 모달 상태 (window.confirm 대체)
     const [confirmModal, setConfirmModal] = useState<{
         isOpen: boolean;
-        type: 'bulk-approve' | 'bulk-delete' | 'bulk-restore' | 'bulk-all-approve' | 'bulk-all-delete' | 'single-approve' | 'single-delete' | 'single-restore' | null;
+        type: 'bulk-approve' | 'bulk-delete' | 'bulk-restore' | 'bulk-all-approve' | 'bulk-all-delete' | 'single-approve' | 'single-delete' | 'single-restore' | 'single-hold' | 'bulk-hold' | null;
         message: string;
     }>({ isOpen: false, type: null, message: '' });
 
@@ -300,17 +300,31 @@ function AdminNewsListPage() {
     };
 
     // 단일 기사 승인/삭제 모달 열기
-    const openSingleConfirmModal = (type: 'single-approve' | 'single-delete' | 'single-restore') => {
+    const openSingleConfirmModal = (type: 'single-approve' | 'single-delete' | 'single-restore' | 'single-hold') => {
         if (!previewArticle) return;
         let message = '';
         if (type === 'single-approve') message = '이 기사를 승인하고 발행하시겠습니까?';
         else if (type === 'single-restore') message = '이 기사를 복구하시겠습니까? (승인 대기 상태로 이동)';
+        else if (type === 'single-hold') message = '이 기사를 보류 처리하시겠습니까? (승인 대기 상태로 변경)';
         else if (type === 'single-delete') {
             message = previewArticle.status === 'trash'
                 ? '이 기사를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'
                 : '이 기사를 삭제하시겠습니까? (휴지통으로 이동)';
         }
         setConfirmModal({ isOpen: true, type, message });
+    };
+
+    // 벌크 보류 모달 열기
+    const openBulkHoldConfirmModal = () => {
+        if (selectedIds.size === 0) {
+            showWarning('선택된 기사가 없습니다.');
+            return;
+        }
+        setConfirmModal({
+            isOpen: true,
+            type: 'bulk-hold',
+            message: `${selectedIds.size}개 기사를 보류 처리하시겠습니까? (승인 대기 상태로 변경)`
+        });
     };
 
     // 확인 모달에서 확인 클릭 시 실행
@@ -334,6 +348,10 @@ function AdminNewsListPage() {
             await executeBulkAllApprove();
         } else if (actionType === 'bulk-all-delete') {
             await executeBulkAllDelete();
+        } else if (actionType === 'single-hold') {
+            await executeSingleHold();
+        } else if (actionType === 'bulk-hold') {
+            await executeBulkHold();
         }
     };
 
@@ -458,6 +476,40 @@ function AdminNewsListPage() {
         } catch (error) {
             console.error('복구 처리 오류:', error);
             showError('복구 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
+    // Bulk Hold 실행 (published -> draft)
+    const executeBulkHold = async () => {
+        setIsBulkProcessing(true);
+        try {
+            const results = await Promise.allSettled(
+                Array.from(selectedIds).map(async (id) => {
+                    const res = await fetch(`/api/posts/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'draft' }) // 보류 시 draft 상태로
+                    });
+                    if (!res.ok) throw new Error(`ID ${id} 보류 실패`);
+                    return id;
+                })
+            );
+
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+
+            if (failed > 0) {
+                showWarning(`${succeeded}개 보류 완료, ${failed}개 실패`);
+            } else {
+                showSuccess(`${succeeded}개 기사가 보류 처리되었습니다.`);
+            }
+            setSelectedIds(new Set());
+            fetchArticles();
+        } catch (error) {
+            console.error('보류 처리 오류:', error);
+            showError('보류 처리 중 오류가 발생했습니다.');
         } finally {
             setIsBulkProcessing(false);
         }
@@ -735,6 +787,40 @@ function AdminNewsListPage() {
         }
     };
 
+    // Hold Article (modal trigger)
+    const handleHold = () => {
+        openSingleConfirmModal('single-hold');
+    };
+
+    // 실제 단일 보류 실행 (published -> draft)
+    const executeSingleHold = async () => {
+        if (!previewArticle) return;
+        setIsApproving(true);
+        try {
+            const res = await fetch(`/api/posts/${previewArticle.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'draft' })
+            });
+
+            if (res.ok) {
+                setArticles(articles.map(a =>
+                    a.id === previewArticle.id ? { ...a, status: 'draft' } : a
+                ));
+                showSuccess("기사가 보류 처리되었습니다.");
+                closePreview();
+                fetchArticles();
+            } else {
+                throw new Error("보류 처리 실패");
+            }
+        } catch (err) {
+            showError("보류 처리 실패");
+            console.error(err);
+        } finally {
+            setIsApproving(false);
+        }
+    };
+
     // Delete Article (모달 트리거)
     const handleDelete = () => {
         openSingleConfirmModal('single-delete');
@@ -788,7 +874,7 @@ function AdminNewsListPage() {
                 iconBgColor="bg-blue-600"
                 actions={
                     <div className="flex gap-2 flex-wrap">
-                        {/* 선택 승인/복구 버튼 - 항상 표시, 선택 없으면 비활성화 */}
+                        {/* 선택 승인/복구/보류 버튼 - 상태에 따라 다르게 표시 */}
                         {filterStatus === 'trash' ? (
                             <button
                                 onClick={() => openBulkConfirmModal('bulk-restore')}
@@ -801,6 +887,19 @@ function AdminNewsListPage() {
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
                                 <RotateCcw className="w-4 h-4" />
                                 선택 복구 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
+                            </button>
+                        ) : filterStatus === 'published' ? (
+                            <button
+                                onClick={openBulkHoldConfirmModal}
+                                disabled={isBulkProcessing || selectedIds.size === 0}
+                                className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
+                                    ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                    : 'bg-[#21262d] text-[#6e7681] cursor-not-allowed border border-[#30363d]'
+                                    }`}
+                            >
+                                {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                <PauseCircle className="w-4 h-4" />
+                                선택 보류 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
                             </button>
                         ) : (
                             <button
@@ -1153,6 +1252,18 @@ function AdminNewsListPage() {
                             >
                                 <RotateCcw className="w-5 h-5" />
                                 기사 복구
+                            </button>
+                        )}
+
+                        {/* Hold Button - Only for published articles */}
+                        {previewArticle.status === 'published' && (
+                            <button
+                                onClick={handleHold}
+                                disabled={isApproving}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 shadow-sm transition disabled:opacity-50 mt-4"
+                            >
+                                {isApproving ? <Loader2 className="w-5 h-5 animate-spin" /> : <PauseCircle className="w-5 h-5" />}
+                                {isApproving ? '보류 처리 중...' : '보류'}
                             </button>
                         )}
                     </div>

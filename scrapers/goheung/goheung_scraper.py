@@ -328,7 +328,7 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
 # ============================================================
 # 7. 메인 수집 함수
 # ============================================================
-def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
+def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
     """
     Collect press releases and send to server (count-based)
 

@@ -94,7 +94,16 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
     return content, thumbnail_url, pub_date
 
-def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
+def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
+    """
+    Collect press releases and send to server (with date filtering)
+
+    Args:
+        days: Collection period (days) - used when start_date/end_date not provided
+        max_articles: Maximum number of articles to collect
+        start_date: Collection start date (YYYY-MM-DD)
+        end_date: Collection end date (YYYY-MM-DD)
+    """
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (기간: {days}일, 최대: {max_articles}개)")
 
     # Ensure dev server is running before starting
@@ -103,10 +112,13 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
         return []
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
     
-    # 날짜 필터 계산
-    from datetime import timedelta
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    # Calculate date filter (prioritize start_date/end_date if provided)
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    print(f"   [DATE] 수집 기간: {start_date} ~ {end_date}")
     
     collected_links = []
     
@@ -176,6 +188,14 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
             if not pub_date:
                 pub_date = datetime.now().strftime('%Y-%m-%d')
 
+            # Date filtering - skip articles outside the date range
+            if pub_date < start_date:
+                print(f"      [STOP] 기간 이전 기사 ({pub_date} < {start_date}), 수집 중단")
+                break  # Stop collecting (articles are in chronological order)
+            if pub_date > end_date:
+                print(f"      [SKIP] 기간 이후 기사 ({pub_date} > {end_date})")
+                continue  # Skip this article but continue checking
+
             # 부제목 추출
             subtitle, content = extract_subtitle(content, title)
 
@@ -227,12 +247,20 @@ def collect_articles(days: int = 3, max_articles: int = 30) -> List[Dict]:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--days', type=int, default=3, help='수집 기간 (일)')
-    parser.add_argument('--max-articles', type=int, default=30, help='최대 수집 기사 수')
-    parser.add_argument('--dry-run', action='store_true', help='테스트 모드')
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} Press Release Scraper')
+    parser.add_argument('--days', type=int, default=3, help='Collection period (days)')
+    parser.add_argument('--max-articles', type=int, default=30, help='Maximum articles to collect')
+    parser.add_argument('--dry-run', action='store_true', help='Test mode (no server transmission)')
+    parser.add_argument('--start-date', type=str, default=None, help='Collection start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', type=str, default=None, help='Collection end date (YYYY-MM-DD)')
     args = parser.parse_args()
-    collect_articles(days=args.days, max_articles=args.max_articles)
+
+    collect_articles(
+        days=args.days,
+        max_articles=args.max_articles,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
 
 if __name__ == "__main__":
     main()

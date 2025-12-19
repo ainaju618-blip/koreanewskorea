@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { autoAssignReporter } from '@/lib/auto-assign';
 
 // Initialize Supabase Admin Client (Service Role)
 const supabaseAdmin = createClient(
@@ -277,6 +278,22 @@ export async function POST(request: Request) {
         }
 
         // ============================================================
+        // 기자 자동 배정 (Auto-assign Reporter)
+        // ============================================================
+        let author_id: string | null = null;
+        let author_name: string | null = null;
+
+        try {
+            const assignResult = await autoAssignReporter(finalRegion);
+            author_id = assignResult.reporter.id;
+            author_name = assignResult.reporter.name;
+            console.info(`[ASSIGN] ${title?.substring(0, 30)}... -> ${author_name} (${assignResult.reason})`);
+        } catch (assignError) {
+            console.warn('[ASSIGN] Reporter auto-assign failed:', assignError);
+            // Continue without reporter assignment
+        }
+
+        // ============================================================
         // 기사 검증 실행 (Article Validation)
         // ============================================================
         const validation = validateArticle({
@@ -316,6 +333,8 @@ export async function POST(request: Request) {
                 thumbnail_url,
                 ai_summary: ai_summary || '',
                 status: dbStatus, // DB 호환 상태 (published/draft/hidden/trash)
+                author_id, // 기자 자동 배정 (reporters.id)
+                author_name, // 기자 이름 (reporters.name)
             })
             .select()
             .single();
