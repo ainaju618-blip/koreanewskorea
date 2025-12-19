@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+
+// Supabase client for bot logs
+const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 const REPO_OWNER = 'korea-news';
 const REPO_NAME = 'koreanewsone';
 const WORKFLOW_FILE = 'daily_scrape.yml';
@@ -103,10 +110,18 @@ export async function GET(req: NextRequest) {
             }
         }
 
+        // Fetch recent bot logs (last 10, optimized query)
+        const { data: botLogs } = await supabaseAdmin
+            .from('bot_logs')
+            .select('id, region, status, articles_count, started_at, ended_at, metadata')
+            .order('started_at', { ascending: false })
+            .limit(10);
+
         return NextResponse.json({
             schedules,
             runs,
             jobStats,
+            botLogs: botLogs || [],
             workflowUrl: `https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}`,
         });
 
@@ -126,8 +141,8 @@ export async function PUT(req: NextRequest) {
         const body = await req.json();
         const { schedules } = body; // Array of KST times like ["05:20", "06:20", "12:30"]
 
-        if (!Array.isArray(schedules) || schedules.length === 0) {
-            return NextResponse.json({ error: 'At least one schedule time is required' }, { status: 400 });
+        if (!Array.isArray(schedules)) {
+            return NextResponse.json({ error: 'Schedules must be an array' }, { status: 400 });
         }
 
         // Validate time format (HH:MM)
@@ -175,15 +190,24 @@ export async function PUT(req: NextRequest) {
         }
 
         // Build new schedule section
-        const scheduleSection = `on:
+        let scheduleSection: string;
+        if (schedules.length === 0) {
+            // Empty schedule - comment out the schedule section
+            scheduleSection = `on:
+  # schedule: (disabled - no schedules configured)
+  workflow_dispatch:`;
+        } else {
+            scheduleSection = `on:
   schedule:
     # Daily schedules - Updated ${today}
 ${cronLines.join('\n')}
   workflow_dispatch:`;
+        }
 
         // Replace the schedule section in the workflow file
+        // Pattern handles both active schedule and commented-out schedule
         const newContent = currentContent.replace(
-            /on:\s*\n\s*schedule:\s*\n[\s\S]*?workflow_dispatch:/,
+            /on:\s*\n\s*(?:schedule:\s*\n[\s\S]*?|# schedule:.*\n\s*)workflow_dispatch:/,
             scheduleSection
         );
 
@@ -211,10 +235,49 @@ ${cronLines.join('\n')}
             throw new Error(`Failed to update workflow: ${updateResponse.status} - ${errorText}`);
         }
 
+        // VERIFICATION: Re-fetch the workflow file to confirm the save actually worked
+        const verifyResponse = await fetch(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/workflows/${WORKFLOW_FILE}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                },
+                cache: 'no-store'
+            }
+        );
+
+        if (!verifyResponse.ok) {
+            throw new Error('Failed to verify save - could not re-fetch workflow file');
+        }
+
+        const verifyData = await verifyResponse.json();
+        const verifiedContent = Buffer.from(verifyData.content, 'base64').toString('utf-8');
+
+        // Check that all scheduled times are actually in the file
+        const savedCrons: string[] = [];
+        for (const time of schedules) {
+            const [kstHour, kstMinute] = time.split(':').map(Number);
+            let utcHour = kstHour - 9;
+            if (utcHour < 0) utcHour += 24;
+            const expectedCron = `${kstMinute} ${utcHour} * * *`;
+
+            if (verifiedContent.includes(expectedCron)) {
+                savedCrons.push(time);
+            }
+        }
+
+        // If not all schedules were saved, throw error
+        if (savedCrons.length !== schedules.length) {
+            const missedSchedules = schedules.filter(t => !savedCrons.includes(t));
+            throw new Error(`Verification failed: These times were not saved: ${missedSchedules.join(', ')}`);
+        }
+
         return NextResponse.json({
             success: true,
-            message: 'Schedule updated successfully',
-            schedules: schedules
+            message: 'Schedule updated and verified successfully',
+            schedules: schedules,
+            verified: true
         });
 
     } catch (error: any) {
