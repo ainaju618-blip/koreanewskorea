@@ -416,6 +416,7 @@ export default function BotSchedulePage() {
                                                 <div>
                                                     <div className="text-sm font-medium">
                                                         {new Date(run.createdAt).toLocaleDateString('ko-KR', {
+                                                            timeZone: 'Asia/Seoul',
                                                             month: 'short',
                                                             day: 'numeric',
                                                             hour: '2-digit',
@@ -473,10 +474,10 @@ export default function BotSchedulePage() {
                                             }`}
                                         >
                                             <span className={`text-sm ${idx === 0 ? 'text-purple-300 font-semibold' : 'text-gray-400'}`}>
-                                                {time.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                                                {time.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric' })}
                                             </span>
                                             <span className={`text-sm font-mono ${idx === 0 ? 'text-purple-300' : 'text-gray-500'}`}>
-                                                {time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                                {time.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     ))}
