@@ -163,13 +163,13 @@ export async function POST(request: Request) {
         }
 
         // 3. Avoid Duplicates - 기존 기사가 있으면 thumbnail_url만 업데이트
-        // 단, trash 상태 기사는 제외 (삭제 후 재수집 가능하도록)
+        // trash, rejected 상태 기사는 제외 (삭제/반려 후 재수집 가능하도록)
         // NOTE: .maybeSingle() 사용 - 중복이 이미 있어도 에러 안 남
         const { data: existingList } = await supabaseAdmin
             .from('posts')
             .select('id, thumbnail_url')
             .eq('original_link', original_link)
-            .neq('status', 'trash')
+            .not('status', 'in', '("trash","rejected")')
             .limit(1);
 
         const existing = existingList?.[0];
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
                 .from('posts')
                 .select('id')
                 .eq('title', title)
-                .neq('status', 'trash')
+                .not('status', 'in', '("trash","rejected")')
                 .gte('published_at', `${publishedDate}T00:00:00`)
                 .lte('published_at', `${publishedDate}T23:59:59.999`)
                 .limit(1);
