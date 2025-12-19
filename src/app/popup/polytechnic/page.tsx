@@ -10,7 +10,7 @@ export default function PolytechnicPopup() {
 
     const handleTabClick = (tab: TabType) => {
         if (tab === 'application') {
-            window.location.href = 'https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34';
+            window.open('https://ipsi.kopo.ac.kr/poly/wonseo/wonseoSearch.do?daehag_cd=3320000&gwajeong_gb=34', '_blank');
             return;
         }
         setActiveTab(tab);
@@ -31,7 +31,7 @@ export default function PolytechnicPopup() {
     const renderRecruitmentContent = () => (
         <div className="flex-1 w-full h-full">
             <iframe
-                src="/files/mojib.pdf#navpanes=0&scrollbar=1&view=FitH"
+                src="https://docs.google.com/viewer?url=https://www.koreanewsone.com/files/mojib.pdf&embedded=true"
                 className="w-full h-full border-0"
                 title="Recruitment Guide PDF"
             />
