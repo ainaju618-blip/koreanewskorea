@@ -37,7 +37,7 @@ export default function Home() {
                 categoryName="광주"
                 categoryNameEn="Gwangju"
                 categorySlug="gwangju"
-                limit={4}
+                limit={5}
               />
             </Suspense>
 
@@ -47,7 +47,7 @@ export default function Home() {
                 categoryName="전남"
                 categoryNameEn="Jeonnam"
                 categorySlug="jeonnam"
-                limit={4}
+                limit={5}
               />
             </Suspense>
 
@@ -58,7 +58,7 @@ export default function Home() {
                 categoryNameEn="Naju"
                 categorySlug="jeonnam/naju"
                 regionCode="naju"
-                limit={4}
+                limit={5}
               />
             </Suspense>
 
