@@ -83,11 +83,22 @@ export async function GET(req: NextRequest) {
             url: run.html_url,
         })) || [];
 
-        // Fetch jobs for the latest run to get detailed progress
+        // Fetch jobs for the active run to get detailed progress
         let jobStats = { total: 0, completed: 0, in_progress: 0, queued: 0, failed: 0 };
-        if (runs.length > 0 && (runs[0].status === 'queued' || runs[0].status === 'in_progress')) {
+
+        // Find the actual active run (queued or in_progress), not just runs[0]
+        const activeRunIndex = runs.findIndex((r: any) => r.status === 'queued' || r.status === 'in_progress');
+        const activeRun = activeRunIndex >= 0 ? runs[activeRunIndex] : null;
+
+        // If there's an active run, move it to the front so frontend sees correct status
+        if (activeRun && activeRunIndex > 0) {
+            runs.splice(activeRunIndex, 1);
+            runs.unshift(activeRun);
+        }
+
+        if (activeRun) {
             const jobsResponse = await fetch(
-                `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${runs[0].id}/jobs`,
+                `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${activeRun.id}/jobs`,
                 {
                     headers: {
                         'Authorization': `Bearer ${GITHUB_TOKEN}`,
