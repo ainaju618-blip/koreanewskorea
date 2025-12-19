@@ -110,7 +110,7 @@ async function getRandomReporter(articleRegion?: string) {
         if (articleRegion) {
             const { data: regionReporters } = await supabaseAdmin
                 .from('reporters')
-                .select('id, name, region, position')
+                .select('id, name, email, region, position')
                 .eq('status', 'Active')
                 .eq('type', 'Human')
                 .eq('region', articleRegion);
@@ -124,7 +124,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Fallback to reporters with "전체" region
         const { data: allRegionReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, region, position')
+            .select('id, name, email, region, position')
             .eq('status', 'Active')
             .eq('type', 'Human')
             .eq('region', '전체');
@@ -137,7 +137,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Final fallback: any active human reporter
         const { data: anyReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, region, position')
+            .select('id, name, email, region, position')
             .eq('status', 'Active')
             .eq('type', 'Human')
             .limit(10);
@@ -252,20 +252,31 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     }
 
     // 1. Fetch Reporter Info
-    // If author_id exists, get that reporter; otherwise assign random reporter
+    // Priority: author_id -> author_name -> random
     let reporter = null;
+
+    // Try 1: Match by author_id (references profiles.id -> reporters.user_id)
     if (news.author_id) {
-        // author_id references profiles.id, which maps to reporters.user_id
-        const { data, error } = await supabaseAdmin
+        const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, region, position')
+            .select('id, name, email, region, position')
             .eq('user_id', news.author_id)
             .single();
-
         reporter = data;
     }
 
-    // If no assigned reporter, get a random one based on article region
+    // Try 2: Match by author_name (fallback when author_id not in profiles)
+    if (!reporter && news.author_name) {
+        const { data } = await supabaseAdmin
+            .from('reporters')
+            .select('id, name, email, region, position')
+            .eq('name', news.author_name)
+            .eq('status', 'Active')
+            .single();
+        reporter = data;
+    }
+
+    // Try 3: Random reporter based on article region
     if (!reporter) {
         reporter = await getRandomReporter(news.region);
     }
