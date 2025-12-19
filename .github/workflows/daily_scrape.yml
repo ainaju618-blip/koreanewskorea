@@ -1,10 +1,7 @@
 name: Daily News Scrape
 
 on:
-  schedule:
-    # Daily schedules - Updated 2025-12-19
-    # 17:42 KST (08:42 UTC)
-    - cron: '42 8 * * *'
+  # All schedules removed - 2025-12-19
   workflow_dispatch:
     inputs:
       region:
