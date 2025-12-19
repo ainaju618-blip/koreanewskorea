@@ -223,54 +223,80 @@ export function ScraperPanel() {
         };
     }, [isRunning, activeJobIds]);
 
-    // Local execution (original method - progress visible on screen)
-    const handleLocalRun = async () => {
+    // GitHub Actions execution for selected regions
+    const handleRun = async () => {
         if (selectedRegions.length === 0) return;
 
         setIsRunning(true);
         setJobResults([]);
         setActiveJobIds([]);
-        setStatusMessage(`${selectedRegions.length}개 지역 수집 시작...`);
-        setProgress({ total: selectedRegions.length, completed: 0 });
 
-        const jobIds: number[] = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const days = Math.min(Math.max(diffDays, 1), 7).toString();
 
-        for (const regionId of selectedRegions) {
+        // If all regions selected, use 'all' for parallel execution
+        if (selectedRegions.length === allRegions.length) {
+            setStatusMessage(`GitHub Actions: 26개 지역 병렬 실행 중...`);
+            setProgress({ total: 26, completed: 0 });
+
             try {
-                const res = await fetch('/api/bot/run', {
+                const response = await fetch('/api/admin/github-actions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        region: regionId,
-                        startDate,
-                        endDate,
-                        dryRun: false
-                    })
+                    body: JSON.stringify({ region: 'all', days })
                 });
-                const data = await res.json();
-                if (data.id) {
-                    jobIds.push(data.id);
-                    console.log(`[ScraperPanel] Started job for ${regionId}: ${data.id}`);
-                }
-            } catch (e) {
-                console.error(`[ScraperPanel] Failed to start ${regionId}:`, e);
-            }
-        }
+                const data = await response.json();
 
-        if (jobIds.length > 0) {
-            setActiveJobIds(jobIds);
-            setStatusMessage(`${jobIds.length}개 지역 수집 중...`);
+                if (response.ok && data.success) {
+                    pollGitHubActions(26);
+                } else {
+                    setIsRunning(false);
+                    setStatusMessage(`Error: ${data.error || data.message}`);
+                }
+            } catch (error: any) {
+                setIsRunning(false);
+                setStatusMessage(`Failed: ${error.message}`);
+            }
         } else {
-            setIsRunning(false);
-            setStatusMessage("작업 시작 실패");
+            // Trigger workflow for each selected region
+            setStatusMessage(`GitHub Actions: ${selectedRegions.length}개 지역 실행 중...`);
+            setProgress({ total: selectedRegions.length, completed: 0 });
+
+            let successCount = 0;
+            for (const regionId of selectedRegions) {
+                try {
+                    const response = await fetch('/api/admin/github-actions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ region: regionId, days })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        successCount++;
+                        console.log(`[ScraperPanel] Triggered GitHub Actions for ${regionId}`);
+                    }
+                } catch (e) {
+                    console.error(`[ScraperPanel] Failed to trigger ${regionId}:`, e);
+                }
+            }
+
+            if (successCount > 0) {
+                setStatusMessage(`GitHub Actions: ${successCount}개 지역 트리거 완료! 진행 상황은 GitHub에서 확인하세요.`);
+                pollGitHubActions(successCount);
+            } else {
+                setIsRunning(false);
+                setStatusMessage("작업 시작 실패");
+            }
         }
     };
 
-    // GitHub Actions execution (for large-scale parallel)
-    const handleGitHubRun = async () => {
+    // GitHub Actions execution for ALL 26 regions (parallel)
+    const handleGitHubRunAll = async () => {
         setIsRunning(true);
         setJobResults([]);
-        setStatusMessage("GitHub Actions workflow triggering...");
+        setStatusMessage("GitHub Actions: 26개 지역 병렬 실행 시작...");
         setProgress({ total: 26, completed: 0 });
 
         try {
@@ -279,20 +305,16 @@ export function ScraperPanel() {
             const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             const days = Math.min(Math.max(diffDays, 1), 7).toString();
 
-            const region = selectedRegions.length === allRegions.length ? 'all' :
-                          selectedRegions.length === 1 ? selectedRegions[0] : 'all';
-
             const response = await fetch('/api/admin/github-actions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ region, days })
+                body: JSON.stringify({ region: 'all', days })
             });
             const data = await response.json();
 
             if (response.ok && data.success) {
                 setStatusMessage(`GitHub Actions started! 26개 지역 병렬 실행 중... (약 5분 소요)`);
-                // Start polling GitHub Actions status
-                pollGitHubActions();
+                pollGitHubActions(26);
             } else {
                 setIsRunning(false);
                 setStatusMessage(`Error: ${data.error || data.message}`);
@@ -304,7 +326,7 @@ export function ScraperPanel() {
     };
 
     // Poll GitHub Actions workflow status
-    const pollGitHubActions = async () => {
+    const pollGitHubActions = (regionCount: number) => {
         let pollCount = 0;
         const maxPolls = 120; // 10 minutes max (5s * 120)
 
@@ -319,8 +341,8 @@ export function ScraperPanel() {
                     if (latestRun.status === 'completed') {
                         setIsRunning(false);
                         if (latestRun.conclusion === 'success') {
-                            setStatusMessage(`GitHub Actions 완료! 26개 지역 수집 성공`);
-                            setProgress({ total: 26, completed: 26 });
+                            setStatusMessage(`GitHub Actions 완료! ${regionCount}개 지역 수집 성공`);
+                            setProgress({ total: regionCount, completed: regionCount });
                         } else {
                             setStatusMessage(`GitHub Actions 완료 (일부 실패). GitHub에서 상세 확인하세요.`);
                         }
@@ -350,8 +372,6 @@ export function ScraperPanel() {
 
         setTimeout(poll, 3000); // Start polling after 3s
     };
-
-    const handleRun = handleLocalRun;
 
     // 전체 중지 버튼 핸들러
     const handleStop = async () => {
@@ -783,7 +803,7 @@ export function ScraperPanel() {
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-3 border-t border-gray-100">
                         <button
-                            onClick={handleLocalRun}
+                            onClick={handleRun}
                             disabled={isRunning || selectedRegions.length === 0}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-sm transition disabled:opacity-50"
                         >
@@ -791,7 +811,7 @@ export function ScraperPanel() {
                             {isRunning ? '실행 중...' : '수집 시작'}
                         </button>
                         <button
-                            onClick={handleGitHubRun}
+                            onClick={handleGitHubRunAll}
                             disabled={isRunning}
                             className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 shadow-sm transition disabled:opacity-50"
                             title="GitHub Actions로 26개 지역 병렬 실행 (약 5분)"
