@@ -7,6 +7,8 @@ on:
     - cron: '12 9 * * *'
     # 20:02 KST (11:02 UTC)
     - cron: '2 11 * * *'
+    # 21:42 KST (12:42 UTC)
+    - cron: '42 12 * * *'
   workflow_dispatch:
     inputs:
       region:
