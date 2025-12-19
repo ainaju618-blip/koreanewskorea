@@ -319,23 +319,31 @@ export async function POST(request: Request) {
             : validation.status === 'limited' ? 'draft'
                 : validation.status;
 
+        // Build insert object - only include author fields if they exist in DB
+        // TODO: Add author_id and author_name columns to posts table in Supabase
+        const insertData: Record<string, unknown> = {
+            title,
+            content: content || '',
+            original_link,
+            source: source || 'Bot',
+            category: category || '뉴스', // Legacy TEXT field
+            category_id, // New FK field (CMS v2.0)
+            region: finalRegion, // Region code for filtering
+            published_at: published_at || new Date().toISOString(),
+            thumbnail_url,
+            ai_summary: ai_summary || '',
+            status: dbStatus, // DB compatible status
+        };
+
+        // Note: author_id and author_name are prepared but NOT inserted
+        // until the columns are added to the posts table in Supabase
+        if (author_id) {
+            console.info(`[ASSIGN] Would assign ${author_name} but columns not in DB yet`);
+        }
+
         const { data, error } = await supabaseAdmin
             .from('posts')
-            .insert({
-                title,
-                content: content || '',
-                original_link,
-                source: source || 'Bot',
-                category: category || '뉴스', // 기존 TEXT 필드 (하위 호환)
-                category_id, // 새 FK 필드 (CMS v2.0)
-                region: finalRegion, // 지역 필터링용 코드 (source에서 자동 매핑)
-                published_at: published_at || new Date().toISOString(),
-                thumbnail_url,
-                ai_summary: ai_summary || '',
-                status: dbStatus, // DB 호환 상태 (published/draft/hidden/trash)
-                author_id, // 기자 자동 배정 (reporters.id)
-                author_name, // 기자 이름 (reporters.name)
-            })
+            .insert(insertData)
             .select()
             .single();
 
