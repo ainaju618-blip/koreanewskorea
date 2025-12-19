@@ -89,8 +89,25 @@ Main Content:
 | **Workarounds without approval** | Work **REJECT** + rollback |
 | **Arbitrary execution during conversation** | **STOP** + conversation mode |
 | **GNB/menu hardcoding** | Code review **REJECT** |
+| **Same error 2+ times** | **STOP** + Full system review (not partial fix) |
 
 > **Detail Rules:** See [.claude/rules/golden-rules.md](.claude/rules/golden-rules.md)
+
+## Repeated Error Protocol (P0 - MUST)
+
+```
+When same/similar error occurs 2+ times:
+
+1. STOP partial fixes immediately
+2. Read ENTIRE related file(s) from top to bottom
+3. Trace full data flow: Input -> Process -> Output
+4. Identify ALL related functions/components
+5. Create comprehensive fix plan BEFORE coding
+6. Fix root cause, not symptoms
+7. Verify fix doesn't break other parts
+
+FORBIDDEN: Quick patch without full context review
+```
 
 ---
 

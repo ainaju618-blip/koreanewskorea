@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     Calendar, Clock, Loader2, Play, History, AlertCircle,
     ExternalLink, GitBranch, CheckCircle2, XCircle, Timer,
@@ -87,6 +87,9 @@ export default function BotSchedulePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
+    // Ref to track unsaved changes (prevents overwriting during auto-refresh)
+    const hasUnsavedChangesRef = useRef(false);
+
     const fetchData = useCallback(async (showRefresh = false) => {
         if (showRefresh) setIsRefreshing(true);
         try {
@@ -114,9 +117,19 @@ export default function BotSchedulePage() {
         return () => clearInterval(interval);
     }, [fetchData]);
 
+    // Keep ref in sync with state
+    useEffect(() => {
+        hasUnsavedChangesRef.current = hasChanges;
+    }, [hasChanges]);
+
     // Initialize edited schedules when data is loaded
+    // IMPORTANT: Don't overwrite user's unsaved changes during auto-refresh
     useEffect(() => {
         if (data?.schedules) {
+            // Skip if user has unsaved changes (prevents auto-refresh overwrite)
+            if (hasUnsavedChangesRef.current) {
+                return;
+            }
             const kstTimes = data.schedules.map(cron => cronToKST(cron).time);
             setEditedSchedules(kstTimes);
             setHasChanges(false);
