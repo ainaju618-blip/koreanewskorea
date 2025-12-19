@@ -76,6 +76,35 @@ python [지역]/[지역]_scraper.py --days 1 --max-articles 1 --dry-run
 
 ---
 
+### P0-5. 이모지 사용 금지 (MUST) - 2025-12-19 추가
+
+```
++==============================================================================+
+|  2025-12-19 사건: 14개 스크래퍼가 이모지로 인한 SyntaxError 발생             |
+|                                                                              |
+|  원인: print문에 이모지 사용                                                 |
+|        GitHub Actions Ubuntu 환경에서 인코딩 문제 발생                       |
+|                                                                              |
+|  결과: "SyntaxError: unterminated string literal" 으로 전체 실패            |
++==============================================================================+
+```
+
+**금지 패턴:**
+```python
+# WRONG - 이모지 사용 금지!
+print(f"[EMOJI] {REGION_NAME} ...")  # 이모지 문자 사용 금지
+```
+
+**올바른 패턴:**
+```python
+# CORRECT - ASCII 마커 사용
+print(f"[INFO] {REGION_NAME} 보도자료 수집 시작")
+print(f"[OK] 수집 완료")
+print(f"[WARN] 경고: {message}")
+print(f"[ERROR] 실패: {error}")
+```
+
+
 ## [필독] AI Agent 필수 준수 사항
 
 ```

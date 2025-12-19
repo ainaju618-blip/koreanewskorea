@@ -9,8 +9,26 @@
 | 항목 | 값 |
 |------|-----|
 | **구현 완료** | 26개 / 26개 (100%) |
+| **실행 방식** | **GitHub Actions 병렬 실행** (2025-12-19~) |
+| **동시 실행** | 10개 (max-parallel: 10) |
+| **예상 시간** | ~5분 (기존 50분 대비 90% 단축) |
 | **이미지 저장** | **Cloudinary** (필수, 실패 시 에러) |
 | **가이드 문서** | `scrapers/SCRAPER_GUIDE.md` |
+
+### GitHub Actions 병렬 실행 (2025-12-19 도입)
+
+```yaml
+# .github/workflows/daily_scrape.yml
+strategy:
+  fail-fast: false      # 한 지역 실패해도 계속 진행
+  max-parallel: 10      # 동시 10개 실행
+  matrix:
+    region: [gwangju, jeonnam, mokpo, ...26개]
+```
+
+### 이모지 사용 금지 규칙 (P0)
+- 스크래퍼에서 이모지 사용 금지 (GitHub Actions 인코딩 오류)
+- `[INFO]`, `[OK]`, `[WARN]`, `[ERROR]` 등 ASCII 마커 사용
 
 ### 지역별 스크래퍼
 - **광역/도 (2)**: 광주광역시, 전라남도
