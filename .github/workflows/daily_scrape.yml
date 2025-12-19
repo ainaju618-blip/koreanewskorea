@@ -11,8 +11,6 @@ on:
     - cron: '31 6 * * *'
     # 16:14 KST (07:14 UTC)
     - cron: '14 7 * * *'
-    # 16:46 KST (07:46 UTC)
-    - cron: '46 7 * * *'
     # 17:42 KST (08:42 UTC)
     - cron: '42 8 * * *'
   workflow_dispatch:
@@ -49,7 +47,7 @@ jobs:
           - gokseong
           - gurye
           - goheung
-          - boseong
+          # - boseong  # Temporarily disabled - connection refused
           - hwasun
           - jangheung
           - gangjin

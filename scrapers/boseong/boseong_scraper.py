@@ -1,8 +1,14 @@
 """
 Boseong County Press Release Scraper
-- Version: v1.1
-- Last Modified: 2025-12-13
+- Version: v1.2
+- Last Modified: 2025-12-19
 - Owner: AI Agent
+
+Changelog (v1.2):
+- Added playwright-stealth for bot detection bypass
+- User-Agent rotation for stealth
+- Random delays to mimic human behavior
+- Increased timeout for connection issues
 
 Changelog (v1.0):
 - Initial creation based on user-provided detailed analysis data
@@ -27,7 +33,9 @@ from urllib.parse import urljoin, parse_qs, urlparse
 # ============================================================
 # 2. External Libraries
 # ============================================================
+import random
 from playwright.sync_api import sync_playwright, Page
+from playwright_stealth import stealth_sync
 
 # ============================================================
 # 3. Local Modules
@@ -138,10 +146,10 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     Returns:
         (content text, thumbnail URL, date, department)
     """
-    if not safe_goto(page, url, timeout=20000):
+    if not safe_goto(page, url, timeout=30000):
         return "", None, datetime.now().strftime('%Y-%m-%d'), None
-    
-    time.sleep(1)  # Page stabilization
+
+    time.sleep(random.uniform(1.5, 2.5))  # Random delay for stealth
     
     # 1. Extract date (format: YYYY.MM.DD HH:MM)
     pub_date = datetime.now().strftime('%Y-%m-%d')
@@ -332,18 +340,33 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
     skipped_count = 0
     collected_articles = []  # dry-run 시 반환용
     
+    # User-Agent rotation for stealth
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    ]
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 1024}
+            user_agent=random.choice(user_agents),
+            viewport={'width': 1280, 'height': 1024},
+            locale='ko-KR',
+            timezone_id='Asia/Seoul'
         )
         context.set_extra_http_headers({
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         })
-        
+
         page = context.new_page()
+
+        # Apply stealth mode to bypass bot detection
+        stealth_sync(page)
         
         page_num = 1
         max_pages = 10  # Search up to 10 pages
@@ -357,7 +380,7 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                 page_num += 1
                 continue
             
-            time.sleep(1.5)  # Wait for page load
+            time.sleep(random.uniform(2.0, 4.0))  # Random delay for stealth
             
             # Find article links in list (card-style layout)
             article_links = page.locator('li a[href*="idx="][href*="mode=view"]')
@@ -522,14 +545,14 @@ def collect_articles(max_articles: int = 10, days: Optional[int] = None, start_d
                     else:
                         print(f"         [WARN] 전송 실패: {result}")
                 
-                time.sleep(1)  # Rate limiting
-            
+                time.sleep(random.uniform(1.5, 3.0))  # Random rate limiting
+
             # Break loop on early termination
             if stop_scraping:
                 break
-            
+
             page_num += 1
-            time.sleep(1)
+            time.sleep(random.uniform(1.0, 2.0))
         
         browser.close()
 
