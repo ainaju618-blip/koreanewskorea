@@ -62,10 +62,12 @@ export default async function NewsGrid({
         .order('created_at', { ascending: false })
         .limit(limit);
 
+    // Query both category and region fields (like HeroSlider)
     if (regionCode) {
-        query = query.eq('region', regionCode);
+        query = query.or(`region.eq.${regionCode},category.eq.${categoryName}`);
     } else if (categorySlug) {
-        query = query.eq('category', categoryName);
+        // For gwangju/jeonnam: search both category and region fields
+        query = query.or(`category.eq.${categoryName},region.eq.${categorySlug}`);
     }
 
     const { data: posts } = await query;
