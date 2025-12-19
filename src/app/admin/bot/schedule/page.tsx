@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
     Calendar, Clock, Loader2, Play, History, AlertCircle,
-    RefreshCw, ExternalLink, GitBranch, CheckCircle2, XCircle, Timer,
+    ExternalLink, GitBranch, CheckCircle2, XCircle, Timer,
     Plus, X, Save
 } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
@@ -249,14 +249,6 @@ export default function BotSchedulePage() {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => fetchData(true)}
-                        disabled={isRefreshing}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-gray-200 rounded-lg font-medium hover:bg-gray-600 transition disabled:opacity-50"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </button>
-                    <button
                         onClick={handleTriggerWorkflow}
                         disabled={isTriggering}
                         className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 shadow-sm transition disabled:opacity-50"
@@ -374,7 +366,7 @@ export default function BotSchedulePage() {
                                             <span className="ml-2 text-purple-400">({editedSchedules.length}/{MAX_SCHEDULES})</span>
                                         </p>
                                         <p className="mt-1 text-xs text-gray-500">
-                                            저장 시 <code className="text-purple-400">.github/workflows/daily_scrape.yml</code> 파일이 업데이트됩니다.
+                                            저장 버튼을 누르면 GitHub 워크플로우 파일이 자동으로 업데이트되고, 화면에 즉시 반영됩니다.
                                         </p>
                                     </div>
                                 </div>
