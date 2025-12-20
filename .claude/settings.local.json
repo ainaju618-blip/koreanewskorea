@@ -189,7 +189,10 @@
       "Bash(source .env)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Enhance author page with SEO/E-E-A-T improvements\n\n- Add coverage area badges \\(출입처\\) based on reporter region\n- Add SEO keyword tags derived from specialty and region\n- Add article search functionality within author page\n- Add tip-off button \\(제보하기\\) in sidebar\n- Add [심층 취재] tab for high-view articles \\(views >= 100\\)\n- Enhance Schema.org Person with knowsAbout, hasCredential, hasOccupation\n- Create reporter-utils.ts with getSpecialtyTitle, getCoverageAreas, generateKeywordTags\n- Create ArticleSearchBar component for in-page article search\n- Create ReporterInfoBox component \\(deferred integration\\)\n- Add SQL script for reporter specialty column\n- Add admin UI rules for desktop-first design\n- Create specialized agents for Korea NEWS project\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(코리아NEWS)",
-      "Bash(코리아NEWS\"\\)\n- Add contentLocation to JSON-LD for local news SEO\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(코리아NEWS\"\\)\n- Add contentLocation to JSON-LD for local news SEO\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(vercel list:*)",
+      "Bash(vercel --prod --yes:*)",
+      "Bash(npx vercel list:*)"
     ]
   }
 }

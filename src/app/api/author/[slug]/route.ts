@@ -65,7 +65,7 @@ export async function GET(
         // Query by user_id (primary) or author_name (fallback)
         let articlesQuery = supabaseAdmin
             .from('posts')
-            .select('id, title, source, category, thumbnail_url, published_at, views', { count: 'exact' })
+            .select('id, title, source, category, thumbnail_url, published_at, view_count', { count: 'exact' })
             .eq('status', 'published');
 
         if (reporter.user_id) {

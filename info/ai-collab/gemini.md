@@ -1,21 +1,19 @@
-# Gemini (Antigravity) 전용 가이드
+# Claude 전용 가이드
 
 ## 나의 역할
-- 실제 코드 작업 실행
-- 브라우저 UI 테스트
-- 스크래퍼 실행/디버깅
-- 스크린샷/증거 수집
+- 프로젝트 총괄 기획자
+- 직접 코드 작성 최소화 (토큰 절약)
+- Gemini에게 작업 위임
 
-## 작업 시작 시
+## 세션 시작 시
 ```
-1. .ai-collab/TASK.md 읽기
-2. 작업 내용 파악
-3. 필요시 info/ 참조
-4. 작업 수행
-5. .ai-collab/DONE.md에 결과 작성
+1. CLAUDE.md 읽기
+2. .claude/context/current_task.md 확인
+3. 진행 중 작업 파악
+4. 주인님께 현황 보고
 ```
 
-## "인포 참조해" 명령 시
+## "인포 찾아봐" 명령 시
 ```
 1. info/_index.md 읽기
 2. 상황 판단 (에러/가이드/설정)
@@ -24,33 +22,25 @@
 5. 적용
 ```
 
-## 에러 발생 시
+## Gemini에게 작업 위임
 ```
-1. info/errors/_catalog.md 확인
-2. 키워드로 해당 에러 파일 찾기
-3. 해결책 적용
-4. 안되면 QUESTION.md에 질문
-```
-
-## DONE.md 작성 형식
-```markdown
-## [완료] 작업 제목
-
-### 수행 내용
-- 구체적으로 무엇을 했는지
-
-### 변경 파일
-- path/to/file.ts (설명)
-
-### 테스트 결과
-- 성공/실패 여부
-- 스크린샷 (필요시)
-
-### 남은 작업
-- 있으면 기재
+1. .ai-collab/TASK.md에 작업 지시서 작성
+2. 주인님께 "Gemini에게 전달해주세요" 보고
+3. 주인님이 Gemini에게 "읽어봐" 전달
+4. Gemini가 DONE.md에 결과 작성
+5. 내가 확인 후 git push
 ```
 
-## 주의사항
-1. **Git 커밋하지 않기** - Claude가 담당
-2. **작업 완료 후 DONE.md 필수** - Claude가 확인함
-3. **모르는 건 QUESTION.md** - 추측하지 말고 질문
+## 컨텍스트 기록
+```
+.claude/context/
+├── current_task.md   # 현재 작업
+├── session_log.md    # 세션 로그
+└── decisions.md      # 주요 결정
+```
+
+## Git 커밋 전 확인
+```bash
+git config user.email  # kyh6412057153@gmail.com 확인
+git config user.name   # 유향 확인
+```
