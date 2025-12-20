@@ -53,8 +53,17 @@ META_PATTERNS = [
 ]
 
 # 본문 최소/최대 길이
-MIN_CONTENT_LENGTH = 50  # 최소 50자
+MIN_CONTENT_LENGTH = 300  # 최소 300자 (SEO 권장 - 짧은 기사 제외)
 MAX_CONTENT_LENGTH = 5000  # 최대 5000자
+
+# 제목 필터링 키워드 (이 키워드가 포함된 기사는 제외)
+EXCLUDED_TITLE_KEYWORDS = [
+    '[포토]',
+    '[인사]',
+    '[부고]',
+    '[동정]',
+    '[게시판]',
+]
 
 
 def clean_content(content: str) -> str:
@@ -111,13 +120,13 @@ def validate_content(content: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_article(article: dict, require_image: bool = False) -> Tuple[bool, str]:
+def validate_article(article: dict, require_image: bool = True) -> Tuple[bool, str]:
     """
     기사 전체 품질 검증
 
     Args:
         article: 기사 딕셔너리 {'title', 'content', 'thumbnail', ...}
-        require_image: 이미지 필수 여부
+        require_image: 이미지 필수 여부 (기본값: True - SEO 권장)
 
     Returns:
         (통과여부, 실패사유)
@@ -127,13 +136,18 @@ def validate_article(article: dict, require_image: bool = False) -> Tuple[bool, 
     if not title or len(title) < 5:
         return False, "제목이 없거나 너무 짧음"
 
+    # 제목 키워드 필터링 (SEO 권장 - 저품질 기사 제외)
+    for keyword in EXCLUDED_TITLE_KEYWORDS:
+        if keyword in title:
+            return False, f"제외 키워드 포함: {keyword}"
+
     # 본문 검증
     content = article.get('content', '')
     is_valid, reason = validate_content(content)
     if not is_valid:
         return False, reason
 
-    # 이미지 검증 (선택적)
+    # 이미지 검증 (기본값: 필수 - SEO 권장)
     if require_image:
         thumbnail = article.get('thumbnail') or article.get('thumbnail_url')
         if not thumbnail:

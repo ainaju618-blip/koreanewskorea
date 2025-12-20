@@ -177,13 +177,12 @@ async function incrementViewCount(id: string) {
 
 function formatDate(dateString: string) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${year}. ${month}. ${day}. ${hour}:${minute}`;
 }
 
 function getCategoryColor(category: string) {
@@ -434,9 +433,11 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="text-[13px] text-gray-500">
-                            {/* Show only one date: published_at (original article time) or created_at */}
-                            <span>{formatDate(news.published_at || news.created_at)}</span>
+                        <div className="text-[13px] text-gray-500 flex flex-col md:flex-row md:gap-3">
+                            <span>최초 게시: {formatDate(news.published_at || news.created_at)}</span>
+                            {news.updated_at && news.updated_at !== news.published_at && (
+                                <span>최종 수정: {formatDate(news.updated_at)}</span>
+                            )}
                         </div>
 
                         {/* 공유 버튼 */}
