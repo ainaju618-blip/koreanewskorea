@@ -110,6 +110,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str]:
     pub_date = datetime.now().strftime('%Y-%m-%d')
     date_selectors = [
         '.view_info .date',
+        '.board_info span:has-text("작성일")',   # 작성일 우선
         '.board_info span:has-text("등록일")',
         'dd:has-text("20")',
         'span:has-text("2025")',

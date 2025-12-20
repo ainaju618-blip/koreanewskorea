@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
         || '코리아NEWS에서 전하는 광주·전남 지역 소식';
 
     const publishedTime = news.published_at || news.created_at;
-    const modifiedTime = news.updated_at || news.published_at || news.created_at;
+    const modifiedTime = news.last_edited_at || news.published_at || news.created_at;
 
     return {
         title: news.title,
@@ -312,7 +312,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         description: news.ai_summary || news.content?.slice(0, 160),
         image: news.thumbnail_url ? [news.thumbnail_url] : [],
         datePublished: news.published_at || news.created_at,
-        dateModified: news.updated_at || news.published_at || news.created_at,
+        dateModified: news.last_edited_at || news.published_at || news.created_at,
         author: {
             '@type': 'Person',
             name: reporter?.name || news.author_name || '코리아NEWS 취재팀',
@@ -437,7 +437,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                             {news.published_at && (
                                 <span>최초 게시: {formatDate(news.published_at)}</span>
                             )}
-                            <span>수정: {formatDate(news.created_at)}</span>
+                            {news.last_edited_at && (
+                                <span>수정: {formatDate(news.last_edited_at)}</span>
+                            )}
                         </div>
 
                         {/* 공유 버튼 */}

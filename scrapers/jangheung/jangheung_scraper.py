@@ -149,9 +149,9 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     try:
         page_text = page.locator('body').inner_text()
         # Find "registration date" pattern
-        date_match = re.search(r'등록일[^\d]*(\d{4})[./](\d{1,2})[./](\d{1,2})', page_text)
+        date_match = re.search(r'(작성일|등록일)[^\d]*(\d{4})[./](\d{1,2})[./](\d{1,2})', page_text)
         if date_match:
-            y, m, d = date_match.groups()
+            y, m, d = date_match.groups()[1:]  # Skip label, get y, m, d
             pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
         else:
             # General date pattern

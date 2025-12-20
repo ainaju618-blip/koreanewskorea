@@ -128,13 +128,24 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
             thumbnail_url = original_image_url  # Fallback to original
             print(f"      [WARN] Cloudinary 업로드 에러: {str(e)[:50]}")
 
-    # 4. 날짜 추출
+    # 4. 날짜 추출 - 작성일/등록일 모두 체크
     pub_date = None
     try:
-        date_elem = page.locator('span:has-text("등록일"), li:has-text("등록일"), td.date')
-        if date_elem.count() > 0:
-            date_text = safe_get_text(date_elem.first)
-            pub_date = normalize_date(date_text)
+        # 다양한 날짜 패턴 시도
+        date_selectors = [
+            'span:has-text("작성일")',
+            'li:has-text("작성일")',
+            'span:has-text("등록일")',
+            'li:has-text("등록일")',
+            'td.date',
+        ]
+        for sel in date_selectors:
+            date_elem = page.locator(sel)
+            if date_elem.count() > 0:
+                date_text = safe_get_text(date_elem.first)
+                if date_text and re.search(r'\d{4}[-./]\d{1,2}[-./]\d{1,2}', date_text):
+                    pub_date = normalize_date(date_text)
+                    break
     except:
         pass
 

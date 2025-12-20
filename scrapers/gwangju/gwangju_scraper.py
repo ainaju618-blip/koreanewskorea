@@ -82,15 +82,28 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except Exception as e:
         print(f"   [WARN] 이미지 추출 에러: {str(e)}")
     
-    # 날짜 추출 (상세 페이지 내)
+    # 날짜 추출 (상세 페이지 내) - 작성일/등록일 모두 체크
     pub_date = None
     try:
-        date_elem = page.locator('span:has-text("등록일"), li:has-text("등록일")')
-        if date_elem.count() > 0:
-            date_text = safe_get_text(date_elem.first)
-            pub_date = normalize_date(date_text)
-    except:
-        pass
+        # 광주시 사이트는 "작성일 : 2025-12-18 08:59" 형태로 표시
+        date_selectors = [
+            'span:has-text("작성일")',      # 광주시 메인 패턴
+            'li:has-text("작성일")',
+            'span:has-text("등록일")',      # 일반적인 패턴
+            'li:has-text("등록일")',
+            'dd:has-text("2025")',          # 날짜 직접 찾기
+            '.view_info span',              # 정보 영역
+        ]
+        for sel in date_selectors:
+            date_elem = page.locator(sel)
+            if date_elem.count() > 0:
+                date_text = safe_get_text(date_elem.first)
+                if date_text and re.search(r'\d{4}[-./]\d{1,2}[-./]\d{1,2}', date_text):
+                    pub_date = normalize_date(date_text)
+                    print(f"      [DATE] 날짜 추출 성공: {pub_date} (from: {sel})")
+                    break
+    except Exception as e:
+        print(f"      [WARN] 날짜 추출 에러: {e}")
 
     return content, thumbnail_url, pub_date
 

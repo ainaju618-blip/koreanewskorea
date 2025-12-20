@@ -166,7 +166,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     count = info_items.count()
     for i in range(count):
         text = safe_get_text(info_items.nth(i))
-        if '등록일' in text:
+        if '등록일' in text or '작성일' in text:
             date_match = re.search(r'(\d{4}[-.]\d{1,2}[-.]\d{1,2})', text)
             if date_match:
                 pub_date = normalize_date(date_match.group(1))

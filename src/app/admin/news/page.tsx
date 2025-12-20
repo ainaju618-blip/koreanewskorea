@@ -53,6 +53,11 @@ function AdminNewsListPage() {
 
     const [totalPages, setTotalPages] = useState(1);
 
+    // Status counts for tabs
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
+        all: 0, draft: 0, published: 0, rejected: 0, trash: 0
+    });
+
     // Keyboard navigation state
     const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
@@ -137,6 +142,19 @@ function AdminNewsListPage() {
         }
     };
 
+    // 상태별 개수 로딩 (탭 배지용)
+    const fetchStatusCounts = async () => {
+        try {
+            const res = await fetch('/api/posts/stats/by-status');
+            if (res.ok) {
+                const data = await res.json();
+                setStatusCounts(data);
+            }
+        } catch (err) {
+            console.error('상태별 개수 로딩 실패:', err);
+        }
+    };
+
     // 상태 필터 또는 페이지 변경 시 API 재호출
     useEffect(() => {
         fetchArticles();
@@ -144,7 +162,13 @@ function AdminNewsListPage() {
 
     useEffect(() => {
         fetchCategories();
+        fetchStatusCounts();
     }, []);
+
+    // 기사 목록 변경 시 개수도 새로고침
+    useEffect(() => {
+        fetchStatusCounts();
+    }, [articles]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -689,7 +713,7 @@ function AdminNewsListPage() {
                     const { reporter, reason } = responseData._assignment;
                     const reasonText = reason === 'region' ? '(region reporter)'
                         : reason === 'global' ? '(global reporter)'
-                        : '(system default)';
+                            : '(system default)';
                     showSuccess(`Published! Assigned to: ${reporter} ${reasonText}`);
                 } else {
                     showSuccess("Article published to main page!");
@@ -910,7 +934,7 @@ function AdminNewsListPage() {
                         >
                             {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
                             <AlertTriangle className="w-4 h-4" />
-                            {filterStatus === 'trash' ? '일괄 영구삭제' : '일괄 삭제'}
+                            {filterStatus === 'trash' ? '휴지통 비우기' : '전체 휴지통으로'} (위험)
                         </button>
                     </div>
                 }
@@ -945,11 +969,11 @@ function AdminNewsListPage() {
                 {/* FilterTabs - 공통 컴포넌트 사용 */}
                 <FilterTabs
                     tabs={[
-                        { key: "all", label: "전체" },
-                        { key: "draft", label: "승인 대기" },
-                        { key: "published", label: "발행됨" },
-                        { key: "rejected", label: "반려됨" },
-                        { key: "trash", label: "휴지통" }
+                        { key: "all", label: "전체", count: statusCounts.all },
+                        { key: "draft", label: "승인 대기", count: statusCounts.draft },
+                        { key: "published", label: "발행됨", count: statusCounts.published },
+                        { key: "rejected", label: "반려됨", count: statusCounts.rejected },
+                        { key: "trash", label: "휴지통", count: statusCounts.trash }
                     ]}
                     activeTab={filterStatus}
                     onChange={(key) => {
@@ -994,9 +1018,8 @@ function AdminNewsListPage() {
                         {paginatedArticles.map((article, index) => (
                             <tr
                                 key={article.id}
-                                className={`hover:bg-[#21262d] transition cursor-pointer ${
-                                    focusedIndex === index ? 'bg-[#1f6feb]/20 ring-1 ring-[#1f6feb]/50' : ''
-                                }`}
+                                className={`hover:bg-[#21262d] transition cursor-pointer ${focusedIndex === index ? 'bg-[#1f6feb]/20 ring-1 ring-[#1f6feb]/50' : ''
+                                    }`}
                                 onClick={() => openPreview(article)}
                             >
                                 <td className="py-1 px-3 text-center text-xs text-[#8b949e]">
