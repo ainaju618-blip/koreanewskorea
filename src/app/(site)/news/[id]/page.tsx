@@ -302,7 +302,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     // Get specialty title for SEO
     const reporterTitle = reporter ? getSpecialtyTitle(reporter) : null;
     const authorProfileUrl = reporter
-        ? `https://koreanewsone.com/author/${reporter.slug || reporter.id}`
+        ? `https://koreanewsone.com/author/${reporter.id}`
         : undefined;
 
     // SEO: NewsArticle structured data (JSON-LD) - E-E-A-T optimized
@@ -324,11 +324,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                 name: '코리아NEWS',
                 url: 'https://koreanewsone.com',
             },
-            sameAs: reporter ? [
-                reporter.sns_twitter,
-                reporter.sns_facebook,
-                reporter.sns_linkedin,
-            ].filter(Boolean) : undefined,
+            sameAs: undefined,
         },
         publisher: {
             '@type': 'NewsMediaOrganization',
@@ -405,7 +401,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                         {/* Reporter Info (Linked to Profile) */}
                         {reporter ? (
                             <Link
-                                href={`/author/${reporter.slug || reporter.id}`}
+                                href={`/author/${reporter.id}`}
                                 rel="author"
                                 className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline"
                             >
