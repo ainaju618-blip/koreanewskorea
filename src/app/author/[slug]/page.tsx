@@ -48,6 +48,7 @@ interface Reporter {
     sns_linkedin: string | null;
     subscriber_count: number;
     total_views: number;
+    user_id: string | null;
 }
 
 interface Article {
@@ -156,11 +157,19 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     }
 
     // 기사 조회
+    // posts.author_id references profiles.id, which links to reporters.user_id
+    // Also check author_name as fallback for older articles
     let articlesQuery = supabaseAdmin
         .from("posts")
         .select("id, title, source, category, thumbnail_url, published_at, views", { count: "exact" })
-        .eq("author_id", reporter.id)
         .eq("status", "published");
+
+    // Query by user_id (primary) or author_name (fallback)
+    if (reporter.user_id) {
+        articlesQuery = articlesQuery.or(`author_id.eq.${reporter.user_id},author_name.eq.${reporter.name}`);
+    } else {
+        articlesQuery = articlesQuery.eq("author_name", reporter.name);
+    }
 
     // Apply search filter if provided
     if (searchQuery && searchQuery.trim()) {
