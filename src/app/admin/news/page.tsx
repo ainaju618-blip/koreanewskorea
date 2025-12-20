@@ -423,11 +423,10 @@ function AdminNewsListPage() {
         const ids = Array.from(selectedIds);
 
         try {
-            const url = `/api/posts${isTrash ? '?force=true' : ''}`;
-            const res = await fetch(url, {
-                method: 'DELETE',
+            const res = await fetch('/api/posts/delete-by-ids', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids })
+                body: JSON.stringify({ ids, force: isTrash })
             });
 
             const data = await res.json();
@@ -578,12 +577,11 @@ function AdminNewsListPage() {
 
             showInfo(`${allIds.length}개 기사 일괄 ${isTrash ? '영구 삭제' : '삭제'} 중...`);
 
-            // Single bulk API call
-            const url = `/api/posts${isTrash ? '?force=true' : ''}`;
-            const res = await fetch(url, {
-                method: 'DELETE',
+            // POST 기반 삭제 API 호출 (Vercel DELETE body 문제 우회)
+            const res = await fetch('/api/posts/delete-by-ids', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: allIds })
+                body: JSON.stringify({ ids: allIds, force: isTrash })
             });
 
             const data = await res.json();
