@@ -105,7 +105,7 @@ async function getRelatedNews(category: string, currentId: string) {
 }
 
 // Reporter select fields for SEO/E-E-A-T
-const REPORTER_SELECT_FIELDS = 'id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin';
+const REPORTER_SELECT_FIELDS = 'id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id';
 
 // Get a random reporter for articles without assigned author
 // Prioritizes reporters matching the article region, falls back to "전체" region
@@ -272,7 +272,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     if (news.author_id) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin')
+            .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
             .eq('user_id', news.author_id)
             .single();
         reporter = data;
@@ -282,7 +282,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     if (!reporter && news.author_name) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin')
+            .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
             .eq('name', news.author_name)
             .eq('status', 'Active')
             .single();
