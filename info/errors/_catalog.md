@@ -51,6 +51,7 @@
 | rls, policy, security, 권한 | `supabase-rls.md` | RLS 정책 위반 |
 | 500, internal, server, 서버 | `api-500.md` | API 500 에러 |
 | 기자, reporter, assign, author, 배정 | `reporter-assign.md` | 기자 배정 문제 |
+| supabase, column, not exist, select, 컬럼 | `supabase-column-not-exist.md` | SELECT에 없는 컬럼 포함 |
 | cors, origin, 교차 | `cors.md` | CORS 에러 |
 | bulk, approval, 승인, 실패, approved_at | `bulk-approval.md` | 일괄 승인 실패 |
 | cron, scheduler, 크론, 스케줄, 중복, dual | `dual-cron-system.md` | 이중 크론 실행 문제 |

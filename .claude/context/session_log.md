@@ -5,6 +5,51 @@
 
 ---
 
+## [2025-12-21 22:00] 세션 #26 - 기자 배정 및 표시 버그 수정 by Claude
+
+### 주인님 의도
+- 기사에 기자 이름이 "코리아NEWS 취재팀"으로 표시되는 문제 해결
+- 기자 자동배정 시스템 전체 점검
+
+### 수행 작업
+
+1. **지역 코드 오타 수정** (`src/app/api/bot/ingest/route.ts`)
+   - `'신안군': 'shinan'` → `'신안군': 'sinan'`
+   - DB 수정: `UPDATE posts SET region = 'sinan' WHERE region = 'shinan'`
+
+2. **스크래퍼 콘텐츠 잘림 수정** (`scrapers/utils/scraper_utils.py`)
+   - 문제: ▲ 특수문자가 문장 중간에 있으면 이후 내용 삭제
+   - 해결: 정규식에 `^` 앵커 추가 (줄 시작만 매칭)
+
+3. **12명 기자 profiles 누락 수정** (SQL)
+   - 문제: reporters.user_id가 profiles.id에 없음
+   - 해결: `INSERT INTO profiles` 실행하여 12명 추가
+
+4. **기자 조회 쿼리 버그 수정** (`src/app/(site)/news/[id]/page.tsx`)
+   - 문제: SELECT에 없는 컬럼 포함 (department, career_years, slug, sns_*)
+   - 증상: Supabase 쿼리 실패 → data: null → "취재팀" 표시
+   - 해결: SELECT를 실제 존재하는 컬럼만으로 수정
+   - 추가: reporter.slug 참조 → reporter.id로 변경
+
+### 실수 및 교훈
+- 로컬 테스트(npm run dev)는 타입 체크 안 함
+- Vercel 빌드(npm run build)는 타입 체크 함
+- **커밋 전 `npx tsc --noEmit` 필수**
+
+### 커밋
+- `696ee21`: fix: Fix region mapping typo and content truncation issue
+- `3ce71ed`: fix: Fix reporter lookup query with non-existent columns
+- `fc4933f`: fix: Remove non-existent column references (slug, sns_*)
+
+### 에러 기록
+- `info/errors/backend/supabase-column-not-exist.md` 생성
+
+### 결과
+- 기자 이름 정상 표시 (고광혁 시정전문기자)
+- 27개 지역 모두 기자 배정 가능
+
+---
+
 ## [2025-12-19 07:00] 세션 #25 - GitHub Actions 병렬 스크래핑 구현 by Claude
 
 ### 주인님 의도
