@@ -161,7 +161,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     // Also check author_name as fallback for older articles
     let articlesQuery = supabaseAdmin
         .from("posts")
-        .select("id, title, source, category, thumbnail_url, published_at, views", { count: "exact" })
+        .select("id, title, source, category, thumbnail_url, published_at, view_count", { count: "exact" })
         .eq("status", "published");
 
     // Query by user_id (primary) or author_name (fallback)
@@ -179,12 +179,12 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     // Tab-based filtering and sorting
     if (tab === "popular") {
         // Most viewed articles
-        articlesQuery = articlesQuery.order("views", { ascending: false });
+        articlesQuery = articlesQuery.order("view_count", { ascending: false });
     } else if (tab === "featured") {
         // Featured/in-depth articles (high view count indicates depth)
         articlesQuery = articlesQuery
-            .gte("views", 100)
-            .order("views", { ascending: false });
+            .gte("view_count", 100)
+            .order("view_count", { ascending: false });
     } else {
         // Default: latest articles
         articlesQuery = articlesQuery.order("published_at", { ascending: false });
