@@ -49,7 +49,7 @@ export default async function NewsGrid({
     categoryName,
     categoryNameEn,
     regionCode,
-    limit = 5
+    limit = 4
 }: NewsGridProps) {
     // 서버에서 직접 데이터 조회
     let query = supabase
@@ -75,7 +75,7 @@ export default async function NewsGrid({
     if (!posts || posts.length === 0) return null;
 
     const mainPost = posts[0];
-    const subPosts = posts.slice(1, 5);
+    const subPosts = posts.slice(1, 4);
 
     return (
         <section className="mb-16">

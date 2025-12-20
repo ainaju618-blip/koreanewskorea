@@ -231,8 +231,16 @@ export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const force = searchParams.get('force') === 'true';
-        const body = await req.json();
-        const { ids } = body;
+
+        // Body 파싱 (에러 처리 강화)
+        let ids: string[] = [];
+        try {
+            const body = await req.json();
+            ids = body.ids || [];
+        } catch (parseError) {
+            console.error('[DELETE /api/posts] Body parse error:', parseError);
+            return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+        }
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return NextResponse.json({ message: 'IDs array required' }, { status: 400 });
@@ -255,7 +263,10 @@ export async function DELETE(req: NextRequest) {
                 .in('id', ids);
         }
 
-        if (result.error) throw result.error;
+        if (result.error) {
+            console.error('[DELETE /api/posts] Supabase error:', result.error);
+            throw result.error;
+        }
 
         return NextResponse.json({
             message: `${ids.length} items ${force ? 'permanently deleted' : 'moved to trash'}`,
@@ -264,6 +275,6 @@ export async function DELETE(req: NextRequest) {
         });
     } catch (error: any) {
         console.error('DELETE /api/posts error:', error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return NextResponse.json({ message: error.message || 'Delete failed' }, { status: 500 });
     }
 }
