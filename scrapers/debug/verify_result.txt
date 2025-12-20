@@ -1,0 +1,35 @@
+File                      | Syntax     | EC Imp   | EC Init  | Img Miss | Fetch Upd
+--------------------------------------------------------------------------------
+X backup_scraper.py       | ERROR      | False    | False    | False    | False   
+X kwnews_scraper.py       | ERROR      | False    | False    | False    | False   
+X universal_scraper.py    | ERROR      | False    | False    | False    | False   
+X ai_news_scraper.py      | OK         | False    | False    | False    | False   
+X rss_scraper.py          | OK         | False    | False    | False    | False   
+  boseong_scraper.py      | OK         | True     | True     | True     | True    
+  damyang_scraper.py      | OK         | True     | True     | True     | True    
+  gangjin_scraper.py      | OK         | True     | True     | True     | True    
+  goheung_scraper.py      | OK         | True     | True     | True     | True    
+  gokseong_scraper.py     | OK         | True     | True     | True     | True    
+  gurye_scraper.py        | OK         | True     | True     | True     | True    
+X gwangju_scraper.py      | ERROR      | False    | False    | False    | False   
+  gwangju_edu_scraper.py  | OK         | True     | True     | True     | True    
+  gwangyang_scraper.py    | OK         | True     | True     | True     | True    
+  haenam_scraper.py       | OK         | True     | True     | True     | True    
+  hampyeong_scraper.py    | OK         | True     | True     | True     | True    
+  hwasun_scraper.py       | OK         | True     | True     | True     | True    
+  jangheung_scraper.py    | OK         | True     | True     | True     | True    
+  jangseong_scraper.py    | OK         | True     | True     | True     | True    
+  jeonnam_scraper.py      | OK         | True     | True     | True     | True    
+  jeonnam_edu_scraper.py  | OK         | True     | True     | True     | True    
+  jindo_scraper.py        | OK         | True     | True     | True     | True    
+X mokpo_scraper.py        | ERROR      | False    | False    | False    | False   
+  muan_scraper.py         | OK         | True     | True     | True     | True    
+X naju_scraper.py         | ERROR      | False    | False    | False    | False   
+  shinan_scraper.py       | OK         | True     | True     | True     | True    
+X suncheon_scraper.py     | ERROR      | False    | False    | False    | False   
+  wando_scraper.py        | OK         | True     | True     | True     | True    
+  yeongam_scraper.py      | OK         | True     | True     | True     | True    
+  yeonggwang_scraper.py   | OK         | True     | True     | True     | True    
+  yeosu_scraper.py        | OK         | True     | True     | True     | True    
+--------------------------------------------------------------------------------
+9 FILES FAILED INTEGRITY CHECK

@@ -36,6 +36,7 @@ from utils.scraper_utils import (
     clean_article_content, extract_subtitle
 )
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 from utils.category_classifier import detect_category
 
 # ============================================================
@@ -110,12 +111,16 @@ def clean_content(content: str) -> str:
 # ============================================================
 # 6. 상세 페이지 수집 함수
 # ============================================================
-def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
+def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str], Optional[str]]:
     """
     Extract content, images, date, department, and subtitle from detail page.
+    
+    Returns:
+        (content, thumbnail URL, date, department, subtitle, error_reason)
+        - error_reason is None on success
     """
     if not safe_goto(page, url, timeout=20000):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None, "PAGE_LOAD_FAIL"
 
     time.sleep(1)
 
@@ -234,13 +239,13 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
 
     # Skip if no image
     if not thumbnail_url:
-        print(f"      [스킵] 이미지 없음")
-        return None, None, None, None, None
+        print(f"      [SKIP] IMAGE_MISSING")
+        return "", None, pub_date, department, None, ErrorCollector.IMAGE_MISSING
 
     # Remove unnecessary metadata from content
     content = clean_article_content(content)
 
-    # 곡성군 특수 처리: 본문 상단 4줄 제거 (메타 정보 포함)
+    # gokseong special handling: remove top 4 lines (meta info)
     if content:
         lines = content.split('\n')
         if len(lines) > 4:
@@ -249,7 +254,7 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     # Extract subtitle
     subtitle, content = extract_subtitle(content, title)
 
-    return content, thumbnail_url, pub_date, department, subtitle
+    return content, thumbnail_url, pub_date, department, subtitle, None  # success
 
 
 # ============================================================
@@ -273,11 +278,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
     if not start_date:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
-    collected_count = 0
-    success_count = 0
-    image_count = 0
-    skip_count = 0
-    skipped_count = 0
+    error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -401,11 +402,15 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 print(f"      > {title[:30]}... ({n_date})")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
-                content, thumbnail_url, pub_date, department, subtitle = fetch_detail(page, full_url, title)
+                content, thumbnail_url, pub_date, department, subtitle, error_reason = fetch_detail(page, full_url, title)
+                error_collector.increment_processed()
 
-                # Skip articles without images
-                if content is None:
-                    skip_count += 1
+                # Skip articles with errors
+                if error_reason:
+                    error_collector.add_error(error_reason, title, full_url)
+                    print(f"         [SKIP] {error_reason}")
+                    safe_goto(page, list_url)
+                    time.sleep(0.3)
                     continue
 
                 # Use date extracted from detail page if available
@@ -430,19 +435,13 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                     'thumbnail_url': thumbnail_url,
                 }
 
-                # Send to server
                 result = send_article_to_server(article_data)
-                collected_count += 1
 
                 if result.get('status') == 'created':
-                    success_count += 1
-                    if thumbnail_url:
-                        image_count += 1
-                    img_status = "O" if thumbnail_url else "X"
-                    print(f"         [OK] 저장 완료 ({img_status})")
+                    error_collector.add_success()
+                    print(f"         [OK] 저장 완료")
                     log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
-                    skipped_count += 1
                     print(f"         [SKIP] 이미 존재")
 
                 # Return to list page
@@ -458,12 +457,13 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
         browser.close()
 
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
-    print(f"[완료] {final_msg}")
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
     return []
 
 

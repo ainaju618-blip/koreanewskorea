@@ -19,6 +19,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 from utils.text_cleaner import clean_article_content
 from utils.category_classifier import detect_category
 from utils.scraper_utils import extract_subtitle
@@ -100,14 +101,19 @@ def safe_get_attr(locator, attr: str) -> Optional[str]:
     return None
 
 
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
-    """Extract content/image/date/department from detail page"""
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """Extract content/image/date/department from detail page
+    
+    Returns:
+        (content, thumbnail_url, pub_date, department, error_reason)
+        - error_reason is None on success
+    """
     try:
         page.goto(url, timeout=20000, wait_until='domcontentloaded')
         page.wait_for_timeout(1500)
     except Exception as e:
         print(f"   [WARN] Page access failed: {url}")
-        return "", None, None, None
+        return "", None, None, None, "PAGE_LOAD_FAIL"
 
     # 1. Extract content
     content = ""
@@ -188,7 +194,11 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except:
         pass
 
-    return content, thumbnail_url, pub_date, department
+    # 이미지가 없으면 스킵
+    if not thumbnail_url:
+        return "", None, pub_date, department, ErrorCollector.IMAGE_MISSING
+
+    return content, thumbnail_url, pub_date, department, None  # success
 
 
 def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
@@ -285,10 +295,8 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
         # ============================================
         # Phase 2: Visit detail pages
         # ============================================
-        success_count = 0
-        skip_count = 0
-        skipped_count = 0
         processed_count = 0
+        error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
         target_links = collected_links[:max_articles]
 
@@ -299,7 +307,15 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
             print(f"   [{processed_count+1}] Analyzing: {title[:40]}...")
 
-            content, thumbnail_url, pub_date, department = fetch_detail(page, url)
+            content, thumbnail_url, pub_date, department, error_reason = fetch_detail(page, url)
+            error_collector.increment_processed()
+
+            # 에러 발생 시 스킵
+            if error_reason:
+                error_collector.add_error(error_reason, title, url)
+                print(f"         [SKIP] {error_reason}")
+                time.sleep(0.5)
+                continue
 
             # Extract subtitle
             subtitle, content = extract_subtitle(content, title)
@@ -334,26 +350,27 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
                 result = send_article_to_server(article_data)
                 if result and result.get('status') == 'created':
                     print(f"      [OK] DB save complete ID: {result.get('id', 'Unknown')}")
-                    success_count += 1
+                    error_collector.add_success()
                     log_to_server(REGION_CODE, '실행중', f"성공: {title[:15]}...", 'success')
                 elif result and result.get('status') == 'exists':
                     print(f"      [SKIP] Article already exists")
-                    skip_count += 1
-                    skipped_count += 1
                 else:
                     print(f"      [WARN] DB save failed: {result}")
+            else:
+                 error_collector.add_error("VALIDATION_FAIL", title, url, msg)
 
             processed_count += 1
             time.sleep(1)  # Rate limiting
 
         browser.close()
 
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
     print(f"[완료] {final_msg}")
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
     return []
 
 

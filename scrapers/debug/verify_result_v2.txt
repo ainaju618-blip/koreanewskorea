@@ -1,0 +1,11 @@
+filename | status | message
+------------------------------------------------------------
+backup_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+kwnews_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+universal_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+ai_news_scraper.py | LOGIC_FAIL | False,False,False,False
+rss_scraper.py | LOGIC_FAIL | False,False,False,False
+gwangju_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+mokpo_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+naju_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF
+suncheon_scraper.py | SYNTAX_ERROR | Line 1: invalid non-printable character U+FEFF

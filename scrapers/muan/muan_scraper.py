@@ -22,6 +22,7 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 from utils.text_cleaner import clean_article_content
 from utils.category_detector import detect_category
 from utils.scraper_utils import extract_subtitle
@@ -149,14 +150,14 @@ def clean_content_v3(content: str) -> str:
     return result
 
 
-def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], Optional[str]]:
+def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
     """상세 페이지에서 본문/이미지/날짜 extract (v1.3)"""
     try:
         page.goto(url, timeout=20000, wait_until='networkidle')
         page.wait_for_timeout(2000)
     except Exception as e:
         print(f"   [WARN] 페이지 접속 실패: {url}")
-        return "", None, None
+        return "", None, None, "PAGE_LOAD_FAIL"
 
     # 1. 본문 extract (v1.3 - 시작/종료점 기반)
     content = ""
@@ -328,7 +329,11 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
             thumbnail_url = original_image_url
             print(f"      [WARN] 저장 실패: {str(e)[:30]}")
 
-    return content, thumbnail_url, pub_date
+    # 이미지가 없으면 스킵
+    if not thumbnail_url:
+        return "", None, pub_date, ErrorCollector.IMAGE_MISSING
+
+    return content, thumbnail_url, pub_date, None  # success
 
 
 def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = None, end_date: str = None, dry_run: bool = False) -> List[Dict]:
@@ -403,8 +408,8 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
         print(f"[OK] {len(collected_links)}개 링크 확보")
 
         # Phase 2: 상세 수집
-        success_count = 0
-        skipped_count = 0
+        error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
+        
         for idx, item in enumerate(collected_links[:max_articles]):
             title = item['title']
             url = item['url']
@@ -412,7 +417,16 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
             print(f"   [{idx+1}] {title[:40]}...")
 
-            content, thumbnail_url, pub_date = fetch_detail(page, url, title)
+            content, thumbnail_url, pub_date, error_reason = fetch_detail(page, url, title)
+            error_collector.increment_processed()
+            
+            # 에러 발생 시 스킵
+            if error_reason:
+                error_collector.add_error(error_reason, title, url)
+                print(f"      [SKIP] {error_reason}")
+                time.sleep(0.5)
+                continue
+
             final_date = pub_date or list_date
 
             # Extract subtitle
@@ -441,25 +455,29 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
                     print(f"      [DRY-RUN] 본문: {len(content)}자")
                     print(f"      본문 시작: {content[:80]}...")
                     print(f"      이미지: {thumbnail_url if thumbnail_url else '없음'}")
-                    success_count += 1
                 else:
                     result = send_article_to_server(article_data)
                     if result and result.get('status') == 'created':
-                        success_count += 1
+                        error_collector.add_success()
                         log_to_server(REGION_CODE, '실행중', f"성공: {title[:15]}...", 'success')
                     elif result and result.get('status') == 'exists':
-                        skipped_count += 1
+                        print(f"      [SKIP] Already exists")
+            else:
+                error_collector.add_error("VALIDATION_FAIL", title, url, msg)
 
             time.sleep(1)
 
         browser.close()
 
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
+        browser.close()
+
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
     print(f"[완료] {final_msg}")
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
     return []
 
 

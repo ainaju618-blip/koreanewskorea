@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 from utils.category_classifier import detect_category
 
 # ============================================================
@@ -130,15 +131,16 @@ def build_list_url(page: int = 1) -> str:
 # ============================================================
 # 6. Detail Page Collection Function
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
     """
     Extract content, image, date, and department from detail page
 
     Returns:
-        (content text, thumbnail URL, date, department)
+        (content text, thumbnail URL, date, department, error_reason)
+        - error_reason is None on success
     """
     if not safe_goto(page, url, timeout=20000):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None, "PAGE_LOAD_FAIL"
     
     time.sleep(1.5)  # Page stabilization
     
@@ -298,7 +300,11 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         except Exception as e:
             print(f"      [WARN] 본문 이미지 extract 실패: {e}")
     
-    return content, thumbnail_url, pub_date, department
+    # 이미지가 없으면 스킵
+    if not thumbnail_url:
+        return "", None, pub_date, department, ErrorCollector.IMAGE_MISSING
+    
+    return content, thumbnail_url, pub_date, department, None  # success
 
 
 # ============================================================
@@ -336,9 +342,7 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
     
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v1.0 시작', 'info')
 
-    collected_count = 0
-    success_count = 0
-    skipped_count = 0
+    error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
     collected_articles = []  # dry-run 시 반환용
     
     with sync_playwright() as p:
@@ -468,7 +472,15 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 print(f"      [ARTICLE] {title[:40]}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
-                content, thumbnail_url, detail_date, department = fetch_detail(page, full_url)
+                content, thumbnail_url, detail_date, department, error_reason = fetch_detail(page, full_url)
+                error_collector.increment_processed()
+                
+                # 에러 발생 시 스킵
+                if error_reason:
+                    error_collector.add_error(error_reason, title, full_url)
+                    print(f"         [SKIP] {error_reason}")
+                    time.sleep(0.3)
+                    continue
                 
                 # Determine date (detail > list > current)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
@@ -517,17 +529,13 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                     print(f"         [DRY-RUN] {img_status}, {content_status}")
                     collected_articles.append(article_data)
                 else:
-                    # Send to server
                     result = send_article_to_server(article_data)
-                    collected_count += 1
 
                     if result.get('status') == 'created':
-                        success_count += 1
-                        img_status = "[O]이미지" if thumbnail_url else "[X]이미지"
-                        print(f"         [OK] 저장 완료 ({img_status})")
+                        error_collector.add_success()
+                        print(f"         [OK] 저장 완료")
                         log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                     elif result.get('status') == 'exists':
-                        skipped_count += 1
                         print(f"         [SKIP] 이미 존재")
                     else:
                         print(f"         [WARN] 전송 실패: {result}")
@@ -543,12 +551,13 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         
         browser.close()
 
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
     print(f"[OK] {final_msg}")
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
 
     return collected_articles
 

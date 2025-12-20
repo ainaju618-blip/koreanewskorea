@@ -36,6 +36,7 @@ from utils.scraper_utils import (
     clean_article_content, extract_subtitle
 )
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 from utils.category_detector import detect_category
 
 # ============================================================
@@ -82,15 +83,16 @@ def normalize_date(date_str: str) -> str:
 # ============================================================
 # 6. Detail Page Collection Function
 # ============================================================
-def fetch_detail(page: Page, url: str) -> Tuple[Optional[str], Optional[str], str, Optional[str]]:
+def fetch_detail(page: Page, url: str) -> Tuple[Optional[str], Optional[str], str, Optional[str], Optional[str]]:
     """
     Extract content, image, date, and department from detail page.
 
     Returns:
-        (content, thumbnail URL, date, department) - Returns (None, None, None, None) if no image
+        (content, thumbnail URL, date, department, error_reason)
+        - error_reason is None on success, set when article should be skipped
     """
     if not safe_goto(page, url, timeout=20000):
-        return None, None, datetime.now().strftime('%Y-%m-%d'), None
+        return None, None, datetime.now().strftime('%Y-%m-%d'), None, "PAGE_LOAD_FAIL"
 
     time.sleep(1)
 
@@ -211,12 +213,12 @@ def fetch_detail(page: Page, url: str) -> Tuple[Optional[str], Optional[str], st
     # Skip if no image
     if not thumbnail_url:
         print(f"      [SKIP] No image")
-        return None, None, None, None
+        return None, None, pub_date, None, ErrorCollector.IMAGE_MISSING
 
     # Clean content (remove metadata)
     content = clean_article_content(content)
 
-    return content, thumbnail_url, pub_date, department
+    return content, thumbnail_url, pub_date, department, None  # success
 
 
 # ============================================================
@@ -239,11 +241,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
     if not start_date:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
-    collected_count = 0
-    success_count = 0
-    image_count = 0
-    skip_count = 0
-    skipped_count = 0
+    error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -325,11 +323,14 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 print(f"      > {title[:30]}... ({n_date})")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
 
-                content, thumbnail_url, pub_date, department = fetch_detail(page, full_url)
+                content, thumbnail_url, pub_date, department, error_reason = fetch_detail(page, full_url)
+                error_collector.increment_processed()
 
-                # Skip articles without images
-                if content is None:
-                    skip_count += 1
+                # Skip articles with errors
+                if error_reason:
+                    error_collector.add_error(error_reason, title, full_url)
+                    safe_goto(page, list_url)
+                    time.sleep(0.3)
                     continue
 
                 # Use extracted date from detail page if available
@@ -362,14 +363,10 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 collected_count += 1
 
                 if result.get('status') == 'created':
-                    success_count += 1
-                    if thumbnail_url:
-                        image_count += 1
-                    img_status = "O" if thumbnail_url else "X"
-                    print(f"         [OK] Save completed ({img_status})")
+                    error_collector.add_success()
+                    print(f"         [OK] Save completed")
                     log_to_server(REGION_CODE, '실행중', f"저장 완료: {title[:15]}...", 'success')
                 elif result.get('status') == 'exists':
-                    skipped_count += 1
                     print(f"         [SKIP] Already exists")
 
                 # Return to list page
@@ -385,12 +382,13 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
         browser.close()
 
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
-    print(f"[완료] 수집 완료 (총 {collected_count}개, 신규 {success_count}개, 이미지 {image_count}개, 스킵 {skip_count}개, 중복 {skipped_count}개)")
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
     return []
 
 

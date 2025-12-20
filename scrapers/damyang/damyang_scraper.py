@@ -26,6 +26,7 @@ from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category
 )
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 
 def normalize_date(date_str: str) -> str:
     """Normalize date string to YYYY-MM-DD format"""
@@ -138,15 +139,16 @@ def clean_content(text: str, title: str = "") -> Tuple[str, Optional[str]]:
 
 
 
-def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str]]:
+def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[str], str, Optional[str], Optional[str], Optional[str]]:
     """
     Extract content, images, date, department, and subtitle from detail page
 
     Returns:
-        (content, thumbnail URL, date, department, subtitle)
+        (content, thumbnail URL, date, department, subtitle, error_reason)
+        - error_reason is None on success
     """
     if not safe_goto(page, url):
-        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None
+        return "", None, datetime.now().strftime('%Y-%m-%d'), None, None, "PAGE_LOAD_FAIL"
 
     # Damyang County SPA site: wait for dynamic loading
     try:
@@ -246,7 +248,11 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
                     print(f"      [SAVED] Content image: {local_path}")
                     break
 
-    return content, thumbnail_url, pub_date, department, subtitle
+    # 이미지가 없으면 스킵
+    if not thumbnail_url:
+        return "", None, pub_date, department, subtitle, ErrorCollector.IMAGE_MISSING
+
+    return content, thumbnail_url, pub_date, department, subtitle, None  # 성공
 
 def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None):
     print(f"[{REGION_NAME}] Press release collection started")
@@ -263,7 +269,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
     if not start_date:
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
-    collected_count = 0
+    error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -343,7 +349,15 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 print(f"      Reading: {item['title']} ({item['date']})")
 
                 # Pass title to remove duplicates from content
-                content, thumb, final_date, dept, subtitle = fetch_detail(page, item['url'], item['title'])
+                content, thumb, final_date, dept, subtitle, error_reason = fetch_detail(page, item['url'], item['title'])
+                error_collector.increment_processed()
+
+                # 에러 발생 시 스킵
+                if error_reason:
+                    error_collector.add_error(error_reason, item['title'], item['url'])
+                    print(f"         [SKIP] {error_reason}")
+                    time.sleep(0.3)
+                    continue
 
                 # Date priority: detail > list
                 pub_at = final_date if final_date else item['date']
@@ -365,10 +379,9 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
                 res = send_article_to_server(article)
                 if res.get('status') == 'created':
+                    error_collector.add_success()
                     print("         [OK] Saved")
-                    collections_msg = "이미지 포함" if thumb else "텍스트만"
-                    log_to_server(REGION_CODE, '성공', f"저장: {item['title']} ({collections_msg})", 'success')
-                    collected_count += 1
+                    log_to_server(REGION_CODE, '성공', f"저장: {item['title'][:20]}...", 'success')
                 elif res.get('status') == 'exists':
                     print("         [SKIP] Already exists")
 
@@ -377,6 +390,14 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             page_num += 1
 
         browser.close()
+
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
 
 if __name__ == "__main__":
     import argparse

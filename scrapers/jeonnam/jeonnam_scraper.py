@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle, detect_category
 from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 
 REGION_CODE = 'jeonnam'
 REGION_NAME = '전라남도'
@@ -67,11 +68,17 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
     return True, "[검증 통과]"
 
 
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str]]:
-    """상세 페이지에서 본문/이미지/날짜 추출"""
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    """상세 페이지에서 본문/이미지/날짜 추출
+    
+    Returns:
+        Tuple[content, thumbnail_url, pub_date, error_reason]
+        - error_reason이 None이면 성공
+        - error_reason이 있으면 해당 기사 스킵 필요
+    """
     if not safe_goto(page, url, timeout=20000):
         print(f"   [WARN] 페이지 접속 실패: {url}")
-        return "", None, None
+        return "", None, None, "PAGE_LOAD_FAIL"
 
     # 1. 본문 추출
     content = ""
@@ -122,11 +129,17 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
                 thumbnail_url = cloudinary_url
                 print(f"      [CLOUD] Cloudinary 업로드 완료")
             else:
-                thumbnail_url = original_image_url  # Fallback to original
-                print(f"      [WARN] Cloudinary 업로드 실패, 원본 URL 사용")
+                # Cloudinary 업로드 실패 - 스킵 (fallback 없음)
+                print(f"      [SKIP] Cloudinary 업로드 실패, 기사 스킵")
+                return "", None, None, ErrorCollector.CLOUDINARY_FAIL
         except Exception as e:
-            thumbnail_url = original_image_url  # Fallback to original
-            print(f"      [WARN] Cloudinary 업로드 에러: {str(e)[:50]}")
+            # Cloudinary 업로드 에러 - 스킵 (fallback 없음)
+            print(f"      [SKIP] Cloudinary 업로드 에러: {str(e)[:50]}")
+            return "", None, None, ErrorCollector.CLOUDINARY_FAIL
+    else:
+        # 이미지가 없는 경우 - 스킵
+        print(f"      [SKIP] 이미지 없음, 기사 스킵")
+        return "", None, None, ErrorCollector.IMAGE_MISSING
 
     # 4. 날짜 추출 - 작성일/등록일 모두 체크
     pub_date = None
@@ -149,7 +162,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except:
         pass
 
-    return content, thumbnail_url, pub_date
+    return content, thumbnail_url, pub_date, None  # 성공 시 error_reason = None
 
 
 def collect_articles(days: int = 3, start_date: str = None, end_date: str = None) -> List[Dict]:
@@ -234,8 +247,7 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
         # ============================================
         # Phase 2: Visit Phase - 상세 페이지 방문
         # ============================================
-        success_count = 0
-        processed_count = 0
+        error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
         # 전체 링크 처리 (max_articles는 bot-service에서 제어)
         target_links = collected_links
@@ -245,9 +257,16 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
             title = item['title']
             list_date = item['date']
 
-            print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
+            print(f"   [{error_collector.total_processed+1}] 분석 중: {title[:30]}...")
 
-            content, thumbnail_url, pub_date = fetch_detail(page, url)
+            content, thumbnail_url, pub_date, error_reason = fetch_detail(page, url)
+            error_collector.increment_processed()
+
+            # 에러 발생 시 스킵
+            if error_reason:
+                error_collector.add_error(error_reason, title, url)
+                time.sleep(0.5)
+                continue
 
             # 부제목 추출
             subtitle, content = extract_subtitle(content, title)
@@ -282,19 +301,28 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
                 result = send_article_to_server(article_data)
                 if result and result.get('status') == 'created':
                     print(f"      [OK] DB 저장 완료 ID: {result.get('id', 'Unknown')}")
-                    success_count += 1
+                    error_collector.add_success()
                     log_to_server(REGION_CODE, '실행중', f"성공: {title[:10]}...", 'success')
+                elif result and result.get('status') == 'exists':
+                    # 중복 기사는 에러가 아님 - 정상 스킵
+                    pass  # 이미 콘솔에 [SKIP] 출력됨
                 else:
                     print(f"      [WARN] DB 저장 실패 API 응답: {result}")
+            else:
+                error_collector.add_error(ErrorCollector.VALIDATION_FAIL, title, url, msg)
 
-            processed_count += 1
             time.sleep(1)  # 부하 조절
 
         browser.close()
 
-    final_msg = f"작업 종료: 총 {processed_count}건 처리 / {success_count}건 저장 성공"
-    print(f"[완료] {final_msg}")
-    log_to_server(REGION_CODE, '성공', final_msg, 'success')
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+
+    final_msg = error_collector.get_error_message()
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, '성공', final_msg, 'success', 
+                  created_count=error_collector.success_count, 
+                  skipped_count=error_collector.skip_count)
     return []
 
 

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """광주광역시 보도자료 스크래퍼 v3.0 (Stability & Verification)"""
 import sys, os, time, re
 from datetime import datetime, timedelta
@@ -9,6 +9,8 @@ from playwright.sync_api import sync_playwright, Page
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category, extract_subtitle
+from utils.cloudinary_uploader import download_and_upload_image
+from utils.error_collector import ErrorCollector
 
 REGION_CODE = 'gwangju'
 REGION_NAME = '광주광역시'
@@ -49,11 +51,17 @@ def validate_article(article_data: Dict) -> Tuple[bool, str]:
 
     return True, "[검증 통과]"
 
-def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str]]:
-    """본문 및 이미지, 작성일시 추출"""
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    """
+    본문 및 이미지, 작성일시 추출
+    
+    Returns:
+        (content, thumbnail_url, pub_date, error_reason)
+        - error_reason is None on success
+    """
     if not safe_goto(page, url, timeout=20000):
         print(f"   [WARN] 페이지 접속 실패: {url}")
-        return "", None, None
+        return "", None, None, "PAGE_LOAD_FAIL"
 
     # 본문 추출
     content = ""
@@ -65,7 +73,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except Exception as e:
         print(f"   [WARN] 본문 추출 에러: {str(e)}")
 
-    # 이미지 추출
+    # 이미지 추출 및 Cloudinary 업로드
     thumbnail_url = None
     try:
         imgs = page.locator('div.board_view_body img, div.view_content img, div#boardView img')
@@ -75,10 +83,14 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
                 src = safe_get_attr(imgs.nth(i), 'src')
                 if src and 'icon' not in src.lower() and 'button' not in src.lower():
                     if not src.startswith('http'):
-                        thumbnail_url = urljoin(BASE_URL, src)
+                        img_url = urljoin(BASE_URL, src)
                     else:
-                        thumbnail_url = src
-                    break 
+                        img_url = src
+                    # Cloudinary 업로드
+                    cloudinary_url = download_and_upload_image(img_url, BASE_URL, folder=REGION_CODE)
+                    if cloudinary_url:
+                        thumbnail_url = cloudinary_url
+                        break
     except Exception as e:
         print(f"   [WARN] 이미지 추출 에러: {str(e)}")
     
@@ -105,7 +117,11 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     except Exception as e:
         print(f"      [WARN] 날짜 추출 에러: {e}")
 
-    return content, thumbnail_url, pub_date
+    # 이미지가 없으면 스킵
+    if not thumbnail_url:
+        return "", None, pub_date, ErrorCollector.IMAGE_MISSING
+
+    return content, thumbnail_url, pub_date, None  # success
 
 def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     """
@@ -182,6 +198,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         success_count = 0
         skipped_count = 0
         processed_count = 0
+        error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
         
         # 최신순으로 처리하기 위해 (보통 목록이 최신순이므로 그대로 진행)
         # 테스트를 위해 최대 10개까지만 처리해본다 (안정화 확인용)
@@ -196,7 +213,16 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             title = item['title']
             print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
             
-            content, thumbnail_url, pub_date = fetch_detail(page, url)
+            content, thumbnail_url, pub_date, error_reason = fetch_detail(page, url)
+            error_collector.increment_processed()
+            
+            # 에러 발생 시 스킵
+            if error_reason:
+                error_collector.add_error(error_reason, title, url)
+                print(f"      [SKIP] {error_reason}")
+                processed_count += 1
+                time.sleep(0.5)
+                continue
 
             if not pub_date:
                 pub_date = datetime.now().strftime('%Y-%m-%d')
@@ -236,26 +262,29 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 # 4. DB 적재 (Ingestion)
                 result = send_article_to_server(article_data)
                 if result and result.get('status') == 'created':
-                    print(f"      [OK] DB 저장 완료 ID: {result.get('id', 'Unknown')}")
-                    success_count += 1
+                    error_collector.add_success()
+                    print(f"      [OK] DB 저장 완료")
                     log_to_server(REGION_CODE, '실행중', f"성공: {title[:10]}...", 'success')
                 elif result and result.get('status') == 'exists':
                     skipped_count += 1
                     print(f"      [SKIP] Already exists")
                 else:
                     print(f"      [WARN] DB 저장 실패 API 응답: {result}")
+            else:
+                error_collector.add_error("VALIDATION_FAIL", title, url, msg)
             
             processed_count += 1
             time.sleep(1) # 부하 조절
 
         browser.close()
-        
-    if skipped_count > 0:
-        final_msg = f"Completed: {success_count} new, {skipped_count} duplicates"
-    else:
-        final_msg = f"Completed: {success_count} new articles"
-    print(f"[완료] {final_msg}")
-    log_to_server(REGION_CODE, 'success', final_msg, 'success', created_count=success_count, skipped_count=skipped_count)
+    
+    # 에러 요약 보고 출력
+    error_collector.print_report()
+    final_msg = error_collector.get_error_message()
+    print(f"[OK] {final_msg}")
+    log_to_server(REGION_CODE, 'success', final_msg, 'success',
+                  created_count=error_collector.success_count,
+                  skipped_count=error_collector.skip_count)
     return []
 
 def main():
