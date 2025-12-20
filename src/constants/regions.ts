@@ -46,9 +46,15 @@ export const GWANGJU_DISTRICTS: Region[] = [
     { code: 'gwangju', name: '광주광역시', type: 'metro' },
 ];
 
+// 전라남도 (province level)
+export const JEONNAM_PROVINCE: Region[] = [
+    { code: 'jeonnam', name: '전라남도', type: 'metro' },
+];
+
 // 교육청 (Agencies)
+// Note: DB reporters.region uses '광주시교육청' (not '광주광역시교육청')
 export const EDUCATION_AGENCIES: Region[] = [
-    { code: 'gwangju_edu', name: '광주광역시교육청', type: 'agency' },
+    { code: 'gwangju_edu', name: '광주시교육청', type: 'agency' },
     { code: 'jeonnam_edu', name: '전라남도교육청', type: 'agency' },
 ];
 
@@ -60,13 +66,13 @@ export const JEONNAM_COUNTIES = JEONNAM_REGIONS.filter(r => r.type === 'county')
 
 // 지역 코드로 지역 정보 조회
 export function getRegionByCode(code: string): Region | undefined {
-    return [...JEONNAM_REGIONS, ...GWANGJU_DISTRICTS, ...EDUCATION_AGENCIES].find(r => r.code === code);
+    return [...JEONNAM_REGIONS, ...GWANGJU_DISTRICTS, ...JEONNAM_PROVINCE, ...EDUCATION_AGENCIES].find(r => r.code === code);
 }
 
 // 지역명으로 지역 정보 조회
 export function getRegionByName(name: string): Region | undefined {
-    return [...JEONNAM_REGIONS, ...GWANGJU_DISTRICTS, ...EDUCATION_AGENCIES].find(r => r.name === name);
+    return [...JEONNAM_REGIONS, ...GWANGJU_DISTRICTS, ...JEONNAM_PROVINCE, ...EDUCATION_AGENCIES].find(r => r.name === name);
 }
 
 // 모든 지역 통합 목록
-export const ALL_REGIONS = [...GWANGJU_DISTRICTS, ...JEONNAM_REGIONS, ...EDUCATION_AGENCIES];
+export const ALL_REGIONS = [...GWANGJU_DISTRICTS, ...JEONNAM_PROVINCE, ...JEONNAM_REGIONS, ...EDUCATION_AGENCIES];

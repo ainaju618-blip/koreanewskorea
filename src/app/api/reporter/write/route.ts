@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 기사 생성
+        // author_id: reporter.user_id (profiles FK), NOT reporter.id (PK)
         const { data: post, error: postError } = await supabaseAdmin
             .from('posts')
             .insert([{
@@ -53,9 +54,10 @@ export async function POST(req: NextRequest) {
                 source: reporter.region,
                 thumbnail_url: thumbnail_url || null,
                 status: status, // draft, pending, published
-                author_id: reporter.id,
+                author_id: reporter.user_id,
+                author_name: reporter.name,
                 published_at: new Date().toISOString(),
-                original_url: null, // 직접 작성한 기사는 원본 URL 없음
+                original_url: null, // directly written article has no original URL
             }])
             .select()
             .single();

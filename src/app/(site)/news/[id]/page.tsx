@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import ShareButton from '@/components/news/ShareButton';
 import { getSpecialtyTitle, formatByline } from '@/lib/reporter-utils';
+import { getRegionByCode } from '@/constants/regions';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -110,14 +111,22 @@ const REPORTER_SELECT_FIELDS = 'id, name, email, region, position, specialty, de
 // Prioritizes reporters matching the article region, falls back to "전체" region
 async function getRandomReporter(articleRegion?: string) {
     try {
-        // First try to find reporter matching article region
+        // Convert English region code to Korean name for DB query
+        // posts.region is English (naju), reporters.region is Korean (나주시)
+        let koreanRegionName: string | null = null;
         if (articleRegion) {
+            const regionInfo = getRegionByCode(articleRegion);
+            koreanRegionName = regionInfo?.name || null;
+        }
+
+        // First try to find reporter matching article region
+        if (koreanRegionName) {
             const { data: regionReporters } = await supabaseAdmin
                 .from('reporters')
                 .select(REPORTER_SELECT_FIELDS)
                 .eq('status', 'Active')
                 .eq('type', 'Human')
-                .eq('region', articleRegion);
+                .eq('region', koreanRegionName);
 
             if (regionReporters && regionReporters.length > 0) {
                 const randomIndex = Math.floor(Math.random() * regionReporters.length);
