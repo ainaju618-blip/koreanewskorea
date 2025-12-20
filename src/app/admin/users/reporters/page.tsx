@@ -26,7 +26,9 @@ const POSITIONS = [
 const REGIONS = [
     { value: '전체', label: '전체' },
     { value: '광주광역시', label: '광주광역시' },
+    { value: '광주시교육청', label: '광주시교육청' },
     { value: '전라남도', label: '전라남도' },
+    { value: '전라남도교육청', label: '전라남도교육청' },
     { value: '목포시', label: '목포시' },
     { value: '여수시', label: '여수시' },
     { value: '순천시', label: '순천시' },
@@ -78,7 +80,7 @@ export default function ReportersPage() {
 
     // Add/Edit Reporter Form State
     const [formName, setFormName] = useState("");
-    const [formType, setFormType] = useState("reporter");  // 직위 값 사용
+    const [formType, setFormType] = useState("editor_chief");  // 직위 값 사용 (기본: 편집국장)
     const [formRegion, setFormRegion] = useState("전체");
     const [formPhone, setFormPhone] = useState("");
     const [formEmail, setFormEmail] = useState("");
@@ -120,7 +122,7 @@ export default function ReportersPage() {
     // 모달 초기화
     const resetForm = () => {
         setFormName("");
-        setFormType("reporter");  // 기본 직위
+        setFormType("editor_chief");  // 기본 직위 (편집국장)
         setFormRegion("전체");
         setFormPhone("");
         setFormEmail("");

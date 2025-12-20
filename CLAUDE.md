@@ -90,6 +90,8 @@ Main Content:
 | **Arbitrary execution during conversation** | **STOP** + conversation mode |
 | **GNB/menu hardcoding** | Code review **REJECT** |
 | **Same error 2+ times** | **STOP** + Full system review (not partial fix) |
+| **Admin UI: cards/boxes for lists** | Code review **REJECT** (use tables) |
+| **Admin UI: mobile-first design** | Code review **REJECT** (desktop-first only) |
 
 > **Detail Rules:** See [.claude/rules/golden-rules.md](.claude/rules/golden-rules.md)
 
@@ -135,6 +137,7 @@ FORBIDDEN: Quick patch without full context review
 - **[Workflow Rules](.claude/rules/workflow.md)** - Session start, work gates, error documentation
 - **[Git & Deploy Rules](.claude/rules/git-deploy.md)** - Git commit, Vercel deployment rules
 - **[Tech Standards](.claude/rules/tech-standards.md)** - Tech stack, encoding, SEO, Context7 usage
+- **[Admin UI Rules](.claude/rules/admin-ui-rules.md)** - Admin page UI standards (desktop-first, tables over cards)
 
 ## Domain Guides (info/)
 

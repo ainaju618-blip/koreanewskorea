@@ -430,7 +430,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                         {/* 기사 목록 */}
                         {articles && articles.length > 0 ? (
                             <div className="space-y-4">
-                                {articles.map((article: any) => (
+                                {articles.map((article: Article) => (
                                     <Link
                                         key={article.id}
                                         href={`/news/${article.id}`}
