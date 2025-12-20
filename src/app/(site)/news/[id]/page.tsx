@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
     const modifiedTime = news.updated_at || news.published_at || news.created_at;
 
     return {
-        title: `${news.title} | 코리아NEWS`,
+        title: news.title,
         description,
         keywords: [news.category, '광주', '전남', '지역뉴스', '코리아NEWS', news.source].filter(Boolean),
         authors: news.author_name ? [{ name: news.author_name }] : undefined,
@@ -345,6 +345,18 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         keywords: [news.category, '광주', '전남', '지역뉴스'].join(', '),
         isAccessibleForFree: true,
         inLanguage: 'ko-KR',
+        // SEO: contentLocation for local news (important for regional search)
+        ...(news.region && {
+            contentLocation: {
+                '@type': 'Place',
+                name: getRegionByCode(news.region)?.name || news.region,
+                address: {
+                    '@type': 'PostalAddress',
+                    addressRegion: '전라남도',
+                    addressCountry: 'KR',
+                },
+            },
+        }),
     };
 
     return (
