@@ -263,7 +263,7 @@ export async function POST(request: Request) {
             '장성군': 'jangseong',
             '완도군': 'wando',
             '진도군': 'jindo',
-            '신안군': 'shinan',
+            '신안군': 'sinan',
             '광주광역시': 'gwangju',
             '광주시': 'gwangju',
             '전라남도': 'jeonnam',
