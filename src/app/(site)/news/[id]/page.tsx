@@ -388,7 +388,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </span>
                     <span className="text-sm text-slate-400 flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {formatDate(news.published_at || news.created_at)}
+                        {news.published_at ? formatDate(news.published_at) : formatDate(news.created_at)}
                     </span>
                 </div>
 
@@ -434,10 +434,10 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
                     <div className="flex items-center gap-4">
                         <div className="text-[13px] text-gray-500 flex flex-col md:flex-row md:gap-3">
-                            <span>최초 게시: {formatDate(news.published_at || news.created_at)}</span>
-                            {news.updated_at && news.updated_at !== news.published_at && (
-                                <span>최종 수정: {formatDate(news.updated_at)}</span>
+                            {news.published_at && (
+                                <span>최초 게시: {formatDate(news.published_at)}</span>
                             )}
+                            <span>수정: {formatDate(news.created_at)}</span>
                         </div>
 
                         {/* 공유 버튼 */}
