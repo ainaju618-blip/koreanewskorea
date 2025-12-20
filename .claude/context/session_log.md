@@ -5,6 +5,31 @@
 
 ---
 
+## [2025-12-21 23:30] 세션 #27 - 기자 페이지 로그아웃 기능 추가 by Claude
+
+### 주인님 의도
+- /reporter 페이지에 로그아웃 기능 추가
+
+### 수행 작업
+
+1. **로그아웃 버튼 구현** (`src/app/reporter/page.tsx`)
+   - LogOut 아이콘 import 추가
+   - useRouter import 추가
+   - loggingOut 상태 추가
+   - handleLogout 핸들러 추가 (확인 모달 포함)
+   - 프로필 수정 링크 옆에 로그아웃 버튼 배치
+
+### 사용 도구
+- TypeScript: tsc --noEmit 타입 체크 통과
+
+### 결과
+- OK - 로그아웃 버튼 추가 완료
+
+### 배포
+- git commit: "feat: Add logout button to reporter dashboard"
+
+---
+
 ## [2025-12-21 22:00] 세션 #26 - 기자 배정 및 표시 버그 수정 by Claude
 
 ### 주인님 의도

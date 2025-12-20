@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     FileText,
@@ -23,6 +24,7 @@ import {
     ChevronLeft,
     ChevronRight,
     ExternalLink,
+    LogOut,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/ConfirmModal";
@@ -95,6 +97,37 @@ export default function ReporterDashboard() {
 
     const { showSuccess, showError } = useToast();
     const { confirmDelete, confirm } = useConfirm();
+    const router = useRouter();
+
+    // Logout state
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    // Logout handler
+    const handleLogout = async () => {
+        const confirmed = await confirm({
+            title: "Logout",
+            message: "Are you sure you want to logout?",
+            confirmText: "Logout",
+            cancelText: "Cancel",
+        });
+
+        if (!confirmed) return;
+
+        setLoggingOut(true);
+        try {
+            const res = await fetch("/api/auth/logout", { method: "POST" });
+            if (res.ok) {
+                showSuccess("Successfully logged out");
+                router.push("/reporter/login");
+            } else {
+                showError("Logout failed");
+            }
+        } catch {
+            showError("An error occurred during logout");
+        } finally {
+            setLoggingOut(false);
+        }
+    };
 
     // Initial data fetch
     useEffect(() => {
@@ -351,13 +384,27 @@ export default function ReporterDashboard() {
                             <p className="text-sm text-slate-500">
                                 {reporter?.regionGroup || reporter?.region} 담당
                             </p>
-                            <Link
-                                href="/reporter/profile"
-                                className="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:text-blue-700"
-                            >
-                                <Edit className="w-3 h-3" />
-                                프로필 수정
-                            </Link>
+                            <div className="flex items-center gap-3 mt-2">
+                                <Link
+                                    href="/reporter/profile"
+                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                                >
+                                    <Edit className="w-3 h-3" />
+                                    프로필 수정
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    disabled={loggingOut}
+                                    className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-red-600 transition-colors disabled:opacity-50"
+                                >
+                                    {loggingOut ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                        <LogOut className="w-3 h-3" />
+                                    )}
+                                    로그아웃
+                                </button>
+                            </div>
                         </div>
                     </div>
 
