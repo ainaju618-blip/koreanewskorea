@@ -62,11 +62,21 @@ export async function GET(
         }
 
         // 3. 기자가 작성한 기사 조회 (published 상태만)
-        const { data: articles, error: articlesError, count } = await supabaseAdmin
+        // Query by user_id (primary) or author_name (fallback)
+        let articlesQuery = supabaseAdmin
             .from('posts')
             .select('id, title, source, category, thumbnail_url, published_at, views', { count: 'exact' })
-            .eq('author_id', reporter.id)
-            .eq('status', 'published')
+            .eq('status', 'published');
+
+        if (reporter.user_id) {
+            // Primary: match by user_id, fallback: match by author_name
+            articlesQuery = articlesQuery.or(`author_id.eq.${reporter.user_id},author_name.eq.${reporter.name}`);
+        } else {
+            // No user_id linked, match by author_name only
+            articlesQuery = articlesQuery.eq('author_name', reporter.name);
+        }
+
+        const { data: articles, error: articlesError, count } = await articlesQuery
             .order('published_at', { ascending: false })
             .range(offset, offset + limit - 1);
 
