@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createClient } from "@/lib/supabase-server";
+import { getSpecialtyTitle, getPositionLabel, getCoverageAreas, generateKeywordTags } from "@/lib/reporter-utils";
 import {
     MapPin,
     Briefcase,
@@ -17,8 +18,14 @@ import {
     Linkedin,
     Users,
     Eye,
+    Search,
+    Mail,
+    Building2,
+    TrendingUp,
+    Sparkles,
 } from "lucide-react";
 import SubscribeButton from "@/components/author/SubscribeButton";
+import ArticleSearchBar from "@/components/author/ArticleSearchBar";
 
 interface Reporter {
     id: string;
@@ -32,6 +39,7 @@ interface Reporter {
     created_at: string;
     slug: string | null;
     department: string | null;
+    specialty: string | null;
     specialties: string[] | null;
     career_years: number | null;
     awards: string[] | null;
@@ -53,7 +61,7 @@ interface Article {
 
 interface PageProps {
     params: Promise<{ slug: string }>;
-    searchParams: Promise<{ page?: string; tab?: string }>;
+    searchParams: Promise<{ page?: string; tab?: string; q?: string }>;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -85,9 +93,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         };
     }
 
-    const positionLabel = getPositionLabel(reporter.position);
-    const title = `${reporter.name} ${positionLabel} - 코리아NEWS`;
-    const description = reporter.bio || `${reporter.name} ${reporter.department || reporter.region} ${positionLabel}. 코리아NEWS에서 최신 기사를 확인하세요.`;
+    const specialtyTitle = getSpecialtyTitle(reporter);
+    const title = `${reporter.name} ${specialtyTitle} - 코리아NEWS`;
+    const description = reporter.bio || `${reporter.name} ${reporter.department || reporter.region} ${specialtyTitle}. 코리아NEWS에서 최신 기사를 확인하세요.`;
 
     return {
         title,
@@ -105,29 +113,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
 }
 
-function getPositionLabel(position: string): string {
-    const positions: Record<string, string> = {
-        editor_in_chief: "주필",
-        branch_manager: "지사장",
-        editor_chief: "편집국장",
-        news_chief: "취재부장",
-        senior_reporter: "수석기자",
-        reporter: "기자",
-        intern_reporter: "수습기자",
-        citizen_reporter: "시민기자",
-        opinion_writer: "오피니언",
-        advisor: "고문",
-        consultant: "자문위원",
-        ambassador: "홍보대사",
-        seoul_correspondent: "서울특파원",
-        foreign_correspondent: "해외특파원",
-    };
-    return positions[position] || position;
-}
+// getPositionLabel is now imported from @/lib/reporter-utils
 
 export default async function AuthorPage({ params, searchParams }: PageProps) {
     const { slug } = await params;
-    const { page: pageParam, tab: tabParam } = await searchParams;
+    const { page: pageParam, tab: tabParam, q: searchQuery } = await searchParams;
 
     // 기자 정보 조회
     const { data: reporter, error: reporterError } = await getReporter(slug);
@@ -142,9 +132,13 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     }
 
     const page = parseInt(pageParam || "1");
-    const tab = tabParam || "articles"; // articles | popular | profile
+    const tab = tabParam || "articles"; // articles | popular | featured
     const limit = 10;
     const offset = (page - 1) * limit;
+
+    // Generate coverage areas and keyword tags
+    const coverageAreas = getCoverageAreas(reporter);
+    const keywordTags = generateKeywordTags(reporter);
 
     // 구독 상태 확인 (로그인 유저인 경우)
     const supabase = await createClient();
@@ -168,10 +162,22 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
         .eq("author_id", reporter.id)
         .eq("status", "published");
 
-    // 정렬 (최신순 vs 인기순)
+    // Apply search filter if provided
+    if (searchQuery && searchQuery.trim()) {
+        articlesQuery = articlesQuery.ilike("title", `%${searchQuery.trim()}%`);
+    }
+
+    // Tab-based filtering and sorting
     if (tab === "popular") {
+        // Most viewed articles
         articlesQuery = articlesQuery.order("views", { ascending: false });
+    } else if (tab === "featured") {
+        // Featured/in-depth articles (high view count indicates depth)
+        articlesQuery = articlesQuery
+            .gte("views", 100)
+            .order("views", { ascending: false });
     } else {
+        // Default: latest articles
         articlesQuery = articlesQuery.order("published_at", { ascending: false });
     }
 
@@ -179,14 +185,16 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
 
     const totalArticles = count || 0;
     const totalPages = Math.ceil(totalArticles / limit);
-    const positionLabel = getPositionLabel(reporter.position);
+    const specialtyTitle = getSpecialtyTitle(reporter);
 
-    // Schema.org 구조화 데이터
+    // Schema.org structured data (E-E-A-T optimized)
+    const canonicalUrl = `https://koreanewsone.com/author/${reporter.slug || reporter.id}`;
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Person",
+        "@id": canonicalUrl,
         name: reporter.name,
-        jobTitle: positionLabel,
+        jobTitle: specialtyTitle,
         worksFor: {
             "@type": "NewsMediaOrganization",
             name: "코리아NEWS",
@@ -194,6 +202,31 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
         },
         description: reporter.bio,
         image: reporter.profile_image,
+        url: canonicalUrl,
+        // E-E-A-T: Expertise signals
+        knowsAbout: reporter.specialties && reporter.specialties.length > 0
+            ? reporter.specialties
+            : keywordTags.length > 0
+                ? keywordTags
+                : undefined,
+        // E-E-A-T: Authority signals (awards as credentials)
+        hasCredential: reporter.awards && reporter.awards.length > 0
+            ? reporter.awards.map(award => ({
+                "@type": "EducationalOccupationalCredential",
+                credentialCategory: "award",
+                name: award,
+            }))
+            : undefined,
+        // E-E-A-T: Experience signals
+        hasOccupation: {
+            "@type": "Occupation",
+            name: specialtyTitle,
+            occupationalCategory: "Journalist",
+            // Experience years if available
+            ...(reporter.career_years && reporter.career_years > 0 && {
+                experienceRequirements: `${reporter.career_years} years`,
+            }),
+        },
         sameAs: [
             reporter.sns_twitter,
             reporter.sns_facebook,
@@ -249,12 +282,25 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                                     {reporter.name}
                                                 </h1>
                                                 <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-sm font-semibold rounded-md border border-blue-100">
-                                                    {positionLabel}
+                                                    {specialtyTitle}
                                                 </span>
                                             </div>
-                                            <p className="text-gray-500 font-medium">
-                                                {reporter.department || reporter.region}
-                                                {reporter.department && reporter.region !== '전체' && ` · ${reporter.region}`}
+                                            {/* Coverage area display (E-E-A-T: Expertise) */}
+                                            <p className="text-gray-600 font-medium text-sm">
+                                                {coverageAreas.length > 0 ? (
+                                                    <>
+                                                        <span className="text-blue-600">{coverageAreas.slice(0, 2).join(' / ')}</span>
+                                                        {' 출입'}
+                                                        {reporter.region && reporter.region !== '전체' && (
+                                                            <span className="text-gray-400"> | {reporter.region} 전문</span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {reporter.department || reporter.region}
+                                                        {reporter.department && reporter.region !== '전체' && ` · ${reporter.region}`}
+                                                    </>
+                                                )}
                                             </p>
                                         </div>
 
@@ -267,25 +313,54 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                         />
                                     </div>
 
+                                    {/* Coverage areas badges */}
+                                    {coverageAreas.length > 0 && (
+                                        <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                                            {coverageAreas.map((area, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border border-gray-200"
+                                                >
+                                                    <Building2 className="w-3 h-3 text-gray-500" />
+                                                    {area}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {reporter.bio && (
                                         <blockquote className="text-gray-700 leading-relaxed mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-400 italic">
                                             "{reporter.bio}"
                                         </blockquote>
                                     )}
 
+                                    {/* Keyword tags (E-E-A-T: Expertise signals) */}
+                                    {keywordTags.length > 0 && (
+                                        <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+                                            {keywordTags.map((tag, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full hover:bg-blue-100 transition-colors cursor-default"
+                                                >
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {/* 통계 배지 */}
                                     <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-6 pt-2 border-t border-gray-100">
                                         {reporter.career_years && reporter.career_years > 0 && (
-                                            <div className="flex items-center gap-1.5 text-gray-600" title="취재 경력">
+                                            <div className="flex items-center gap-1.5 text-gray-600" title="Career">
                                                 <Briefcase className="w-4 h-4 text-gray-400" />
                                                 <span className="text-sm">경력 <strong>{reporter.career_years}년</strong></span>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-1.5 text-gray-600" title="작성 기사">
+                                        <div className="flex items-center gap-1.5 text-gray-600" title="Articles">
                                             <FileText className="w-4 h-4 text-gray-400" />
                                             <span className="text-sm">기사 <strong>{totalArticles.toLocaleString()}건</strong></span>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-gray-600" title="총 조회수">
+                                        <div className="flex items-center gap-1.5 text-gray-600" title="Views">
                                             <Eye className="w-4 h-4 text-gray-400" />
                                             <span className="text-sm">누적 조회 <strong>{(reporter.total_views || 0).toLocaleString()}</strong></span>
                                         </div>
@@ -294,29 +369,63 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                             </div>
                         </div>
 
-                        {/* 탭 네비게이션 */}
-                        <div className="flex border-b border-gray-200 mb-6">
-                            <Link
-                                href={`/author/${slug}?tab=articles`}
-                                className={`px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${tab === 'articles' || !tab
-                                        ? "border-blue-600 text-blue-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    }`}
-                            >
-                                <FileText className="w-4 h-4" />
-                                최신 기사
-                            </Link>
-                            <Link
-                                href={`/author/${slug}?tab=popular`}
-                                className={`px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${tab === 'popular'
-                                        ? "border-blue-600 text-blue-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    }`}
-                            >
-                                <Users className="w-4 h-4" />
-                                많이 본 기사
-                            </Link>
+                        {/* 탭 네비게이션 + 검색바 */}
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <div className="flex border-b border-gray-200 flex-1">
+                                <Link
+                                    href={`/author/${slug}?tab=articles`}
+                                    className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'articles' || (!tab && !searchQuery)
+                                            ? "border-blue-600 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        }`}
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    최신 기사
+                                </Link>
+                                <Link
+                                    href={`/author/${slug}?tab=popular`}
+                                    className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'popular'
+                                            ? "border-blue-600 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        }`}
+                                >
+                                    <TrendingUp className="w-4 h-4" />
+                                    인기 기사
+                                </Link>
+                                <Link
+                                    href={`/author/${slug}?tab=featured`}
+                                    className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'featured'
+                                            ? "border-blue-600 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        }`}
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    심층 취재
+                                </Link>
+                            </div>
+
+                            {/* Search bar */}
+                            <ArticleSearchBar
+                                authorSlug={slug}
+                                currentTab={tab}
+                                initialQuery={searchQuery || ""}
+                            />
                         </div>
+
+                        {/* Search result indicator */}
+                        {searchQuery && (
+                            <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <p className="text-sm text-blue-700">
+                                    <span className="font-medium">"{searchQuery}"</span> 검색 결과: {totalArticles}건
+                                </p>
+                                <Link
+                                    href={`/author/${slug}?tab=${tab}`}
+                                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                    검색 초기화
+                                </Link>
+                            </div>
+                        )}
 
                         {/* 기사 목록 */}
                         {articles && articles.length > 0 ? (
@@ -389,6 +498,25 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
 
                     {/* 사이드바 (데스크탑) */}
                     <aside className="w-full lg:w-80 flex-shrink-0 space-y-6">
+
+                        {/* 제보하기 카드 (E-E-A-T: Authority & Trust) */}
+                        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 shadow-lg text-white">
+                            <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                                <Mail className="w-5 h-5" />
+                                제보하기
+                            </h3>
+                            <p className="text-blue-100 text-sm mb-4">
+                                {reporter.name} 기자에게 직접 제보하세요.
+                                제보 내용은 철저히 보호됩니다.
+                            </p>
+                            <a
+                                href={`mailto:news@koreanewsone.com?subject=[${reporter.region || '제보'}] ${reporter.name} 기자 제보&body=제보 내용을 작성해주세요.%0A%0A성함:%0A연락처:%0A제보 내용:%0A`}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors w-full justify-center"
+                            >
+                                <Mail className="w-4 h-4" />
+                                이메일로 제보하기
+                            </a>
+                        </div>
 
                         {/* 전문 분야 카드 */}
                         {reporter.specialties && reporter.specialties.length > 0 && (

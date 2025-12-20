@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import ShareButton from '@/components/news/ShareButton';
+import { getSpecialtyTitle, formatByline } from '@/lib/reporter-utils';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -102,6 +103,9 @@ async function getRelatedNews(category: string, currentId: string) {
     }
 }
 
+// Reporter select fields for SEO/E-E-A-T
+const REPORTER_SELECT_FIELDS = 'id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin';
+
 // Get a random reporter for articles without assigned author
 // Prioritizes reporters matching the article region, falls back to "전체" region
 async function getRandomReporter(articleRegion?: string) {
@@ -110,7 +114,7 @@ async function getRandomReporter(articleRegion?: string) {
         if (articleRegion) {
             const { data: regionReporters } = await supabaseAdmin
                 .from('reporters')
-                .select('id, name, email, region, position')
+                .select(REPORTER_SELECT_FIELDS)
                 .eq('status', 'Active')
                 .eq('type', 'Human')
                 .eq('region', articleRegion);
@@ -124,7 +128,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Fallback to reporters with "전체" region
         const { data: allRegionReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position')
+            .select(REPORTER_SELECT_FIELDS)
             .eq('status', 'Active')
             .eq('type', 'Human')
             .eq('region', '전체');
@@ -137,7 +141,7 @@ async function getRandomReporter(articleRegion?: string) {
         // Final fallback: any active human reporter
         const { data: anyReporters } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position')
+            .select(REPORTER_SELECT_FIELDS)
             .eq('status', 'Active')
             .eq('type', 'Human')
             .limit(10);
@@ -259,7 +263,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     if (news.author_id) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position')
+            .select('id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin')
             .eq('user_id', news.author_id)
             .single();
         reporter = data;
@@ -269,7 +273,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     if (!reporter && news.author_name) {
         const { data } = await supabaseAdmin
             .from('reporters')
-            .select('id, name, email, region, position')
+            .select('id, name, email, region, position, specialty, department, bio, profile_image, avatar_icon, career_years, slug, sns_twitter, sns_facebook, sns_linkedin')
             .eq('name', news.author_name)
             .eq('status', 'Active')
             .single();
@@ -286,7 +290,13 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     // 조회수 증가 (Phase 3)
     // await incrementViewCount(id);
 
-    // SEO: NewsArticle 구조화 데이터 (JSON-LD)
+    // Get specialty title for SEO
+    const reporterTitle = reporter ? getSpecialtyTitle(reporter) : null;
+    const authorProfileUrl = reporter
+        ? `https://koreanewsone.com/author/${reporter.slug || reporter.id}`
+        : undefined;
+
+    // SEO: NewsArticle structured data (JSON-LD) - E-E-A-T optimized
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
@@ -298,14 +308,28 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         author: {
             '@type': 'Person',
             name: reporter?.name || news.author_name || '코리아NEWS 취재팀',
-            url: reporter ? `https://koreanewsone.com/author/${reporter.id}` : undefined,
+            url: authorProfileUrl,
+            jobTitle: reporterTitle || undefined,
+            worksFor: {
+                '@type': 'NewsMediaOrganization',
+                name: '코리아NEWS',
+                url: 'https://koreanewsone.com',
+            },
+            sameAs: reporter ? [
+                reporter.sns_twitter,
+                reporter.sns_facebook,
+                reporter.sns_linkedin,
+            ].filter(Boolean) : undefined,
         },
         publisher: {
-            '@type': 'Organization',
+            '@type': 'NewsMediaOrganization',
             name: '코리아NEWS',
+            url: 'https://koreanewsone.com',
             logo: {
                 '@type': 'ImageObject',
                 url: 'https://koreanewsone.com/logo.png',
+                width: 600,
+                height: 60,
             },
         },
         mainEntityOfPage: {
@@ -314,6 +338,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         },
         articleSection: news.category,
         keywords: [news.category, '광주', '전남', '지역뉴스'].join(', '),
+        isAccessibleForFree: true,
+        inLanguage: 'ko-KR',
     };
 
     return (
@@ -364,21 +390,23 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
                 )}
 
-                {/* 기자 및 메타 정보 (강원일보 스타일) */}
+                {/* Byline - SEO/E-E-A-T optimized format: (region=koreaNews) name title */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between py-4 border-t border-b border-gray-200 mb-8 bg-gray-50/50 px-4 rounded-lg">
                     <div className="flex items-center gap-2 mb-2 md:mb-0">
                         {/* Reporter Info (Linked to Profile) */}
                         {reporter ? (
                             <Link
-                                href={`/author/${reporter.id}`}
+                                href={`/author/${reporter.slug || reporter.id}`}
                                 rel="author"
-                                className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline flex items-center gap-2"
+                                className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline"
                             >
-                                {reporter.name} 기자
-                                {reporter.region && reporter.region !== '전체' && (
-                                    <span className="text-gray-500 font-normal text-xs no-underline">
-                                        | {reporter.region}
-                                    </span>
+                                {reporter.region && reporter.region !== '전체' ? (
+                                    <>
+                                        <span className="text-gray-500 font-normal">({reporter.region}=코리아뉴스)</span>
+                                        {' '}{reporter.name} {reporterTitle}
+                                    </>
+                                ) : (
+                                    <>코리아뉴스 {reporter.name} {reporterTitle}</>
                                 )}
                             </Link>
                         ) : (
