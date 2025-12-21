@@ -19,7 +19,7 @@ export default function PolytechnicPopup() {
     const renderImageContent = () => (
         <div className="flex-1 relative w-full h-full">
             <Image
-                src="/images/ads/hi02.png"
+                src="/images/ads/hi03.png"
                 alt="Korea Polytechnic Naju Campus"
                 fill
                 className="object-contain"
@@ -73,31 +73,28 @@ export default function PolytechnicPopup() {
                     <div className="flex items-center gap-1 flex-wrap">
                         <button
                             onClick={() => handleTabClick('image')}
-                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${
-                                activeTab === 'image'
+                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'image'
                                     ? 'bg-white text-blue-700 shadow-md'
                                     : 'text-white/90 hover:bg-white/20'
-                            }`}
+                                }`}
                         >
                             이미지
                         </button>
                         <button
                             onClick={() => handleTabClick('recruitment')}
-                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${
-                                activeTab === 'recruitment'
+                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'recruitment'
                                     ? 'bg-white text-blue-700 shadow-md'
                                     : 'text-white/90 hover:bg-white/20'
-                            }`}
+                                }`}
                         >
                             모집요강
                         </button>
                         <button
                             onClick={() => handleTabClick('video')}
-                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${
-                                activeTab === 'video'
+                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'video'
                                     ? 'bg-white text-blue-700 shadow-md'
                                     : 'text-white/90 hover:bg-white/20'
-                            }`}
+                                }`}
                         >
                             영상보기
                         </button>

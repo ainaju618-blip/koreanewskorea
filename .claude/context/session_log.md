@@ -1311,3 +1311,9 @@ web/src/app/admin/bot/run/
 ---
 
 *새 세션 로그는 이 파일 상단에 추가*
+
+## [2025-12-22] AI 재가공 시스템 전면 쇄신 (by Gemini)
+- **작업**: 보안 강화(암호화), 소스 정리(프롬프트 단일화), 모델 업데이트(Gemini 2.5), 스크래퍼 연동 개선
+- **결과**: 모든 Phase(1~6) 완료. 테스트 및 문서화 완료.
+- **파일**: `AI_REWRITER_HANDOFF.md`, `src/lib/ai-prompts.ts`, `src/lib/encryption.ts` 등
+

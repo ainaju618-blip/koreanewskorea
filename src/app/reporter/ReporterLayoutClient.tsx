@@ -20,6 +20,7 @@ import {
     Home,
     Inbox,
     Bell,
+    Sparkles,
     type LucideIcon,
 } from "lucide-react";
 import NotificationDropdown from "@/components/reporter/NotificationDropdown";

@@ -207,6 +207,25 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             department = data['department']
         if data.get('content'):
             content = data['content'][:5000]
+            
+        # 1-1. Extract Time if available in meta tags or content
+        # 여수시: registration date에 시간이 포함되어 있는지 확인하거나 본문에서 추출
+        # Pattern: "2024-12-21 15:30"
+        if data.get('date'):
+             # Check if date has time
+            dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', data['date'])
+            if dt_match:
+                y, m, d, hh, mm = dt_match.groups()
+                pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        
+        # Fallback: scan page text for time pattern
+        if pub_date == datetime.now().strftime('%Y-%m-%d') or 'T' not in pub_date:
+             page_text = page.locator('body').inner_text()
+             dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text[:5000])
+             if dt_match:
+                y, m, d, hh, mm = dt_match.groups()
+                pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+
     except Exception as e:
         print(f"      [WARN] JS 추출 실패: {e}")
     
@@ -419,7 +438,8 @@ def collect_articles(days: int = 3, max_articles: int = 30, dry_run: bool = Fals
                     continue
 
                 # date 필터링
-                if pub_date < start_date:
+                date_only = pub_date.split('T')[0] if 'T' in pub_date else pub_date
+                if date_only < start_date:
                     stop = True
                     break
 
@@ -432,11 +452,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, dry_run: bool = Fals
                 # Auto-classify category
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in pub_date and '+09:00' in pub_date:
+                     published_at = pub_date
+                else:
+                     published_at = f"{pub_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{pub_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

@@ -164,10 +164,11 @@ def fetch_detail(page: Page, url: str, seq: str = '') -> Tuple[str, Optional[str
         page_text = page.locator('body').inner_text()
         
         # 작성일 패턴: "작성일 : YYYY-MM-DD HH:mm"
-        date_match = re.search(r'작성일\s*[:\s]+(\d{4})-(\d{1,2})-(\d{1,2})\s+\d{1,2}:\d{2}', page_text)
+        # 1. Try to find date with time
+        date_match = re.search(r'작성일\s*[:\s]+(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text)
         if date_match:
-            y, m, d = date_match.groups()
-            pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+            y, m, d, hh, mm = date_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
         else:
             # 일반 날짜 패턴
             date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text[:3000])
@@ -510,10 +511,13 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 # 날짜 결정 (상세 > 목록 > 현재)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 
+                # 날짜만 추출해서 비교
+                date_only = final_date.split('T')[0] if 'T' in final_date else final_date
+
                 # 날짜 필터 + 조기 종료 로직
-                if start_date and final_date < start_date:
+                if start_date and date_only < start_date:
                     consecutive_old += 1
-                    print(f"         [SKIP] 날짜 필터로 스킵: {final_date} (연속 {consecutive_old}개)")
+                    print(f"         [SKIP] 날짜 필터로 스킵: {date_only} (연속 {consecutive_old}개)")
 
                     if consecutive_old >= 3:
                         print("         [STOP] 오래된 기사 3개 연속 발견, 페이지 탐색 중지")
@@ -533,11 +537,17 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 # Auto-categorize
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in final_date and '+09:00' in final_date:
+                     published_at = final_date
+                else:
+                     published_at = f"{final_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{final_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

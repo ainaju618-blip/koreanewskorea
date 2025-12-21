@@ -135,6 +135,7 @@ const MENU_ITEMS: MenuGroup[] = [
                 icon: Settings,
                 href: "/admin/settings",
                 subItems: [
+                    { label: "AI 재가공 설정", href: "/admin/settings/ai", icon: Sparkles },
                     { label: "사이트 정보", href: "/admin/settings/general" },
                     { label: "카테고리", href: "/admin/settings/categories" },
                     { label: "레이아웃", href: "/admin/settings/layouts" },

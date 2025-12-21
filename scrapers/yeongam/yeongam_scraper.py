@@ -144,11 +144,17 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     
     try:
         page_text = page.locator('body').inner_text()
-        # YYYY-MM-DD 패턴 찾기 (제목 아래)
-        date_match = re.search(r'(\d{4})-(\d{1,2})-(\d{1,2})', page_text[:2000])
-        if date_match:
-            y, m, d = date_match.groups()
-            pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+        # 시간 포함 패턴 (YYYY-MM-DD HH:mm)
+        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text[:2000])
+        if dt_match:
+            y, m, d, hh, mm = dt_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        else:
+            # YYYY-MM-DD 패턴 찾기 (제목 아래)
+            date_match = re.search(r'(\d{4})-(\d{1,2})-(\d{1,2})', page_text[:2000])
+            if date_match:
+                y, m, d = date_match.groups()
+                pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     except Exception as e:
         print(f"      [WARN] Date extraction failed: {e}")
     
@@ -461,7 +467,13 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 
                 # Date filter + early termination logic
-                if start_date and final_date < start_date:
+                # 날짜 비교 시 시간이 포함될 수 있으므로 날짜 부분만 비교
+                if len(final_date) > 10: 
+                    final_date_only = final_date[:10]
+                else:
+                    final_date_only = final_date
+
+                if start_date and final_date_only < start_date:
                     consecutive_old += 1
                     print(f"         [SKIP] Skipped by date filter: {final_date} (consecutive {consecutive_old})")
 
@@ -480,11 +492,17 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 # Automatic category classification
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in final_date and '+09:00' in final_date:
+                     published_at = final_date
+                else:
+                     published_at = f"{final_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{final_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

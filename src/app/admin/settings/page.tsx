@@ -1,12 +1,13 @@
 "use client";
 
-import { Settings, Clock, Wrench, Globe, Tag, Key } from "lucide-react";
+import { Settings, Clock, Wrench, Globe, Tag, Key, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
     const settingsLinks = [
         { href: "/admin/settings/general", label: "사이트 정보", icon: Globe, desc: "사이트 기본 정보 설정" },
         { href: "/admin/settings/categories", label: "카테고리 관리", icon: Tag, desc: "기사 카테고리 관리" },
+        { href: "/admin/settings/ai", label: "AI 재가공 설정", icon: Sparkles, desc: "AI 기사 재가공 기능 설정" },
         { href: "/admin/settings/api", label: "API 키 설정", icon: Key, desc: "외부 서비스 API 키 관리" },
     ];
 

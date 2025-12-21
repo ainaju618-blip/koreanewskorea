@@ -19,7 +19,8 @@ import {
     CheckCircle,
     Clock,
     AlertCircle,
-    FileText
+    FileText,
+    Sparkles
 } from "lucide-react";
 import {
     PageHeader,
@@ -52,6 +53,9 @@ interface NewsSource {
     // 개발 상태
     scraper_status: 'completed' | 'developing' | 'planned' | 'none';
     tech_notes?: string;
+
+    // AI 재가공
+    ai_rewrite_enabled?: boolean;
 
     // 메타
     created_at: string;
@@ -406,6 +410,7 @@ export default function SourcesManagementPage() {
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">코드</th>
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-14">지역</th>
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">유형</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-12">AI</th>
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">보도자료 URL</th>
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">상태</th>
                                 <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">작업</th>
@@ -422,17 +427,42 @@ export default function SourcesManagementPage() {
                                         <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{source.code}</code>
                                     </td>
                                     <td className="px-3 py-1.5">
-                                        <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                                            source.region === '광주' ? 'bg-purple-100 text-purple-700' :
-                                            source.region === '전남' ? 'bg-blue-100 text-blue-700' :
-                                            source.region === 'AI' ? 'bg-emerald-100 text-emerald-700' :
-                                            source.region === '뉴스' ? 'bg-orange-100 text-orange-700' :
-                                            'bg-gray-100 text-gray-700'
-                                        }`}>
+                                        <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${source.region === '광주' ? 'bg-purple-100 text-purple-700' :
+                                                source.region === '전남' ? 'bg-blue-100 text-blue-700' :
+                                                    source.region === 'AI' ? 'bg-emerald-100 text-emerald-700' :
+                                                        source.region === '뉴스' ? 'bg-orange-100 text-orange-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                            }`}>
                                             {source.region}
                                         </span>
                                     </td>
                                     <td className="px-3 py-1.5 text-gray-600">{source.org_type}</td>
+                                    <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const res = await fetch(`/api/sources/${source.id}`, {
+                                                        method: 'PATCH',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ ai_rewrite_enabled: !source.ai_rewrite_enabled })
+                                                    });
+                                                    if (res.ok) {
+                                                        fetchSources();
+                                                    }
+                                                } catch (err) {
+                                                    console.error('AI 토글 실패:', err);
+                                                }
+                                            }}
+                                            className={`relative w-10 h-5 rounded-full transition-colors ${source.ai_rewrite_enabled ? 'bg-purple-600' : 'bg-gray-300'
+                                                }`}
+                                            title={source.ai_rewrite_enabled ? 'AI 재가공 활성화됨' : 'AI 재가공 비활성화'}
+                                        >
+                                            <span
+                                                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${source.ai_rewrite_enabled ? 'translate-x-5' : ''
+                                                    }`}
+                                            />
+                                        </button>
+                                    </td>
                                     <td className="px-3 py-1.5">
                                         {source.press_list_url ? (
                                             <a

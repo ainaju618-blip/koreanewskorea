@@ -149,17 +149,25 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
 
     try:
         page_text = page.locator('body').inner_text()
-        # Find "Created: YYYY-MM-DD HH:mm" pattern
-        date_match = re.search(r'작성일[:\s]*(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
-        if date_match:
-            y, m, d = date_match.groups()
-            pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+        
+        # 1. Try to find date with time (YYYY-MM-DD HH:mm)
+        # Pattern: "Created: 2025-12-21 15:30"
+        dt_match = re.search(r'작성일[:\s]*(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text)
+        if dt_match:
+            y, m, d, hh, mm = dt_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
         else:
-            # General date pattern
-            date_match = re.search(r'(\d{4})-(\d{1,2})-(\d{1,2})', page_text[:3000])
+            # 2. Fallback: Date only
+            date_match = re.search(r'작성일[:\s]*(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
             if date_match:
                 y, m, d = date_match.groups()
                 pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+            else:
+                # 3. Last resort: Any date pattern
+                date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text[:3000])
+                if date_match:
+                    y, m, d = date_match.groups()
+                    pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     except Exception as e:
         print(f"      [WARN] Date extraction failed: {e}")
 
@@ -468,10 +476,13 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 # 날짜 결정 (상세 > 목록 > 현재)
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 
+                # 날짜만 추출해서 비교
+                date_only = final_date.split('T')[0] if 'T' in final_date else final_date
+
                 # Date filter + early termination logic
-                if start_date and final_date < start_date:
+                if start_date and date_only < start_date:
                     consecutive_old += 1
-                    print(f"         [SKIP] Skipped by date filter: {final_date} (consecutive {consecutive_old})")
+                    print(f"         [SKIP] Skipped by date filter: {date_only} (consecutive {consecutive_old})")
 
                     if consecutive_old >= 3:
                         print("         [STOP] 3 consecutive old articles found, stopping page search")
@@ -491,11 +502,17 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 # 카테고리 자동 분류
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in final_date and '+09:00' in final_date:
+                     published_at = final_date
+                else:
+                     published_at = f"{final_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{final_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

@@ -389,6 +389,9 @@ def clean_article_content(content: str, max_length: int = 5000) -> str:
     misc_patterns = [
         # Photo caption patterns
         r'사진\s*[:]\s*[^\n]+',
+        r'.*관련\s*이미지.*©.*',  # Image caption with copyright
+        r'.*©\s*코리아NEWS.*',    # Specific copyright pattern
+        r'^보도자료\s*제공\s*[:].*', # Press release provider info
         r'^\s*[\u25B2\u25BC\u25C0\u25B6]\s*[^\n]+',  # Arrow captions (line start only)
         r'^\s*[\u25B3\u25BD]\s*[^\n]+',  # Triangle captions (line start only)
         # Copyright/disclaimer

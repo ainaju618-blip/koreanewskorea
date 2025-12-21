@@ -163,7 +163,13 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
                 if date_elem and date_elem.count() > 0:
                     date_text = safe_get_text(date_elem)
                     if date_text:
-                        pub_date = normalize_date(date_text)
+                        # Try to extract time "2024.12.21 15:30"
+                        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', date_text)
+                        if dt_match:
+                            y, m, d, hh, mm = dt_match.groups()
+                            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+                        else:
+                            pub_date = normalize_date(date_text)
                         break
             except:
                 continue
@@ -423,11 +429,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 # Auto-categorize
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in n_date and '+09:00' in n_date:
+                     published_at = n_date
+                else:
+                     published_at = f"{n_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{n_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

@@ -58,6 +58,7 @@ interface Article {
     thumbnail_url: string | null;
     published_at: string;
     ai_summary: string | null;
+    content: string | null;
 }
 
 interface PageProps {
@@ -161,7 +162,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     // Also check author_name as fallback for older articles
     let articlesQuery = supabaseAdmin
         .from("posts")
-        .select("id, title, source, category, thumbnail_url, published_at, view_count, ai_summary", { count: "exact" })
+        .select("id, title, source, category, thumbnail_url, published_at, view_count, ai_summary, content", { count: "exact" })
         .eq("status", "published");
 
     // Query by user_id (primary) or author_name (fallback)
@@ -458,11 +459,9 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                                 <h3 className="text-base md:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2 leading-snug">
                                                     {article.title}
                                                 </h3>
-                                                {article.ai_summary && (
-                                                    <p className="text-sm text-gray-600 line-clamp-2 mb-2 flex-1">
-                                                        {article.ai_summary}
-                                                    </p>
-                                                )}
+                                                <p className="text-sm text-gray-600 line-clamp-2 mb-2 flex-1 leading-relaxed">
+                                                    {article.ai_summary || article.content?.substring(0, 100) || ''}
+                                                </p>
                                                 <span className="text-xs text-gray-400 mt-auto">
                                                     {article.published_at.split('T')[0]}
                                                 </span>

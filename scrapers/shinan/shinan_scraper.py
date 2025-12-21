@@ -239,12 +239,20 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
         images = []
     
     # date 파싱
+    # date 파싱
     pub_date = datetime.now().strftime('%Y-%m-%d')
     if date_str:
-        date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_str)
-        if date_match:
-            y, m, d = date_match.groups()
-            pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+        # 1. Try YYYY-MM-DD HH:mm
+        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', date_str)
+        if dt_match:
+            y, m, d, hh, mm = dt_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        else:
+            # 2. Fallback YYYY-MM-DD
+            date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_str)
+            if date_match:
+                y, m, d = date_match.groups()
+                pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
     
     # Clean content - clean_article_content 함수 사용
     content = clean_article_content(content)
@@ -448,7 +456,10 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
 
                 # date 필터링 (상세 페이지에서 얻은 정확한 date로)
-                if final_date < start_date:
+                # 날짜만 추출해서 비교
+                date_only = final_date.split('T')[0] if 'T' in final_date else final_date
+                
+                if date_only < start_date:
                     stop = True
                     break
 
@@ -461,11 +472,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 # Auto-classify category
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in final_date and '+09:00' in final_date:
+                     published_at = final_date
+                else:
+                     published_at = f"{final_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{final_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

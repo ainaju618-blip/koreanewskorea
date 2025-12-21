@@ -177,9 +177,17 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
     try:
         # Find date pattern in full page text
         page_text = page.locator('body').inner_text()
-        match = re.search(r'(\d{4}-\d{2}-\d{2})', page_text)
-        if match:
-            pub_date = match.group(1)
+        
+        # 1. 시간 포함 패턴 시도 (YYYY-MM-DD HH:mm)
+        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text[:5000])
+        if dt_match:
+             y, m, d, hh, mm = dt_match.groups()
+             pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        else:
+            # 2. 날짜만 있는 패턴
+            match = re.search(r'(\d{4}-\d{2}-\d{2})', page_text[:5000])
+            if match:
+                pub_date = match.group(1)
     except:
         pass
 
@@ -281,6 +289,9 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
                         'date': article_date
                     })
 
+                    # 날짜 필터 (list page) - 장성은 목록에서 날짜 확인 불가하므로 스킵
+
+
                 except Exception as e:
                     print(f"      [WARN] Link parsing error: {str(e)}")
 
@@ -326,12 +337,18 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
             # Auto-categorize
             cat_code, cat_name = detect_category(title, content)
 
+            # published_at 처리 (시간 포함 여부 확인)
+            if 'T' in final_date and '+09:00' in final_date:
+                    published_at = final_date
+            else:
+                    published_at = f"{final_date}T09:00:00+09:00"
+
             # Create data object
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
                 'content': content,
-                'published_at': f"{final_date}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': url,
                 'source': REGION_NAME,
                 'category': cat_name,

@@ -169,9 +169,15 @@ def fetch_detail(page: Page, url: str, title: str = "") -> Tuple[str, Optional[s
     for i in range(count):
         text = safe_get_text(info_items.nth(i))
         if '등록일' in text or '작성일' in text:
-            date_match = re.search(r'(\d{4}[-.]\d{1,2}[-.]\d{1,2})', text)
-            if date_match:
-                pub_date = normalize_date(date_match.group(1))
+            # Try to extract time as well "2024.12.21 15:30"
+            dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', text)
+            if dt_match:
+                y, m, d, hh, mm = dt_match.groups()
+                pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+            else:
+                date_match = re.search(r'(\d{4}[-.]\d{1,2}[-.]\d{1,2})', text)
+                if date_match:
+                    pub_date = normalize_date(date_match.group(1))
         if '담당부서' in text:
             dept_match = text.replace('담당부서', '').replace(':', '').strip()
             if dept_match:
@@ -365,11 +371,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 # Auto-classify category
                 cat_code, cat_name = detect_category(item['title'], content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in pub_at and '+09:00' in pub_at:
+                     published_at = pub_at
+                else:
+                     published_at = f"{pub_at}T09:00:00+09:00"
+
                 article = {
                     'title': item['title'],
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{pub_at}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': item['url'],
                     'source': REGION_NAME,
                     'category': cat_name,

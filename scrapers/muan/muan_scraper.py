@@ -250,13 +250,30 @@ def fetch_detail(page: Page, url: str, title: str) -> Tuple[str, Optional[str], 
 
     # 2. 날짜 extract
     pub_date = None
+    # 1. 날짜 및 시간 추출
+    extracted_date_time = datetime.now().strftime('%Y-%m-%d') # Default to current date
     try:
-        page_text = page.locator('div.sub_inner').inner_text()[:2000]
-        match = re.search(r'작성일\s*(\d{4}\.\d{2}\.\d{2})', page_text)
-        if match:
-            pub_date = normalize_date(match.group(1))
-    except:
-        pass
+        page_text = page.locator('div.sub_inner').inner_text() # Limit search to sub_inner
+        
+        # 1-1. 날짜+시간 패턴 (YYYY-MM-DD HH:mm)
+        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text[:5000])
+        if dt_match:
+            y, m, d, hh, mm = dt_match.groups()
+            extracted_date_time = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        else:
+            # 1-2. 날짜만
+            # 작성일: 2024-12-12
+            date_match = re.search(r'작성일[:\s]*(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
+            if not date_match:
+                # 등록일 or other patterns
+                date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text[:3000])
+            
+            if date_match:
+                y, m, d = date_match.groups()
+                extracted_date_time = f"{y}-{int(m):02d}-{int(d):02d}"
+    except Exception as e:
+        print(f"   [WARN] 날짜/시간 extract 에러: {str(e)}")
+    pub_date = extracted_date_time
 
     # 3. 이미지 extract (v1.4: 더 일반화된 이미지 extract)
     thumbnail_url = None
@@ -350,6 +367,13 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     collected_links = []
+    stop_collecting = False
+
+    # Calculate start_date for filtering
+    if start_date:
+        start_date_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+    else:
+        start_date_dt = (datetime.now() - timedelta(days=days)).date()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -361,6 +385,8 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
         # Phase 1: 링크 수집
         for page_num in range(1, 4):
+            if stop_collecting:
+                break
             list_url = f'{LIST_URL}?page={page_num}'
             print(f"   [PAGE] 페이지 {page_num} 스캔...")
 
@@ -394,6 +420,13 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
                         list_date = normalize_date(date_cell.inner_text().strip()) if date_cell.count() > 0 else None
                     except:
                         list_date = None
+
+                    # Apply date filtering based on list_date
+                    if list_date:
+                        list_date_only = list_date.split('T')[0] if 'T' in list_date else list_date
+                        if datetime.strptime(list_date_only, '%Y-%m-%d').date() < start_date_dt:
+                            stop_collecting = True
+                            break
 
                     collected_links.append({
                         'title': title,
@@ -435,11 +468,17 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
             # Automatic category classification
             cat_code, cat_name = detect_category(title, content)
 
+            # published_at 처리 (시간 포함 여부 확인)
+            if 'T' in final_date and '+09:00' in final_date:
+                 published_at = final_date
+            else:
+                 published_at = f"{final_date}T09:00:00+09:00"
+
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
                 'content': content,
-                'published_at': f"{final_date}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': url,
                 'source': REGION_NAME,
                 'category': cat_name,

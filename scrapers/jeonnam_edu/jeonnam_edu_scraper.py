@@ -180,7 +180,15 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
         info_items = page.locator(DETAIL_DATE_SELECTOR)
         for i in range(info_items.count()):
             text = info_items.nth(i).inner_text().strip()
-            if '입력' in text or re.search(r'\d{4}\.\d{2}\.\d{2}', text):
+            if '입력' in text or re.search(r'\d{4}[\.-]\d{2}[\.-]\d{2}', text):
+                # 1. 시간 포함 패턴 (YYYY.MM.DD HH:MM)
+                dt_match = re.search(r'(\d{4})[\.-](\d{1,2})[\.-](\d{1,2})\s+(\d{1,2}):(\d{1,2})', text)
+                if dt_match:
+                    y, m, d, hh, mm = dt_match.groups()
+                    pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+                    break
+                
+                # 2. 날짜만 있는 패턴
                 pub_date = normalize_date(text)
                 break
     except:
@@ -223,6 +231,10 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     else:
         cutoff_date = start_date
+
+    # cutoff_date가 날짜 객체가 아닌 문자열인지 확인 (YYYY-MM-DD)
+    if 'T' in cutoff_date:
+        cutoff_date = cutoff_date.split('T')[0]
 
     if not end_date:
         end_date = datetime.now().strftime('%Y-%m-%d')
@@ -274,11 +286,9 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
                     # 날짜는 상세 페이지에서 추출
                     article_date = datetime.now().strftime('%Y-%m-%d')
 
-                    # 날짜 필터링
-                    if article_date < cutoff_date:
-                        stop_collecting = True
-                        break
-
+                    # 날짜 필터링 (목록에서 날짜 확인 불가능하므로 상세에서 처리해야 하나, 여기선 일단 패스)
+                    # 실제 필터링은 상세 페이지 날짜 확인 후 적용하거나, 목록에 날짜가 있다면 여기서 처리
+                    
                     # URL 완성
                     full_url = urljoin(BASE_URL, href)
 
@@ -338,12 +348,18 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
             # Auto-categorize
             cat_code, cat_name = detect_category(title, content)
 
+            # published_at 처리 (시간 포함 여부 확인)
+            if 'T' in final_date and '+09:00' in final_date:
+                    published_at = final_date
+            else:
+                    published_at = f"{final_date}T09:00:00+09:00"
+
             # Create data object
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
                 'content': content,
-                'published_at': f"{final_date}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': url,
                 'source': REGION_NAME,
                 'category': cat_name,

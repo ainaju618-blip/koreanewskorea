@@ -125,13 +125,22 @@ def fetch_detail(page: Page, url: str) -> Tuple[Optional[str], Optional[str], st
         except:
             pass
 
-    # 2. Extract date - Gangjin: first dd in div.view_titlebox
+    # 2. Extract date and time
     try:
-        date_elem = page.locator('div.view_titlebox dd').first
-        if date_elem.count() > 0:
-            date_text = safe_get_text(date_elem)
-            if date_text:
-                pub_date = normalize_date(date_text)
+        page_text = page.locator('body').inner_text()
+        
+        # 2-1. YYYY-MM-DD HH:mm (Time priority)
+        dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', page_text[:5000])
+        if dt_match:
+            y, m, d, hh, mm = dt_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+        else:
+             # 2-2. Date only fallback
+            date_elem = page.locator('div.view_titlebox dd').first
+            if date_elem.count() > 0:
+                date_text = safe_get_text(date_elem)
+                if date_text:
+                    pub_date = normalize_date(date_text)
     except:
         pass
 
@@ -337,6 +346,9 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 if pub_date and pub_date != datetime.now().strftime('%Y-%m-%d'):
                     n_date = pub_date
 
+                # 날짜만 추출해서 비교
+                date_only = n_date.split('T')[0] if 'T' in n_date else n_date
+
                 if not content:
                     content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
@@ -346,11 +358,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 # Auto-classify category
                 cat_code, cat_name = detect_category(title, content)
 
+                # published_at 처리 (시간 포함 여부 확인)
+                if 'T' in n_date and '+09:00' in n_date:
+                     published_at = n_date
+                else:
+                     published_at = f"{n_date}T09:00:00+09:00"
+
                 article_data = {
                     'title': title,
                     'subtitle': subtitle,
                     'content': content,
-                    'published_at': f"{n_date}T09:00:00+09:00",
+                    'published_at': published_at,
                     'original_link': full_url,
                     'source': REGION_NAME,
                     'category': cat_name,

@@ -132,9 +132,15 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     try:
         # 날짜 추출 (본문 텍스트 패턴 또는 메타 영역)
         page_text = page.content()
-        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', page_text)
-        if date_match:
-            pub_date = date_match.group(1)
+        # Try finding date with time first
+        dt_match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', page_text)
+        if dt_match:
+            d_part, t_part = dt_match.groups()
+            pub_date = f"{d_part}T{t_part}:00+09:00"
+        else:
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', page_text)
+            if date_match:
+                pub_date = date_match.group(1)
         
         # 기관명 (담당부서) 추출
         # 텍스트 "기관명 :" 찾기
@@ -478,6 +484,13 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             if detail_date != datetime.now().strftime('%Y-%m-%d'):
                 n_date = detail_date
             
+            # 여기서 n_date가 시간 정보를 포함할 수 있으므로, 날짜 비교 시에는 날짜 부분만 추출
+            date_only = n_date.split('T')[0] if 'T' in n_date else n_date
+            if date_only < start_date:
+                # 이미 리스트에서 걸러졌겠지만, 상세 페이지 날짜가 더 과거일 경우 다시 체크
+                print(f"         [SKIP] 상세 페이지 날짜 필터: {n_date} < {start_date}")
+                continue
+            
             if not content:
                 content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
@@ -487,11 +500,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             # 카테고리 자동 분류
             cat_code, cat_name = detect_category(title, content)
 
+            # published_at 처리 (시간 포함 여부 확인)
+            if 'T' in n_date and '+09:00' in n_date:
+                 published_at = n_date
+            else:
+                 published_at = f"{n_date}T09:00:00+09:00"
+
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
                 'content': content,
-                'published_at': f"{n_date}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': full_url,
                 'source': department or REGION_NAME,
                 'category': cat_name,

@@ -156,16 +156,26 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
             date_elem = page.locator(sel)
             if date_elem.count() > 0:
                 date_text = safe_get_text(date_elem.first)
-                if date_text and re.search(r'\d{4}[-./]\d{1,2}[-./]\d{1,2}', date_text):
-                    pub_date = normalize_date(date_text)
-                    break
+                if date_text:
+                     # 1. 시간 포함 패턴 시도 (YYYY-MM-DD HH:MM)
+                     dt_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})\s+(\d{1,2}):(\d{1,2})', date_text)
+                     if dt_match:
+                         y, m, d, hh, mm = dt_match.groups()
+                         pub_date = f"{y}-{int(m):02d}-{int(d):02d}T{int(hh):02d}:{int(mm):02d}:00+09:00"
+                         break
+                     
+                     # 2. 날짜만 있는 패턴
+                     d_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_text)
+                     if d_match:
+                         pub_date = normalize_date(date_text)
+                         break
     except:
         pass
 
     return content, thumbnail_url, pub_date, None  # 성공 시 error_reason = None
 
 
-def collect_articles(days: int = 3, start_date: str = None, end_date: str = None) -> List[Dict]:
+def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     print(f"[{REGION_NAME}] 보도자료 수집 시작 (Strict Verification Mode)")
 
     # Ensure dev server is running before starting
@@ -228,7 +238,14 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
                     if n_date < start_date:
                         stop_collecting = True
                         break
-                    if n_date > end_date:
+                    
+                    # 날짜 비교 시 시간이 포함될 수 있으므로 날짜 부분만 비교
+                    if len(n_date) > 10: 
+                        n_date_only = n_date[:10]
+                    else:
+                        n_date_only = n_date
+
+                    if n_date_only > end_date:
                         continue
 
                     if title and full_url and 'boardView' in full_url:
@@ -249,8 +266,8 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
         # ============================================
         error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
-        # 전체 링크 처리 (max_articles는 bot-service에서 제어)
-        target_links = collected_links
+        # 전체 링크 처리
+        target_links = collected_links[:max_articles] if max_articles else collected_links
 
         for item in target_links:
             url = item['url']
@@ -277,12 +294,18 @@ def collect_articles(days: int = 3, start_date: str = None, end_date: str = None
             # 카테고리 자동 분류
             cat_code, cat_name = detect_category(title, content)
 
+            # published_at 처리 (시간 포함 여부 확인)
+            if 'T' in final_date and '+09:00' in final_date:
+                    published_at = final_date
+            else:
+                    published_at = f"{final_date}T09:00:00+09:00"
+
             # 데이터 객체 생성
             article_data = {
                 'title': title,
                 'subtitle': subtitle,
                 'content': content,
-                'published_at': f"{final_date}T09:00:00+09:00",
+                'published_at': published_at,
                 'original_link': url,
                 'source': REGION_NAME,
                 'category': cat_name,
@@ -338,6 +361,7 @@ def main():
     args = parser.parse_args()
     collect_articles(
         days=args.days,
+        max_articles=args.max_articles,
         start_date=args.start_date,
         end_date=args.end_date
     )
