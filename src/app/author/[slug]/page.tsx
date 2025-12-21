@@ -17,7 +17,6 @@ import {
     Facebook,
     Linkedin,
     Users,
-    Eye,
     Search,
     Mail,
     Building2,
@@ -58,6 +57,7 @@ interface Article {
     category: string;
     thumbnail_url: string | null;
     published_at: string;
+    ai_summary: string | null;
 }
 
 interface PageProps {
@@ -161,7 +161,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     // Also check author_name as fallback for older articles
     let articlesQuery = supabaseAdmin
         .from("posts")
-        .select("id, title, source, category, thumbnail_url, published_at, view_count", { count: "exact" })
+        .select("id, title, source, category, thumbnail_url, published_at, view_count, ai_summary", { count: "exact" })
         .eq("status", "published");
 
     // Query by user_id (primary) or author_name (fallback)
@@ -260,7 +260,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                     홈으로
                 </Link>
 
-                <div className="flex flex-col lg:flex-row gap-8">
+                <div className="flex flex-col lg:flex-row-reverse gap-8">
                     {/* 메인 컬럼 */}
                     <div className="flex-1 min-w-0">
 
@@ -369,10 +369,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                             <FileText className="w-4 h-4 text-gray-400" />
                                             <span className="text-sm">기사 <strong>{totalArticles.toLocaleString()}건</strong></span>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-gray-600" title="Views">
-                                            <Eye className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm">누적 조회 <strong>{(reporter.total_views || 0).toLocaleString()}</strong></span>
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -384,8 +381,8 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                 <Link
                                     href={`/author/${slug}?tab=articles`}
                                     className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'articles' || (!tab && !searchQuery)
-                                            ? "border-blue-600 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        ? "border-blue-600 text-blue-600"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                         }`}
                                 >
                                     <FileText className="w-4 h-4" />
@@ -394,8 +391,8 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                 <Link
                                     href={`/author/${slug}?tab=popular`}
                                     className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'popular'
-                                            ? "border-blue-600 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        ? "border-blue-600 text-blue-600"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                         }`}
                                 >
                                     <TrendingUp className="w-4 h-4" />
@@ -404,8 +401,8 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                 <Link
                                     href={`/author/${slug}?tab=featured`}
                                     className={`px-4 md:px-6 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${tab === 'featured'
-                                            ? "border-blue-600 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        ? "border-blue-600 text-blue-600"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                         }`}
                                 >
                                     <Sparkles className="w-4 h-4" />
@@ -445,24 +442,10 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                         href={`/news/${article.id}`}
                                         className="block bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group overflow-hidden"
                                     >
-                                        <div className="flex p-4 gap-4 md:gap-6">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded font-medium group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                                        {article.category}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400 bg-white">
-                                                        {new Date(article.published_at).toLocaleDateString("ko-KR")}
-                                                    </span>
-                                                </div>
-                                                <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2 leading-snug">
-                                                    {article.title}
-                                                </h3>
-                                                {/* 요약이 있다면 여기에 추가 */}
-                                            </div>
-
+                                        <div className="flex p-4 gap-4">
+                                            {/* Left: Large Thumbnail */}
                                             {article.thumbnail_url && (
-                                                <div className="w-24 h-24 md:w-32 md:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                <div className="w-32 h-24 md:w-40 md:h-28 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                                     <img
                                                         src={article.thumbnail_url}
                                                         alt=""
@@ -470,6 +453,20 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                                     />
                                                 </div>
                                             )}
+                                            {/* Right: Title + Summary + Date */}
+                                            <div className="flex-1 min-w-0 flex flex-col">
+                                                <h3 className="text-base md:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2 leading-snug">
+                                                    {article.title}
+                                                </h3>
+                                                {article.ai_summary && (
+                                                    <p className="text-sm text-gray-600 line-clamp-2 mb-2 flex-1">
+                                                        {article.ai_summary}
+                                                    </p>
+                                                )}
+                                                <span className="text-xs text-gray-400 mt-auto">
+                                                    {article.published_at.split('T')[0]}
+                                                </span>
+                                            </div>
                                         </div>
                                     </Link>
                                 ))}
