@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-type TabType = 'image' | 'recruitment' | 'video' | 'application';
+type TabType = 'recruitment' | 'video' | 'application';
 
 export default function PolytechnicPopup() {
-    const [activeTab, setActiveTab] = useState<TabType>('image');
+    const [activeTab, setActiveTab] = useState<TabType>('recruitment');
 
     const handleTabClick = (tab: TabType) => {
         if (tab === 'application') {
@@ -15,18 +15,6 @@ export default function PolytechnicPopup() {
         }
         setActiveTab(tab);
     };
-
-    const renderImageContent = () => (
-        <div className="flex-1 relative w-full h-full">
-            <Image
-                src="/images/ads/hi03.png"
-                alt="Korea Polytechnic Naju Campus"
-                fill
-                className="object-contain"
-                priority
-            />
-        </div>
-    );
 
     const renderRecruitmentContent = () => (
         <div className="flex-1 overflow-auto bg-gray-100">
@@ -72,19 +60,10 @@ export default function PolytechnicPopup() {
                 <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-2 sm:px-4 py-2 sm:py-3">
                     <div className="flex items-center gap-1 flex-wrap">
                         <button
-                            onClick={() => handleTabClick('image')}
-                            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'image'
-                                    ? 'bg-white text-blue-700 shadow-md'
-                                    : 'text-white/90 hover:bg-white/20'
-                                }`}
-                        >
-                            이미지
-                        </button>
-                        <button
                             onClick={() => handleTabClick('recruitment')}
                             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'recruitment'
-                                    ? 'bg-white text-blue-700 shadow-md'
-                                    : 'text-white/90 hover:bg-white/20'
+                                ? 'bg-white text-blue-700 shadow-md'
+                                : 'text-white/90 hover:bg-white/20'
                                 }`}
                         >
                             모집요강
@@ -92,8 +71,8 @@ export default function PolytechnicPopup() {
                         <button
                             onClick={() => handleTabClick('video')}
                             className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 ${activeTab === 'video'
-                                    ? 'bg-white text-blue-700 shadow-md'
-                                    : 'text-white/90 hover:bg-white/20'
+                                ? 'bg-white text-blue-700 shadow-md'
+                                : 'text-white/90 hover:bg-white/20'
                                 }`}
                         >
                             영상보기
@@ -119,7 +98,6 @@ export default function PolytechnicPopup() {
                 </div>
 
                 {/* Content Area - fills remaining space */}
-                {activeTab === 'image' && renderImageContent()}
                 {activeTab === 'recruitment' && renderRecruitmentContent()}
                 {activeTab === 'video' && renderVideoContent()}
             </div>
