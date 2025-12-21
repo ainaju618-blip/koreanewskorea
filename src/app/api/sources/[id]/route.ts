@@ -48,7 +48,7 @@ export async function PATCH(
             'name', 'code', 'region', 'org_type',
             'homepage_url', 'press_list_url', 'press_detail_pattern',
             'main_phone', 'contact_dept', 'contact_name', 'contact_phone', 'contact_email',
-            'scraper_status', 'tech_notes'
+            'scraper_status', 'tech_notes', 'ai_rewrite_enabled'
         ];
 
         for (const field of allowedFields) {

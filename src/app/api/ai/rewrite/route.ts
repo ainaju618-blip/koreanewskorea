@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
             style = "news",
             provider: requestProvider,
             apiKey: requestApiKey,
-            reporterId
+            reporterId,
+            systemPrompt: requestSystemPrompt // Allow override for testing
         } = body;
 
         if (!text) {
@@ -118,6 +119,11 @@ export async function POST(request: NextRequest) {
             provider = globalSettings.provider;
             apiKey = globalSettings.apiKeys[provider] || "";
             customPrompt = globalSettings.systemPrompt;
+        }
+
+        // Request-level override (for simulation/testing)
+        if (requestSystemPrompt) {
+            customPrompt = requestSystemPrompt;
         }
 
         // API 키 없으면 원본 반환

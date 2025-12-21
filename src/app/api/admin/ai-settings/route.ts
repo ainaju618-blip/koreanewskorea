@@ -13,7 +13,8 @@ const AI_SETTINGS_KEYS = [
     "ai_default_provider",
     "ai_global_keys",
     "ai_system_prompt",
-    "ai_saved_prompts"
+    "ai_saved_prompts",
+    "ai_saved_key_profiles"
 ];
 
 // GET: AI 설정 조회
@@ -35,6 +36,7 @@ export async function GET() {
             apiKeys: { gemini: string; claude: string; grok: string };
             systemPrompt: string;
             savedPrompts: { id: string; name: string; content: string }[];
+            savedKeyProfiles: { id: string; name: string; apiKeys: { gemini: string; claude: string; grok: string } }[];
         } = {
             enabled: false,
             defaultProvider: "gemini",
@@ -44,7 +46,8 @@ export async function GET() {
                 grok: "",
             },
             systemPrompt: "",
-            savedPrompts: []
+            savedPrompts: [],
+            savedKeyProfiles: []
         };
 
         if (data) {
@@ -66,6 +69,8 @@ export async function GET() {
                     settings.systemPrompt = String(row.value) || "";
                 } else if (row.key === "ai_saved_prompts") {
                     settings.savedPrompts = Array.isArray(row.value) ? row.value : [];
+                } else if (row.key === "ai_saved_key_profiles") {
+                    settings.savedKeyProfiles = Array.isArray(row.value) ? row.value : [];
                 }
             }
         }
@@ -82,7 +87,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
     try {
         const body = await request.json();
-        const { enabled, defaultProvider, apiKeys, systemPrompt, savedPrompts } = body;
+        const { enabled, defaultProvider, apiKeys, systemPrompt, savedPrompts, savedKeyProfiles } = body;
 
         // Upsert 설정
         const updates = [
@@ -111,6 +116,11 @@ export async function PATCH(request: NextRequest) {
                 key: "ai_saved_prompts",
                 value: savedPrompts || [],
                 description: "Saved prompt templates"
+            },
+            {
+                key: "ai_saved_key_profiles",
+                value: savedKeyProfiles || [],
+                description: "Saved API key profiles"
             },
         ];
 

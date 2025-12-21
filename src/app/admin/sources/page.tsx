@@ -20,8 +20,12 @@ import {
     Clock,
     AlertCircle,
     FileText,
-    Sparkles
+    Sparkles,
+    Settings,
+    List,
+    ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 import {
     PageHeader,
     ConfirmModal,
@@ -300,14 +304,40 @@ export default function SourcesManagementPage() {
 
     return (
         <div className="space-y-6">
+            {/* Top Navigation Tabs */}
+            <div className="flex items-center gap-4 border-b border-gray-200 pb-4 mb-6">
+                <h1 className="text-2xl font-bold">수집처 관리</h1>
+                <div className="flex-1" />
+                <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white text-blue-600 shadow-sm rounded-md">
+                        <List className="w-4 h-4" />
+                        수집처 관리
+                    </div>
+                    <Link
+                        href="/admin/settings/ai"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 rounded-md transition"
+                    >
+                        <Settings className="w-4 h-4" />
+                        AI 설정
+                    </Link>
+                </div>
+            </div>
+
+            <PageHeader
+                title=""
+                description="뉴스 수집 대상 기관을 관리하고 스크래퍼 상태를 모니터링합니다."
+                actions={
+                    <button
+                        onClick={() => openPanel()}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        새 수집처 등록
+                    </button>
+                }
+            />
             {/* Header */}
             <div className="flex flex-col gap-4">
-                <PageHeader
-                    title="수집처 관리"
-                    description="뉴스 수집 대상 기관의 기초 정보를 관리합니다. 스크래퍼 개발 시 참고 자료로 활용됩니다."
-                    icon={Building2}
-                    iconBgColor="bg-emerald-600"
-                />
                 <div className="flex gap-2">
                     <button
                         onClick={() => openPanel()}
@@ -428,10 +458,10 @@ export default function SourcesManagementPage() {
                                     </td>
                                     <td className="px-3 py-1.5">
                                         <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${source.region === '광주' ? 'bg-purple-100 text-purple-700' :
-                                                source.region === '전남' ? 'bg-blue-100 text-blue-700' :
-                                                    source.region === 'AI' ? 'bg-emerald-100 text-emerald-700' :
-                                                        source.region === '뉴스' ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-gray-100 text-gray-700'
+                                            source.region === '전남' ? 'bg-blue-100 text-blue-700' :
+                                                source.region === 'AI' ? 'bg-emerald-100 text-emerald-700' :
+                                                    source.region === '뉴스' ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-gray-100 text-gray-700'
                                             }`}>
                                             {source.region}
                                         </span>
@@ -712,6 +742,71 @@ export default function SourcesManagementPage() {
                     </div>
                 </div>
             </SlidePanel>
+
+            {/* Footer Navigation (User Request) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 pb-12">
+                {/* Left: API Key Issuance */}
+                <div className="bg-gray-900 rounded-xl p-6 text-white">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <ExternalLink className="w-5 h-5 text-yellow-400" />
+                        API 키 발급 바로가기
+                    </h3>
+                    <div className="grid grid-cols-1 gap-3">
+                        <a
+                            href="https://aistudio.google.com/app/apikey"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-blue-400 hover:text-blue-300 transition text-sm font-medium"
+                        >
+                            Google AI Studio (Gemini - 무료/Pay-as-you-go)
+                        </a>
+                        <a
+                            href="https://console.cloud.google.com/enable-mfa?redirectTo=%2F"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-indigo-400 hover:text-indigo-300 transition text-sm font-medium"
+                        >
+                            Google Cloud Console (유료/MFA 설정)
+                        </a>
+                        <a
+                            href="https://console.anthropic.com/settings/keys"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-amber-600 hover:text-amber-500 transition text-sm font-medium"
+                        >
+                            Anthropic Console (Claude)
+                        </a>
+                        <a
+                            href="https://console.x.ai/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition text-sm font-medium"
+                        >
+                            xAI Console (Grok)
+                        </a>
+                    </div>
+                </div>
+
+                {/* Right: Go to AI Settings */}
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white flex flex-col justify-between">
+                    <div>
+                        <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                            <Settings className="w-5 h-5" />
+                            AI 설정으로 이동
+                        </h3>
+                        <p className="text-blue-100 text-sm mb-6">
+                            발급받은 키를 등록하거나, 자동 기사 작성 시스템 프롬프트를 수정하려면 AI 설정 페이지로 이동하세요.
+                        </p>
+                    </div>
+                    <Link
+                        href="/admin/settings/ai"
+                        className="flex items-center justify-center gap-2 w-full py-4 bg-white text-blue-700 rounded-lg font-bold hover:bg-blue-50 transition shadow-lg"
+                    >
+                        AI 설정 페이지 바로가기
+                        <ArrowRight className="w-5 h-5" />
+                    </Link>
+                </div>
+            </div>
 
             {/* 삭제 확인 모달 */}
             <ConfirmModal
