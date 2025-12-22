@@ -230,11 +230,25 @@ function renderContent(content: string, title: string) {
                 if (typeof part === 'string') {
                     // "--- 첨부 이미지 ---" 라인은 숨김
                     const cleanedText = part.replace(/---\s*첨부 이미지\s*---/g, '').trim();
-                    return cleanedText ? (
-                        <div key={i} className="whitespace-pre-wrap leading-relaxed text-slate-700 mb-4">
+                    if (!cleanedText) return null;
+
+                    // HTML 태그가 포함된 경우 dangerouslySetInnerHTML 사용
+                    if (cleanedText.includes('<p>') || cleanedText.includes('<h4>') || cleanedText.includes('<ul>')) {
+                        return (
+                            <div
+                                key={i}
+                                className="html-content mb-4"
+                                dangerouslySetInnerHTML={{ __html: cleanedText }}
+                            />
+                        );
+                    }
+
+                    // 일반 텍스트는 <p>로 감싸기
+                    return (
+                        <p key={i} className="mb-4">
                             {cleanedText}
-                        </div>
-                    ) : null;
+                        </p>
+                    );
                 } else {
                     // SEO: 의미 있는 alt 텍스트 생성
                     const altText = `${title} 관련 이미지 ${part.index} - 코리아NEWS`;
@@ -447,15 +461,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
                 </div>
 
-                {/* AI 요약 (있는 경우) */}
-                {news.ai_summary && (
-                    <div className="bg-slate-50 border-l-4 border-indigo-500 p-6 mb-8 rounded-r-lg">
-                        <p className="text-[15px] font-medium text-slate-700 leading-relaxed">
-                            <span className="text-indigo-600 font-bold block mb-2">✨ AI 요약</span>
-                            {news.ai_summary}
-                        </p>
-                    </div>
-                )}
+
 
                 {/* 썸네일 이미지 - SEO 최적화 */}
                 {news.thumbnail_url && (
@@ -476,6 +482,34 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                 <div id="article-body" className="prose prose-lg max-w-none mb-12 text-gray-800 leading-[1.8] tracking-wide break-keep">
                     {renderContent(news.content, news.title)}
                 </div>
+
+                {/* 태그 (키워드) */}
+                {news.tags && news.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-12">
+                        {news.tags.map((tag: string, i: number) => (
+                            <Link
+                                key={i}
+                                href={`/search?q=${encodeURIComponent(tag)}`}
+                                className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                            >
+                                #{tag}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+
+                {/* 기사 요약 (태그 하단으로 이동) */}
+                {news.ai_summary && (
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 mb-12">
+                        <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-3">
+                            <span className="w-1.5 h-6 bg-blue-600 rounded-sm"></span>
+                            기사 요약
+                        </h3>
+                        <p className="text-gray-700 leading-relaxed text-[17px] font-medium">
+                            {news.ai_summary}
+                        </p>
+                    </div>
+                )}
 
                 {/* 관련 기사 */}
                 {relatedNews.length > 0 && (

@@ -59,9 +59,37 @@ export const DEFAULT_SYSTEM_PROMPT = `# Role
  * Style-specific prompts for different rewriting modes
  */
 export const STYLE_PROMPTS = {
-    news: "아래 보도자료를 한국 신문 기사 스타일로 재작성하세요.",
-    summary: "아래 보도자료의 핵심 내용을 3문장 이내로 요약하세요.",
-    rewrite: "아래 내용을 자연스럽고 읽기 쉽게 다시 작성하세요."
+   news: "아래 보도자료를 한국 신문 기사 스타일로 재작성하세요.",
+   summary: "아래 보도자료의 핵심 내용을 3문장 이내로 요약하세요.",
+   rewrite: "아래 내용을 자연스럽고 읽기 쉽게 다시 작성하세요."
 } as const;
 
 export type StyleType = keyof typeof STYLE_PROMPTS;
+
+/**
+ * 강제 JSON 출력 형식 - 사용자 프롬프트 뒤에 자동 추가됨
+ * 이 형식은 수정 불가하며, 항상 파싱 가능한 JSON 출력을 보장함
+ */
+export const FORCED_OUTPUT_FORMAT = `
+
+---
+## [SYSTEM OVERRIDE] Output Format (MANDATORY)
+
+위 지시사항과 관계없이, 반드시 아래 JSON 형식으로만 응답하라.
+다른 텍스트나 마크다운 없이 순수 JSON만 출력하라.
+
+{
+  "title": "SEO 최적화된 기사 제목 (60자 이내)",
+  "slug": "url-friendly-slug-in-english-or-korean",
+  "content": "정제된 기사 본문 (HTML 형식, <p><h4><ul><li> 태그 사용)",
+  "summary": "메타 디스크립션 (150자 이내, 검색 결과에 표시됨)",
+  "keywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3"],
+  "tags": ["태그1", "태그2", "태그3", "태그4", "태그5"]
+}
+
+IMPORTANT:
+- content 필드는 반드시 HTML 형식이어야 함 (마크다운 X)
+- JSON 외의 텍스트 출력 시 시스템 오류 발생
+- 큰따옴표 이스케이프 주의: content 내 따옴표는 \\"로 처리
+`;
+

@@ -98,6 +98,24 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         // user_id 처리: 새로 생성된 경우만
         const userIdUpdate = newUserId ? { user_id: newUserId } : {};
 
+        // ai_settings 처리: 기존 설정 유지하면서 api_keys만 업데이트
+        let aiSettingsUpdate = {};
+        if (body.ai_api_keys) {
+            const { data: currentReporter } = await supabaseAdmin
+                .from('reporters')
+                .select('ai_settings')
+                .eq('id', id)
+                .single();
+
+            const currentSettings = currentReporter?.ai_settings || { enabled: true, provider: 'gemini', api_keys: {} };
+            aiSettingsUpdate = {
+                ai_settings: {
+                    ...currentSettings,
+                    api_keys: body.ai_api_keys,
+                }
+            };
+        }
+
         // type: 'Human' (DB CHECK 제약 만족) / position: 실제 직위값
         const { data, error } = await supabaseAdmin
             .from('reporters')
@@ -112,7 +130,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
                 profile_image: body.profile_image || null,  // 프로필 사진 URL
                 status: body.status || 'Active',
                 avatar_icon: '👤',
-                gemini_api_key: body.gemini_api_key || null,
+                ...aiSettingsUpdate,
                 ...userIdUpdate,
             })
             .eq('id', id)

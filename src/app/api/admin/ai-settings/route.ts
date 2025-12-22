@@ -14,7 +14,11 @@ const AI_SETTINGS_KEYS = [
     "ai_global_keys",
     "ai_system_prompt",
     "ai_saved_prompts",
-    "ai_saved_key_profiles"
+    "ai_saved_key_profiles",
+    "ai_enabled_regions",
+    "ai_daily_limit",
+    "ai_monthly_token_limit",
+    "ai_max_input_length"
 ];
 
 // GET: AI 설정 조회
@@ -37,6 +41,10 @@ export async function GET() {
             systemPrompt: string;
             savedPrompts: { id: string; name: string; content: string }[];
             savedKeyProfiles: { id: string; name: string; apiKeys: { gemini: string; claude: string; grok: string } }[];
+            enabledRegions: string[];
+            dailyLimit: number;
+            monthlyTokenLimit: number;
+            maxInputLength: number;
         } = {
             enabled: false,
             defaultProvider: "gemini",
@@ -47,7 +55,11 @@ export async function GET() {
             },
             systemPrompt: "",
             savedPrompts: [],
-            savedKeyProfiles: []
+            savedKeyProfiles: [],
+            enabledRegions: [],
+            dailyLimit: 100,
+            monthlyTokenLimit: 1000000,
+            maxInputLength: 5000
         };
 
         if (data) {
@@ -60,10 +72,11 @@ export async function GET() {
                     const keys = typeof row.value === "object" ? row.value : {};
                     // Decrypt API keys for client display
                     const decryptedKeys = decryptApiKeys(keys);
+                    // Fallback to .env values if DB keys are empty
                     settings.apiKeys = {
-                        gemini: decryptedKeys.gemini || "",
-                        claude: decryptedKeys.claude || "",
-                        grok: decryptedKeys.grok || "",
+                        gemini: decryptedKeys.gemini || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
+                        claude: decryptedKeys.claude || process.env.ANTHROPIC_API_KEY || "",
+                        grok: decryptedKeys.grok || process.env.XAI_API_KEY || "",
                     };
                 } else if (row.key === "ai_system_prompt") {
                     settings.systemPrompt = String(row.value) || "";
@@ -71,6 +84,14 @@ export async function GET() {
                     settings.savedPrompts = Array.isArray(row.value) ? row.value : [];
                 } else if (row.key === "ai_saved_key_profiles") {
                     settings.savedKeyProfiles = Array.isArray(row.value) ? row.value : [];
+                } else if (row.key === "ai_enabled_regions") {
+                    settings.enabledRegions = Array.isArray(row.value) ? row.value : [];
+                } else if (row.key === "ai_daily_limit") {
+                    settings.dailyLimit = typeof row.value === "number" ? row.value : 100;
+                } else if (row.key === "ai_monthly_token_limit") {
+                    settings.monthlyTokenLimit = typeof row.value === "number" ? row.value : 1000000;
+                } else if (row.key === "ai_max_input_length") {
+                    settings.maxInputLength = typeof row.value === "number" ? row.value : 5000;
                 }
             }
         }
@@ -87,7 +108,10 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
     try {
         const body = await request.json();
-        const { enabled, defaultProvider, apiKeys, systemPrompt, savedPrompts, savedKeyProfiles } = body;
+        const {
+            enabled, defaultProvider, apiKeys, systemPrompt, savedPrompts, savedKeyProfiles,
+            enabledRegions, dailyLimit, monthlyTokenLimit, maxInputLength
+        } = body;
 
         // Upsert 설정
         const updates = [
@@ -121,6 +145,26 @@ export async function PATCH(request: NextRequest) {
                 key: "ai_saved_key_profiles",
                 value: savedKeyProfiles || [],
                 description: "Saved API key profiles"
+            },
+            {
+                key: "ai_enabled_regions",
+                value: enabledRegions || [],
+                description: "AI Rewrite enabled regions"
+            },
+            {
+                key: "ai_daily_limit",
+                value: dailyLimit ?? 100,
+                description: "Daily AI call limit"
+            },
+            {
+                key: "ai_monthly_token_limit",
+                value: monthlyTokenLimit ?? 1000000,
+                description: "Monthly token limit"
+            },
+            {
+                key: "ai_max_input_length",
+                value: maxInputLength ?? 5000,
+                description: "Max input length in characters"
             },
         ];
 

@@ -4,8 +4,9 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
 import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType } from "@/lib/ai-prompts";
+import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType, FORCED_OUTPUT_FORMAT } from "@/lib/ai-prompts";
 import { decryptApiKeys } from "@/lib/encryption";
+import { parseAIOutput, toDBUpdate } from "@/lib/ai-output-parser";
 
 type AIProvider = "gemini" | "claude" | "grok";
 
@@ -19,18 +20,19 @@ function getModel(provider: AIProvider, apiKey: string) {
     switch (provider) {
         case "gemini": {
             const google = createGoogleGenerativeAI({ apiKey });
-            // Stable: gemini-2.5-flash
-            // Preview: gemini-3-flash-preview (available from Dec 2025)
-            // To use 3.0 preview: return google("gemini-3-flash-preview");
+            // gemini-2.5-flash: Input FREE~$0.08/M, Output $0.30/M (2025.12)
+            // gemini-3-flash: Input $0.50/M, Output $3.00/M (Preview)
             return google("gemini-2.5-flash");
         }
         case "claude": {
             const anthropic = createAnthropic({ apiKey });
-            return anthropic("claude-3-5-sonnet-20241022");
+            // claude-sonnet-4-5-20250929: Input $3/M, Output $15/M (2025.12)
+            return anthropic("claude-sonnet-4-5-20250929");
         }
         case "grok": {
             const xai = createXai({ apiKey });
-            return xai("grok-2-1212");
+            // grok-4-latest: xAI latest model (2025.12)
+            return xai("grok-4-latest");
         }
         default:
             throw new Error(`지원하지 않는 AI 제공자: ${provider}`);
@@ -75,7 +77,9 @@ export async function POST(request: NextRequest) {
             provider: requestProvider,
             apiKey: requestApiKey,
             reporterId,
-            systemPrompt: requestSystemPrompt // Allow override for testing
+            systemPrompt: requestSystemPrompt, // Allow override for testing
+            parseJson = false, // true: JSON 파싱 모드, false: 기존 텍스트 모드
+            articleId // 기사 ID (DB 업데이트용)
         } = body;
 
         if (!text) {
@@ -144,12 +148,78 @@ export async function POST(request: NextRequest) {
         // Use custom prompt if available, otherwise use default
         const systemPromptToUse = customPrompt || DEFAULT_SYSTEM_PROMPT;
 
+        // JSON 파싱 모드면 강제 출력 형식 추가
+        const finalSystemPrompt = parseJson
+            ? systemPromptToUse + FORCED_OUTPUT_FORMAT
+            : systemPromptToUse;
+
         const { text: rewritten } = await generateText({
             model,
-            system: systemPromptToUse,
+            system: finalSystemPrompt,
             prompt: `${stylePrompt}\n\n---\n\n${text}`,
         });
 
+        // JSON 파싱 모드
+        if (parseJson) {
+            const parseResult = parseAIOutput(rewritten || "");
+
+            if (!parseResult.success) {
+                console.error("[ai/rewrite] Parse failed:", parseResult.error);
+                return NextResponse.json({
+                    success: false,
+                    error: parseResult.error,
+                    rawResponse: rewritten,
+                    provider,
+                    processedAt: new Date().toISOString()
+                }, { status: 422 });
+            }
+
+            // DB 업데이트용 객체
+            const dbUpdate = toDBUpdate(parseResult.data!);
+
+            // articleId가 있으면 DB 업데이트
+            if (articleId) {
+                const { error: updateError } = await supabaseAdmin
+                    .from("posts")
+                    .update({
+                        ...dbUpdate,
+                        status: "published",
+                        published_at: new Date().toISOString()
+                    })
+                    .eq("id", articleId);
+
+                if (updateError) {
+                    console.error("[ai/rewrite] DB update failed:", updateError);
+                    return NextResponse.json({
+                        success: false,
+                        error: "DB 업데이트 실패: " + updateError.message,
+                        parsed: parseResult.data,
+                        provider,
+                        processedAt: new Date().toISOString()
+                    }, { status: 500 });
+                }
+
+                return NextResponse.json({
+                    success: true,
+                    message: "기사가 AI 재가공되어 발행되었습니다.",
+                    parsed: parseResult.data,
+                    articleId,
+                    provider,
+                    processedAt: new Date().toISOString()
+                });
+            }
+
+            // articleId 없으면 파싱 결과만 반환 (미리보기용)
+            return NextResponse.json({
+                success: true,
+                parsed: parseResult.data,
+                dbUpdate,
+                provider,
+                processedAt: new Date().toISOString()
+            });
+        }
+
+        // 기존 텍스트 모드 (하위 호환)
         return NextResponse.json({
             rewritten: rewritten || text,
             provider,

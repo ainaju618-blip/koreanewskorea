@@ -104,7 +104,11 @@ export async function POST(req: NextRequest) {
                 status: 'Active',
                 user_id: userId,
                 access_level: 1, // 기본 권한 레벨
-                gemini_api_key: body.gemini_api_key || null,
+                ai_settings: body.ai_api_keys ? {
+                    enabled: true,
+                    provider: 'gemini',
+                    api_keys: body.ai_api_keys,
+                } : null,
             }])
             .select()
             .single();

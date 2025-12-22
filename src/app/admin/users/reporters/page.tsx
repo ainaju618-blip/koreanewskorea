@@ -53,6 +53,121 @@ const REGIONS = [
     { value: '신안군', label: '신안군' },
 ];
 
+// API 키 타입
+interface ApiKeys {
+    gemini: string;
+    claude: string;
+    grok: string;
+}
+
+type AIProvider = "gemini" | "claude" | "grok";
+
+// AI 키 입력 + 연결 테스트 섹션
+function AIKeySection({
+    formApiKeys,
+    setFormApiKeys
+}: {
+    formApiKeys: ApiKeys;
+    setFormApiKeys: (keys: ApiKeys) => void;
+}) {
+    const { showSuccess, showError } = useToast();
+    const [testing, setTesting] = useState<AIProvider | null>(null);
+    const [testResults, setTestResults] = useState<Record<AIProvider, boolean | null>>({
+        gemini: null, claude: null, grok: null
+    });
+
+    const handleTest = async (provider: AIProvider) => {
+        const apiKey = formApiKeys[provider];
+        if (!apiKey) {
+            showError("API 키를 먼저 입력해주세요.");
+            return;
+        }
+
+        setTesting(provider);
+        setTestResults(prev => ({ ...prev, [provider]: null }));
+
+        try {
+            const res = await fetch("/api/ai/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ provider, apiKey }),
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setTestResults(prev => ({ ...prev, [provider]: true }));
+                showSuccess(`${provider} API 연결 성공!`);
+            } else {
+                setTestResults(prev => ({ ...prev, [provider]: false }));
+                showError(data.error || "연결 테스트 실패");
+            }
+        } catch {
+            setTestResults(prev => ({ ...prev, [provider]: false }));
+            showError("테스트 중 오류가 발생했습니다.");
+        } finally {
+            setTesting(null);
+        }
+    };
+
+    const providers: { id: AIProvider; name: string; placeholder: string; color: string }[] = [
+        { id: "gemini", name: "Gemini", placeholder: "AIzaSy...", color: "blue" },
+        { id: "claude", name: "Claude", placeholder: "sk-ant-...", color: "orange" },
+        { id: "grok", name: "Grok", placeholder: "xai-...", color: "gray" },
+    ];
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 border-b pb-2 flex items-center gap-2">
+                <Key className="w-4 h-4 text-purple-600" />
+                AI 설정
+            </h3>
+            <div className="space-y-3">
+                {providers.map((p) => (
+                    <div key={p.id}>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            {p.name} API 키
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="password"
+                                value={formApiKeys[p.id] || ""}
+                                onChange={(e) => {
+                                    setFormApiKeys({ ...formApiKeys, [p.id]: e.target.value });
+                                    setTestResults(prev => ({ ...prev, [p.id]: null }));
+                                }}
+                                className={`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-${p.color}-500 outline-none font-mono`}
+                                placeholder={p.placeholder}
+                                autoComplete="off"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleTest(p.id)}
+                                disabled={testing === p.id || !formApiKeys[p.id]}
+                                className="px-3 py-2 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1"
+                                title="연결 테스트"
+                            >
+                                {testing === p.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : testResults[p.id] === true ? (
+                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                ) : testResults[p.id] === false ? (
+                                    <X className="w-3 h-3 text-red-600" />
+                                ) : (
+                                    <Bot className="w-3 h-3" />
+                                )}
+                                {testing === p.id ? "테스트중" : testResults[p.id] === true ? "성공" : testResults[p.id] === false ? "실패" : "테스트"}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <p className="text-xs text-gray-400">
+                키 입력 후 &quot;테스트&quot; 버튼으로 연결을 확인하세요.
+            </p>
+        </div>
+    );
+}
+
 // 기자 타입 정의
 interface Reporter {
     id: string;
@@ -67,7 +182,7 @@ interface Reporter {
     status: "Active" | "Inactive";
     avatar_icon: string;
     created_at: string;
-    gemini_api_key: string | null;
+    ai_settings: { enabled: boolean; provider: string; api_keys: ApiKeys } | null;
 }
 
 export default function ReportersPage() {
@@ -87,7 +202,7 @@ export default function ReportersPage() {
     const [formPassword, setFormPassword] = useState("");
     const [formBio, setFormBio] = useState("");
     const [formStatus, setFormStatus] = useState<"Active" | "Inactive">("Active");
-    const [formGeminiApiKey, setFormGeminiApiKey] = useState("");
+    const [formApiKeys, setFormApiKeys] = useState<ApiKeys>({ gemini: "", claude: "", grok: "" });
     const [formProfileImage, setFormProfileImage] = useState("");  // 프로필 사진 URL
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -129,7 +244,7 @@ export default function ReportersPage() {
         setFormPassword("");
         setFormBio("");
         setFormStatus("Active");
-        setFormGeminiApiKey("");
+        setFormApiKeys({ gemini: "", claude: "", grok: "" });
         setFormProfileImage("");
         setSelectedReporter(null);
     };
@@ -150,7 +265,11 @@ export default function ReportersPage() {
         setFormEmail(reporter.email || "");
         setFormBio(reporter.bio || "");
         setFormStatus(reporter.status);
-        setFormGeminiApiKey(reporter.gemini_api_key || "");
+        setFormApiKeys({
+            gemini: reporter.ai_settings?.api_keys?.gemini || "",
+            claude: reporter.ai_settings?.api_keys?.claude || "",
+            grok: reporter.ai_settings?.api_keys?.grok || "",
+        });
         setFormProfileImage(reporter.profile_image || "");
         setShowEditModal(true);
     };
@@ -190,7 +309,7 @@ export default function ReportersPage() {
                     password: formEmail ? (formPassword || null) : null,  // 이메일 있으면 비밀번호 설정
                     bio: formBio || null,
                     profile_image: formProfileImage || null,
-                    gemini_api_key: formGeminiApiKey || null,
+                    ai_api_keys: formApiKeys,
                 })
             });
 
@@ -244,7 +363,7 @@ export default function ReportersPage() {
                     profile_image: formProfileImage || null,
                     status: formStatus,
                     password: formPassword || null,  // 비밀번호 변경 (빈 문자열이면 null)
-                    gemini_api_key: formGeminiApiKey || null,
+                    ai_api_keys: formApiKeys,
                 })
             });
 
@@ -443,8 +562,8 @@ export default function ReportersPage() {
                         setFormBio={setFormBio}
                         formProfileImage={formProfileImage}
                         setFormProfileImage={setFormProfileImage}
-                        formGeminiApiKey={formGeminiApiKey}
-                        setFormGeminiApiKey={setFormGeminiApiKey}
+                        formApiKeys={formApiKeys}
+                        setFormApiKeys={setFormApiKeys}
                         isSubmitting={isSubmitting}
                         onSubmit={handleAddReporter}
                         onCancel={() => setShowAddModal(false)}
@@ -476,8 +595,8 @@ export default function ReportersPage() {
                         setFormProfileImage={setFormProfileImage}
                         formStatus={formStatus}
                         setFormStatus={setFormStatus}
-                        formGeminiApiKey={formGeminiApiKey}
-                        setFormGeminiApiKey={setFormGeminiApiKey}
+                        formApiKeys={formApiKeys}
+                        setFormApiKeys={setFormApiKeys}
                         isSubmitting={isSubmitting}
                         onSubmit={handleUpdateReporter}
                         onCancel={() => setShowEditModal(false)}
@@ -569,8 +688,8 @@ interface ReporterFormProps {
     setFormProfileImage?: (v: string) => void;
     formStatus?: "Active" | "Inactive";
     setFormStatus?: (v: "Active" | "Inactive") => void;
-    formGeminiApiKey?: string;
-    setFormGeminiApiKey?: (v: string) => void;
+    formApiKeys?: ApiKeys;
+    setFormApiKeys?: (v: ApiKeys) => void;
     isSubmitting: boolean;
     onSubmit: () => void;
     onCancel: () => void;
@@ -590,7 +709,7 @@ function ReporterForm({
     formBio, setFormBio,
     formProfileImage, setFormProfileImage,
     formStatus, setFormStatus,
-    formGeminiApiKey, setFormGeminiApiKey,
+    formApiKeys, setFormApiKeys,
     isSubmitting, onSubmit, onCancel, submitLabel, showStatus, isAddMode, isEditMode
 }: ReporterFormProps) {
     return (
@@ -745,31 +864,11 @@ function ReporterForm({
             </div>
 
             {/* 섹션 5: AI 설정 */}
-            {setFormGeminiApiKey && (
-                <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b pb-2 flex items-center gap-2">
-                        <Key className="w-4 h-4 text-purple-600" />
-                        AI 설정
-                    </h3>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Gemini API 키 <span className="text-gray-400">(Google AI Studio에서 발급)</span>
-                        </label>
-                        <input
-                            type="password"
-                            value={formGeminiApiKey}
-                            onChange={(e) => setFormGeminiApiKey(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none font-mono"
-                            placeholder="AIzaSy..."
-                            autoComplete="off"
-                        />
-                        <p className="text-xs text-gray-400 mt-1">
-                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
-                                Google AI Studio
-                            </a>에서 API 키를 발급받으세요.
-                        </p>
-                    </div>
-                </div>
+            {setFormApiKeys && (
+                <AIKeySection
+                    formApiKeys={formApiKeys!}
+                    setFormApiKeys={setFormApiKeys}
+                />
             )}
 
             {/* 버튼 */}
