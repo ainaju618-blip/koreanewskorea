@@ -5,9 +5,10 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType, FORCED_OUTPUT_FORMAT } from "@/lib/ai-prompts";
-import { decryptApiKeys } from "@/lib/encryption";
+import { decryptApiKeys, decryptApiKey, isEncrypted } from "@/lib/encryption";
 import { parseAIOutput, toDBUpdate, validateFactAccuracy } from "@/lib/ai-output-parser";
 import { canProcessArticle, logAIUsage } from "@/lib/ai-guard";
+import { getNextGeminiKey, GeminiKeyEntry, estimateCapacity } from "@/lib/ai-key-rotation";
 import fs from "fs";
 import path from "path";
 
@@ -53,7 +54,7 @@ function getModel(provider: AIProvider, apiKey: string) {
     }
 }
 
-// Get global AI settings
+// Get global AI settings (with multi-key support)
 async function getGlobalSettings() {
     const { data, error } = await supabaseAdmin
         .from("site_settings")
@@ -63,22 +64,64 @@ async function getGlobalSettings() {
     if (error) throw error;
 
     let provider: AIProvider = "gemini";
-    let apiKeys: Record<string, string> = {};
+    let rawKeys: Record<string, unknown> = {};
     let systemPrompt: string = "";
 
     for (const row of data || []) {
         if (row.key === "ai_default_provider") {
             provider = String(row.value).replace(/"/g, "") as AIProvider;
         } else if (row.key === "ai_global_keys") {
-            const rawKeys = typeof row.value === "object" ? row.value : {};
-            // Decrypt API keys from storage
-            apiKeys = decryptApiKeys(rawKeys);
+            rawKeys = typeof row.value === "object" ? row.value : {};
         } else if (row.key === "ai_system_prompt") {
             systemPrompt = String(row.value) || "";
         }
     }
 
-    return { provider, apiKeys, systemPrompt };
+    // Handle multi-key for Gemini
+    let selectedGeminiKey = "";
+    let keyLabel = "default";
+    let keyIndex = 0;
+
+    if (provider === "gemini") {
+        const geminiValue = rawKeys.gemini;
+
+        // Check if multi-key format (array)
+        if (Array.isArray(geminiValue) && geminiValue.length > 0) {
+            const keyResult = getNextGeminiKey({
+                gemini: geminiValue as GeminiKeyEntry[],
+                claude: "",
+                grok: ""
+            });
+            if (keyResult) {
+                selectedGeminiKey = keyResult.key;
+                keyLabel = keyResult.label;
+                keyIndex = keyResult.index;
+            }
+        }
+        // Legacy single key format
+        else if (typeof geminiValue === "string" && geminiValue) {
+            selectedGeminiKey = isEncrypted(geminiValue)
+                ? decryptApiKey(geminiValue)
+                : geminiValue;
+        }
+    }
+
+    // Decrypt other keys (claude, grok) - these are still single key
+    const otherKeys: Record<string, string> = {};
+    for (const [key, value] of Object.entries(rawKeys)) {
+        if (key !== "gemini" && typeof value === "string") {
+            otherKeys[key] = isEncrypted(value) ? decryptApiKey(value) : value;
+        }
+    }
+
+    // Build final API keys object
+    const apiKeys: Record<string, string> = {
+        gemini: selectedGeminiKey,
+        claude: otherKeys.claude || "",
+        grok: otherKeys.grok || ""
+    };
+
+    return { provider, apiKeys, systemPrompt, keyLabel, keyIndex };
 }
 
 // POST: AI 기사 재가공
@@ -212,7 +255,10 @@ export async function POST(request: NextRequest) {
                 provider: globalSettings.provider,
                 hasApiKey: !!globalSettings.apiKeys[provider],
                 apiKeyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}` : "EMPTY",
-                hasCustomPrompt: !!globalSettings.systemPrompt
+                hasCustomPrompt: !!globalSettings.systemPrompt,
+                // Multi-key rotation info
+                keyLabel: globalSettings.keyLabel,
+                keyIndex: globalSettings.keyIndex
             });
         }
 
