@@ -29,6 +29,7 @@ from urllib.parse import urljoin, unquote
 # 2. External Libraries
 # ============================================================
 from playwright.sync_api import sync_playwright, Page
+from playwright_stealth import Stealth
 
 # ============================================================
 # 3. Local Modules
@@ -345,6 +346,10 @@ def collect_articles(days: int = 3, max_articles: int = 30, dry_run: bool = Fals
             viewport={'width': 1280, 'height': 1024}
         )
         page = context.new_page()
+        
+        # Apply stealth mode to bypass bot detection
+        stealth = Stealth()
+        stealth.apply_stealth_sync(page)
         
         page_num = 1
         stop = False
