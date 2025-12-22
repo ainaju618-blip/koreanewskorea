@@ -194,7 +194,13 @@
       "Bash(vercel --prod --yes:*)",
       "Bash(npx vercel list:*)",
       "Bash(xargs:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 강진군/여수시 스크래퍼 playwright-stealth v2.0.0 호환 수정\n\n- gangjin_scraper.py: Stealth 클래스 적용\n- yeosu_scraper.py: Stealth 클래스 적용\n- 보성군 스크래퍼와 동일한 패턴 적용\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 강진군/여수시 스크래퍼 playwright-stealth v2.0.0 호환 수정\n\n- gangjin_scraper.py: Stealth 클래스 적용\n- yeosu_scraper.py: Stealth 클래스 적용\n- 보성군 스크래퍼와 동일한 패턴 적용\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx dotenv:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(node scripts/test-ai-rewrite.js:*)",
+      "Bash(node scripts/test-ai-rewrite-raw.js:*)",
+      "Bash(node scripts/test-ai-rewrite-boseong.js:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: AI 기사 재가공 v2.0 - 할루시네이션 방지 및 SEO 최적화\n\n- ai-prompts.ts: v2.0 프롬프트 적용\n  - 제목 1개 최적화 \\(숫자+지역명+핵심내용\\)\n  - 4가지 할루시네이션 방지 원칙 추가\n  - 기사 길이별 구조화 규칙\n  - extracted_numbers, extracted_quotes 필드 추가\n\n- ai-output-parser.ts: 팩트 검증 로직 추가\n  - validateFactAccuracy\\(\\) 함수 구현\n  - 숫자/인용구 추출 및 원본 대조 검증\n  - A/B/C/D 등급 시스템 \\(할루시네이션 기반\\)\n  - 텍스트 정규화 \\(curly quotes, whitespace\\)\n\n- route.ts: validation 결과 API 응답에 포함\n\n- 테스트 스크립트 3종 추가\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

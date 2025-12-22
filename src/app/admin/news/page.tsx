@@ -491,10 +491,64 @@ function AdminNewsListPage() {
                 return;
             }
 
+            // [STEP 1.5] Daily limit pre-check
+            addProgressLog('한도 체크', '일일 사용량 확인 중...', 'info');
+            const usageRes = await fetch('/api/admin/ai-usage');
+            let dailyLimit = 100; // default
+            let todayCount = 0;
+
+            // Get daily limit from settings
+            if (settingsRes.ok) {
+                const settingsData = await settingsRes.json();
+                dailyLimit = settingsData.settings?.dailyLimit || settingsData.dailyLimit || 100;
+            }
+
+            if (usageRes.ok) {
+                const usageData = await usageRes.json();
+                todayCount = usageData.today?.callCount || 0;
+                const remaining = dailyLimit - todayCount;
+
+                addProgressLog('한도 체크', `오늘 사용: ${todayCount}/${dailyLimit}, 남은 횟수: ${remaining}`,
+                    remaining >= ids.length ? 'success' : 'warning');
+
+                // Count how many articles need AI processing
+                let aiTargetCount = 0;
+                for (const id of ids) {
+                    const article = articles.find(a => a.id === id);
+                    if (article) {
+                        const regionMap: Record<string, string> = {
+                            '광주광역시': 'gwangju', '전라남도': 'jeonnam',
+                            '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
+                            '나주시': 'naju', '광양시': 'gwangyang',
+                            '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
+                            '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
+                            '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
+                            '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
+                            '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
+                            '진도군': 'jindo', '신안군': 'sinan',
+                            '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                        };
+                        const articleRegion = regionMap[article.source] || '';
+                        if (enabledRegions.includes(articleRegion)) {
+                            aiTargetCount++;
+                        }
+                    }
+                }
+
+                // Warn if not enough quota (considering double validation = 2x calls per article)
+                const estimatedCalls = aiTargetCount * 2; // Double validation
+                if (remaining < estimatedCalls) {
+                    addProgressLog('한도 경고',
+                        `AI 대상 ${aiTargetCount}개 (예상 호출 ${estimatedCalls}회) > 남은 한도 ${remaining}회`,
+                        'warning');
+                    addProgressLog('한도 경고', '일부 기사는 한도 초과로 실패할 수 있습니다.', 'warning');
+                }
+            }
+
             // [STEP 2] AI 활성화 - 각 기사별로 AI 재가공 처리
             addProgressLog('AI 재가공', `${ids.length}개 기사 AI 재가공 시작...`, 'info');
 
-            // 지역 매핑
+            // 지역 매핑 (already defined in pre-check, but keep for clarity)
             const regionMap: Record<string, string> = {
                 '광주광역시': 'gwangju', '전라남도': 'jeonnam',
                 '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
@@ -549,15 +603,31 @@ function AdminNewsListPage() {
 
                         if (rewriteRes.ok) {
                             const rewriteData = await rewriteRes.json();
-                            if (rewriteData.success || rewriteData.parsed) {
-                                addProgressLog('AI 재가공', `성공! (${(articleDuration / 1000).toFixed(1)}초)`, 'success', articleDuration);
+
+                            // Grade check: Only Grade A articles are published
+                            const grade = rewriteData.validation?.grade || 'unknown';
+                            const isGradeA = grade === 'A';
+
+                            if (rewriteData.success && isGradeA) {
+                                // Grade A: Successfully published with AI rewrite
+                                addProgressLog('AI 재가공', `Grade A - 발행 완료! (${(articleDuration / 1000).toFixed(1)}초)`, 'success', articleDuration);
                                 successCount++;
+                            } else if (rewriteData.cancelled) {
+                                // Grade B/C/D: AI rewrite cancelled, held as draft
+                                addProgressLog('AI 재가공', `Grade ${grade} - 보류됨 (할루시네이션 감지)`, 'warning', articleDuration);
+                                skipCount++;
+                            } else if (rewriteData.parsed) {
+                                // Preview mode (no articleId case) - should not happen in bulk approve
+                                addProgressLog('AI 재가공', `미리보기 모드`, 'info', articleDuration);
+                                skipCount++;
                             } else {
                                 addProgressLog('AI 재가공', `파싱 실패`, 'error', articleDuration);
                                 failCount++;
                             }
                         } else {
-                            addProgressLog('AI 재가공', `API 오류: HTTP ${rewriteRes.status}`, 'error');
+                            const errorData = await rewriteRes.json().catch(() => ({}));
+                            const errorMsg = errorData.error || `HTTP ${rewriteRes.status}`;
+                            addProgressLog('AI 재가공', `API 오류: ${errorMsg}`, 'error');
                             failCount++;
                         }
                     } catch (err) {
@@ -587,15 +657,16 @@ function AdminNewsListPage() {
             }
 
             const totalDuration = Date.now() - totalStartTime;
-            addProgressLog('완료', `총 ${successCount}개 성공, ${failCount}개 실패 (${(totalDuration / 1000).toFixed(1)}초)`,
-                failCount > 0 ? 'warning' : 'success', totalDuration);
+            const resultStatus = failCount > 0 ? 'warning' : (skipCount > 0 ? 'warning' : 'success');
+            addProgressLog('완료', `발행 ${successCount}개, 보류 ${skipCount}개, 실패 ${failCount}개 (${(totalDuration / 1000).toFixed(1)}초)`,
+                resultStatus, totalDuration);
 
             setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '완료' }));
 
-            if (failCount > 0) {
-                showWarning(`${successCount}개 AI 재가공 승인 완료, ${failCount}개 실패`);
+            if (failCount > 0 || skipCount > 0) {
+                showWarning(`발행 ${successCount}개, 보류 ${skipCount}개 (Grade B/C/D), 실패 ${failCount}개`);
             } else {
-                showSuccess(`${successCount}개 기사가 AI 재가공되어 승인되었습니다.`);
+                showSuccess(`${successCount}개 기사가 AI 재가공되어 발행되었습니다. (전체 Grade A)`);
             }
 
             setTimeout(() => {
@@ -709,7 +780,7 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk All Approve - Single API call (no batch processing)
+    // Bulk All Approve - Uses same AI processing as executeBulkApprove
     const executeBulkAllApprove = async () => {
         setIsBulkProcessing(true);
         try {
@@ -718,7 +789,8 @@ function AdminNewsListPage() {
             const listRes = await fetch(`/api/posts?limit=1000${statusParam}`);
             if (!listRes.ok) throw new Error('Failed to fetch articles');
             const listData = await listRes.json();
-            const allIds: string[] = (listData.posts || []).map((p: any) => p.id);
+            const allArticles = listData.posts || [];
+            const allIds: string[] = allArticles.map((p: any) => p.id);
 
             if (allIds.length === 0) {
                 showWarning('승인할 기사가 없습니다.');
@@ -726,32 +798,45 @@ function AdminNewsListPage() {
                 return;
             }
 
-            showInfo(`${allIds.length}개 기사 일괄 승인 중...`);
+            // Set all IDs as selected and call executeBulkApprove
+            // This ensures AI processing is applied uniformly
+            setSelectedIds(new Set(allIds));
 
-            // Single bulk API call
-            const res = await fetch('/api/posts', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: allIds, action: 'approve' })
+            // Store articles temporarily for the batch process
+            setArticles(prev => {
+                // Merge new articles with existing ones (avoid duplicates)
+                const existingIds = new Set(prev.map(a => a.id));
+                const newArticles = allArticles
+                    .filter((a: any) => !existingIds.has(a.id))
+                    .map((p: any) => ({
+                        id: p.id,
+                        title: p.title || '[제목 없음]',
+                        content: p.content || '',
+                        status: p.status || 'draft',
+                        created_at: p.created_at,
+                        published_at: p.published_at,
+                        views: p.view_count || 0,
+                        category: p.category || '미분류',
+                        source: p.source || 'Korea NEWS',
+                        author: p.author || 'AI Reporter',
+                        original_link: p.original_link,
+                        thumbnail_url: p.thumbnail_url,
+                        subtitle: p.subtitle || '',
+                        is_focus: p.is_focus || false
+                    }));
+                return [...prev, ...newArticles];
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message);
+            // Wait for state update
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-            const succeeded = data.success || 0;
-            const failed = data.failed || 0;
-
-            if (failed > 0) {
-                showWarning(`${succeeded}개 일괄 승인 완료, ${failed}개 실패`);
-            } else {
-                showSuccess(`${succeeded}개 기사가 일괄 승인되었습니다.`);
-            }
-            setSelectedIds(new Set());
-            fetchArticles();
+            // Use executeBulkApprove which handles AI processing
+            setIsBulkProcessing(false); // Reset, executeBulkApprove will set it again
+            await executeBulkApprove();
+            // executeBulkApprove handles cleanup and fetchArticles
         } catch (error) {
             console.error('Bulk all approve error:', error);
             showError('일괄 승인 처리 중 오류가 발생했습니다.');
-        } finally {
             setIsBulkProcessing(false);
         }
     };

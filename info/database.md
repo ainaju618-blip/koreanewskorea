@@ -38,6 +38,10 @@
 | `is_focus` | boolean | 포커스 기사 여부 |
 | `approved_by` | uuid | 승인자 ID (FK → reporters) |
 | `approved_at` | timestamptz | 승인 일시 |
+| `ai_processed` | boolean | AI 재가공 여부 |
+| `ai_processed_at` | timestamptz | AI 재가공 일시 |
+| `ai_validation_grade` | text | AI 검증 등급 (A/B/C/D) |
+| `ai_validation_warnings` | text[] | AI 검증 경고 목록 |
 
 ### reporters (기자)
 | 컬럼 | 타입 | 설명 |

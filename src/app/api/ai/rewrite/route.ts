@@ -319,55 +319,200 @@ export async function POST(request: NextRequest) {
                 extracted_quotes: parseResult.data?.extracted_quotes
             });
 
-            // [DEBUG] STEP 7.5: Fact validation
-            const validationResult = validateFactAccuracy(text, parseResult.data!);
-            log("STEP-7.5-VALIDATION", {
-                isValid: validationResult.isValid,
-                grade: validationResult.grade,
-                warnings: validationResult.warnings,
-                numberCheck: validationResult.numberCheck,
-                quoteCheck: validationResult.quoteCheck
+            // [DEBUG] STEP 7.5: Fact validation (1st pass)
+            const validationResult1 = validateFactAccuracy(text, parseResult.data!);
+            log("STEP-7.5-VALIDATION-PASS1", {
+                isValid: validationResult1.isValid,
+                grade: validationResult1.grade,
+                warnings: validationResult1.warnings,
+                numberCheck: validationResult1.numberCheck,
+                quoteCheck: validationResult1.quoteCheck
             });
 
-            // DB update object
-            const dbUpdate = toDBUpdate(parseResult.data!);
+            // Double validation: If 1st pass is Grade A, do 2nd pass
+            let finalGrade = validationResult1.grade;
+            let finalValidation = validationResult1;
+            let finalParseResult = parseResult;
 
-            // [DEBUG] STEP 8: DB 업데이트
+            if (validationResult1.grade === "A" && articleId) {
+                log("STEP-7.6-DOUBLE-VALIDATION-START", {
+                    message: "1st pass Grade A, starting 2nd validation pass"
+                });
+
+                // 2nd AI call for double validation
+                const startTime2 = Date.now();
+                const { text: rewritten2, usage: usage2 } = await generateText({
+                    model,
+                    system: finalSystemPrompt,
+                    prompt: `${stylePrompt}\n\n---\n\n${text}`,
+                });
+                const elapsed2 = Date.now() - startTime2;
+
+                log("STEP-7.6-AI-RESPONSE-PASS2", {
+                    elapsed: `${elapsed2}ms`,
+                    responseLength: rewritten2?.length || 0,
+                    usage: usage2
+                });
+
+                // Log 2nd pass usage
+                const inputTokens2 = (usage2 as Record<string, number>)?.promptTokens || Math.ceil(text.length / 4);
+                const outputTokens2 = (usage2 as Record<string, number>)?.completionTokens || Math.ceil((rewritten2?.length || 0) / 4);
+                await logAIUsage(region, provider, inputTokens2, outputTokens2, articleId);
+
+                // Parse 2nd pass result
+                const parseResult2 = parseAIOutput(rewritten2 || "");
+
+                if (parseResult2.success) {
+                    // Validate 2nd pass
+                    const validationResult2 = validateFactAccuracy(text, parseResult2.data!);
+                    log("STEP-7.6-VALIDATION-PASS2", {
+                        isValid: validationResult2.isValid,
+                        grade: validationResult2.grade,
+                        warnings: validationResult2.warnings
+                    });
+
+                    // Both passes must be Grade A to publish
+                    if (validationResult2.grade === "A") {
+                        log("STEP-7.6-DOUBLE-VALIDATION-SUCCESS", {
+                            message: "Both passes Grade A - approved for publishing",
+                            pass1Grade: validationResult1.grade,
+                            pass2Grade: validationResult2.grade
+                        });
+                        // Use 2nd pass result (more recent)
+                        finalParseResult = parseResult2;
+                        finalValidation = validationResult2;
+                        finalGrade = "A";
+                    } else {
+                        log("STEP-7.6-DOUBLE-VALIDATION-FAILED", {
+                            message: "2nd pass not Grade A - rejected",
+                            pass1Grade: validationResult1.grade,
+                            pass2Grade: validationResult2.grade
+                        });
+                        // Downgrade to the worse grade
+                        finalGrade = validationResult2.grade;
+                        finalValidation = validationResult2;
+                    }
+                } else {
+                    log("STEP-7.6-PARSE2-FAILED", {
+                        error: parseResult2.error,
+                        message: "2nd pass parse failed - treating as failed validation"
+                    });
+                    finalGrade = "D"; // Parse failure = worst grade
+                }
+            }
+
+            // Use final validation result
+            const validationResult = finalValidation;
+
+            // DB update object (use final parse result)
+            const dbUpdate = toDBUpdate(finalParseResult.data!);
+
+            // [DEBUG] STEP 8: DB update
             if (articleId) {
-                log("STEP-8-DB-UPDATE-START", { articleId, dbUpdate });
+                // Grade-based publishing decision
+                // ONLY Grade A (both passes) = apply AI rewrite + publish
+                // Grade B/C/D = cancel AI rewrite (keep original), hold as draft
+                const isGradeA = finalGrade === "A";
 
-                const { error: updateError } = await supabaseAdmin
-                    .from("posts")
-                    .update({
+                log("STEP-8-DB-UPDATE-START", {
+                    articleId,
+                    validationGrade: validationResult.grade,
+                    isGradeA,
+                    action: isGradeA ? "APPLY_AND_PUBLISH" : "CANCEL_AND_HOLD"
+                });
+
+                if (isGradeA) {
+                    // Grade A: Apply AI rewrite and publish (passed double validation)
+                    const updateData: Record<string, unknown> = {
                         ...dbUpdate,
                         status: "published",
-                        published_at: new Date().toISOString()
-                    })
-                    .eq("id", articleId);
+                        published_at: new Date().toISOString(),
+                        ai_validation_grade: validationResult.grade,
+                        ai_double_validated: true
+                    };
 
-                if (updateError) {
-                    log("STEP-8-DB-UPDATE-FAILED", { error: updateError.message });
-                    console.error("[ai/rewrite] DB update failed:", updateError);
+                    const { error: updateError } = await supabaseAdmin
+                        .from("posts")
+                        .update(updateData)
+                        .eq("id", articleId);
+
+                    if (updateError) {
+                        log("STEP-8-DB-UPDATE-FAILED", { error: updateError.message });
+                        console.error("[ai/rewrite] DB update failed:", updateError);
+                        return NextResponse.json({
+                            success: false,
+                            error: "DB 업데이트 실패: " + updateError.message,
+                            parsed: parseResult.data,
+                            provider,
+                            processedAt: new Date().toISOString()
+                        }, { status: 500 });
+                    }
+
+                    log("STEP-8-DB-UPDATE-SUCCESS", {
+                        articleId,
+                        status: "published",
+                        message: "Grade A - Article published with AI rewrite"
+                    });
+
                     return NextResponse.json({
-                        success: false,
-                        error: "DB 업데이트 실패: " + updateError.message,
-                        parsed: parseResult.data,
+                        success: true,
+                        published: true,
+                        message: "기사가 AI 재가공되어 발행되었습니다. (이중 검증 통과, 등급: A)",
+                        parsed: finalParseResult.data,
+                        validation: validationResult,
+                        doubleValidation: true,
+                        articleId,
                         provider,
                         processedAt: new Date().toISOString()
-                    }, { status: 500 });
+                    });
+                } else {
+                    // Grade B/C/D: Cancel AI rewrite, keep original, hold as draft
+                    // Only update status and validation info, NOT content
+                    const holdData: Record<string, unknown> = {
+                        status: "draft",
+                        ai_validation_grade: validationResult.grade,
+                        ai_validation_warnings: validationResult.warnings,
+                        ai_processed: false // Mark as not processed (original kept)
+                    };
+
+                    const { error: updateError } = await supabaseAdmin
+                        .from("posts")
+                        .update(holdData)
+                        .eq("id", articleId);
+
+                    if (updateError) {
+                        log("STEP-8-HOLD-FAILED", { error: updateError.message });
+                        console.error("[ai/rewrite] Hold update failed:", updateError);
+                        return NextResponse.json({
+                            success: false,
+                            error: "보류 처리 실패: " + updateError.message,
+                            validation: validationResult,
+                            provider,
+                            processedAt: new Date().toISOString()
+                        }, { status: 500 });
+                    }
+
+                    log("STEP-8-HOLD-SUCCESS", {
+                        articleId,
+                        status: "draft",
+                        grade: validationResult.grade,
+                        message: "AI rewrite cancelled, original kept, held as draft"
+                    });
+
+                    // Determine which pass failed for the message
+                    const failedPass = validationResult1.grade !== "A" ? "1차" : "2차";
+                    return NextResponse.json({
+                        success: false,
+                        published: false,
+                        cancelled: true,
+                        message: `AI 재가공이 취소되었습니다. ${failedPass} 검증 등급(${finalGrade})이 기준 미달입니다. 원본이 유지되며 보류 처리되었습니다.`,
+                        validation: validationResult,
+                        doubleValidation: validationResult1.grade === "A", // True if 1st pass was A but 2nd failed
+                        articleId,
+                        provider,
+                        processedAt: new Date().toISOString()
+                    });
                 }
-
-                log("STEP-8-DB-UPDATE-SUCCESS", { articleId, message: "Article published" });
-
-                return NextResponse.json({
-                    success: true,
-                    message: "기사가 AI 재가공되어 발행되었습니다.",
-                    parsed: parseResult.data,
-                    validation: validationResult,
-                    articleId,
-                    provider,
-                    processedAt: new Date().toISOString()
-                });
             }
 
             // articleId not provided - return preview only
