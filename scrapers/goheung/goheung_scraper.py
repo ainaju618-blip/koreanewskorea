@@ -385,6 +385,7 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         
         page_num = 1
         max_pages = 10  # 최대 10페이지까지 탐색
+        collected_count = 0  # Initialize collected_count
         
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)

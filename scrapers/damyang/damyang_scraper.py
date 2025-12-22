@@ -283,6 +283,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
         page_num = 1
         stop = False
+        collected_count = 0  # Initialize collected_count
 
         while page_num <= 5 and not stop and collected_count < max_articles:
             # Try URL parameter pagination (&page=N)

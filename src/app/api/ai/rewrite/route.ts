@@ -141,19 +141,26 @@ export async function POST(request: NextRequest) {
         }
 
         // [DEBUG] STEP 2: AI Guard 체크
+        // 테스트 모드(API 키 직접 전달)인 경우 Guard 체크 우회
+        const isTestMode = !!(requestProvider && requestApiKey);
         const region = body.region || 'unknown';
-        log("STEP-2-GUARD-CHECK", { region, textLength: text.length });
+        log("STEP-2-GUARD-CHECK", { region, textLength: text.length, isTestMode });
 
-        const guardCheck = await canProcessArticle(region, text.length);
-        log("STEP-2-GUARD-RESULT", guardCheck);
+        if (!isTestMode) {
+            const guardCheck = await canProcessArticle(region, text.length);
+            log("STEP-2-GUARD-RESULT", guardCheck);
 
-        if (!guardCheck.allowed) {
-            log("STEP-2-GUARD-BLOCKED", { reason: guardCheck.reason, code: guardCheck.code });
-            return NextResponse.json(
-                { error: guardCheck.reason, code: guardCheck.code },
-                { status: 429 }
-            );
+            if (!guardCheck.allowed) {
+                log("STEP-2-GUARD-BLOCKED", { reason: guardCheck.reason, code: guardCheck.code });
+                return NextResponse.json(
+                    { error: guardCheck.reason, code: guardCheck.code },
+                    { status: 429 }
+                );
+            }
+        } else {
+            log("STEP-2-GUARD-BYPASSED", { reason: "Test mode - API key provided directly" });
         }
+
 
         let provider: AIProvider;
         let apiKey: string;

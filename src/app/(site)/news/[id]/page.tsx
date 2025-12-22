@@ -498,18 +498,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     </div>
                 )}
 
-                {/* 기사 요약 (태그 하단으로 이동) */}
-                {news.ai_summary && (
-                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 mb-12">
-                        <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-3">
-                            <span className="w-1.5 h-6 bg-blue-600 rounded-sm"></span>
-                            기사 요약
-                        </h3>
-                        <p className="text-gray-700 leading-relaxed text-[17px] font-medium">
-                            {news.ai_summary}
-                        </p>
-                    </div>
-                )}
+                {/* 기사 요약 박스 제거됨 - AI가 본문 상단에 요약을 이미 포함하므로 중복 */}
 
                 {/* 관련 기사 */}
                 {relatedNews.length > 0 && (
