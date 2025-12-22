@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import NewsGrid, { NewsGridSkeleton } from '@/components/NewsGrid';
 import Sidebar, { SidebarSkeleton } from '@/components/Sidebar';
+import HomeHero from '@/components/home/HomeHero';
 
 // Revalidate every 60 seconds - ensures fresh news data
 export const revalidate = 60;
@@ -20,6 +21,9 @@ export default function Home() {
     <main className="min-h-screen bg-white font-sans">
       {/* Container - Centered 1400px (WebFrame Spec) */}
       <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
+
+        {/* ===== ZONE 1: HERO SECTION with AdBanner ===== */}
+        <HomeHero />
 
         {/* ===== SECTION GRIDS (Kangwon Ilbo Style) ===== */}
         <div className="flex flex-col lg:flex-row gap-8">
