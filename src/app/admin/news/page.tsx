@@ -72,6 +72,40 @@ function AdminNewsListPage() {
     const [isApproving, setIsApproving] = useState(false);
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
+    // AI 승인 진행 상황 모달 상태
+    interface ProgressLog {
+        timestamp: string;
+        step: string;
+        message: string;
+        duration?: number;  // ms
+        status: 'info' | 'success' | 'error' | 'warning';
+    }
+    const [progressModal, setProgressModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        logs: ProgressLog[];
+        currentStep: string;
+        startTime: number;
+        isComplete: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        logs: [],
+        currentStep: '',
+        startTime: 0,
+        isComplete: false
+    });
+
+    // 진행 상황 로그 추가 함수
+    const addProgressLog = (step: string, message: string, status: ProgressLog['status'] = 'info', duration?: number) => {
+        const timestamp = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+        setProgressModal(prev => ({
+            ...prev,
+            currentStep: step,
+            logs: [...prev.logs, { timestamp, step, message, status, duration }]
+        }));
+    };
+
     // 확인 모달 상태 (window.confirm 대체)
     const [confirmModal, setConfirmModal] = useState<{
         isOpen: boolean;
@@ -646,17 +680,123 @@ function AdminNewsListPage() {
     };
 
 
-    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 + 자동 기자 배정)
+    // 실제 단일 승인 실행 (Cloudinary 이미지 최적화 + AI 재가공 + 자동 기자 배정)
     const executeSingleApprove = async () => {
         if (!previewArticle) return;
 
+        const totalStartTime = Date.now();
+
+        // 진행 모달 열기
+        setProgressModal({
+            isOpen: true,
+            title: `기사 승인 처리 중`,
+            logs: [],
+            currentStep: '초기화',
+            startTime: totalStartTime,
+            isComplete: false
+        });
+
         setIsApproving(true);
+
+        addProgressLog('시작', `기사: ${previewArticle.title.substring(0, 40)}...`, 'info');
+        addProgressLog('시작', `출처: ${previewArticle.source}`, 'info');
+
         try {
             let finalThumbnailUrl = previewArticle.thumbnail_url;
+            let finalTitle = editTitle;
+            let finalContent = editContent;
+            let aiProcessed = false;
+
+            // 0. AI 설정 확인 - 이 지역이 AI 재가공 활성화되어 있는지 체크
+            const step0Start = Date.now();
+            addProgressLog('AI 설정', 'AI 설정 확인 중...', 'info');
+
+            try {
+                const settingsRes = await fetch('/api/admin/ai-settings');
+                const step0Duration = Date.now() - step0Start;
+
+                if (settingsRes.ok) {
+                    const settings = await settingsRes.json();
+                    const aiEnabled = settings.enabled === true;
+                    const enabledRegions: string[] = settings.enabledRegions || [];
+
+                    addProgressLog('AI 설정', `마스터 스위치: ${aiEnabled ? 'ON' : 'OFF'} (${step0Duration}ms)`, aiEnabled ? 'success' : 'warning', step0Duration);
+                    addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
+
+                    // 기사의 region이 AI 활성화 지역에 포함되어 있는지 확인
+                    // previewArticle.source에서 region 추출 (예: "광주광역시" -> "gwangju")
+                    const regionMap: Record<string, string> = {
+                        '광주광역시': 'gwangju', '전라남도': 'jeonnam',
+                        '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
+                        '나주시': 'naju', '광양시': 'gwangyang',
+                        '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
+                        '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
+                        '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
+                        '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
+                        '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
+                        '진도군': 'jindo', '신안군': 'sinan',
+                        '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                    };
+
+                    const articleRegion = regionMap[previewArticle.source] || '';
+                    const shouldRewrite = aiEnabled && enabledRegions.includes(articleRegion);
+
+                    addProgressLog('AI 설정', `이 기사 지역: ${previewArticle.source} -> ${articleRegion || '(매핑없음)'}`, 'info');
+                    addProgressLog('AI 설정', `AI 재가공 대상: ${shouldRewrite ? 'YES' : 'NO'}`, shouldRewrite ? 'success' : 'warning');
+
+                    if (shouldRewrite) {
+                        const step1Start = Date.now();
+                        addProgressLog('AI 재가공', `AI 재가공 시작 (본문 ${editContent.length}자)...`, 'info');
+
+                        const rewriteRes = await fetch('/api/ai/rewrite', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: editContent,
+                                parseJson: true,
+                                articleId: previewArticle.id,
+                                region: articleRegion
+                            })
+                        });
+
+                        const step1Duration = Date.now() - step1Start;
+
+                        if (rewriteRes.ok) {
+                            const rewriteData = await rewriteRes.json();
+                            if (rewriteData.parsed && rewriteData.parsed.title && rewriteData.parsed.content) {
+                                finalTitle = rewriteData.parsed.title;
+                                finalContent = rewriteData.parsed.content;
+                                aiProcessed = true;
+                                addProgressLog('AI 재가공', `완료! (${(step1Duration / 1000).toFixed(1)}초)`, 'success', step1Duration);
+                                addProgressLog('AI 재가공', `새 제목: ${finalTitle.substring(0, 35)}...`, 'success');
+                            } else {
+                                const errorDetail = rewriteData.parseError || '필수 필드 누락';
+                                addProgressLog('AI 재가공', `파싱 실패: ${errorDetail}`, 'error', step1Duration);
+                                throw new Error(`AI 재가공 실패: ${errorDetail}\n\n이 기사는 발행되지 않았습니다.`);
+                            }
+                        } else {
+                            const errorData = await rewriteRes.json().catch(() => ({}));
+                            const errorMsg = errorData.error || errorData.message || `HTTP ${rewriteRes.status}`;
+                            addProgressLog('AI 재가공', `API 오류: ${errorMsg}`, 'error', step1Duration);
+                            throw new Error(`AI 재가공 API 오류: ${errorMsg}\n\n이 기사는 발행되지 않았습니다.`);
+                        }
+                    } else {
+                        addProgressLog('AI 재가공', '스킵 (비활성 지역)', 'warning');
+                    }
+                }
+            } catch (aiErr) {
+                // AI 관련 에러는 게시 중지
+                if (aiErr instanceof Error && aiErr.message.includes('AI 재가공')) {
+                    throw aiErr;
+                }
+                addProgressLog('AI 설정', `설정 확인 실패 (원본으로 진행)`, 'warning');
+            }
 
             // 1. 외부 이미지가 있으면 Cloudinary로 업로드
             if (previewArticle.thumbnail_url && !previewArticle.thumbnail_url.includes('res.cloudinary.com')) {
-                console.log('[Approve] Cloudinary upload starting...');
+                const step2Start = Date.now();
+                addProgressLog('이미지', 'Cloudinary 업로드 시작...', 'info');
+
                 try {
                     const uploadRes = await fetch('/api/upload/from-url', {
                         method: 'POST',
@@ -668,25 +808,35 @@ function AdminNewsListPage() {
                     });
 
                     const uploadData = await uploadRes.json();
+                    const step2Duration = Date.now() - step2Start;
 
                     if (uploadData.cloudinaryUrl && !uploadData.error) {
                         finalThumbnailUrl = uploadData.cloudinaryUrl;
-                        console.log('[Approve] Cloudinary upload complete:', finalThumbnailUrl);
+                        addProgressLog('이미지', `업로드 완료 (${(step2Duration / 1000).toFixed(1)}초)`, 'success', step2Duration);
                     } else {
-                        console.warn('[Approve] Cloudinary upload failed, using original URL:', uploadData.error);
+                        addProgressLog('이미지', `업로드 실패: ${uploadData.error || 'Unknown'}`, 'warning', step2Duration);
                     }
                 } catch (uploadErr) {
-                    console.warn('[Approve] Cloudinary upload error, using original URL:', uploadErr);
-                    // Graceful degradation - continue with approval
+                    addProgressLog('이미지', `업로드 에러 (원본 사용)`, 'warning');
                 }
+            } else {
+                addProgressLog('이미지', previewArticle.thumbnail_url ? '이미 Cloudinary (스킵)' : '이미지 없음', 'info');
             }
 
-            // 2. DB update (thumbnail_url included, auto-assign handled by API)
-            const bodyData: any = {
+            // 2. DB update
+            const step3Start = Date.now();
+            addProgressLog('DB 저장', 'DB 업데이트 중...', 'info');
+
+            const bodyData: Record<string, unknown> = {
                 status: 'published',
-                thumbnail_url: finalThumbnailUrl
+                title: finalTitle,
+                content: finalContent,
+                thumbnail_url: finalThumbnailUrl,
+                ai_processed: aiProcessed
             };
-            // Keep original published_at if exists, otherwise API will set it
+            if (aiProcessed) {
+                bodyData.ai_processed_at = new Date().toISOString();
+            }
             if (!previewArticle.published_at) {
                 bodyData.published_at = new Date().toISOString();
             }
@@ -697,33 +847,61 @@ function AdminNewsListPage() {
                 body: JSON.stringify(bodyData)
             });
 
+            const step3Duration = Date.now() - step3Start;
+
             if (res.ok) {
                 const responseData = await res.json();
+                addProgressLog('DB 저장', `완료 (${step3Duration}ms)`, 'success', step3Duration);
 
                 setArticles(articles.map(a =>
                     a.id === previewArticle.id
-                        ? { ...a, status: 'published', published_at: a.published_at || new Date().toISOString(), thumbnail_url: finalThumbnailUrl }
+                        ? { ...a, status: 'published', title: finalTitle, content: finalContent, published_at: a.published_at || new Date().toISOString(), thumbnail_url: finalThumbnailUrl }
                         : a
                 ));
 
-                // Show success message with auto-assigned reporter info
+                // 최종 결과
+                const totalDuration = Date.now() - totalStartTime;
+                const aiText = aiProcessed ? ' (AI 재가공)' : '';
+
+                addProgressLog('완료', `총 소요 시간: ${(totalDuration / 1000).toFixed(1)}초`, 'success', totalDuration);
+
                 if (responseData._assignment) {
-                    const { reporter, reason } = responseData._assignment;
-                    const reasonText = reason === 'region' ? '(region reporter)'
-                        : reason === 'global' ? '(global reporter)'
-                            : '(system default)';
-                    showSuccess(`Published! Assigned to: ${reporter} ${reasonText}`);
-                } else {
-                    showSuccess("Article published to main page!");
+                    addProgressLog('완료', `기자 배정: ${responseData._assignment.reporter}`, 'success');
                 }
-                closePreview();
-                fetchArticles();
+
+                addProgressLog('완료', `기사 발행 성공!${aiText}`, 'success');
+
+                // 모달 완료 상태로 변경
+                setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '완료' }));
+
+                showSuccess(`Published!${aiText} (${(totalDuration / 1000).toFixed(1)}s)`);
+
+                // 2초 후 모달 닫기
+                setTimeout(() => {
+                    setProgressModal(prev => ({ ...prev, isOpen: false }));
+                    closePreview();
+                    fetchArticles();
+                }, 2000);
             } else {
-                throw new Error("Approval failed");
+                addProgressLog('DB 저장', `실패 (HTTP ${res.status})`, 'error', step3Duration);
+                throw new Error("DB 업데이트 실패");
             }
         } catch (err) {
-            showError("Approval failed. (Check DB connection)");
-            console.error(err);
+            const totalDuration = Date.now() - totalStartTime;
+            addProgressLog('에러', `처리 실패 (${(totalDuration / 1000).toFixed(1)}초 경과)`, 'error', totalDuration);
+
+            if (err instanceof Error) {
+                addProgressLog('에러', err.message.split('\n')[0], 'error');
+            }
+
+            setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '실패' }));
+
+            if (err instanceof Error && err.message.includes('AI 재가공')) {
+                showError(err.message);
+            } else {
+                showError("Approval failed. (Check DB connection)");
+            }
+            console.error('[Approve] Error:', err);
         } finally {
             setIsApproving(false);
         }
@@ -1245,6 +1423,67 @@ function AdminNewsListPage() {
                     </div>
                 )}
             </SlidePanel>
+
+            {/* Progress Popup - 우측 하단 팝업창 */}
+            {progressModal.isOpen && (
+                <div className="fixed bottom-4 right-4 z-50 w-96">
+                    <div className="bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl flex flex-col max-h-[400px]">
+                        {/* Header */}
+                        <div className="px-4 py-3 border-b border-[#30363d] flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                {!progressModal.isComplete && (
+                                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                                )}
+                                {progressModal.isComplete && progressModal.currentStep === '완료' && (
+                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                )}
+                                {progressModal.isComplete && progressModal.currentStep === '실패' && (
+                                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                                )}
+                                <span className="text-sm font-medium text-[#e6edf3]">
+                                    {progressModal.isComplete
+                                        ? (progressModal.currentStep === '완료' ? '처리 완료!' : '처리 실패')
+                                        : progressModal.currentStep
+                                    }
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setProgressModal(prev => ({ ...prev, isOpen: false }))}
+                                className="text-[#8b949e] hover:text-[#e6edf3] transition"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Log List */}
+                        <div className="flex-1 overflow-y-auto p-3 space-y-0.5 font-mono text-[11px] max-h-[280px]">
+                            {progressModal.logs.map((log, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`flex gap-1.5 py-0.5 ${log.status === 'success' ? 'text-green-400' :
+                                        log.status === 'error' ? 'text-red-400' :
+                                            log.status === 'warning' ? 'text-yellow-400' :
+                                                'text-[#8b949e]'
+                                        }`}
+                                >
+                                    <span className="text-[#58a6ff] flex-shrink-0">[{log.step}]</span>
+                                    <span className="flex-1 truncate">{log.message}</span>
+                                    {log.duration && log.duration >= 500 && (
+                                        <span className="text-[#6e7681] flex-shrink-0">
+                                            {log.duration >= 1000 ? `${(log.duration / 1000).toFixed(1)}s` : `${log.duration}ms`}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-4 py-2 border-t border-[#30363d] text-xs text-[#8b949e]">
+                            경과: {((Date.now() - progressModal.startTime) / 1000).toFixed(1)}초
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ConfirmModal - 공통 컴포넌트 사용 */}
             <ConfirmModal

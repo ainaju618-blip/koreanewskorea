@@ -4,7 +4,6 @@ export { APIKeyManager } from "./APIKeyManager";
 export { PromptEditor } from "./PromptEditor";
 export { AISimulation } from "./AISimulation";
 export { ReporterKeyManager } from "./ReporterKeyManager";
-export { RegionSelector } from "./RegionSelector";
+export { RegionSelector, ALL_REGIONS } from "./RegionSelector";
 export { UsagePanel } from "./UsagePanel";
 export { SettingsSummary } from "./SettingsSummary";
-

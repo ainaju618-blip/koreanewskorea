@@ -20,16 +20,20 @@ interface APIKeyManagerProps {
     settings: AISettings;
     testing: AIProvider | null;
     testResults: Record<AIProvider, boolean | null>;
+    defaultProvider: AIProvider;
     onUpdateApiKey: (provider: AIProvider, value: string) => void;
     onTest: (provider: AIProvider) => void;
+    onSetDefaultProvider: (provider: AIProvider) => void;
 }
 
 export function APIKeyManager({
     settings,
     testing,
     testResults,
+    defaultProvider,
     onUpdateApiKey,
-    onTest
+    onTest,
+    onSetDefaultProvider
 }: APIKeyManagerProps) {
     const [showKeys, setShowKeys] = useState<Record<AIProvider, boolean>>({
         gemini: false,
@@ -41,17 +45,42 @@ export function APIKeyManager({
         setShowKeys(prev => ({ ...prev, [provider]: !prev[provider] }));
     };
 
+    const providerLabels: Record<AIProvider, string> = {
+        gemini: "Gemini",
+        claude: "Claude",
+        grok: "Grok"
+    };
+
     return (
         <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">API 키</h3>
+            <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-700">API 키</h3>
+                <span className="text-xs text-gray-500">
+                    기본: <span className="font-medium text-blue-600">{providerLabels[defaultProvider]}</span>
+                </span>
+            </div>
 
-            {/* API Key inputs */}
+            {/* API Key inputs with radio buttons */}
             <div className="space-y-3">
                 {providers.map(provider => (
                     <div key={provider.id} className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-500 w-16">
-                            {provider.id === "gemini" ? "Gemini" : provider.id === "claude" ? "Claude" : "Grok"}
-                        </span>
+                        {/* Radio button for default provider */}
+                        <input
+                            type="radio"
+                            name="defaultProvider"
+                            id={`provider-${provider.id}`}
+                            checked={defaultProvider === provider.id}
+                            onChange={() => onSetDefaultProvider(provider.id)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            title="기본 제공자로 설정"
+                        />
+                        <label
+                            htmlFor={`provider-${provider.id}`}
+                            className={`text-xs font-medium w-14 cursor-pointer ${defaultProvider === provider.id ? 'text-blue-600' : 'text-gray-500'
+                                }`}
+                        >
+                            {providerLabels[provider.id]}
+                        </label>
                         <div className="relative flex-1">
                             <input
                                 type={showKeys[provider.id] ? "text" : "password"}
@@ -108,6 +137,10 @@ export function APIKeyManager({
                     </div>
                 ))}
             </div>
+
+            <p className="text-xs text-gray-400">
+                라디오 버튼으로 기본 AI 제공자를 선택하세요. 선택된 제공자가 기사 재가공에 사용됩니다.
+            </p>
         </div>
     );
 }

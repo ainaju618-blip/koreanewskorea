@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { RefreshCw, AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import { RefreshCw, AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
 import { DEFAULT_SYSTEM_PROMPT } from "@/lib/ai-prompts";
 import { useAISettings, SavedPrompt } from "./hooks/useAISettings";
 import {
@@ -12,8 +12,10 @@ import {
     ReporterKeyManager,
     RegionSelector,
     UsagePanel,
-    SettingsSummary
+    SettingsSummary,
+    ALL_REGIONS
 } from "./components";
+import Link from "next/link";
 
 export default function AISettingsPage() {
     const {
@@ -29,6 +31,7 @@ export default function AISettingsPage() {
         setSettings,
         updateSettings,
         updateApiKey,
+        setDefaultProvider,
         setTestInput,
         setTestOutput,
         handleSave,
@@ -39,6 +42,9 @@ export default function AISettingsPage() {
         saveSettings,
         showSuccess,
     } = useAISettings();
+
+    // Save Message State
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
     // Loading state
     if (loading) {
@@ -102,8 +108,37 @@ export default function AISettingsPage() {
                 settings={settings}
                 saving={saving}
                 onToggleEnabled={handleToggleEnabled}
-                onSave={handleSave}
+                onSave={async () => {
+                    await handleSave();
+                    // Build region names for message
+                    const regionNames = (settings.enabledRegions || [])
+                        .map(id => {
+                            const region = ALL_REGIONS.find(r => r.id === id);
+                            return region?.label || id;
+                        })
+                        .join(', ');
+
+                    if (regionNames) {
+                        setSaveMessage(regionNames);
+                    } else {
+                        setSaveMessage(null);
+                    }
+                }}
             />
+
+            {/* Quick Navigation - 승인대기 바로가기 */}
+            <div className="flex items-center gap-2">
+                <Link
+                    href="/admin/news?status=draft"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition text-sm font-medium shadow-sm"
+                >
+                    <ExternalLink className="w-4 h-4" />
+                    승인대기 기사 바로가기
+                </Link>
+                <span className="text-xs text-gray-500">
+                    AI 설정 후 승인대기 기사를 승인하면 자동으로 AI 재가공됩니다.
+                </span>
+            </div>
 
             {/* Prompt Editor - Full Width */}
             <PromptEditor
@@ -115,6 +150,33 @@ export default function AISettingsPage() {
                 onSavePrompt={handleSavePrompt}
                 onDeletePrompt={handleDeletePrompt}
             />
+
+            {/* Save Confirmation Message */}
+            {saveMessage && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                        <span className="font-semibold">{saveMessage}</span>
+                        {settings.enabledRegions && settings.enabledRegions.length > 1
+                            ? '가 '
+                            : '이 '
+                        }
+                        AI 재가공을 사용하도록 저장되었습니다.
+                        <br />
+                        <span className="text-blue-600">
+                            활성화 버튼을 클릭하시면 이후 수집되는
+                            <span className="font-semibold">{saveMessage}</span> 기사는
+                            수집 후 승인 버튼을 누르는 시점에 재가공되어 기사로 정식 등록됩니다.
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => setSaveMessage(null)}
+                        className="ml-auto text-blue-400 hover:text-blue-600 text-lg leading-none"
+                    >
+                        &times;
+                    </button>
+                </div>
+            )}
 
             {/* 지역 선택 + 설정 요약 */}
             <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
@@ -137,8 +199,10 @@ export default function AISettingsPage() {
                         settings={settings}
                         testing={testing}
                         testResults={testResults}
+                        defaultProvider={settings.defaultProvider}
                         onUpdateApiKey={updateApiKey}
                         onTest={handleTest}
+                        onSetDefaultProvider={setDefaultProvider}
                     />
 
                     {/* 사용량 패널 */}
@@ -168,7 +232,7 @@ export default function AISettingsPage() {
                         onRun={handleSimulation}
                         onRealTest={handleRealTest}
                         onCopy={handleCopyOutput}
-                        realTestResult={realTestResult}
+                        realTestResult={realTestResult ?? undefined}
                     />
                 </div>
             </div>

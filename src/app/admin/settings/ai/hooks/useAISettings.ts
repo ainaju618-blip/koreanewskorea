@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_SYSTEM_PROMPT } from "@/lib/ai-prompts";
+import { ParsedArticle } from "@/lib/ai-output-parser";
+import { AI_DEFAULT_DAILY_LIMIT, AI_DEFAULT_MONTHLY_TOKEN_LIMIT, AI_DEFAULT_MAX_INPUT_LENGTH } from "@/lib/ai-consts";
 
 // Types
 export type AIProvider = "gemini" | "claude" | "grok";
@@ -38,6 +40,16 @@ export interface AISettings {
     dailyLimit: number;
     monthlyTokenLimit: number;
     maxInputLength: number;
+}
+
+// P2: any 타입 제거 - Real Test Result Interface
+export interface RealTestResult {
+    success: boolean;
+    articleId?: string;
+    message?: string;
+    error?: string;
+    parsed?: ParsedArticle;
+    step?: string;
 }
 
 // Provider Info
@@ -76,9 +88,9 @@ const defaultSettings: AISettings = {
     savedPrompts: [],
     savedKeyProfiles: [],
     enabledRegions: [],
-    dailyLimit: 100,
-    monthlyTokenLimit: 1000000,
-    maxInputLength: 5000
+    dailyLimit: AI_DEFAULT_DAILY_LIMIT,
+    monthlyTokenLimit: AI_DEFAULT_MONTHLY_TOKEN_LIMIT,
+    maxInputLength: AI_DEFAULT_MAX_INPUT_LENGTH
 };
 
 export function useAISettings() {
@@ -96,9 +108,9 @@ export function useAISettings() {
     // Simulation states
     const [testInput, setTestInput] = useState("");
     const [testOutput, setTestOutput] = useState("");
-    const [parsedOutput, setParsedOutput] = useState<any>(null);
+    const [parsedOutput, setParsedOutput] = useState<ParsedArticle | null>(null);
     const [isRewriting, setIsRewriting] = useState(false);
-    const [realTestResult, setRealTestResult] = useState<any>(null); // 실전 테스트 결과
+    const [realTestResult, setRealTestResult] = useState<RealTestResult | null>(null);
 
     // Fetch settings
     const fetchSettings = useCallback(async () => {
@@ -312,10 +324,11 @@ export function useAISettings() {
                 showSuccess("실전 테스트 성공! 기사가 발행되었습니다.");
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error(error);
-            setRealTestResult({ success: false, step: "create", error: error.message });
-            showError("테스트 중 오류: " + error.message);
+            setRealTestResult({ success: false, step: "create", error: errorMessage });
+            showError("테스트 중 오류: " + errorMessage);
         } finally {
             setIsRewriting(false);
         }
@@ -331,6 +344,14 @@ export function useAISettings() {
         setSettings(prev => ({
             ...prev,
             apiKeys: { ...prev.apiKeys, [provider]: value }
+        }));
+    }, []);
+
+    // Set default provider
+    const setDefaultProvider = useCallback((provider: AIProvider) => {
+        setSettings(prev => ({
+            ...prev,
+            defaultProvider: provider
         }));
     }, []);
 
@@ -351,6 +372,7 @@ export function useAISettings() {
         setSettings,
         updateSettings,
         updateApiKey,
+        setDefaultProvider,
         setTestInput,
         setTestOutput,
         setParsedOutput,

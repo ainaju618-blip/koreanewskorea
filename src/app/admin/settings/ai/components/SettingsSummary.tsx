@@ -10,6 +10,12 @@ interface SettingsSummaryProps {
 }
 
 export function SettingsSummary({ enabled, enabledRegions }: SettingsSummaryProps) {
+    // 선택된 지역 라벨들
+    const regionLabels = enabledRegions.map(id => getRegionLabel(id));
+    const displayRegions = regionLabels.length > 5
+        ? [...regionLabels.slice(0, 5), `외 ${regionLabels.length - 5}개`].join(", ")
+        : regionLabels.join(", ");
+
     if (!enabled) {
         return (
             <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
@@ -19,7 +25,18 @@ export function SettingsSummary({ enabled, enabledRegions }: SettingsSummaryProp
                         <h4 className="text-sm font-semibold text-gray-700">AI 재가공 비활성화</h4>
                         <p className="text-sm text-gray-600 mt-1">
                             현재 AI 기사 재가공 기능이 비활성화되어 있습니다.
-                            활성화 토글을 켜고 저장하면 선택된 지역의 기사에 AI 재가공이 적용됩니다.
+                            {enabledRegions.length > 0 ? (
+                                <>
+                                    <br />
+                                    <span className="text-blue-600 font-medium">
+                                        저장된 지역: {displayRegions}
+                                    </span>
+                                    <br />
+                                    활성화 토글을 켜고 저장하면 위 지역의 기사에 AI 재가공이 적용됩니다.
+                                </>
+                            ) : (
+                                <> 활성화 토글을 켜고 저장하면 선택된 지역의 기사에 AI 재가공이 적용됩니다.</>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -43,12 +60,6 @@ export function SettingsSummary({ enabled, enabledRegions }: SettingsSummaryProp
             </div>
         );
     }
-
-    // 선택된 지역 라벨들
-    const regionLabels = enabledRegions.map(id => getRegionLabel(id));
-    const displayRegions = regionLabels.length > 5
-        ? [...regionLabels.slice(0, 5), `외 ${regionLabels.length - 5}개`].join(", ")
-        : regionLabels.join(", ");
 
     return (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">

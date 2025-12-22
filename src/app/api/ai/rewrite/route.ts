@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType, FORCED_OUTPUT_FORMAT } from "@/lib/ai-prompts";
 import { decryptApiKeys } from "@/lib/encryption";
 import { parseAIOutput, toDBUpdate } from "@/lib/ai-output-parser";
+import { canProcessArticle, logAIUsage } from "@/lib/ai-guard";
 
 type AIProvider = "gemini" | "claude" | "grok";
 
@@ -89,6 +90,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // P1: AI Guard 체크 - 사용량 제한 및 지역 체크
+        const region = body.region || 'unknown';
+        const guardCheck = await canProcessArticle(region, text.length);
+        if (!guardCheck.allowed) {
+            return NextResponse.json(
+                { error: guardCheck.reason, code: guardCheck.code },
+                { status: 429 }
+            );
+        }
+
         let provider: AIProvider;
         let apiKey: string;
         let customPrompt: string = "";
@@ -153,11 +164,16 @@ export async function POST(request: NextRequest) {
             ? systemPromptToUse + FORCED_OUTPUT_FORMAT
             : systemPromptToUse;
 
-        const { text: rewritten } = await generateText({
+        const { text: rewritten, usage } = await generateText({
             model,
             system: finalSystemPrompt,
             prompt: `${stylePrompt}\n\n---\n\n${text}`,
         });
+
+        // P1: 사용량 로깅 (AI SDK v4 타입: totalTokens, promptTokens 대신)
+        const inputTokens = (usage as Record<string, number>)?.promptTokens || Math.ceil(text.length / 4);
+        const outputTokens = (usage as Record<string, number>)?.completionTokens || Math.ceil((rewritten?.length || 0) / 4);
+        await logAIUsage(region, provider, inputTokens, outputTokens, articleId);
 
         // JSON 파싱 모드
         if (parseJson) {

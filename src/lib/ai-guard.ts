@@ -183,8 +183,12 @@ export async function canProcessArticle(
 
     } catch (error) {
         console.error("[ai-guard] Error checking process eligibility:", error);
-        // 에러 시에도 허용 (fail-open)
-        return { allowed: true };
+        // P0 보안: 에러 시 거부 (fail-close) - 안전 우선
+        return {
+            allowed: false,
+            reason: "시스템 오류로 AI 처리를 일시 중단합니다.",
+            code: 'DISABLED'
+        };
     }
 }
 

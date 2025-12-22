@@ -21,15 +21,16 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_provider ON ai_usage_logs(provider);
 -- RLS 활성화
 ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
 
--- 관리자만 접근 가능 정책
-CREATE POLICY "Admin access only" ON ai_usage_logs
+-- 관리자 전체 접근 정책 (SELECT/UPDATE/DELETE)
+CREATE POLICY "Admin can manage" ON ai_usage_logs
     FOR ALL
-    USING (auth.jwt() ->> 'role' = 'admin' OR auth.jwt() ->> 'role' = 'service_role');
+    USING (
+        auth.jwt() ->> 'role' = 'admin' 
+        OR auth.jwt() ->> 'role' = 'service_role'
+    );
 
--- 서비스 역할은 삽입 가능
-CREATE POLICY "Service role insert" ON ai_usage_logs
-    FOR INSERT
-    WITH CHECK (true);
+-- 서버 사이드 삽입 허용 (스크래퍼/API에서 사용)
+-- Note: service_role key 사용 시 RLS 우회됨
 
 -- 코멘트
 COMMENT ON TABLE ai_usage_logs IS 'AI 재가공 사용량 로그';
