@@ -35,7 +35,7 @@ from urllib.parse import urljoin, parse_qs, urlparse
 # ============================================================
 import random
 from playwright.sync_api import sync_playwright, Page
-from playwright_stealth import stealth_sync
+from playwright_stealth import Stealth
 
 # ============================================================
 # 3. Local Modules
@@ -374,7 +374,8 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         page = context.new_page()
 
         # Apply stealth mode to bypass bot detection
-        stealth_sync(page)
+        stealth = Stealth()
+        stealth.apply_stealth_sync(page)
         
         page_num = 1
         max_pages = 10  # Search up to 10 pages
