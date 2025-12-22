@@ -6,7 +6,7 @@ import { createXai } from "@ai-sdk/xai";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType, FORCED_OUTPUT_FORMAT } from "@/lib/ai-prompts";
 import { decryptApiKeys } from "@/lib/encryption";
-import { parseAIOutput, toDBUpdate } from "@/lib/ai-output-parser";
+import { parseAIOutput, toDBUpdate, validateFactAccuracy } from "@/lib/ai-output-parser";
 import { canProcessArticle, logAIUsage } from "@/lib/ai-guard";
 import fs from "fs";
 import path from "path";
@@ -314,10 +314,22 @@ export async function POST(request: NextRequest) {
                 contentLength: parseResult.data?.content?.length || 0,
                 summary: parseResult.data?.summary?.substring(0, 50) + "...",
                 keywords: parseResult.data?.keywords,
-                tags: parseResult.data?.tags
+                tags: parseResult.data?.tags,
+                extracted_numbers: parseResult.data?.extracted_numbers,
+                extracted_quotes: parseResult.data?.extracted_quotes
             });
 
-            // DB 업데이트용 객체
+            // [DEBUG] STEP 7.5: Fact validation
+            const validationResult = validateFactAccuracy(text, parseResult.data!);
+            log("STEP-7.5-VALIDATION", {
+                isValid: validationResult.isValid,
+                grade: validationResult.grade,
+                warnings: validationResult.warnings,
+                numberCheck: validationResult.numberCheck,
+                quoteCheck: validationResult.quoteCheck
+            });
+
+            // DB update object
             const dbUpdate = toDBUpdate(parseResult.data!);
 
             // [DEBUG] STEP 8: DB 업데이트
@@ -345,23 +357,25 @@ export async function POST(request: NextRequest) {
                     }, { status: 500 });
                 }
 
-                log("STEP-8-DB-UPDATE-SUCCESS", { articleId, message: "기사 발행 완료" });
+                log("STEP-8-DB-UPDATE-SUCCESS", { articleId, message: "Article published" });
 
                 return NextResponse.json({
                     success: true,
                     message: "기사가 AI 재가공되어 발행되었습니다.",
                     parsed: parseResult.data,
+                    validation: validationResult,
                     articleId,
                     provider,
                     processedAt: new Date().toISOString()
                 });
             }
 
-            // articleId 없으면 파싱 결과만 반환 (미리보기용)
-            log("STEP-7-PREVIEW-ONLY", { message: "articleId 없음, 미리보기 결과 반환" });
+            // articleId not provided - return preview only
+            log("STEP-7-PREVIEW-ONLY", { message: "No articleId, returning preview result" });
             return NextResponse.json({
                 success: true,
                 parsed: parseResult.data,
+                validation: validationResult,
                 dbUpdate,
                 provider,
                 processedAt: new Date().toISOString()
