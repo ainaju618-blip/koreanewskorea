@@ -109,3 +109,6 @@ korea-news-reporter-portal-v2.0/
 claude-hub/.env
 claude-hub/__pycache__/
 claude-hub/.claude/
+
+logs/
+*.log

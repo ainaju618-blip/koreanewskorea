@@ -413,36 +413,201 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk Approve - Single API call for all selected items
+    // Bulk Approve - AI 설정에 따라 분기 + 진행 모달 표시
     const executeBulkApprove = async () => {
         console.log('=== 선택 승인 시작 ===');
         const ids = Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
 
+        if (ids.length === 0) {
+            showWarning('선택된 기사가 없습니다.');
+            return;
+        }
+
+        const totalStartTime = Date.now();
+
+        // 진행 모달 열기
+        setProgressModal({
+            isOpen: true,
+            title: `${ids.length}개 기사 일괄 승인 처리 중`,
+            logs: [],
+            currentStep: '초기화',
+            startTime: totalStartTime,
+            isComplete: false
+        });
+
         setIsBulkProcessing(true);
+
         try {
-            const res = await fetch('/api/posts', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids, action: 'approve' })
-            });
+            // [STEP 1] AI 설정 확인
+            addProgressLog('시작', `${ids.length}개 기사 선택됨`, 'info');
+            addProgressLog('AI 설정', 'AI 설정 확인 중...', 'info');
 
-            const data = await res.json();
+            const settingsRes = await fetch('/api/admin/ai-settings');
+            const step1Duration = Date.now() - totalStartTime;
 
-            if (!res.ok) {
-                throw new Error(data.message || 'Bulk approve failed');
-            }
+            let aiEnabled = false;
+            let enabledRegions: string[] = [];
 
-            console.log('=== 승인 결과 ===', data);
-
-            if (data.failed > 0) {
-                showWarning(`${data.success}개 승인 완료, ${data.failed}개 실패`);
+            if (settingsRes.ok) {
+                const settingsData = await settingsRes.json();
+                const settings = settingsData.settings || settingsData;
+                aiEnabled = settings.enabled === true;
+                enabledRegions = settings.enabledRegions || [];
+                addProgressLog('AI 설정', `마스터 스위치: ${aiEnabled ? 'ON' : 'OFF'} (${step1Duration}ms)`, aiEnabled ? 'success' : 'warning', step1Duration);
+                addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
             } else {
-                showSuccess(`${data.success}개 기사가 승인되었습니다.`);
+                addProgressLog('AI 설정', 'AI 설정 조회 실패, 기존 방식으로 진행', 'warning');
             }
-            setSelectedIds(new Set());
-            fetchArticles();
+
+            // AI가 비활성화되어 있으면 기존 방식으로 빠른 승인
+            if (!aiEnabled) {
+                addProgressLog('승인', 'AI 비활성화 - 기존 방식으로 빠른 승인', 'info');
+                const res = await fetch('/api/posts', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, action: 'approve' })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Bulk approve failed');
+
+                const totalDuration = Date.now() - totalStartTime;
+                addProgressLog('완료', `${data.success}개 승인 완료 (${(totalDuration / 1000).toFixed(1)}초)`, 'success', totalDuration);
+
+                setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '완료' }));
+
+                if (data.failed > 0) {
+                    showWarning(`${data.success}개 승인 완료, ${data.failed}개 실패`);
+                } else {
+                    showSuccess(`${data.success}개 기사가 승인되었습니다.`);
+                }
+
+                setTimeout(() => {
+                    setProgressModal(prev => ({ ...prev, isOpen: false }));
+                    setSelectedIds(new Set());
+                    fetchArticles();
+                }, 2000);
+                return;
+            }
+
+            // [STEP 2] AI 활성화 - 각 기사별로 AI 재가공 처리
+            addProgressLog('AI 재가공', `${ids.length}개 기사 AI 재가공 시작...`, 'info');
+
+            // 지역 매핑
+            const regionMap: Record<string, string> = {
+                '광주광역시': 'gwangju', '전라남도': 'jeonnam',
+                '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
+                '나주시': 'naju', '광양시': 'gwangyang',
+                '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
+                '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
+                '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
+                '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
+                '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
+                '진도군': 'jindo', '신안군': 'sinan',
+                '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+            };
+
+            let successCount = 0;
+            let failCount = 0;
+            let skipCount = 0;
+
+            // 선택된 기사 정보 조회
+            for (let i = 0; i < ids.length; i++) {
+                const articleId = ids[i];
+                const article = articles.find(a => a.id === articleId);
+
+                if (!article) {
+                    addProgressLog('스킵', `기사 ${i + 1}/${ids.length}: 정보 없음`, 'warning');
+                    skipCount++;
+                    continue;
+                }
+
+                const articleRegion = regionMap[article.source] || '';
+                const shouldRewrite = enabledRegions.includes(articleRegion);
+
+                addProgressLog('처리 중', `[${i + 1}/${ids.length}] ${article.title.substring(0, 25)}...`, 'info');
+
+                if (shouldRewrite) {
+                    // AI 재가공 API 호출
+                    try {
+                        const articleStartTime = Date.now();
+                        addProgressLog('AI 재가공', `${article.source} -> AI 호출 중...`, 'info');
+
+                        const rewriteRes = await fetch('/api/ai/rewrite', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: article.content,
+                                parseJson: true,
+                                articleId: article.id,
+                                region: articleRegion
+                            })
+                        });
+
+                        const articleDuration = Date.now() - articleStartTime;
+
+                        if (rewriteRes.ok) {
+                            const rewriteData = await rewriteRes.json();
+                            if (rewriteData.success || rewriteData.parsed) {
+                                addProgressLog('AI 재가공', `성공! (${(articleDuration / 1000).toFixed(1)}초)`, 'success', articleDuration);
+                                successCount++;
+                            } else {
+                                addProgressLog('AI 재가공', `파싱 실패`, 'error', articleDuration);
+                                failCount++;
+                            }
+                        } else {
+                            addProgressLog('AI 재가공', `API 오류: HTTP ${rewriteRes.status}`, 'error');
+                            failCount++;
+                        }
+                    } catch (err) {
+                        addProgressLog('AI 재가공', `에러 발생`, 'error');
+                        failCount++;
+                    }
+                } else {
+                    // AI 대상이 아닌 지역 - 기존 방식으로 승인
+                    addProgressLog('기존 승인', `${article.source} (AI 비대상 지역)`, 'info');
+                    try {
+                        const res = await fetch('/api/posts', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ids: [article.id], action: 'approve' })
+                        });
+                        if (res.ok) {
+                            addProgressLog('기존 승인', `완료`, 'success');
+                            successCount++;
+                        } else {
+                            addProgressLog('기존 승인', `실패`, 'error');
+                            failCount++;
+                        }
+                    } catch {
+                        failCount++;
+                    }
+                }
+            }
+
+            const totalDuration = Date.now() - totalStartTime;
+            addProgressLog('완료', `총 ${successCount}개 성공, ${failCount}개 실패 (${(totalDuration / 1000).toFixed(1)}초)`,
+                failCount > 0 ? 'warning' : 'success', totalDuration);
+
+            setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '완료' }));
+
+            if (failCount > 0) {
+                showWarning(`${successCount}개 AI 재가공 승인 완료, ${failCount}개 실패`);
+            } else {
+                showSuccess(`${successCount}개 기사가 AI 재가공되어 승인되었습니다.`);
+            }
+
+            setTimeout(() => {
+                setProgressModal(prev => ({ ...prev, isOpen: false }));
+                setSelectedIds(new Set());
+                fetchArticles();
+            }, 2000);
+
         } catch (error) {
+            const totalDuration = Date.now() - totalStartTime;
+            addProgressLog('에러', `처리 실패 (${(totalDuration / 1000).toFixed(1)}초)`, 'error', totalDuration);
+            setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '실패' }));
             console.error('승인 처리 오류:', error);
             showError('승인 처리 중 오류가 발생했습니다.');
         } finally {
@@ -686,6 +851,15 @@ function AdminNewsListPage() {
 
         const totalStartTime = Date.now();
 
+        // [DEBUG] STEP 0: 승인 시작
+        console.log('='.repeat(60));
+        console.log('[APPROVE] STEP-0: 승인 버튼 클릭됨');
+        console.log('[APPROVE] STEP-0: 기사 ID:', previewArticle.id);
+        console.log('[APPROVE] STEP-0: 기사 제목:', previewArticle.title);
+        console.log('[APPROVE] STEP-0: 출처:', previewArticle.source);
+        console.log('[APPROVE] STEP-0: 본문 길이:', editContent.length, '자');
+        console.log('='.repeat(60));
+
         // 진행 모달 열기
         setProgressModal({
             isOpen: true,
@@ -709,16 +883,24 @@ function AdminNewsListPage() {
 
             // 0. AI 설정 확인 - 이 지역이 AI 재가공 활성화되어 있는지 체크
             const step0Start = Date.now();
+            console.log('[APPROVE] STEP-1: AI 설정 확인 시작...');
             addProgressLog('AI 설정', 'AI 설정 확인 중...', 'info');
 
             try {
                 const settingsRes = await fetch('/api/admin/ai-settings');
                 const step0Duration = Date.now() - step0Start;
 
+                console.log('[APPROVE] STEP-1: AI 설정 API 응답 (', step0Duration, 'ms)');
+
                 if (settingsRes.ok) {
-                    const settings = await settingsRes.json();
+                    const settingsData = await settingsRes.json();
+                    const settings = settingsData.settings || settingsData;
                     const aiEnabled = settings.enabled === true;
                     const enabledRegions: string[] = settings.enabledRegions || [];
+
+                    console.log('[APPROVE] STEP-1: 마스터 스위치:', aiEnabled ? 'ON' : 'OFF');
+                    console.log('[APPROVE] STEP-1: 활성화 지역:', enabledRegions.join(', ') || '없음');
+                    console.log('[APPROVE] STEP-1: 전역 API 키 존재:', !!settings.apiKeys?.gemini || !!settings.apiKeys?.claude);
 
                     addProgressLog('AI 설정', `마스터 스위치: ${aiEnabled ? 'ON' : 'OFF'} (${step0Duration}ms)`, aiEnabled ? 'success' : 'warning', step0Duration);
                     addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
@@ -741,11 +923,22 @@ function AdminNewsListPage() {
                     const articleRegion = regionMap[previewArticle.source] || '';
                     const shouldRewrite = aiEnabled && enabledRegions.includes(articleRegion);
 
+                    console.log('[APPROVE] STEP-1: 기사 출처:', previewArticle.source);
+                    console.log('[APPROVE] STEP-1: 매핑된 지역코드:', articleRegion || '(매핑없음)');
+                    console.log('[APPROVE] STEP-1: AI 재가공 대상:', shouldRewrite ? 'YES' : 'NO');
+
                     addProgressLog('AI 설정', `이 기사 지역: ${previewArticle.source} -> ${articleRegion || '(매핑없음)'}`, 'info');
                     addProgressLog('AI 설정', `AI 재가공 대상: ${shouldRewrite ? 'YES' : 'NO'}`, shouldRewrite ? 'success' : 'warning');
 
                     if (shouldRewrite) {
                         const step1Start = Date.now();
+                        console.log('[APPROVE] STEP-2: AI 재가공 API 호출 시작...');
+                        console.log('[APPROVE] STEP-2: 요청 데이터:', {
+                            textLength: editContent.length,
+                            parseJson: true,
+                            articleId: previewArticle.id,
+                            region: articleRegion
+                        });
                         addProgressLog('AI 재가공', `AI 재가공 시작 (본문 ${editContent.length}자)...`, 'info');
 
                         const rewriteRes = await fetch('/api/ai/rewrite', {
@@ -761,31 +954,48 @@ function AdminNewsListPage() {
 
                         const step1Duration = Date.now() - step1Start;
 
+                        console.log('[APPROVE] STEP-2: AI 재가공 API 응답 (', step1Duration, 'ms)');
+                        console.log('[APPROVE] STEP-2: 응답 상태:', rewriteRes.status);
+
                         if (rewriteRes.ok) {
                             const rewriteData = await rewriteRes.json();
+                            console.log('[APPROVE] STEP-2: 파싱된 데이터:', {
+                                hasTitle: !!rewriteData.parsed?.title,
+                                hasContent: !!rewriteData.parsed?.content,
+                                hasSummary: !!rewriteData.parsed?.summary,
+                                tags: rewriteData.parsed?.tags,
+                                provider: rewriteData.provider
+                            });
+
                             if (rewriteData.parsed && rewriteData.parsed.title && rewriteData.parsed.content) {
                                 finalTitle = rewriteData.parsed.title;
                                 finalContent = rewriteData.parsed.content;
                                 aiProcessed = true;
+                                console.log('[APPROVE] STEP-2: AI 재가공 성공!');
+                                console.log('[APPROVE] STEP-2: 새 제목:', finalTitle.substring(0, 50));
                                 addProgressLog('AI 재가공', `완료! (${(step1Duration / 1000).toFixed(1)}초)`, 'success', step1Duration);
                                 addProgressLog('AI 재가공', `새 제목: ${finalTitle.substring(0, 35)}...`, 'success');
                             } else {
                                 const errorDetail = rewriteData.parseError || '필수 필드 누락';
+                                console.log('[APPROVE] STEP-2: AI 재가공 파싱 실패:', errorDetail);
                                 addProgressLog('AI 재가공', `파싱 실패: ${errorDetail}`, 'error', step1Duration);
                                 throw new Error(`AI 재가공 실패: ${errorDetail}\n\n이 기사는 발행되지 않았습니다.`);
                             }
                         } else {
                             const errorData = await rewriteRes.json().catch(() => ({}));
                             const errorMsg = errorData.error || errorData.message || `HTTP ${rewriteRes.status}`;
+                            console.log('[APPROVE] STEP-2: AI 재가공 API 오류:', errorMsg);
                             addProgressLog('AI 재가공', `API 오류: ${errorMsg}`, 'error', step1Duration);
                             throw new Error(`AI 재가공 API 오류: ${errorMsg}\n\n이 기사는 발행되지 않았습니다.`);
                         }
                     } else {
+                        console.log('[APPROVE] STEP-2: AI 재가공 스킵 (비활성 지역)');
                         addProgressLog('AI 재가공', '스킵 (비활성 지역)', 'warning');
                     }
                 }
             } catch (aiErr) {
                 // AI 관련 에러는 게시 중지
+                console.log('[APPROVE] AI 에러 발생:', aiErr);
                 if (aiErr instanceof Error && aiErr.message.includes('AI 재가공')) {
                     throw aiErr;
                 }
@@ -825,6 +1035,14 @@ function AdminNewsListPage() {
 
             // 2. DB update
             const step3Start = Date.now();
+            console.log('[APPROVE] STEP-3: DB 업데이트 시작...');
+            console.log('[APPROVE] STEP-3: 저장할 데이터:', {
+                status: 'published',
+                titleLength: finalTitle.length,
+                contentLength: finalContent.length,
+                aiProcessed,
+                hasThumbnail: !!finalThumbnailUrl
+            });
             addProgressLog('DB 저장', 'DB 업데이트 중...', 'info');
 
             const bodyData: Record<string, unknown> = {
@@ -848,9 +1066,11 @@ function AdminNewsListPage() {
             });
 
             const step3Duration = Date.now() - step3Start;
+            console.log('[APPROVE] STEP-3: DB 응답 (', step3Duration, 'ms), 상태:', res.status);
 
             if (res.ok) {
                 const responseData = await res.json();
+                console.log('[APPROVE] STEP-3: DB 저장 성공!');
                 addProgressLog('DB 저장', `완료 (${step3Duration}ms)`, 'success', step3Duration);
 
                 setArticles(articles.map(a =>
@@ -863,9 +1083,16 @@ function AdminNewsListPage() {
                 const totalDuration = Date.now() - totalStartTime;
                 const aiText = aiProcessed ? ' (AI 재가공)' : '';
 
+                console.log('='.repeat(60));
+                console.log('[APPROVE] COMPLETE: 기사 발행 완료!');
+                console.log('[APPROVE] COMPLETE: 총 소요 시간:', (totalDuration / 1000).toFixed(1), '초');
+                console.log('[APPROVE] COMPLETE: AI 재가공:', aiProcessed ? 'YES' : 'NO');
+                console.log('='.repeat(60));
+
                 addProgressLog('완료', `총 소요 시간: ${(totalDuration / 1000).toFixed(1)}초`, 'success', totalDuration);
 
                 if (responseData._assignment) {
+                    console.log('[APPROVE] COMPLETE: 기자 배정:', responseData._assignment.reporter);
                     addProgressLog('완료', `기자 배정: ${responseData._assignment.reporter}`, 'success');
                 }
 

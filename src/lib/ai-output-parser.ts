@@ -177,12 +177,20 @@ function normalizeContent(content: string): string {
 
 /**
  * DB 업데이트용 객체 생성
+ * summary를 본문 맨 위에 요약 박스로 추가
  */
 export function toDBUpdate(parsed: ParsedArticle): Record<string, any> {
+    // 요약을 본문 맨 위에 추가 (스타일링된 요약 박스)
+    const summaryBox = parsed.summary
+        ? `<div class="article-summary" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0284c7; padding: 16px 20px; margin-bottom: 24px; border-radius: 0 8px 8px 0; font-size: 1.05em; line-height: 1.6; color: #0c4a6e;"><strong>요약</strong> | ${parsed.summary}</div>\n\n`
+        : '';
+
+    const contentWithSummary = summaryBox + parsed.content;
+
     return {
         title: parsed.title,
         slug: parsed.slug,
-        content: parsed.content,
+        content: contentWithSummary,
         ai_summary: parsed.summary,
         keywords: parsed.keywords,
         tags: parsed.tags,
