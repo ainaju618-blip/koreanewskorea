@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import NewsGrid, { NewsGridSkeleton } from '@/components/NewsGrid';
 import Sidebar, { SidebarSkeleton } from '@/components/Sidebar';
-import HomeHero from '@/components/home/HomeHero';
 
 // Revalidate every 60 seconds - ensures fresh news data
 export const revalidate = 60;
@@ -11,7 +10,7 @@ export const revalidate = 60;
  * ===================
  * Layout: 1400px Container (WebFrame Spec)
  * Style: Kangwon Ilbo Clone
- * 
+ *
  * [현대화] Suspense + Streaming 적용
  * - 각 섹션이 독립적으로 로딩되어 사용자가 빠르게 콘텐츠를 볼 수 있음
  */
@@ -22,10 +21,7 @@ export default function Home() {
       {/* Container - Centered 1400px (WebFrame Spec) */}
       <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
 
-        {/* ===== ZONE 1: HERO SECTION (870px Main Visual) ===== */}
-        <HomeHero />
-
-        {/* ===== ZONE 2: SECTION GRIDS (Kangwon Ilbo Style) ===== */}
+        {/* ===== SECTION GRIDS (Kangwon Ilbo Style) ===== */}
         <div className="flex flex-col lg:flex-row gap-8">
 
           {/* LEFT COLUMN: Main Content (72%) */}
