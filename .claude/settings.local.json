@@ -192,7 +192,9 @@
       "Bash(코리아NEWS\"\\)\n- Add contentLocation to JSON-LD for local news SEO\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(vercel list:*)",
       "Bash(vercel --prod --yes:*)",
-      "Bash(npx vercel list:*)"
+      "Bash(npx vercel list:*)",
+      "Bash(xargs:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 강진군/여수시 스크래퍼 playwright-stealth v2.0.0 호환 수정\n\n- gangjin_scraper.py: Stealth 클래스 적용\n- yeosu_scraper.py: Stealth 클래스 적용\n- 보성군 스크래퍼와 동일한 패턴 적용\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
