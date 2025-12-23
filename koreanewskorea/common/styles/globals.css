@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* ==============================================
+   Korea NEWS Regional - Design System
+   Reference: common/README.md
+   ============================================== */
+
+:root {
+    /* Primary Colors */
+    --color-primary: #1E3A5F;
+    --color-primary-hover: #2A4A73;
+    --color-primary-dark: #152B47;
+
+    /* Background */
+    --color-bg: #FFFFFF;
+    --color-bg-secondary: #F5F5F5;
+    --color-border: #E5E7EB;
+
+    /* Text */
+    --color-text: #1F2937;
+    --color-text-secondary: #6B7280;
+    --color-text-muted: #9CA3AF;
+
+    /* Accent */
+    --color-accent: #2563EB;
+    --color-accent-hover: #1D4ED8;
+
+    /* Status */
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+
+    /* Typography */
+    --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-serif: 'Noto Serif KR', Georgia, serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    line-height: 1.6;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Utility Classes */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Region Badge */
+.region-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: var(--color-bg-secondary);
+    border-radius: 0.25rem;
+    color: var(--color-text-secondary);
+}
+
+.region-badge--tier1 {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.region-badge--tier2 {
+    background-color: var(--color-accent);
+    color: white;
+}
