@@ -427,7 +427,8 @@ function AdminNewsListPage() {
 
     // Bulk Approve - AI 설정에 따라 분기 + 진행 모달 표시
     // overrideIds: 직접 ID 배열 전달 (전체 승인 등에서 사용)
-    const executeBulkApprove = async (overrideIds?: string[]) => {
+    // overrideArticles: ID -> Article 매핑 (전체 승인에서 state 동기화 없이 사용)
+    const executeBulkApprove = async (overrideIds?: string[], overrideArticles?: Map<string, Article>) => {
         console.log('=== 선택 승인 시작 ===');
         const ids = overrideIds || Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
@@ -601,7 +602,8 @@ function AdminNewsListPage() {
                 }
 
                 const articleId = ids[i];
-                const article = articles.find(a => a.id === articleId);
+                // Check overrideArticles first (for bulk all approve), then state
+                const article = overrideArticles?.get(articleId) || articles.find(a => a.id === articleId);
 
                 if (!article) {
                     addProgressLog('스킵', `기사 ${i + 1}/${ids.length}: 정보 없음`, 'warning');
@@ -906,32 +908,29 @@ function AdminNewsListPage() {
                 return;
             }
 
-            // Store articles temporarily for the batch process
-            setArticles(prev => {
-                const existingIds = new Set(prev.map(a => a.id));
-                const newArticles = allArticles
-                    .filter((a: any) => !existingIds.has(a.id))
-                    .map((p: any) => ({
-                        id: p.id,
-                        title: p.title || '[제목 없음]',
-                        content: p.content || '',
-                        status: p.status || 'draft',
-                        created_at: p.created_at,
-                        published_at: p.published_at,
-                        views: p.view_count || 0,
-                        category: p.category || '미분류',
-                        source: p.source || 'Korea NEWS',
-                        author: p.author || 'AI Reporter',
-                        original_link: p.original_link,
-                        thumbnail_url: p.thumbnail_url,
-                        subtitle: p.subtitle || '',
-                        is_focus: p.is_focus || false
-                    }));
-                return [...prev, ...newArticles];
+            // Create article map for direct lookup (bypasses state timing issue)
+            const articlesMap = new Map<string, Article>();
+            allArticles.forEach((p: any) => {
+                articlesMap.set(p.id, {
+                    id: p.id,
+                    title: p.title || '[제목 없음]',
+                    content: p.content || '',
+                    status: p.status || 'draft',
+                    created_at: p.created_at,
+                    published_at: p.published_at,
+                    views: p.view_count || 0,
+                    category: p.category || '미분류',
+                    source: p.source || 'Korea NEWS',
+                    author: p.author || 'AI Reporter',
+                    original_link: p.original_link,
+                    thumbnail_url: p.thumbnail_url,
+                    subtitle: p.subtitle || '',
+                    is_focus: p.is_focus || false
+                });
             });
 
-            // Pass IDs directly to executeBulkApprove (no state dependency)
-            await executeBulkApprove(allIds);
+            // Pass IDs and articles map directly (no state dependency)
+            await executeBulkApprove(allIds, articlesMap);
         } catch (error) {
             console.error('Bulk all approve error:', error);
             showError('일괄 승인 처리 중 오류가 발생했습니다.');
