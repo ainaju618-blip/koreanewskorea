@@ -26,6 +26,45 @@ interface Category {
     depth: number;
 }
 
+// Bulk Job State for localStorage persistence
+interface BulkJobState {
+    type: 'approve';
+    allIds: string[];
+    processedIds: string[];
+    articlesData: Record<string, any>; // Serialized article data
+    startedAt: string;
+    lastUpdated: string;
+}
+
+const BULK_JOB_KEY = 'koreanews_bulk_job';
+
+// Helper functions for localStorage job management
+const saveBulkJob = (job: BulkJobState) => {
+    try {
+        localStorage.setItem(BULK_JOB_KEY, JSON.stringify(job));
+    } catch (e) {
+        console.error('Failed to save bulk job:', e);
+    }
+};
+
+const loadBulkJob = (): BulkJobState | null => {
+    try {
+        const data = localStorage.getItem(BULK_JOB_KEY);
+        return data ? JSON.parse(data) : null;
+    } catch (e) {
+        console.error('Failed to load bulk job:', e);
+        return null;
+    }
+};
+
+const clearBulkJob = () => {
+    try {
+        localStorage.removeItem(BULK_JOB_KEY);
+    } catch (e) {
+        console.error('Failed to clear bulk job:', e);
+    }
+};
+
 // Suspense 바운더리 내에서 useSearchParams를 사용하는 래퍼 컴포넌트
 export default function AdminNewsListPageWrapper() {
     return (
@@ -230,6 +269,38 @@ function AdminNewsListPage() {
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isBulkProcessing]);
+
+    // Check for pending bulk job on page load and auto-resume
+    useEffect(() => {
+        const pendingJob = loadBulkJob();
+        if (pendingJob && pendingJob.allIds.length > pendingJob.processedIds.length) {
+            const remaining = pendingJob.allIds.length - pendingJob.processedIds.length;
+            showInfo(`이전 작업 발견: ${remaining}개 기사 남음. 자동 재개합니다...`);
+
+            // Auto-resume after a short delay
+            setTimeout(() => {
+                resumeBulkJob(pendingJob);
+            }, 1500);
+        }
+    }, []); // Run once on mount
+
+    // Resume bulk job from localStorage state
+    const resumeBulkJob = async (job: BulkJobState) => {
+        const remainingIds = job.allIds.filter(id => !job.processedIds.includes(id));
+        if (remainingIds.length === 0) {
+            clearBulkJob();
+            return;
+        }
+
+        // Rebuild articles map from saved data
+        const articlesMap = new Map<string, any>();
+        Object.entries(job.articlesData).forEach(([id, data]) => {
+            articlesMap.set(id, data);
+        });
+
+        // Call executeBulkApprove with remaining IDs and resume mode
+        await executeBulkApprove(remainingIds, articlesMap, true, job.processedIds.length);
+    };
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -443,13 +514,21 @@ function AdminNewsListPage() {
     // Bulk Approve - AI 설정에 따라 분기 + 진행 모달 표시
     // overrideIds: 직접 ID 배열 전달 (전체 승인 등에서 사용)
     // overrideArticles: ID -> 기사 데이터 매핑 (전체 승인에서 state 동기화 없이 사용)
-    const executeBulkApprove = async (overrideIds?: string[], overrideArticles?: Map<string, any>) => {
-        console.log('=== 선택 승인 시작 ===');
+    // isResume: 이전 작업 재개 여부
+    // previouslyProcessed: 재개 시 이전에 처리된 개수
+    const executeBulkApprove = async (
+        overrideIds?: string[],
+        overrideArticles?: Map<string, any>,
+        isResume: boolean = false,
+        previouslyProcessed: number = 0
+    ) => {
+        console.log('=== 선택 승인 시작 ===', isResume ? '(재개)' : '(새 작업)');
         const ids = overrideIds || Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
 
         if (ids.length === 0) {
             showWarning('승인할 기사가 없습니다.');
+            clearBulkJob(); // Clear any stale job
             return;
         }
 
@@ -459,17 +538,36 @@ function AdminNewsListPage() {
         stopBulkRef.current = false;
 
         // 진행 모달 열기
+        const totalCount = isResume ? ids.length + previouslyProcessed : ids.length;
         setProgressModal({
             isOpen: true,
-            title: `${ids.length}개 기사 일괄 승인 처리 중`,
+            title: isResume
+                ? `작업 재개: ${ids.length}개 남음 (총 ${totalCount}개 중)`
+                : `${ids.length}개 기사 일괄 승인 처리 중`,
             logs: [],
-            currentStep: '초기화',
+            currentStep: isResume ? '재개 중' : '초기화',
             startTime: totalStartTime,
             isComplete: false,
             isStopped: false
         });
 
         setIsBulkProcessing(true);
+
+        // Save initial job state to localStorage (for new jobs)
+        if (!isResume && overrideArticles) {
+            const articlesData: Record<string, any> = {};
+            overrideArticles.forEach((value, key) => {
+                articlesData[key] = value;
+            });
+            saveBulkJob({
+                type: 'approve',
+                allIds: ids,
+                processedIds: [],
+                articlesData,
+                startedAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            });
+        }
 
         try {
             // [STEP 1] AI 설정 확인
@@ -517,6 +615,9 @@ function AdminNewsListPage() {
                 } else {
                     showSuccess(`${data.success}개 기사가 승인되었습니다.`);
                 }
+
+                // Clear localStorage since AI was disabled and we did fast approve
+                clearBulkJob();
 
                 setTimeout(() => {
                     setProgressModal(prev => ({ ...prev, isOpen: false }));
@@ -777,6 +878,14 @@ function AdminNewsListPage() {
                         failCount++;
                     }
                 }
+
+                // Update localStorage progress after each article
+                const currentJob = loadBulkJob();
+                if (currentJob) {
+                    currentJob.processedIds.push(articleId);
+                    currentJob.lastUpdated = new Date().toISOString();
+                    saveBulkJob(currentJob);
+                }
             }
 
             const totalDuration = Date.now() - totalStartTime;
@@ -785,6 +894,11 @@ function AdminNewsListPage() {
                 resultStatus, totalDuration);
 
             setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '완료' }));
+
+            // Clear localStorage on successful completion (but keep if stopped for later resume)
+            if (!stopBulkRef.current) {
+                clearBulkJob();
+            }
 
             if (failCount > 0 || skipCount > 0) {
                 showWarning(`발행 ${successCount}개, 보류 ${skipCount}개 (Grade B/C/D), 실패 ${failCount}개`);
