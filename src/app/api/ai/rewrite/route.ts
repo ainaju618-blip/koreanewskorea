@@ -640,10 +640,12 @@ export async function POST(request: NextRequest) {
 
                 if (isGradeA) {
                     // Grade A: Apply AI rewrite and publish (passed double validation)
+                    const now = new Date().toISOString();
                     const updateData: Record<string, unknown> = {
                         ...dbUpdate,
                         status: "published",
-                        published_at: new Date().toISOString(),
+                        published_at: now,
+                        site_published_at: now, // Site publish time for admin display
                         ai_validation_grade: validationResult.grade,
                         ai_double_validated: true
                     };
