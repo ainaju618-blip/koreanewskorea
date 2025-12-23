@@ -206,7 +206,8 @@
       "Bash(node check-keys.mjs:*)",
       "Bash(node -e \"\nimport { readFileSync } from ''fs'';\nconst content = readFileSync\\(''.env'', ''utf8''\\);\nconsole.log\\(''Lines:'', content.split\\(''\\\\n''\\).length\\);\nconst lines = content.split\\(''\\\\n''\\).filter\\(l => l.includes\\(''SUPABASE''\\)\\);\nconsole.log\\(''Supabase lines:'', lines\\);\n\")",
       "Bash(gh repo create:*)",
-      "Bash(powershell -Command \"Start-Sleep -Seconds 8; Get-Content ''C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--cbt-koreanews\\\\tasks\\\\b1adeb1.output''\")"
+      "Bash(powershell -Command \"Start-Sleep -Seconds 8; Get-Content ''C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--cbt-koreanews\\\\tasks\\\\b1adeb1.output''\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Add robust JSON sanitization for AI response parsing\n\n- Add sanitizeJSON\\(\\) to handle common AI output issues\n- Normalize Unicode quotes to standard quotes\n- Escape unescaped newlines in string values\n- Remove trailing commas before } or ]\n- Auto-add missing closing braces\n- Add fixNestedQuotes\\(\\) for unescaped internal quotes\n- Add detailed error logging with position context\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

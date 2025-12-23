@@ -8,7 +8,6 @@ import { DEFAULT_SYSTEM_PROMPT, STYLE_PROMPTS, StyleType, FORCED_OUTPUT_FORMAT }
 import { decryptApiKeys, decryptApiKey, isEncrypted } from "@/lib/encryption";
 import { parseAIOutput, toDBUpdate, validateFactAccuracy } from "@/lib/ai-output-parser";
 import { canProcessArticle, logAIUsage } from "@/lib/ai-guard";
-import { getNextGeminiKey, GeminiKeyEntry, estimateCapacity } from "@/lib/ai-key-rotation";
 import fs from "fs";
 import path from "path";
 
@@ -54,16 +53,31 @@ function getModel(provider: AIProvider, apiKey: string) {
     }
 }
 
-// HARDCODED GEMINI API KEY (temporary - for testing)
-// User provided new key on 2025-12-24 to resolve rate limit issues
-const HARDCODED_GEMINI_KEY = "AIzaSyAjlrbbTCxtwpPyKkevDfUAJ-IjVu42-UI";
+// Multiple Gemini API keys for rotation (reduces rate limit issues)
+const GEMINI_KEYS = [
+    { key: "AIzaSyAjlrbbTCxtwpPyKkevDfUAJ-IjVu42-UI", label: "key1" },
+    { key: "AIzaSyBulyeEOg4CG_8-VS3pP9rQfG9bFYQUhjQ", label: "key2" }
+];
 
-// Get global AI settings (with multi-key support)
+// Round-robin key rotation
+let currentKeyIndex = 0;
+function getNextGeminiKey(): { key: string; label: string } {
+    const selected = GEMINI_KEYS[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+    console.log(`[KeyRotation] Selected key: ${selected.label} (index ${currentKeyIndex})`);
+    return selected;
+}
+
+// Get global AI settings (with multi-key rotation)
 async function getGlobalSettings() {
     console.log("========================================");
     console.log("[getGlobalSettings] DEBUG START");
-    console.log("[getGlobalSettings] USING HARDCODED KEY!");
-    console.log("[getGlobalSettings] Key Preview:", HARDCODED_GEMINI_KEY.substring(0, 15) + "...");
+    console.log("[getGlobalSettings] USING MULTI-KEY ROTATION!");
+
+    // Get next key from rotation
+    const selectedKey = getNextGeminiKey();
+    console.log("[getGlobalSettings] Selected Key Label:", selectedKey.label);
+    console.log("[getGlobalSettings] Key Preview:", selectedKey.key.substring(0, 15) + "...");
 
     // Fetch system prompt from DB (still needed)
     const { data, error } = await supabaseAdmin
@@ -82,15 +96,12 @@ async function getGlobalSettings() {
         }
     }
 
-    // Use hardcoded key directly
+    // Use rotated key
     const provider: AIProvider = "gemini";
-    const selectedGeminiKey = HARDCODED_GEMINI_KEY;
-    const keyLabel = "hardcoded-new";
-    const keyIndex = 0;
 
-    // Build final API keys object (hardcoded gemini, empty others)
+    // Build final API keys object
     const apiKeys: Record<string, string> = {
-        gemini: selectedGeminiKey,
+        gemini: selectedKey.key,
         claude: "",
         grok: ""
     };
@@ -100,12 +111,12 @@ async function getGlobalSettings() {
     console.log("[getGlobalSettings] - gemini key exists:", !!apiKeys.gemini);
     console.log("[getGlobalSettings] - gemini key length:", apiKeys.gemini?.length || 0);
     console.log("[getGlobalSettings] - gemini key preview:", apiKeys.gemini ? (apiKeys.gemini.substring(0, 12) + "..." + apiKeys.gemini.substring(apiKeys.gemini.length - 4)) : "EMPTY");
-    console.log("[getGlobalSettings] - keyLabel:", keyLabel);
-    console.log("[getGlobalSettings] - keyIndex:", keyIndex);
+    console.log("[getGlobalSettings] - keyLabel:", selectedKey.label);
+    console.log("[getGlobalSettings] - keyIndex:", currentKeyIndex);
     console.log("[getGlobalSettings] DEBUG END");
     console.log("========================================");
 
-    return { provider, apiKeys, systemPrompt, keyLabel, keyIndex };
+    return { provider, apiKeys, systemPrompt, keyLabel: selectedKey.label, keyIndex: currentKeyIndex };
 }
 
 // POST: AI 기사 재가공
@@ -462,6 +473,24 @@ export async function POST(request: NextRequest) {
             if (!parseResult.success) {
                 log("STEP-7-PARSE-FAILED", { error: parseResult.error });
                 console.error("[ai/rewrite] Parse failed:", parseResult.error);
+
+                // Save error log to DB for debugging (using ai_validation_warnings column)
+                if (articleId) {
+                    await supabaseAdmin
+                        .from("posts")
+                        .update({
+                            ai_validation_warnings: [
+                                `PARSE_ERROR: ${parseResult.error}`,
+                                `RAW_LENGTH: ${rewritten?.length || 0}`,
+                                `RAW_PREVIEW: ${rewritten?.substring(0, 500)}`,
+                                `TIMESTAMP: ${new Date().toISOString()}`
+                            ],
+                            ai_validation_grade: "D",
+                            status: "draft"
+                        })
+                        .eq("id", articleId);
+                }
+
                 return NextResponse.json({
                     success: false,
                     error: parseResult.error,
@@ -492,12 +521,15 @@ export async function POST(request: NextRequest) {
                 quoteCheck: validationResult1.quoteCheck
             });
 
-            // Double validation: If 1st pass is Grade A, do 2nd pass
+            // Double validation: DISABLED to reduce API calls (was causing quota exceeded errors)
+            // Each article now uses only 1 API call instead of 2
             let finalGrade = validationResult1.grade;
             let finalValidation = validationResult1;
             let finalParseResult = parseResult;
 
-            if (validationResult1.grade === "A" && articleId) {
+            // DISABLED: Double validation was consuming too many API calls
+            // Re-enable by changing 'false' to 'validationResult1.grade === "A"'
+            if (false && validationResult1.grade === "A" && articleId) {
                 console.log("╔════════════════════════════════════════════════════════════════╗");
                 console.log("║  !!! DOUBLE VALIDATION TRIGGERED - 2ND API CALL STARTING !!!  ║");
                 console.log("╚════════════════════════════════════════════════════════════════╝");

@@ -1511,16 +1511,19 @@ function AdminNewsListPage() {
                         {/* 구분선 */}
                         <div className="w-px h-8 bg-gray-300 mx-1" />
 
-                        {/* 일괄 승인 버튼 (휴지통 제외) */}
+                        {/* 일괄 승인 버튼 (선택 승인과 동일 - 선택된 항목만 처리) */}
                         {filterStatus !== 'trash' && filterStatus !== 'published' && (
                             <button
-                                onClick={() => openBulkAllConfirmModal('bulk-all-approve')}
-                                disabled={isBulkProcessing}
-                                className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                                onClick={() => openBulkConfirmModal('bulk-approve')}
+                                disabled={isBulkProcessing || selectedIds.size === 0}
+                                className={`px-4 py-2 font-medium rounded-lg shadow-sm transition flex items-center gap-2 ${selectedIds.size > 0
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    : 'bg-[#21262d] text-[#6e7681] cursor-not-allowed border border-[#30363d]'
+                                    }`}
                             >
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
                                 <CheckCircle className="w-4 h-4" />
-                                일괄 승인
+                                일괄 승인 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
                             </button>
                         )}
 
