@@ -1527,10 +1527,10 @@ function AdminNewsListPage() {
                             </button>
                         )}
 
-                        {/* 전체 일괄 승인 버튼 (승인대기 화면에서만 - 최대 1000개) */}
+                        {/* 전체 일괄 승인 버튼 (승인대기 화면에서만 - 최대 1000개, 확인 없이 바로 실행) */}
                         {filterStatus === 'draft' && (
                             <button
-                                onClick={() => openBulkAllConfirmModal('bulk-all-approve')}
+                                onClick={executeBulkAllApprove}
                                 disabled={isBulkProcessing}
                                 className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
                             >

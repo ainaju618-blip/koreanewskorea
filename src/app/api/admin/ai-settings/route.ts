@@ -66,7 +66,7 @@ export async function GET() {
             savedPrompts: [],
             savedKeyProfiles: [],
             enabledRegions: [],
-            dailyLimit: 100,
+            dailyLimit: 1000,
             monthlyTokenLimit: 1000000,
             maxInputLength: 5000
         };
@@ -113,7 +113,7 @@ export async function GET() {
                 } else if (row.key === "ai_enabled_regions") {
                     settings.enabledRegions = Array.isArray(row.value) ? row.value : [];
                 } else if (row.key === "ai_daily_limit") {
-                    settings.dailyLimit = typeof row.value === "number" ? row.value : 100;
+                    settings.dailyLimit = typeof row.value === "number" ? row.value : 1000;
                 } else if (row.key === "ai_monthly_token_limit") {
                     settings.monthlyTokenLimit = typeof row.value === "number" ? row.value : 1000000;
                 } else if (row.key === "ai_max_input_length") {
@@ -206,7 +206,7 @@ export async function PATCH(request: NextRequest) {
             },
             {
                 key: "ai_daily_limit",
-                value: dailyLimit ?? 100,
+                value: dailyLimit ?? 1000,
                 description: "Daily AI call limit"
             },
             {

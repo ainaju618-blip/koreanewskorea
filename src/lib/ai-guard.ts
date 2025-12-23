@@ -60,7 +60,7 @@ async function getAISettings(): Promise<AISettings> {
     const settings: AISettings = {
         enabled: false,
         enabledRegions: [],
-        dailyLimit: 100,
+        dailyLimit: 1000,
         monthlyTokenLimit: 1000000,
         maxInputLength: 5000
     };
@@ -72,7 +72,7 @@ async function getAISettings(): Promise<AISettings> {
             } else if (row.key === "ai_enabled_regions") {
                 settings.enabledRegions = Array.isArray(row.value) ? row.value : [];
             } else if (row.key === "ai_daily_limit") {
-                settings.dailyLimit = typeof row.value === "number" ? row.value : 100;
+                settings.dailyLimit = typeof row.value === "number" ? row.value : 1000;
             } else if (row.key === "ai_monthly_token_limit") {
                 settings.monthlyTokenLimit = typeof row.value === "number" ? row.value : 1000000;
             } else if (row.key === "ai_max_input_length") {
