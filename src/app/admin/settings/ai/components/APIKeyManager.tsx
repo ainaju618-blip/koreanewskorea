@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import {
     Eye,
     EyeOff,
-    TestTube,
+    Zap,
     RefreshCw,
     CheckCircle,
     XCircle,
-    ExternalLink
+    ExternalLink,
+    PlayCircle
 } from "lucide-react";
 import {
     AIProvider,
@@ -24,6 +25,8 @@ interface APIKeyManagerProps {
     onUpdateApiKey: (provider: AIProvider, value: string) => void;
     onTest: (provider: AIProvider) => void;
     onSetDefaultProvider: (provider: AIProvider) => void;
+    onTestAll?: () => void;
+    testingAll?: boolean;
 }
 
 export function APIKeyManager({
@@ -33,7 +36,9 @@ export function APIKeyManager({
     defaultProvider,
     onUpdateApiKey,
     onTest,
-    onSetDefaultProvider
+    onSetDefaultProvider,
+    onTestAll,
+    testingAll
 }: APIKeyManagerProps) {
     const [showKeys, setShowKeys] = useState<Record<AIProvider, boolean>>({
         gemini: false,
@@ -51,13 +56,41 @@ export function APIKeyManager({
         grok: "Grok"
     };
 
+    // Count how many keys have been tested successfully
+    const successCount = Object.values(testResults).filter(r => r === true).length;
+    const totalWithKeys = providers.filter(p => settings.apiKeys[p.id]).length;
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700">API 키</h3>
-                <span className="text-xs text-gray-500">
-                    기본: <span className="font-medium text-blue-600">{providerLabels[defaultProvider]}</span>
-                </span>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-700">API 키</h3>
+                    {successCount > 0 && (
+                        <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+                            {successCount}/{totalWithKeys} 연결됨
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                        기본: <span className="font-medium text-blue-600">{providerLabels[defaultProvider]}</span>
+                    </span>
+                    {onTestAll && totalWithKeys > 0 && (
+                        <button
+                            onClick={onTestAll}
+                            disabled={testingAll || testing !== null}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            title="모든 API 키 연결 테스트"
+                        >
+                            {testingAll ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                                <PlayCircle className="w-3 h-3" />
+                            )}
+                            전체 테스트
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* API Key inputs with radio buttons */}
@@ -113,27 +146,41 @@ export function APIKeyManager({
                             <ExternalLink className="w-4 h-4" />
                         </a>
 
-                        {/* Test button */}
+                        {/* Test button with result indicator */}
                         <button
                             onClick={() => onTest(provider.id)}
                             disabled={testing === provider.id || !settings.apiKeys[provider.id]}
-                            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition"
-                            title="테스트"
+                            className={`inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg transition ${
+                                testResults[provider.id] === true
+                                    ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                                    : testResults[provider.id] === false
+                                        ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title="API 연결 테스트"
                         >
                             {testing === provider.id ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <>
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                    테스트중
+                                </>
+                            ) : testResults[provider.id] === true ? (
+                                <>
+                                    <CheckCircle className="w-3 h-3" />
+                                    연결됨
+                                </>
+                            ) : testResults[provider.id] === false ? (
+                                <>
+                                    <XCircle className="w-3 h-3" />
+                                    실패
+                                </>
                             ) : (
-                                <TestTube className="w-4 h-4" />
+                                <>
+                                    <Zap className="w-3 h-3" />
+                                    테스트
+                                </>
                             )}
                         </button>
-
-                        {/* Test result */}
-                        {testResults[provider.id] === true && (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                        )}
-                        {testResults[provider.id] === false && (
-                            <XCircle className="w-4 h-4 text-red-600" />
-                        )}
                     </div>
                 ))}
             </div>

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         switch (provider) {
             case "gemini": {
                 const google = createGoogleGenerativeAI({ apiKey });
+                // gemini-2.5-flash: Latest stable model
                 model = google("gemini-2.5-flash");
                 break;
             }

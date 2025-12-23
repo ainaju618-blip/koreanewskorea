@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { encryptApiKeys, decryptApiKeys } from "@/lib/encryption";
+import { encryptApiKey, encryptApiKeys, decryptApiKeys, decryptApiKey, isEncrypted } from "@/lib/encryption";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Gemini multi-key entry type
+interface GeminiKeyEntry {
+    key: string;
+    label: string;
+    enabled?: boolean;
+}
 
 // AI Settings Keys
 const AI_SETTINGS_KEYS = [
@@ -38,6 +45,7 @@ export async function GET() {
             enabled: boolean;
             defaultProvider: string;
             apiKeys: { gemini: string; claude: string; grok: string };
+            geminiMultiKeys: GeminiKeyEntry[];
             systemPrompt: string;
             savedPrompts: { id: string; name: string; content: string }[];
             savedKeyProfiles: { id: string; name: string; apiKeys: { gemini: string; claude: string; grok: string } }[];
@@ -53,6 +61,7 @@ export async function GET() {
                 claude: "",
                 grok: "",
             },
+            geminiMultiKeys: [],
             systemPrompt: "",
             savedPrompts: [],
             savedKeyProfiles: [],
@@ -70,14 +79,31 @@ export async function GET() {
                     settings.defaultProvider = String(row.value).replace(/"/g, "") || "gemini";
                 } else if (row.key === "ai_global_keys") {
                     const keys = typeof row.value === "object" ? row.value : {};
-                    // Decrypt API keys for client display
-                    const decryptedKeys = decryptApiKeys(keys);
-                    // Fallback to .env values if DB keys are empty
-                    settings.apiKeys = {
-                        gemini: decryptedKeys.gemini || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
-                        claude: decryptedKeys.claude || process.env.ANTHROPIC_API_KEY || "",
-                        grok: decryptedKeys.grok || process.env.XAI_API_KEY || "",
-                    };
+
+                    // Check if gemini is multi-key format (array)
+                    if (Array.isArray(keys.gemini)) {
+                        // Decrypt each key in the array and assign default labels
+                        settings.geminiMultiKeys = keys.gemini.map((entry: GeminiKeyEntry, index: number) => ({
+                            key: isEncrypted(entry.key) ? decryptApiKey(entry.key) : entry.key,
+                            label: entry.label || String(index + 1), // Default: "1", "2", "3"...
+                            enabled: entry.enabled !== false
+                        }));
+                        // Use first enabled key as the main gemini key
+                        const firstEnabled = settings.geminiMultiKeys.find(k => k.enabled);
+                        settings.apiKeys.gemini = firstEnabled?.key || "";
+                    } else {
+                        // Legacy single-key format
+                        const decryptedKeys = decryptApiKeys(keys);
+                        settings.apiKeys.gemini = decryptedKeys.gemini || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+                    }
+
+                    // Decrypt claude and grok keys
+                    const decryptedKeys = decryptApiKeys({
+                        claude: keys.claude || "",
+                        grok: keys.grok || ""
+                    });
+                    settings.apiKeys.claude = decryptedKeys.claude || process.env.ANTHROPIC_API_KEY || "";
+                    settings.apiKeys.grok = decryptedKeys.grok || process.env.XAI_API_KEY || "";
                 } else if (row.key === "ai_system_prompt") {
                     settings.systemPrompt = String(row.value) || "";
                 } else if (row.key === "ai_saved_prompts") {
@@ -109,9 +135,36 @@ export async function PATCH(request: NextRequest) {
     try {
         const body = await request.json();
         const {
-            enabled, defaultProvider, apiKeys, systemPrompt, savedPrompts, savedKeyProfiles,
+            enabled, defaultProvider, apiKeys, geminiMultiKeys, systemPrompt, savedPrompts, savedKeyProfiles,
             enabledRegions, dailyLimit, monthlyTokenLimit, maxInputLength
         } = body;
+
+        // Validate apiKeys format - must be an object, not an array
+        if (apiKeys && (Array.isArray(apiKeys) || typeof apiKeys !== 'object')) {
+            console.error('[AI Settings] Invalid apiKeys format:', typeof apiKeys, Array.isArray(apiKeys) ? '(Array)' : '');
+            return NextResponse.json({ error: 'Invalid apiKeys format - must be an object' }, { status: 400 });
+        }
+
+        // Build the global keys object with multi-key support for Gemini
+        let globalKeysValue: Record<string, unknown>;
+
+        if (geminiMultiKeys && Array.isArray(geminiMultiKeys) && geminiMultiKeys.length > 0) {
+            // Use multi-key format for Gemini
+            const encryptedGeminiKeys = geminiMultiKeys.map((entry: GeminiKeyEntry, index: number) => ({
+                key: isEncrypted(entry.key) ? entry.key : encryptApiKey(entry.key),
+                label: entry.label || String(index + 1), // Default label: 1, 2, 3...
+                enabled: entry.enabled !== false
+            }));
+
+            globalKeysValue = {
+                gemini: encryptedGeminiKeys,
+                claude: apiKeys?.claude ? (isEncrypted(apiKeys.claude) ? apiKeys.claude : encryptApiKey(apiKeys.claude)) : "",
+                grok: apiKeys?.grok ? (isEncrypted(apiKeys.grok) ? apiKeys.grok : encryptApiKey(apiKeys.grok)) : ""
+            };
+        } else {
+            // Legacy single-key format
+            globalKeysValue = encryptApiKeys(apiKeys || {});
+        }
 
         // Upsert 설정
         const updates = [
@@ -127,8 +180,8 @@ export async function PATCH(request: NextRequest) {
             },
             {
                 key: "ai_global_keys",
-                // Encrypt API keys before storing
-                value: encryptApiKeys(apiKeys),
+                // Encrypt API keys before storing (with multi-key support)
+                value: globalKeysValue,
                 description: "Global AI API Keys (encrypted)"
             },
             {

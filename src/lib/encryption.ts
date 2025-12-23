@@ -41,6 +41,12 @@ function getEncryptionKey(): Buffer {
 export function encryptApiKey(plaintext: string): string {
     if (!plaintext) return '';
 
+    // Type validation - must be string
+    if (typeof plaintext !== 'string') {
+        console.error('[Encryption] Expected string but received:', typeof plaintext);
+        return '';
+    }
+
     const key = getEncryptionKey();
     const iv = crypto.randomBytes(IV_LENGTH);
 
@@ -111,9 +117,22 @@ export function isEncrypted(value: string): boolean {
  * Only encrypts values that appear to be unencrypted API keys.
  */
 export function encryptApiKeys(keys: Record<string, string>): Record<string, string> {
+    // Validation - keys must be an object, not an array
+    if (!keys || Array.isArray(keys) || typeof keys !== 'object') {
+        console.error('[Encryption] Invalid keys format - expected object but received:',
+            Array.isArray(keys) ? 'Array' : typeof keys);
+        return {};
+    }
+
     const encrypted: Record<string, string> = {};
 
     for (const [provider, key] of Object.entries(keys)) {
+        // Skip if value is not a string
+        if (key !== null && key !== undefined && typeof key !== 'string') {
+            console.error(`[Encryption] Invalid value type for ${provider}:`, typeof key);
+            encrypted[provider] = '';
+            continue;
+        }
         if (!key) {
             encrypted[provider] = '';
         } else if (isEncrypted(key)) {

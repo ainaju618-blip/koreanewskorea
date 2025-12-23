@@ -25,6 +25,12 @@ export interface SavedKeyProfile {
     };
 }
 
+export interface GeminiKeyEntry {
+    key: string;
+    label: string;
+    enabled?: boolean;
+}
+
 export interface AISettings {
     enabled: boolean;
     defaultProvider: AIProvider;
@@ -33,6 +39,7 @@ export interface AISettings {
         claude: string;
         grok: string;
     };
+    geminiMultiKeys: GeminiKeyEntry[];
     systemPrompt: string;
     savedPrompts: SavedPrompt[];
     savedKeyProfiles: SavedKeyProfile[];
@@ -84,6 +91,7 @@ const defaultSettings: AISettings = {
     enabled: false,
     defaultProvider: "gemini",
     apiKeys: { gemini: "", claude: "", grok: "" },
+    geminiMultiKeys: [],
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     savedPrompts: [],
     savedKeyProfiles: [],
@@ -101,6 +109,7 @@ export function useAISettings() {
 
     // Test states
     const [testing, setTesting] = useState<AIProvider | null>(null);
+    const [testingAll, setTestingAll] = useState(false);
     const [testResults, setTestResults] = useState<Record<AIProvider, boolean | null>>({
         gemini: null, claude: null, grok: null
     });
@@ -198,6 +207,66 @@ export function useAISettings() {
             showError("테스트 중 오류가 발생했습니다.");
         } finally {
             setTesting(null);
+        }
+    }, [settings.apiKeys, showSuccess, showError]);
+
+    // Test all API connections
+    const handleTestAll = useCallback(async () => {
+        // Get providers with API keys
+        const providersWithKeys = providers.filter(p => settings.apiKeys[p.id]);
+
+        if (providersWithKeys.length === 0) {
+            showError("테스트할 API 키가 없습니다.");
+            return;
+        }
+
+        try {
+            setTestingAll(true);
+            // Reset all test results
+            setTestResults({ gemini: null, claude: null, grok: null });
+
+            let successCount = 0;
+            let failCount = 0;
+
+            // Test each provider sequentially
+            for (const provider of providersWithKeys) {
+                setTesting(provider.id);
+
+                try {
+                    const res = await fetch("/api/ai/test", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            provider: provider.id,
+                            apiKey: settings.apiKeys[provider.id]
+                        }),
+                    });
+
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        setTestResults(prev => ({ ...prev, [provider.id]: true }));
+                        successCount++;
+                    } else {
+                        setTestResults(prev => ({ ...prev, [provider.id]: false }));
+                        failCount++;
+                    }
+                } catch {
+                    setTestResults(prev => ({ ...prev, [provider.id]: false }));
+                    failCount++;
+                }
+            }
+
+            // Show summary
+            if (failCount === 0) {
+                showSuccess(`모든 API 연결 성공! (${successCount}/${providersWithKeys.length})`);
+            } else if (successCount === 0) {
+                showError(`모든 API 연결 실패 (${failCount}/${providersWithKeys.length})`);
+            } else {
+                showSuccess(`${successCount}개 성공, ${failCount}개 실패`);
+            }
+        } finally {
+            setTesting(null);
+            setTestingAll(false);
         }
     }, [settings.apiKeys, showSuccess, showError]);
 
@@ -361,6 +430,7 @@ export function useAISettings() {
         loading,
         saving,
         testing,
+        testingAll,
         testResults,
         testInput,
         testOutput,
@@ -378,6 +448,7 @@ export function useAISettings() {
         setParsedOutput,
         handleSave,
         handleTest,
+        handleTestAll,
         handleSimulation,
         handleRealTest,
         saveSettings,

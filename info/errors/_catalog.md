@@ -65,7 +65,8 @@
 | status_check, constraint, 상태 | `constraint-status.md` | posts 상태값 제약 |
 | type_check, reporter, 타입 | `constraint-type.md` | reporters 타입 제약 |
 | migration, alter, schema, 스키마 | `migration.md` | 스키마 변경 오류 |
+| ai, column, schema cache, ai_validation_grade, 컬럼 없음 | `ai-column-missing.md` | AI 컬럼 누락으로 DB 업데이트 실패 |
 
 ---
 
-*최종 업데이트: 2025-12-17*
+*최종 업데이트: 2025-12-23*

@@ -5,6 +5,57 @@
 
 ---
 
+## [2025-12-23 14:00] 세션 #28 - Gemini Multi-Key 시스템 및 AI 재가공 에러 해결 by Claude
+
+### 주인님 의도
+- Gemini API 키 2개를 사용하여 Round-Robin 로테이션으로 AI 재가공
+- AI 재가공 실패 원인 분석 및 해결
+
+### 수행 작업
+
+1. **Gemini 모델 호환성 문제 해결**
+   - 문제: `gemini-3-flash-preview` 모델이 `@ai-sdk/google@2.0.51`에서 미지원
+   - 시도: 주인님 제공 문서에 따라 `gemini-3-flash-preview` 사용 시도 → 실패
+   - 해결: `gemini-2.5-flash`로 변경 (SDK 지원 모델)
+   - 수정 파일: `/api/ai/rewrite/route.ts`, `/api/ai/test/route.ts`
+
+2. **Round-Robin 키 로테이션 검증**
+   - `src/lib/ai-key-rotation.ts` 확인
+   - 2개 키 정상 등록 확인 (key1, key2)
+   - 로그: `[KeyRotation] Selected key #1/2 (key1)`
+
+3. **DB 스키마 누락 컬럼 발견 및 해결**
+   - 증상: AI 처리 성공 (Grade A) → DB 업데이트 실패
+   - 로그: `[STEP-8-DB-UPDATE-FAILED] "Could not find the 'ai_validation_grade' column"`
+   - 원인: `posts` 테이블에 AI 관련 컬럼 미생성
+   - 해결: 주인님이 Supabase에서 SQL 실행
+   ```sql
+   ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_validation_grade text;
+   ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_double_validated boolean DEFAULT false;
+   ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_validation_warnings text[];
+   ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_processed boolean DEFAULT false;
+   ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_processed_at timestamptz;
+   ```
+
+4. **에러 문서화**
+   - `info/errors/database/ai-column-missing.md` 생성
+   - `info/errors/_catalog.md` 업데이트
+
+### 사용 도구
+- Read: route.ts, ai-key-rotation.ts, ai-output-parser.ts, database.md
+- Write: ai-column-missing.md
+- Edit: _catalog.md
+
+### 결과
+- OK - Gemini 2.5 Flash 모델로 AI 재가공 정상 작동
+- OK - 2개 키 Round-Robin 로테이션 정상
+- OK - DB 컬럼 추가 후 업데이트 정상
+
+### 에러 기록
+- `info/errors/database/ai-column-missing.md` 생성 완료
+
+---
+
 ## [2025-12-21 23:30] 세션 #27 - 기자 페이지 로그아웃 기능 추가 by Claude
 
 ### 주인님 의도

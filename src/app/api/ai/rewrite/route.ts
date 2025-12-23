@@ -35,9 +35,9 @@ function getModel(provider: AIProvider, apiKey: string) {
     switch (provider) {
         case "gemini": {
             const google = createGoogleGenerativeAI({ apiKey });
-            // gemini-3-flash-preview: Released Dec 17, 2025 - Google's latest fastest model
-            // Frontier intelligence at lower cost, available via Gemini API
-            return google("gemini-3-flash-preview");
+            // gemini-2.5-flash: Latest stable model supported by @ai-sdk/google
+            // Note: gemini-3-flash-preview not yet supported in SDK v2.0.51
+            return google("gemini-2.5-flash");
         }
         case "claude": {
             const anthropic = createAnthropic({ apiKey });
@@ -311,8 +311,8 @@ export async function POST(request: NextRequest) {
             userPromptLength: text.length
         });
 
-        // [DEBUG] STEP 5: AI 호출
-        log("STEP-5-AI-CALLING", { provider, model: "gemini-3-flash-preview" });
+        // [DEBUG] STEP 5: AI call
+        log("STEP-5-AI-CALLING", { provider, model: "gemini-2.5-flash" });
         const startTime = Date.now();
 
         const { text: rewritten, usage } = await generateText({

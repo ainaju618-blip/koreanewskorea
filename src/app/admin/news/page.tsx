@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, CheckCircle, FileEdit, Trash2, X, Globe, Save, Loader2, RotateCcw, AlertTriangle, PauseCircle } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
@@ -87,14 +87,26 @@ function AdminNewsListPage() {
         currentStep: string;
         startTime: number;
         isComplete: boolean;
+        isStopped: boolean;
     }>({
         isOpen: false,
         title: '',
         logs: [],
         currentStep: '',
         startTime: 0,
-        isComplete: false
+        isComplete: false,
+        isStopped: false
     });
+
+    // Stop signal for bulk operations
+    const stopBulkRef = useRef(false);
+
+    // Stop button handler
+    const handleStopBulk = () => {
+        stopBulkRef.current = true;
+        setProgressModal(prev => ({ ...prev, isStopped: true }));
+        addProgressLog('중지', '사용자가 중지를 요청했습니다. 현재 작업 완료 후 중지됩니다...', 'warning');
+    };
 
     // 진행 상황 로그 추가 함수
     const addProgressLog = (step: string, message: string, status: ProgressLog['status'] = 'info', duration?: number) => {
@@ -426,6 +438,9 @@ function AdminNewsListPage() {
 
         const totalStartTime = Date.now();
 
+        // Reset stop signal
+        stopBulkRef.current = false;
+
         // 진행 모달 열기
         setProgressModal({
             isOpen: true,
@@ -433,7 +448,8 @@ function AdminNewsListPage() {
             logs: [],
             currentStep: '초기화',
             startTime: totalStartTime,
-            isComplete: false
+            isComplete: false,
+            isStopped: false
         });
 
         setIsBulkProcessing(true);
@@ -448,12 +464,14 @@ function AdminNewsListPage() {
 
             let aiEnabled = false;
             let enabledRegions: string[] = [];
+            let dailyLimitFromSettings = 100; // Store daily limit from settings response
 
             if (settingsRes.ok) {
                 const settingsData = await settingsRes.json();
                 const settings = settingsData.settings || settingsData;
                 aiEnabled = settings.enabled === true;
                 enabledRegions = settings.enabledRegions || [];
+                dailyLimitFromSettings = settings.dailyLimit || 100; // Extract daily limit here
                 addProgressLog('AI 설정', `마스터 스위치: ${aiEnabled ? 'ON' : 'OFF'} (${step1Duration}ms)`, aiEnabled ? 'success' : 'warning', step1Duration);
                 addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
             } else {
@@ -493,56 +511,62 @@ function AdminNewsListPage() {
 
             // [STEP 1.5] Daily limit pre-check
             addProgressLog('한도 체크', '일일 사용량 확인 중...', 'info');
-            const usageRes = await fetch('/api/admin/ai-usage');
-            let dailyLimit = 100; // default
+            const dailyLimit = dailyLimitFromSettings; // Use value extracted from settings response above
             let todayCount = 0;
 
-            // Get daily limit from settings
-            if (settingsRes.ok) {
-                const settingsData = await settingsRes.json();
-                dailyLimit = settingsData.settings?.dailyLimit || settingsData.dailyLimit || 100;
-            }
+            try {
+                console.log('[DEBUG] Fetching ai-usage...');
+                const usageRes = await fetch('/api/admin/ai-usage');
+                console.log('[DEBUG] ai-usage response status:', usageRes.status);
 
-            if (usageRes.ok) {
-                const usageData = await usageRes.json();
-                todayCount = usageData.today?.callCount || 0;
-                const remaining = dailyLimit - todayCount;
+                if (usageRes.ok) {
+                    const usageData = await usageRes.json();
+                    console.log('[DEBUG] usageData:', usageData);
+                    todayCount = usageData.today?.callCount || 0;
+                    const remaining = dailyLimit - todayCount;
 
-                addProgressLog('한도 체크', `오늘 사용: ${todayCount}/${dailyLimit}, 남은 횟수: ${remaining}`,
-                    remaining >= ids.length ? 'success' : 'warning');
+                    addProgressLog('한도 체크', `오늘 사용: ${todayCount}/${dailyLimit}, 남은 횟수: ${remaining}`,
+                        remaining >= ids.length ? 'success' : 'warning');
 
-                // Count how many articles need AI processing
-                let aiTargetCount = 0;
-                for (const id of ids) {
-                    const article = articles.find(a => a.id === id);
-                    if (article) {
-                        const regionMap: Record<string, string> = {
-                            '광주광역시': 'gwangju', '전라남도': 'jeonnam',
-                            '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
-                            '나주시': 'naju', '광양시': 'gwangyang',
-                            '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
-                            '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
-                            '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
-                            '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
-                            '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
-                            '진도군': 'jindo', '신안군': 'sinan',
-                            '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
-                        };
-                        const articleRegion = regionMap[article.source] || '';
-                        if (enabledRegions.includes(articleRegion)) {
-                            aiTargetCount++;
+                    // Count how many articles need AI processing
+                    let aiTargetCount = 0;
+                    for (const id of ids) {
+                        const article = articles.find(a => a.id === id);
+                        if (article) {
+                            const regionMap: Record<string, string> = {
+                                '광주광역시': 'gwangju', '전라남도': 'jeonnam',
+                                '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
+                                '나주시': 'naju', '광양시': 'gwangyang',
+                                '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
+                                '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
+                                '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
+                                '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
+                                '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
+                                '진도군': 'jindo', '신안군': 'sinan',
+                                '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                            };
+                            const articleRegion = regionMap[article.source] || '';
+                            if (enabledRegions.includes(articleRegion)) {
+                                aiTargetCount++;
+                            }
                         }
                     }
-                }
 
-                // Warn if not enough quota (considering double validation = 2x calls per article)
-                const estimatedCalls = aiTargetCount * 2; // Double validation
-                if (remaining < estimatedCalls) {
-                    addProgressLog('한도 경고',
-                        `AI 대상 ${aiTargetCount}개 (예상 호출 ${estimatedCalls}회) > 남은 한도 ${remaining}회`,
-                        'warning');
-                    addProgressLog('한도 경고', '일부 기사는 한도 초과로 실패할 수 있습니다.', 'warning');
+                    // Warn if not enough quota (considering double validation = 2x calls per article)
+                    const estimatedCalls = aiTargetCount * 2; // Double validation
+                    if (remaining < estimatedCalls) {
+                        addProgressLog('한도 경고',
+                            `AI 대상 ${aiTargetCount}개 (예상 호출 ${estimatedCalls}회) > 남은 한도 ${remaining}회`,
+                            'warning');
+                        addProgressLog('한도 경고', '일부 기사는 한도 초과로 실패할 수 있습니다.', 'warning');
+                    }
+                } else {
+                    console.error('[DEBUG] ai-usage API failed:', usageRes.status);
+                    addProgressLog('한도 체크', `API 오류 (${usageRes.status}) - 계속 진행`, 'warning');
                 }
+            } catch (usageError) {
+                console.error('[DEBUG] ai-usage fetch error:', usageError);
+                addProgressLog('한도 체크', '사용량 조회 실패 - 계속 진행', 'warning');
             }
 
             // [STEP 2] AI 활성화 - 각 기사별로 AI 재가공 처리
@@ -568,6 +592,13 @@ function AdminNewsListPage() {
 
             // 선택된 기사 정보 조회
             for (let i = 0; i < ids.length; i++) {
+                // Check stop signal before each article
+                if (stopBulkRef.current) {
+                    const totalDuration = Date.now() - totalStartTime;
+                    addProgressLog('중지됨', `사용자 요청으로 중지됨 (${i}/${ids.length} 처리)`, 'warning', totalDuration);
+                    break;
+                }
+
                 const articleId = ids[i];
                 const article = articles.find(a => a.id === articleId);
 
@@ -677,10 +708,14 @@ function AdminNewsListPage() {
 
         } catch (error) {
             const totalDuration = Date.now() - totalStartTime;
-            addProgressLog('에러', `처리 실패 (${(totalDuration / 1000).toFixed(1)}초)`, 'error', totalDuration);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : '';
+            console.error('[DEBUG] Bulk approve error:', errorMessage);
+            console.error('[DEBUG] Error stack:', errorStack);
+            addProgressLog('에러', `처리 실패: ${errorMessage}`, 'error', totalDuration);
+            addProgressLog('에러', `(${(totalDuration / 1000).toFixed(1)}초 경과)`, 'error');
             setProgressModal(prev => ({ ...prev, isComplete: true, currentStep: '실패' }));
-            console.error('승인 처리 오류:', error);
-            showError('승인 처리 중 오류가 발생했습니다.');
+            showError(`승인 처리 중 오류: ${errorMessage}`);
         } finally {
             setIsBulkProcessing(false);
         }
@@ -952,7 +987,8 @@ function AdminNewsListPage() {
             logs: [],
             currentStep: '초기화',
             startTime: totalStartTime,
-            isComplete: false
+            isComplete: false,
+            isStopped: false
         });
 
         setIsApproving(true);
@@ -1759,12 +1795,28 @@ function AdminNewsListPage() {
                                     }
                                 </span>
                             </div>
-                            <button
-                                onClick={() => setProgressModal(prev => ({ ...prev, isOpen: false }))}
-                                className="text-[#8b949e] hover:text-[#e6edf3] transition"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {/* Stop button - only show when processing */}
+                                {!progressModal.isComplete && !progressModal.isStopped && (
+                                    <button
+                                        onClick={handleStopBulk}
+                                        className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-1 transition"
+                                        title="처리 중지"
+                                    >
+                                        <PauseCircle className="w-3 h-3" />
+                                        중지
+                                    </button>
+                                )}
+                                {progressModal.isStopped && !progressModal.isComplete && (
+                                    <span className="text-xs text-yellow-400">중지 중...</span>
+                                )}
+                                <button
+                                    onClick={() => setProgressModal(prev => ({ ...prev, isOpen: false }))}
+                                    className="text-[#8b949e] hover:text-[#e6edf3] transition"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Log List */}

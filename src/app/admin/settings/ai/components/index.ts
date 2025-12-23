@@ -7,3 +7,4 @@ export { ReporterKeyManager } from "./ReporterKeyManager";
 export { RegionSelector, ALL_REGIONS } from "./RegionSelector";
 export { UsagePanel } from "./UsagePanel";
 export { SettingsSummary } from "./SettingsSummary";
+export { GeminiMultiKeyTester } from "./GeminiMultiKeyTester";

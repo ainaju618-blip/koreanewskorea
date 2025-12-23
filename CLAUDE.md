@@ -14,7 +14,11 @@
 ## 0.1 Project Identity
 
 ```
-Korea NEWS (koreanewsone.com)
+Official Name: 코리아NEWS (Gwangju City Hall Registered)
+
+Domains:
+  - koreanewskorea.com (Primary)
+  - koreanewsone.com
 
 Mission:
   Auto-collect press releases from 27 Jeonnam/Gwangju regions,
@@ -264,6 +268,62 @@ koreanews/
 
 ---
 
+# Work Domains (Two Tracks)
+
+> **AI agents work in two separate domains. Identify which domain before starting.**
+
+## Domain A: New Development (Planning Required)
+
+New features that require planning and specification before coding.
+
+| Feature | Spec Document | Status |
+|---------|---------------|--------|
+| **Regional Homepage System** | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Planning |
+
+**Workflow for Domain A:**
+```
+1. Read the spec document FIRST
+2. Check the checklist in the spec
+3. Work only on items marked for current phase
+4. Update checklist after completing work
+5. Increment spec version if making significant changes
+```
+
+## Domain B: Existing Program Enhancement
+
+Bug fixes, improvements, and maintenance of existing features.
+
+**Workflow for Domain B:**
+```
+1. Identify the problem/enhancement
+2. Read relevant source files
+3. Fix/improve following existing patterns
+4. Test locally before commit
+5. Document in session log
+```
+
+## How to Identify Domain
+
+| Signal | Domain |
+|--------|--------|
+| "New feature", "Build X from scratch" | **A - New Development** |
+| "Fix bug", "Improve X", "Update X" | **B - Enhancement** |
+| Spec document exists | **A - New Development** |
+| Working on existing code | **B - Enhancement** |
+
+---
+
+# Active Specifications (Plan Documents)
+
+> **Read these before working on new features**
+
+| Document | Feature | Version | Status |
+|----------|---------|---------|--------|
+| [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Regional Homepage System | 0.4 | Planning |
+| [plan/mainplan.md](plan/mainplan.md) | Master Strategy | 1.0 | Active |
+
+---
+
 # Maintenance Policy
 
 > **Self-Healing Clause**
@@ -282,8 +342,10 @@ When discrepancy found between rules and actual code:
 |------|-------|
 | **Project Name** | `koreanewsone` |
 | **Team** | `koreanews-projects` |
-| **Production Domain** | `www.koreanewsone.com` |
+| **Domain (Primary)** | `koreanewskorea.com` |
+| **Domain (Secondary)** | `koreanewsone.com` |
 | **GitHub Repo** | `korea-news/koreanewsone` |
+| **Registered Name** | 코리아NEWS (Gwangju City Hall) |
 
 > **NEVER create new Vercel project! Deploy to existing project only.**
 

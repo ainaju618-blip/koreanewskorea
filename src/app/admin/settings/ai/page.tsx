@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { RefreshCw, AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
 import { DEFAULT_SYSTEM_PROMPT } from "@/lib/ai-prompts";
-import { useAISettings, SavedPrompt } from "./hooks/useAISettings";
+import { useAISettings, SavedPrompt, GeminiKeyEntry } from "./hooks/useAISettings";
 import {
     AISettingsHeader,
     PromptEditor,
@@ -13,6 +13,7 @@ import {
     RegionSelector,
     UsagePanel,
     SettingsSummary,
+    GeminiMultiKeyTester,
     ALL_REGIONS
 } from "./components";
 import Link from "next/link";
@@ -23,6 +24,7 @@ export default function AISettingsPage() {
         loading,
         saving,
         testing,
+        testingAll,
         testResults,
         testInput,
         testOutput,
@@ -36,6 +38,7 @@ export default function AISettingsPage() {
         setTestOutput,
         handleSave,
         handleTest,
+        handleTestAll,
         handleSimulation,
         handleRealTest,
         realTestResult,
@@ -99,6 +102,19 @@ export default function AISettingsPage() {
     const handleCopyOutput = () => {
         navigator.clipboard.writeText(testOutput);
         showSuccess("클립보드에 복사되었습니다.");
+    };
+
+    // Handle Gemini multi-key changes
+    const handleGeminiKeysChange = (keys: GeminiKeyEntry[]) => {
+        updateSettings({ geminiMultiKeys: keys });
+    };
+
+    // Save Gemini multi-keys
+    const handleSaveGeminiKeys = async () => {
+        const success = await saveSettings(settings);
+        if (success) {
+            showSuccess("Gemini 키가 저장되었습니다.");
+        }
     };
 
     return (
@@ -198,11 +214,21 @@ export default function AISettingsPage() {
                     <APIKeyManager
                         settings={settings}
                         testing={testing}
+                        testingAll={testingAll}
                         testResults={testResults}
                         defaultProvider={settings.defaultProvider}
                         onUpdateApiKey={updateApiKey}
                         onTest={handleTest}
+                        onTestAll={handleTestAll}
                         onSetDefaultProvider={setDefaultProvider}
+                    />
+
+                    {/* Gemini Multi-Key Manager */}
+                    <GeminiMultiKeyTester
+                        geminiKeys={settings.geminiMultiKeys || []}
+                        onKeysChange={handleGeminiKeysChange}
+                        onSave={handleSaveGeminiKeys}
+                        saving={saving}
                     />
 
                     {/* 사용량 패널 */}
