@@ -204,7 +204,9 @@
       "Bash(git reflog:*)",
       "Bash(powershell -Command \"Get-ChildItem -Directory | Where-Object { $_Name -ne ''common'' -and $_Name -ne ''plan'' } | Remove-Item -Recurse -Force\")",
       "Bash(node check-keys.mjs:*)",
-      "Bash(node -e \"\nimport { readFileSync } from ''fs'';\nconst content = readFileSync\\(''.env'', ''utf8''\\);\nconsole.log\\(''Lines:'', content.split\\(''\\\\n''\\).length\\);\nconst lines = content.split\\(''\\\\n''\\).filter\\(l => l.includes\\(''SUPABASE''\\)\\);\nconsole.log\\(''Supabase lines:'', lines\\);\n\")"
+      "Bash(node -e \"\nimport { readFileSync } from ''fs'';\nconst content = readFileSync\\(''.env'', ''utf8''\\);\nconsole.log\\(''Lines:'', content.split\\(''\\\\n''\\).length\\);\nconst lines = content.split\\(''\\\\n''\\).filter\\(l => l.includes\\(''SUPABASE''\\)\\);\nconsole.log\\(''Supabase lines:'', lines\\);\n\")",
+      "Bash(gh repo create:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 8; Get-Content ''C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--cbt-koreanews\\\\tasks\\\\b1adeb1.output''\")"
     ]
   }
 }

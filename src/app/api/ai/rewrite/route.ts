@@ -54,72 +54,56 @@ function getModel(provider: AIProvider, apiKey: string) {
     }
 }
 
+// HARDCODED GEMINI API KEY (temporary - for testing)
+// User provided new key on 2025-12-24 to resolve rate limit issues
+const HARDCODED_GEMINI_KEY = "AIzaSyAjlrbbTCxtwpPyKkevDfUAJ-IjVu42-UI";
+
 // Get global AI settings (with multi-key support)
 async function getGlobalSettings() {
+    console.log("========================================");
+    console.log("[getGlobalSettings] DEBUG START");
+    console.log("[getGlobalSettings] USING HARDCODED KEY!");
+    console.log("[getGlobalSettings] Key Preview:", HARDCODED_GEMINI_KEY.substring(0, 15) + "...");
+
+    // Fetch system prompt from DB (still needed)
     const { data, error } = await supabaseAdmin
         .from("site_settings")
         .select("key, value")
-        .in("key", ["ai_default_provider", "ai_global_keys", "ai_system_prompt"]);
+        .in("key", ["ai_system_prompt"]);
 
-    if (error) throw error;
+    if (error) {
+        console.log("[getGlobalSettings] DB ERROR:", error.message);
+    }
 
-    let provider: AIProvider = "gemini";
-    let rawKeys: Record<string, unknown> = {};
     let systemPrompt: string = "";
-
     for (const row of data || []) {
-        if (row.key === "ai_default_provider") {
-            provider = String(row.value).replace(/"/g, "") as AIProvider;
-        } else if (row.key === "ai_global_keys") {
-            rawKeys = typeof row.value === "object" ? row.value : {};
-        } else if (row.key === "ai_system_prompt") {
+        if (row.key === "ai_system_prompt") {
             systemPrompt = String(row.value) || "";
         }
     }
 
-    // Handle multi-key for Gemini
-    let selectedGeminiKey = "";
-    let keyLabel = "default";
-    let keyIndex = 0;
+    // Use hardcoded key directly
+    const provider: AIProvider = "gemini";
+    const selectedGeminiKey = HARDCODED_GEMINI_KEY;
+    const keyLabel = "hardcoded-new";
+    const keyIndex = 0;
 
-    if (provider === "gemini") {
-        const geminiValue = rawKeys.gemini;
-
-        // Check if multi-key format (array)
-        if (Array.isArray(geminiValue) && geminiValue.length > 0) {
-            const keyResult = getNextGeminiKey({
-                gemini: geminiValue as GeminiKeyEntry[],
-                claude: "",
-                grok: ""
-            });
-            if (keyResult) {
-                selectedGeminiKey = keyResult.key;
-                keyLabel = keyResult.label;
-                keyIndex = keyResult.index;
-            }
-        }
-        // Legacy single key format
-        else if (typeof geminiValue === "string" && geminiValue) {
-            selectedGeminiKey = isEncrypted(geminiValue)
-                ? decryptApiKey(geminiValue)
-                : geminiValue;
-        }
-    }
-
-    // Decrypt other keys (claude, grok) - these are still single key
-    const otherKeys: Record<string, string> = {};
-    for (const [key, value] of Object.entries(rawKeys)) {
-        if (key !== "gemini" && typeof value === "string") {
-            otherKeys[key] = isEncrypted(value) ? decryptApiKey(value) : value;
-        }
-    }
-
-    // Build final API keys object
+    // Build final API keys object (hardcoded gemini, empty others)
     const apiKeys: Record<string, string> = {
         gemini: selectedGeminiKey,
-        claude: otherKeys.claude || "",
-        grok: otherKeys.grok || ""
+        claude: "",
+        grok: ""
     };
+
+    console.log("[getGlobalSettings] FINAL RESULT:");
+    console.log("[getGlobalSettings] - provider:", provider);
+    console.log("[getGlobalSettings] - gemini key exists:", !!apiKeys.gemini);
+    console.log("[getGlobalSettings] - gemini key length:", apiKeys.gemini?.length || 0);
+    console.log("[getGlobalSettings] - gemini key preview:", apiKeys.gemini ? (apiKeys.gemini.substring(0, 12) + "..." + apiKeys.gemini.substring(apiKeys.gemini.length - 4)) : "EMPTY");
+    console.log("[getGlobalSettings] - keyLabel:", keyLabel);
+    console.log("[getGlobalSettings] - keyIndex:", keyIndex);
+    console.log("[getGlobalSettings] DEBUG END");
+    console.log("========================================");
 
     return { provider, apiKeys, systemPrompt, keyLabel, keyIndex };
 }
@@ -315,11 +299,144 @@ export async function POST(request: NextRequest) {
         log("STEP-5-AI-CALLING", { provider, model: "gemini-2.5-flash" });
         const startTime = Date.now();
 
-        const { text: rewritten, usage } = await generateText({
-            model,
-            system: finalSystemPrompt,
-            prompt: `${stylePrompt}\n\n---\n\n${text}`,
-        });
+        let rewritten: string | undefined;
+        let usage: unknown;
+
+        // Helper function to try API call with rate limit handling
+        const tryApiCallWithFallback = async (currentApiKey: string, retryCount = 0): Promise<{ text: string; usage: unknown }> => {
+            const currentModel = getModel(provider, currentApiKey);
+
+            console.log("========================================");
+            console.log("[AI-CALL] ATTEMPT", retryCount + 1);
+            console.log("[AI-CALL] Provider:", provider);
+            console.log("[AI-CALL] API Key Length:", currentApiKey?.length || 0);
+            console.log("[AI-CALL] API Key Preview:", currentApiKey ? (currentApiKey.substring(0, 15) + "..." + currentApiKey.substring(currentApiKey.length - 4)) : "EMPTY");
+            console.log("[AI-CALL] Timestamp:", new Date().toISOString());
+            console.log("========================================");
+
+            try {
+                const result = await generateText({
+                    model: currentModel,
+                    system: finalSystemPrompt,
+                    prompt: `${stylePrompt}\n\n---\n\n${text}`,
+                    maxRetries: 0,
+                });
+                return { text: result.text || "", usage: result.usage };
+            } catch (err: unknown) {
+                const errMsg = err instanceof Error ? err.message : String(err);
+
+                // Check if rate limit error
+                if (errMsg.includes("quota") || errMsg.includes("429") || errMsg.includes("rate")) {
+                    console.log("[AI-CALL] RATE LIMIT HIT! Checking for alternate key...");
+
+                    // If we haven't retried yet and we have multi-key, try getting next key
+                    if (retryCount < 1 && provider === "gemini") {
+                        const globalSettings = await getGlobalSettings();
+                        const nextKey = globalSettings.apiKeys.gemini;
+
+                        // If we got a different key, wait and retry
+                        if (nextKey && nextKey !== currentApiKey) {
+                            console.log("[AI-CALL] Got different key! Waiting 10s then retrying...");
+                            console.log("[AI-CALL] Next Key Preview:", nextKey.substring(0, 15) + "...");
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            return tryApiCallWithFallback(nextKey, retryCount + 1);
+                        } else {
+                            console.log("[AI-CALL] Same key returned, cannot fallback. Waiting 15s then retrying same key...");
+                            await new Promise(resolve => setTimeout(resolve, 15000));
+                            return tryApiCallWithFallback(currentApiKey, retryCount + 1);
+                        }
+                    }
+                }
+                throw err;
+            }
+        };
+
+        try {
+            log("STEP-5-AI-CALLING-START", {
+                timestamp: new Date().toISOString(),
+                provider,
+                modelUsed: "gemini-2.5-flash",
+                systemPromptLength: finalSystemPrompt.length,
+                userPromptLength: text.length,
+                totalPromptLength: finalSystemPrompt.length + text.length + stylePrompt.length
+            });
+
+            const result = await tryApiCallWithFallback(apiKey);
+
+            rewritten = result.text;
+            usage = result.usage;
+
+            console.log("========================================");
+            console.log("[AI-CALL] SUCCESS - Response received!");
+            console.log("[AI-CALL] Response Length:", rewritten?.length || 0);
+            console.log("[AI-CALL] Usage:", JSON.stringify(usage));
+            console.log("========================================");
+
+            log("STEP-5-AI-CALLING-SUCCESS", {
+                timestamp: new Date().toISOString(),
+                responseReceived: true
+            });
+
+        } catch (aiError: unknown) {
+            const elapsed = Date.now() - startTime;
+            const aiErrorMessage = aiError instanceof Error ? aiError.message : String(aiError);
+            const aiErrorStack = aiError instanceof Error ? aiError.stack : "No stack trace";
+            const aiErrorName = aiError instanceof Error ? aiError.name : "Unknown";
+
+            // Extract full error details
+            const fullError = aiError as Record<string, unknown>;
+
+            console.log("========================================");
+            console.log("[AI-CALL] ERROR OCCURRED!");
+            console.log("[AI-CALL] Error Name:", aiErrorName);
+            console.log("[AI-CALL] Error Message:", aiErrorMessage);
+            console.log("[AI-CALL] Elapsed Time:", elapsed, "ms");
+            console.log("[AI-CALL] Provider:", provider);
+            console.log("[AI-CALL] API Key Preview:", apiKey ? (apiKey.substring(0, 15) + "..." + apiKey.substring(apiKey.length - 4)) : "EMPTY");
+            console.log("[AI-CALL] Full Error Object Keys:", Object.keys(fullError));
+            console.log("[AI-CALL] Full Error:", JSON.stringify(fullError, null, 2));
+
+            // Check if it's a rate limit error
+            if (aiErrorMessage.includes("429") || aiErrorMessage.includes("quota") || aiErrorMessage.includes("rate") || aiErrorMessage.includes("limit")) {
+                console.log("[AI-CALL] >>> RATE LIMIT DETECTED <<<");
+                console.log("[AI-CALL] This is a rate limit error!");
+                console.log("[AI-CALL] Possible causes:");
+                console.log("[AI-CALL] 1. Free tier limit: 20 RPM");
+                console.log("[AI-CALL] 2. AI SDK internal retries (3 attempts)");
+                console.log("[AI-CALL] 3. API key might be shared/exhausted");
+            }
+
+            // Check for specific Google AI error structure
+            if (fullError.cause) {
+                console.log("[AI-CALL] Error Cause:", JSON.stringify(fullError.cause, null, 2));
+            }
+            if (fullError.response) {
+                console.log("[AI-CALL] Error Response:", JSON.stringify(fullError.response, null, 2));
+            }
+
+            console.log("[AI-CALL] Stack Trace:", aiErrorStack);
+            console.log("========================================");
+
+            log("STEP-5-AI-ERROR", {
+                elapsed: `${elapsed}ms`,
+                errorName: aiErrorName,
+                errorMessage: aiErrorMessage,
+                errorStack: aiErrorStack,
+                provider,
+                apiKeyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : "EMPTY",
+                fullErrorKeys: Object.keys(fullError)
+            });
+
+            console.error("[AI-REWRITE] AI API Error:", {
+                error: aiErrorMessage,
+                stack: aiErrorStack,
+                provider,
+                elapsed
+            });
+
+            // Re-throw to be caught by outer catch
+            throw new Error(`AI API Error: ${aiErrorMessage}`);
+        }
 
         const elapsed = Date.now() - startTime;
         log("STEP-5-AI-RESPONSE", {
@@ -381,17 +498,39 @@ export async function POST(request: NextRequest) {
             let finalParseResult = parseResult;
 
             if (validationResult1.grade === "A" && articleId) {
+                console.log("╔════════════════════════════════════════════════════════════════╗");
+                console.log("║  !!! DOUBLE VALIDATION TRIGGERED - 2ND API CALL STARTING !!!  ║");
+                console.log("╚════════════════════════════════════════════════════════════════╝");
+                console.log("[DOUBLE-VAL] 1st pass was Grade A, now making 2ND API CALL");
+                console.log("[DOUBLE-VAL] This is the SECOND API request for this article!");
+                console.log("[DOUBLE-VAL] Total API calls so far: 2 (for this one article)");
+                console.log("[DOUBLE-VAL] API Key Preview:", apiKey ? (apiKey.substring(0, 15) + "..." + apiKey.substring(apiKey.length - 4)) : "EMPTY");
+                console.log("[DOUBLE-VAL] Timestamp:", new Date().toISOString());
+
                 log("STEP-7.6-DOUBLE-VALIDATION-START", {
                     message: "1st pass Grade A, starting 2nd validation pass"
                 });
 
+                // Wait 5 seconds before 2nd API call to avoid rate limiting
+                console.log("[DOUBLE-VAL] Waiting 5 seconds before 2nd API call (rate limit prevention)...");
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.log("[DOUBLE-VAL] Wait complete, now calling API...");
+
                 // 2nd AI call for double validation
                 const startTime2 = Date.now();
+
+                console.log("[DOUBLE-VAL] Calling generateText() for 2nd time...");
+
                 const { text: rewritten2, usage: usage2 } = await generateText({
                     model,
                     system: finalSystemPrompt,
                     prompt: `${stylePrompt}\n\n---\n\n${text}`,
+                    maxRetries: 0,  // Disable AI SDK auto-retry to prevent quota exhaustion
                 });
+
+                console.log("[DOUBLE-VAL] 2nd API call completed successfully!");
+                console.log("[DOUBLE-VAL] Response length:", rewritten2?.length || 0);
+
                 const elapsed2 = Date.now() - startTime2;
 
                 log("STEP-7.6-AI-RESPONSE-PASS2", {
@@ -582,10 +721,33 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error: unknown) {
-        console.error("Rewrite Error:", error);
-        const message = error instanceof Error ? error.message : "재작성 중 오류 발생";
+        const errorMessage = error instanceof Error ? error.message : "재작성 중 오류 발생";
+        const errorStack = error instanceof Error ? error.stack : "No stack trace";
+        const errorName = error instanceof Error ? error.name : "Unknown";
+
+        // [DEBUG] 전체 에러 로그 - 파일 저장
+        const timestamp = new Date().toISOString();
+        const errorLog = {
+            timestamp,
+            step: "GLOBAL-CATCH-ERROR",
+            errorName,
+            errorMessage,
+            errorStack
+        };
+
+        console.error("[AI-REWRITE] Global Error:", errorLog);
+
+        // 파일에도 기록
+        try {
+            ensureLogDir();
+            const logLine = `[${timestamp}] [GLOBAL-CATCH-ERROR] ${JSON.stringify(errorLog, null, 2)}\n\n`;
+            fs.appendFileSync(LOG_FILE, logLine, "utf8");
+        } catch (logError) {
+            console.error("[AI-REWRITE] Failed to write error log:", logError);
+        }
+
         return NextResponse.json(
-            { error: message },
+            { error: errorMessage, details: errorStack },
             { status: 500 }
         );
     }

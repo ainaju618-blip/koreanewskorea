@@ -15,6 +15,7 @@ export interface Article {
     region: string;
     category?: string;
     source?: string;
+    source_url?: string;
     published_at: string;
     created_at?: string;
     author_name?: string;

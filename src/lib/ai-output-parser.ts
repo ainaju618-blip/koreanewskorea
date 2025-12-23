@@ -47,8 +47,8 @@ export interface ValidationResult {
 }
 
 /**
- * Extract JSON from AI response
- * AI may wrap output in markdown code blocks, so handle that
+ * Extract and sanitize JSON from AI response
+ * Handles: markdown blocks, unescaped quotes, newlines, special chars
  */
 function extractJSON(text: string): string {
     // Remove code blocks (```json ... ``` or ``` ... ```)
@@ -68,7 +68,92 @@ function extractJSON(text: string): string {
         cleaned = cleaned.substring(startIdx, endIdx + 1);
     }
 
+    // Sanitize JSON string
+    cleaned = sanitizeJSON(cleaned);
+
     return cleaned;
+}
+
+/**
+ * Sanitize JSON string to fix common AI output issues
+ */
+function sanitizeJSON(jsonStr: string): string {
+    let result = jsonStr;
+
+    // 1. Normalize Unicode quotes to standard quotes
+    result = result
+        .replace(/[\u201C\u201D\u201E\u201F]/g, '"')  // Curly double quotes -> "
+        .replace(/[\u2018\u2019\u201A\u201B]/g, "'"); // Curly single quotes -> '
+
+    // 2. Fix unescaped newlines inside string values
+    // This regex finds strings and escapes newlines within them
+    result = result.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match) => {
+        return match
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r")
+            .replace(/\t/g, "\\t");
+    });
+
+    // 3. Fix trailing commas before } or ]
+    result = result.replace(/,\s*([\}\]])/g, "$1");
+
+    // 4. Try to fix incomplete JSON (missing closing braces)
+    const openBraces = (result.match(/\{/g) || []).length;
+    const closeBraces = (result.match(/\}/g) || []).length;
+    if (openBraces > closeBraces) {
+        const missing = openBraces - closeBraces;
+        result = result + "}".repeat(missing);
+        console.log(`[sanitizeJSON] Added ${missing} missing closing brace(s)`);
+    }
+
+    // 5. Fix unescaped quotes inside string values (complex case)
+    // Pattern: "key": "value with "nested" quotes"
+    // This is tricky - we try a simple fix for common patterns
+    result = fixNestedQuotes(result);
+
+    return result;
+}
+
+/**
+ * Attempt to fix unescaped nested quotes in JSON values
+ * This handles cases like: "content": "He said "hello" to me"
+ */
+function fixNestedQuotes(jsonStr: string): string {
+    // First, try to parse as-is
+    try {
+        JSON.parse(jsonStr);
+        return jsonStr; // Already valid, no fix needed
+    } catch {
+        // Continue with fix attempts
+    }
+
+    // Strategy: Find string values and escape internal quotes
+    // Look for pattern: "key": "value"
+    // The challenge is distinguishing field-ending quotes from internal quotes
+
+    let result = jsonStr;
+
+    // Common fix: Replace ": " followed by quotes that don't end properly
+    // This regex finds property values and tries to fix them
+    const propertyPattern = /("[\w_]+"\s*:\s*")([^]*?)("(?:\s*[,\}]))/g;
+
+    result = result.replace(propertyPattern, (match, prefix, value, suffix) => {
+        // Escape any unescaped quotes in the value
+        // But don't double-escape already escaped quotes
+        const fixedValue = value.replace(/(?<!\\)"/g, '\\"');
+        return prefix + fixedValue + suffix;
+    });
+
+    // Try parsing again
+    try {
+        JSON.parse(result);
+        console.log("[fixNestedQuotes] Successfully fixed nested quotes");
+        return result;
+    } catch {
+        // Return original if fix didn't work
+        console.log("[fixNestedQuotes] Could not fix nested quotes, returning original");
+        return jsonStr;
+    }
 }
 
 /**
@@ -76,8 +161,34 @@ function extractJSON(text: string): string {
  */
 export function parseAIOutput(aiResponse: string): ParseResult {
     try {
+        // Log raw response info for debugging
+        console.log("[ai-output-parser] Raw response length:", aiResponse?.length || 0);
+        console.log("[ai-output-parser] Raw response preview:", aiResponse?.substring(0, 200));
+
         const jsonStr = extractJSON(aiResponse);
-        const parsed = JSON.parse(jsonStr);
+        console.log("[ai-output-parser] Extracted JSON length:", jsonStr?.length || 0);
+        console.log("[ai-output-parser] Extracted JSON preview:", jsonStr?.substring(0, 300));
+
+        let parsed;
+        try {
+            parsed = JSON.parse(jsonStr);
+        } catch (parseErr) {
+            // Log detailed error info for debugging
+            const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+            console.error("[ai-output-parser] JSON.parse failed:", errMsg);
+            console.error("[ai-output-parser] Problem JSON (first 500 chars):", jsonStr?.substring(0, 500));
+            console.error("[ai-output-parser] Problem JSON (last 200 chars):", jsonStr?.substring(jsonStr.length - 200));
+
+            // Try to identify the exact position of the error
+            const posMatch = errMsg.match(/position (\d+)/i);
+            if (posMatch) {
+                const pos = parseInt(posMatch[1], 10);
+                const context = jsonStr?.substring(Math.max(0, pos - 50), pos + 50);
+                console.error(`[ai-output-parser] Error at position ${pos}, context: ...${context}...`);
+            }
+
+            throw parseErr;
+        }
 
         // Validate required fields
         const validation = validateParsedArticle(parsed);
@@ -100,15 +211,17 @@ export function parseAIOutput(aiResponse: string): ParseResult {
             extracted_quotes: normalizeQuotes(parsed.extracted_quotes)
         };
 
+        console.log("[ai-output-parser] Parse successful, title:", normalized.title);
         return {
             success: true,
             data: normalized
         };
     } catch (error) {
-        console.error("[ai-output-parser] JSON parse error:", error);
+        const errMsg = error instanceof Error ? error.message : "JSON parsing failed";
+        console.error("[ai-output-parser] Final parse error:", errMsg);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "JSON parsing failed"
+            error: errMsg
         };
     }
 }

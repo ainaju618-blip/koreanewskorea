@@ -74,7 +74,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
                                 {getRegionConfig(article.region)?.nameKo || article.region}
                             </span>
                             <time>{formattedDate}</time>
-                            {article.author && <span>{article.author}</span>}
+                            {article.author_name && <span>{article.author_name}</span>}
                         </div>
                     </header>
 

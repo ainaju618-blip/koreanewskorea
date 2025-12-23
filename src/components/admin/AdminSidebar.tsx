@@ -172,24 +172,17 @@ export default function AdminSidebarLayout({ children }: { children: React.React
     useEffect(() => {
         const fetchPendingCounts = async () => {
             try {
-                // 병렬로 3개 API 호출
-                const [newsRes, aiNewsRes, draftsRes] = await Promise.all([
-                    fetch('/api/posts?status=draft&limit=1'),
-                    fetch('/api/ai-news?status=draft&limit=1'),
-                    fetch('/api/drafts?limit=1')
-                ]);
+                // Only call existing API - /api/posts with status=draft
+                const newsRes = await fetch('/api/posts?status=draft&limit=1');
 
-                const [newsData, aiNewsData, draftsData] = await Promise.all([
-                    newsRes.json(),
-                    aiNewsRes.json(),
-                    draftsRes.json()
-                ]);
-
-                setPendingCounts({
-                    news: newsData.totalCount || 0,
-                    aiNews: aiNewsData.totalCount || 0,
-                    drafts: draftsData.totalCount || 0
-                });
+                if (newsRes.ok) {
+                    const newsData = await newsRes.json();
+                    setPendingCounts({
+                        news: newsData.count || 0,
+                        aiNews: 0, // API not implemented yet
+                        drafts: 0  // API not implemented yet
+                    });
+                }
             } catch (error) {
                 console.error('Failed to fetch pending counts:', error);
             }

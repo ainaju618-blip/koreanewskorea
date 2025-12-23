@@ -46,45 +46,89 @@ const supabaseAdmin = createClient(
 export function getNextGeminiKey(keys: AIApiKeys): { key: string; label: string; index: number } | null {
     const geminiKeys = keys.gemini;
 
+    console.log("========================================");
+    console.log("[KeyRotation] DEBUG START");
+    console.log("[KeyRotation] Input type:", typeof geminiKeys);
+    console.log("[KeyRotation] Is Array:", Array.isArray(geminiKeys));
+    console.log("[KeyRotation] Current Index BEFORE:", currentKeyIndex);
+    console.log("[KeyRotation] Last Rotation Date:", lastRotationDate);
+
     // Legacy single key format
     if (typeof geminiKeys === "string") {
-        const decryptedKey = isEncrypted(geminiKeys) ? decryptApiKey(geminiKeys) : geminiKeys;
+        console.log("[KeyRotation] MODE: Legacy single key");
+        const isEnc = isEncrypted(geminiKeys);
+        console.log("[KeyRotation] Is Encrypted:", isEnc);
+        console.log("[KeyRotation] Key Preview (encrypted):", geminiKeys.substring(0, 20) + "...");
+        const decryptedKey = isEnc ? decryptApiKey(geminiKeys) : geminiKeys;
+        console.log("[KeyRotation] Decrypted Key Preview:", decryptedKey.substring(0, 12) + "..." + decryptedKey.substring(decryptedKey.length - 4));
+        console.log("[KeyRotation] Decrypted Key Length:", decryptedKey.length);
+        console.log("[KeyRotation] DEBUG END - Returning single key");
+        console.log("========================================");
         return { key: decryptedKey, label: "default", index: 0 };
     }
 
     // Multi-key format
     if (!Array.isArray(geminiKeys) || geminiKeys.length === 0) {
+        console.log("[KeyRotation] ERROR: Not an array or empty");
+        console.log("[KeyRotation] DEBUG END - Returning null");
+        console.log("========================================");
         return null;
     }
 
+    console.log("[KeyRotation] MODE: Multi-key array");
+    console.log("[KeyRotation] Total keys in array:", geminiKeys.length);
+
+    // Log all keys info (masked)
+    geminiKeys.forEach((k, i) => {
+        const keyPreview = k.key ? (k.key.substring(0, 10) + "...") : "EMPTY";
+        console.log(`[KeyRotation] Key[${i}]: label=${k.label}, enabled=${k.enabled !== false}, keyPreview=${keyPreview}`);
+    });
+
     // Filter enabled keys
     const enabledKeys = geminiKeys.filter(k => k.enabled !== false && k.key);
+    console.log("[KeyRotation] Enabled keys count:", enabledKeys.length);
 
     if (enabledKeys.length === 0) {
+        console.log("[KeyRotation] ERROR: No enabled keys found!");
+        console.log("[KeyRotation] DEBUG END - Returning null");
+        console.log("========================================");
         return null;
     }
 
     // Reset index at start of new day (daily rotation reset)
     const today = new Date().toISOString().split("T")[0];
+    console.log("[KeyRotation] Today:", today);
     if (lastRotationDate !== today) {
+        console.log("[KeyRotation] NEW DAY detected! Resetting index from", currentKeyIndex, "to 0");
         currentKeyIndex = 0;
         lastRotationDate = today;
-        console.log(`[KeyRotation] New day ${today}, reset index to 0`);
     }
 
     // Round-robin selection
     const index = currentKeyIndex % enabledKeys.length;
     const selectedEntry = enabledKeys[index];
 
+    console.log("[KeyRotation] Current Index:", currentKeyIndex);
+    console.log("[KeyRotation] Calculated index (mod):", index);
+    console.log("[KeyRotation] Selected Entry Label:", selectedEntry.label);
+
     // Increment for next call
     currentKeyIndex++;
+    console.log("[KeyRotation] Index AFTER increment:", currentKeyIndex);
 
     // Decrypt if needed
-    const decryptedKey = isEncrypted(selectedEntry.key)
+    const isEnc = isEncrypted(selectedEntry.key);
+    console.log("[KeyRotation] Selected key is encrypted:", isEnc);
+    const decryptedKey = isEnc
         ? decryptApiKey(selectedEntry.key)
         : selectedEntry.key;
 
-    console.log(`[KeyRotation] Selected key #${index + 1}/${enabledKeys.length} (${selectedEntry.label})`);
+    console.log("[KeyRotation] Final Key Preview:", decryptedKey.substring(0, 12) + "..." + decryptedKey.substring(decryptedKey.length - 4));
+    console.log("[KeyRotation] Final Key Length:", decryptedKey.length);
+    console.log("[KeyRotation] Final Key starts with 'AIza':", decryptedKey.startsWith("AIza"));
+    console.log(`[KeyRotation] SELECTED: key #${index + 1}/${enabledKeys.length} (${selectedEntry.label})`);
+    console.log("[KeyRotation] DEBUG END");
+    console.log("========================================");
 
     return {
         key: decryptedKey,

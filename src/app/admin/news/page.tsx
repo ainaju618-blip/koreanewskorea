@@ -617,23 +617,57 @@ function AdminNewsListPage() {
                     // AI 재가공 API 호출
                     try {
                         const articleStartTime = Date.now();
+
+                        // [DEBUG] AI API 호출 전 상세 로그
+                        console.log('╔════════════════════════════════════════════════════════════════╗');
+                        console.log('║       AI REWRITE API CALL START - FRONTEND DEBUG               ║');
+                        console.log('╚════════════════════════════════════════════════════════════════╝');
+                        console.log('[FRONTEND] Timestamp:', new Date().toISOString());
+                        console.log('[FRONTEND] Article Index:', i + 1, '/', ids.length);
+                        console.log('[FRONTEND] Article ID:', article.id);
+                        console.log('[FRONTEND] Article Title:', article.title);
+                        console.log('[FRONTEND] Article Source:', article.source);
+                        console.log('[FRONTEND] Region Code:', articleRegion);
+                        console.log('[FRONTEND] Content Length:', article.content?.length || 0);
+                        console.log('[FRONTEND] Content Preview:', article.content?.substring(0, 100) + '...');
+                        console.log('[FRONTEND] AI Enabled:', aiEnabled);
+                        console.log('[FRONTEND] Enabled Regions:', enabledRegions);
+                        console.log('[FRONTEND] Is Region Enabled:', enabledRegions.includes(articleRegion));
+                        console.log('[FRONTEND] NOTE: API will use parseJson=true, which may trigger DOUBLE VALIDATION (2x API calls) if Grade A!');
+
                         addProgressLog('AI 재가공', `${article.source} -> AI 호출 중...`, 'info');
+
+                        const requestBody = {
+                            text: article.content,
+                            parseJson: true,
+                            articleId: article.id,
+                            region: articleRegion
+                        };
+
+                        console.log('[DEBUG] Request Body:', JSON.stringify(requestBody, null, 2).substring(0, 500));
 
                         const rewriteRes = await fetch('/api/ai/rewrite', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                text: article.content,
-                                parseJson: true,
-                                articleId: article.id,
-                                region: articleRegion
-                            })
+                            body: JSON.stringify(requestBody)
                         });
 
                         const articleDuration = Date.now() - articleStartTime;
 
+                        // [DEBUG] API 응답 상세 로그
+                        console.log('[DEBUG] Response Status:', rewriteRes.status);
+                        console.log('[DEBUG] Response OK:', rewriteRes.ok);
+                        console.log('[DEBUG] Response Headers:', Object.fromEntries(rewriteRes.headers.entries()));
+                        console.log('[DEBUG] Duration:', articleDuration, 'ms');
+
                         if (rewriteRes.ok) {
                             const rewriteData = await rewriteRes.json();
+
+                            // [DEBUG] 성공 응답 상세 로그
+                            console.log('[DEBUG] Response Data Keys:', Object.keys(rewriteData));
+                            console.log('[DEBUG] Success:', rewriteData.success);
+                            console.log('[DEBUG] Published:', rewriteData.published);
+                            console.log('[DEBUG] Validation:', rewriteData.validation);
 
                             // Grade check: Only Grade A articles are published
                             const grade = rewriteData.validation?.grade || 'unknown';
@@ -652,18 +686,58 @@ function AdminNewsListPage() {
                                 addProgressLog('AI 재가공', `미리보기 모드`, 'info', articleDuration);
                                 skipCount++;
                             } else {
+                                console.log('[DEBUG] Parse failed - Full response:', JSON.stringify(rewriteData, null, 2));
                                 addProgressLog('AI 재가공', `파싱 실패`, 'error', articleDuration);
                                 failCount++;
                             }
                         } else {
-                            const errorData = await rewriteRes.json().catch(() => ({}));
-                            const errorMsg = errorData.error || `HTTP ${rewriteRes.status}`;
+                            // [DEBUG] 에러 응답 상세 로그
+                            const responseText = await rewriteRes.text();
+                            console.log('[DEBUG] ========== API ERROR RESPONSE ==========');
+                            console.log('[DEBUG] Status:', rewriteRes.status);
+                            console.log('[DEBUG] Status Text:', rewriteRes.statusText);
+                            console.log('[DEBUG] Response Text:', responseText);
+
+                            let errorData: any = {};
+                            try {
+                                errorData = JSON.parse(responseText);
+                                console.log('[DEBUG] Parsed Error Data:', errorData);
+                            } catch (parseErr) {
+                                console.log('[DEBUG] Response is not JSON');
+                            }
+
+                            const errorMsg = errorData.error || `HTTP ${rewriteRes.status}: ${rewriteRes.statusText}`;
                             addProgressLog('AI 재가공', `API 오류: ${errorMsg}`, 'error');
                             failCount++;
                         }
+
+                        console.log('[DEBUG] ========== AI REWRITE API CALL END ==========');
+
+                        // Rate limit prevention: Wait 3 seconds before next API call
+                        if (i < ids.length - 1) {
+                            addProgressLog('대기', '다음 기사 처리 전 3초 대기 중... (Rate Limit 방지)', 'info');
+                            console.log('[DEBUG] Waiting 3 seconds before next API call to avoid rate limiting...');
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                        }
+
                     } catch (err) {
-                        addProgressLog('AI 재가공', `에러 발생`, 'error');
+                        // [DEBUG] 네트워크/예외 에러 상세 로그
+                        console.log('[DEBUG] ========== AI REWRITE EXCEPTION ==========');
+                        console.log('[DEBUG] Error Type:', err?.constructor?.name);
+                        console.log('[DEBUG] Error Message:', err instanceof Error ? err.message : String(err));
+                        console.log('[DEBUG] Error Stack:', err instanceof Error ? err.stack : 'No stack');
+                        console.log('[DEBUG] Full Error:', err);
+
+                        const errMsg = err instanceof Error ? err.message : String(err);
+                        addProgressLog('AI 재가공', `에러 발생: ${errMsg}`, 'error');
                         failCount++;
+
+                        // Rate limit prevention after error: Wait 5 seconds (longer due to error)
+                        if (i < ids.length - 1) {
+                            addProgressLog('대기', '에러 후 5초 대기 중... (Rate Limit 회복)', 'info');
+                            console.log('[DEBUG] Waiting 5 seconds after error before next API call...');
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        }
                     }
                 } else {
                     // AI 대상이 아닌 지역 - 기존 방식으로 승인
