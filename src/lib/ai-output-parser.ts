@@ -492,7 +492,7 @@ export function validateFactAccuracy(
 
     const quoteCheckPassed = extraQuotes.length === 0;
 
-    // Determine grade
+    // Determine grade based on warnings count
     let grade: "A" | "B" | "C" | "D";
     if (warnings.length === 0) {
         grade = "A";

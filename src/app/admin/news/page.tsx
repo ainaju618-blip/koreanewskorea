@@ -464,14 +464,14 @@ function AdminNewsListPage() {
 
             let aiEnabled = false;
             let enabledRegions: string[] = [];
-            let dailyLimitFromSettings = 100; // Store daily limit from settings response
+            let dailyLimitFromSettings = 1000; // Store daily limit from settings response (default 1000 for bulk processing)
 
             if (settingsRes.ok) {
                 const settingsData = await settingsRes.json();
                 const settings = settingsData.settings || settingsData;
                 aiEnabled = settings.enabled === true;
                 enabledRegions = settings.enabledRegions || [];
-                dailyLimitFromSettings = settings.dailyLimit || 100; // Extract daily limit here
+                dailyLimitFromSettings = settings.dailyLimit || 1000; // Extract daily limit here (default 1000)
                 addProgressLog('AI 설정', `마스터 스위치: ${aiEnabled ? 'ON' : 'OFF'} (${step1Duration}ms)`, aiEnabled ? 'success' : 'warning', step1Duration);
                 addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
             } else {
@@ -552,8 +552,8 @@ function AdminNewsListPage() {
                         }
                     }
 
-                    // Warn if not enough quota (considering double validation = 2x calls per article)
-                    const estimatedCalls = aiTargetCount * 2; // Double validation
+                    // Warn if not enough quota (1 API call per article - double validation disabled)
+                    const estimatedCalls = aiTargetCount; // 1 call per article (double validation disabled)
                     if (remaining < estimatedCalls) {
                         addProgressLog('한도 경고',
                             `AI 대상 ${aiTargetCount}개 (예상 호출 ${estimatedCalls}회) > 남은 한도 ${remaining}회`,
@@ -1524,6 +1524,19 @@ function AdminNewsListPage() {
                                 {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
                                 <CheckCircle className="w-4 h-4" />
                                 일괄 승인 {selectedIds.size > 0 && `(${selectedIds.size}개)`}
+                            </button>
+                        )}
+
+                        {/* 전체 일괄 승인 버튼 (승인대기 화면에서만 - 최대 1000개) */}
+                        {filterStatus === 'draft' && (
+                            <button
+                                onClick={() => openBulkAllConfirmModal('bulk-all-approve')}
+                                disabled={isBulkProcessing}
+                                className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 shadow-sm transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isBulkProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                <CheckCircle className="w-4 h-4" />
+                                전체 승인 (최대 1000개)
                             </button>
                         )}
 
