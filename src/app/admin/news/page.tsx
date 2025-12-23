@@ -426,13 +426,14 @@ function AdminNewsListPage() {
     };
 
     // Bulk Approve - AI 설정에 따라 분기 + 진행 모달 표시
-    const executeBulkApprove = async () => {
+    // overrideIds: 직접 ID 배열 전달 (전체 승인 등에서 사용)
+    const executeBulkApprove = async (overrideIds?: string[]) => {
         console.log('=== 선택 승인 시작 ===');
-        const ids = Array.from(selectedIds);
+        const ids = overrideIds || Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
 
         if (ids.length === 0) {
-            showWarning('선택된 기사가 없습니다.');
+            showWarning('승인할 기사가 없습니다.');
             return;
         }
 
@@ -889,9 +890,8 @@ function AdminNewsListPage() {
         }
     };
 
-    // Bulk All Approve - Uses same AI processing as executeBulkApprove
+    // Bulk All Approve - 전체 기사 자동 승인 (최대 1000개, 확인 없이 바로 실행)
     const executeBulkAllApprove = async () => {
-        setIsBulkProcessing(true);
         try {
             // Get all articles for current filter (no pagination)
             const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
@@ -903,17 +903,11 @@ function AdminNewsListPage() {
 
             if (allIds.length === 0) {
                 showWarning('승인할 기사가 없습니다.');
-                setIsBulkProcessing(false);
                 return;
             }
 
-            // Set all IDs as selected and call executeBulkApprove
-            // This ensures AI processing is applied uniformly
-            setSelectedIds(new Set(allIds));
-
             // Store articles temporarily for the batch process
             setArticles(prev => {
-                // Merge new articles with existing ones (avoid duplicates)
                 const existingIds = new Set(prev.map(a => a.id));
                 const newArticles = allArticles
                     .filter((a: any) => !existingIds.has(a.id))
@@ -936,17 +930,11 @@ function AdminNewsListPage() {
                 return [...prev, ...newArticles];
             });
 
-            // Wait for state update
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Use executeBulkApprove which handles AI processing
-            setIsBulkProcessing(false); // Reset, executeBulkApprove will set it again
-            await executeBulkApprove();
-            // executeBulkApprove handles cleanup and fetchArticles
+            // Pass IDs directly to executeBulkApprove (no state dependency)
+            await executeBulkApprove(allIds);
         } catch (error) {
             console.error('Bulk all approve error:', error);
             showError('일괄 승인 처리 중 오류가 발생했습니다.');
-            setIsBulkProcessing(false);
         }
     };
 
