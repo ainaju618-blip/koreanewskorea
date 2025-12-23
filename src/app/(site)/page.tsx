@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import NewsGrid, { NewsGridSkeleton } from '@/components/NewsGrid';
 import Sidebar, { SidebarSkeleton } from '@/components/Sidebar';
 import HomeHero from '@/components/home/HomeHero';
+import PersonalizedNewsContainer from '@/components/location/PersonalizedNewsContainer';
 
 // Revalidate every 60 seconds - ensures fresh news data
 export const revalidate = 60;
@@ -19,6 +20,9 @@ export const revalidate = 60;
 export default function Home() {
   return (
     <main className="min-h-screen bg-white font-sans">
+      {/* ===== PERSONALIZED NEWS SECTION (Client Component, Admin-controlled) ===== */}
+      <PersonalizedNewsContainer />
+
       {/* Container - Centered 1400px (WebFrame Spec) */}
       <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
 

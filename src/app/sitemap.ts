@@ -38,10 +38,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${siteUrl}/category/${cat}`,
         lastModified: new Date(),
         changeFrequency: 'daily' as const,
+        priority: 0.9,
+    }));
+
+    // 3. 27개 지역별 페이지
+    const regions = [
+        'gwangju', 'jeonnam', 'mokpo', 'yeosu', 'suncheon', 'naju', 'gwangyang',
+        'damyang', 'gokseong', 'gurye', 'goheung', 'boseong', 'hwasun', 'jangheung',
+        'gangjin', 'haenam', 'yeongam', 'muan', 'hampyeong', 'yeonggwang', 'jangseong',
+        'wando', 'jindo', 'shinan', 'gwangju_edu', 'jeonnam_edu'
+    ];
+    const regionPages: MetadataRoute.Sitemap = regions.map(region => ({
+        url: `${siteUrl}/category/jeonnam/${region}`,
+        lastModified: new Date(),
+        changeFrequency: 'daily' as const,
         priority: 0.8,
     }));
 
-    // 3. 기사 페이지 (published 상태만)
+    // 4. 기사 페이지 (published 상태만)
     const { data: posts } = await supabaseAdmin
         .from('posts')
         .select('id, updated_at, published_at')
@@ -56,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
     }));
 
-    // 4. 기자 프로필 페이지
+    // 5. 기자 프로필 페이지
     const { data: reporters } = await supabaseAdmin
         .from('reporters')
         .select('id, slug, updated_at')
@@ -69,5 +83,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
     }));
 
-    return [...staticPages, ...categoryPages, ...newsPages, ...authorPages];
+    return [...staticPages, ...categoryPages, ...regionPages, ...newsPages, ...authorPages];
 }
