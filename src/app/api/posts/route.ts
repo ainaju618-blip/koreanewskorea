@@ -120,6 +120,7 @@ export async function PATCH(req: NextRequest) {
                 status: 'published',
                 published_at: now,
                 approved_at: now,
+                site_published_at: now, // Site publish time
             };
 
             // Check if auto-assign is enabled

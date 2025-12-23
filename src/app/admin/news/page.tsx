@@ -152,8 +152,9 @@ function AdminNewsListPage() {
                 title: p.title || '[제목 없음]',
                 content: p.content || '',
                 status: p.status || 'draft',
-                created_at: p.created_at, // 수집일 (추가)
-                published_at: p.published_at, // 원본 작성일 or 발행일
+                created_at: p.created_at, // 수집일
+                published_at: p.published_at, // 원문 작성일
+                site_published_at: p.site_published_at, // 사이트 발행시간
                 views: p.view_count || 0,
                 category: p.category || '미분류',
                 source: p.source || 'Korea NEWS',
@@ -427,8 +428,8 @@ function AdminNewsListPage() {
 
     // Bulk Approve - AI 설정에 따라 분기 + 진행 모달 표시
     // overrideIds: 직접 ID 배열 전달 (전체 승인 등에서 사용)
-    // overrideArticles: ID -> Article 매핑 (전체 승인에서 state 동기화 없이 사용)
-    const executeBulkApprove = async (overrideIds?: string[], overrideArticles?: Map<string, Article>) => {
+    // overrideArticles: ID -> 기사 데이터 매핑 (전체 승인에서 state 동기화 없이 사용)
+    const executeBulkApprove = async (overrideIds?: string[], overrideArticles?: Map<string, any>) => {
         console.log('=== 선택 승인 시작 ===');
         const ids = overrideIds || Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
@@ -909,7 +910,7 @@ function AdminNewsListPage() {
             }
 
             // Create article map for direct lookup (bypasses state timing issue)
-            const articlesMap = new Map<string, Article>();
+            const articlesMap = new Map<string, any>();
             allArticles.forEach((p: any) => {
                 articlesMap.set(p.id, {
                     id: p.id,
@@ -1613,6 +1614,7 @@ function AdminNewsListPage() {
                             <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">작성자/출처</th>
                             <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">원문작성일</th>
                             <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">수집일</th>
+                            <th className="py-2 px-3 text-xs font-semibold text-[#8b949e] uppercase">발행시간</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#21262d]">
@@ -1686,6 +1688,11 @@ function AdminNewsListPage() {
                                 </td>
                                 <td className="py-1 px-3 text-xs text-[#8b949e]">
                                     {new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                                </td>
+                                <td className="py-1 px-3 text-xs text-[#58a6ff]">
+                                    {article.site_published_at
+                                        ? new Date(article.site_published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+                                        : '-'}
                                 </td>
                             </tr>
                         ))}
