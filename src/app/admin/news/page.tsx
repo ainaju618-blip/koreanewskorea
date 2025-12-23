@@ -217,6 +217,20 @@ function AdminNewsListPage() {
         fetchStatusCounts();
     }, [articles]);
 
+    // Prevent page navigation during bulk processing
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isBulkProcessing) {
+                e.preventDefault();
+                e.returnValue = 'AI 재가공이 진행 중입니다. 페이지를 떠나면 처리가 중단됩니다.';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isBulkProcessing]);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
