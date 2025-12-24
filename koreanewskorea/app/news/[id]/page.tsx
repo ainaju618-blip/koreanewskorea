@@ -104,7 +104,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
                     />
 
                     {/* Source Link */}
-                    {article.source_url && (
+                    {article.original_link && (
                         <div
                             style={{
                                 marginTop: '2rem',
@@ -113,7 +113,7 @@ export default async function NewsDetailPage({ params }: PageProps) {
                             }}
                         >
                             <a
-                                href={article.source_url}
+                                href={article.original_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{

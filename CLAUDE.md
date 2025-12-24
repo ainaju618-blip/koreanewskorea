@@ -319,6 +319,7 @@ Bug fixes, improvements, and maintenance of existing features.
 
 | Document | Feature | Version | Status |
 |----------|---------|---------|--------|
+| [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md) | Business Context (WHY) | 1.0 | **Read First** |
 | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Regional Homepage System | 0.4 | Planning |
 | [plan/mainplan.md](plan/mainplan.md) | Master Strategy | 1.0 | Active |
 

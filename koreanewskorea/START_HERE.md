@@ -2,7 +2,20 @@
 
 ---
 
-## Step 1: Read These First (In Order)
+## Step 0: Understand the Business (WHY)
+
+**Before writing any code, understand WHY this project exists:**
+
+> [plan/BUSINESS_STRATEGY.md](plan/BUSINESS_STRATEGY.md) - Business context & revenue model
+
+This document explains:
+- Why we build regional homepages
+- How this generates revenue
+- What success looks like
+
+---
+
+## Step 1: Read Technical Docs (WHAT)
 
 1. [README.md](README.md) - Project structure & separation rule
 2. [common/README.md](common/README.md) - Shared settings (colors, fonts)

@@ -7,7 +7,8 @@ import { supabase } from '../supabase/client';
 import { Article } from '../../domain/entities';
 
 // Common select fields matching actual DB schema
-const POST_FIELDS = 'id, title, content, ai_summary, thumbnail_url, region, category, source, source_url, published_at, created_at, author_name';
+// NOTE: DB uses 'original_link' not 'source_url'
+const POST_FIELDS = 'id, title, content, ai_summary, thumbnail_url, region, category, source, original_link, published_at, created_at, author_name';
 
 /**
  * Find articles by a single region

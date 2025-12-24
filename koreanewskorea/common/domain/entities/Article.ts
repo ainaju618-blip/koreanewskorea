@@ -12,7 +12,7 @@ export interface Article {
     region: string;
     category?: string;
     source?: string;
-    source_url?: string;
+    original_link?: string;  // DB column name (not source_url)
     published_at: string;
     created_at?: string;
     author_name?: string;

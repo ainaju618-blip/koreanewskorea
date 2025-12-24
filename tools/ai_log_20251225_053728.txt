@@ -1,0 +1,9 @@
+[05:37:30] [AI] Starting dev server...
+[05:37:38] 
+[AI] Batch 1: Loading pending articles...
+[05:37:38] [AI] No more pending articles
+[05:37:38] 
+[AI SUMMARY]
+[05:37:38]   Total processed: 0
+[05:37:38]   Success: 0
+[05:37:38]   Failed: 0
