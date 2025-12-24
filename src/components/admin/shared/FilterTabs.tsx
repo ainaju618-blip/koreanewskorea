@@ -1,17 +1,22 @@
 /**
- * FilterTabs - 필터 탭 컴포넌트
+ * FilterTabs - Filter tabs component using shadcn Tabs
  *
  * @example
  * <FilterTabs
  *   tabs={[
- *     { key: "all", label: "전체" },
- *     { key: "draft", label: "승인 대기" },
- *     { key: "published", label: "발행됨" },
+ *     { key: "all", label: "All" },
+ *     { key: "draft", label: "Pending" },
+ *     { key: "published", label: "Published" },
  *   ]}
  *   activeTab={filterStatus}
  *   onChange={(key) => setFilterStatus(key)}
  * />
  */
+
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/shadcn/tabs";
+import { Button } from "@/components/ui/shadcn/button";
+import { Badge } from "@/components/ui/shadcn/badge";
+import { cn } from "@/lib/utils";
 
 interface Tab {
     key: string;
@@ -36,45 +41,56 @@ export function FilterTabs({
         return (
             <div className="flex gap-2">
                 {tabs.map((tab) => (
-                    <button
+                    <Button
                         key={tab.key}
                         onClick={() => onChange(tab.key)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                        variant={activeTab === tab.key ? "default" : "secondary"}
+                        size="sm"
+                        className={cn(
+                            "transition-all",
                             activeTab === tab.key
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        )}
                     >
                         {tab.label}
                         {tab.count !== undefined && (
-                            <span className="ml-1.5 text-xs opacity-75">({tab.count})</span>
+                            <Badge
+                                variant="outline"
+                                className="ml-1.5 text-xs px-1.5 py-0 h-5 bg-background/20"
+                            >
+                                {tab.count}
+                            </Badge>
                         )}
-                    </button>
+                    </Button>
                 ))}
             </div>
         );
     }
 
-    // Pills variant (default)
+    // Pills variant (default) using shadcn Tabs
     return (
-        <div className="flex bg-gray-100 p-1 rounded-lg">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.key}
-                    onClick={() => onChange(tab.key)}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        activeTab === tab.key
-                            ? "bg-white text-blue-600 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                    {tab.label}
-                    {tab.count !== undefined && (
-                        <span className="ml-1 text-xs opacity-60">({tab.count})</span>
-                    )}
-                </button>
-            ))}
-        </div>
+        <Tabs value={activeTab} onValueChange={onChange} className="w-auto">
+            <TabsList className="bg-muted/50 border border-border">
+                {tabs.map((tab) => (
+                    <TabsTrigger
+                        key={tab.key}
+                        value={tab.key}
+                        className={cn(
+                            "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm",
+                            "text-muted-foreground hover:text-foreground transition-all"
+                        )}
+                    >
+                        {tab.label}
+                        {tab.count !== undefined && (
+                            <span className="ml-1.5 text-xs opacity-70">
+                                ({tab.count})
+                            </span>
+                        )}
+                    </TabsTrigger>
+                ))}
+            </TabsList>
+        </Tabs>
     );
 }
 

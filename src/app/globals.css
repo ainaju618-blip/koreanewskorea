@@ -96,6 +96,126 @@
     /* Effects */
     --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
     --backdrop-glass: blur(12px);
+
+    /* ================================================
+       shadcn/ui Component Color System
+       - Used by components in src/components/ui/shadcn/
+       ================================================ */
+
+    /* Core UI Colors (Light Mode - Default) */
+    --color-background: #ffffff;
+    --color-foreground: #0f172a;
+
+    /* Card */
+    --color-card: #ffffff;
+    --color-card-foreground: #0f172a;
+
+    /* Popover */
+    --color-popover: #ffffff;
+    --color-popover-foreground: #0f172a;
+
+    /* Primary - Korea Red */
+    --color-primary-foreground: #ffffff;
+
+    /* Secondary */
+    --color-secondary-foreground: #ffffff;
+
+    /* Muted */
+    --color-muted-foreground: #64748b;
+
+    /* Accent */
+    --color-accent-foreground: #0f172a;
+
+    /* Destructive */
+    --color-destructive: #ef4444;
+    --color-destructive-foreground: #ffffff;
+
+    /* Border, Input, Ring */
+    --color-border: #e2e8f0;
+    --color-input: #e2e8f0;
+    --color-ring: #A6121D;
+
+    /* Radius */
+    --radius: 0.5rem;
+}
+
+/* ===================================
+   shadcn/ui HSL Variables (Light Mode)
+   - Standard shadcn format for component compatibility
+   =================================== */
+:root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 354 84% 36%;              /* Korea Red #A6121D */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 354 84% 36%;                 /* Korea Red */
+
+    --radius: 0.5rem;
+
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+}
+
+/* Dark mode for non-admin areas */
+.dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 354 84% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
+
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
 }
 
 @layer base {
@@ -346,6 +466,40 @@
     --admin-accent-orange-muted: rgba(210, 153, 34, 0.15);
     --admin-accent-purple: #a371f7;
     --admin-accent-purple-muted: rgba(163, 113, 247, 0.15);
+
+    /* =============================================
+       shadcn/ui CSS Variables (Dark Mode - Admin)
+       HSL format for shadcn compatibility
+       ============================================= */
+    --background: 220 13% 7%;           /* #0d1117 */
+    --foreground: 0 0% 100%;            /* #ffffff */
+
+    --card: 220 13% 9%;                 /* #161b22 */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 220 13% 9%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 84% 36%;               /* Korea Red #A6121D mapped */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 14%;           /* #1c2128 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 14% 14%;
+    --muted-foreground: 215 14% 57%;    /* #8b949e */
+
+    --accent: 220 14% 18%;              /* #21262d */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 78% 62%;           /* #f85149 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 14% 22%;              /* #30363d */
+    --input: 215 14% 22%;
+    --ring: 212 92% 67%;                /* #58a6ff */
+
+    --radius: 0.5rem;
 }
 
 /* ===================================

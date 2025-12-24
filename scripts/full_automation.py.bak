@@ -500,110 +500,59 @@ def run_scraper(region: str, today: str) -> Dict[str, Any]:
 def get_unprocessed_articles(supabase: SupabaseClient, today: str = None, all_pending: bool = False) -> List[Dict]:
     """Get articles that need AI processing.
 
-    Includes:
-    1. New articles (ai_processed is null or false)
-    2. Grade C/D articles with retry_count < 5 (for retry processing)
-
     Args:
         supabase: Supabase client
         today: Date filter (YYYY-MM-DD). If None, no date filter.
         all_pending: If True, get ALL unprocessed articles regardless of date.
     """
-    AI_MAX_RETRIES = 5  # Maximum retry attempts for Grade C/D articles
-
     if all_pending:
-        logger.info('[AI] Fetching ALL unprocessed articles + retry candidates...')
+        logger.info('[AI] Fetching ALL unprocessed articles (pending approval)...')
     else:
         logger.info(f'[AI] Fetching unprocessed articles from {today}...')
 
-    # Query 1: New articles (never processed)
-    url1 = f'{supabase.url}/rest/v1/posts'
-    url1 += '?status=eq.draft'
-    url1 += '&or=(ai_processed.is.null,ai_processed.eq.false)'
-    url1 += '&select=id,title,content,region,status,ai_retry_count,ai_validation_grade'
+    # Query posts table
+    url = f'{supabase.url}/rest/v1/posts'
+    url += '?status=eq.draft'
+    url += '&or=(ai_processed.is.null,ai_processed.eq.false)'
+    url += '&select=id,title,content,region,status'
 
+    # Add date filter only if not processing all pending
     if not all_pending and today:
-        url1 += f'&created_at=gte.{today}T00:00:00'
+        url += f'&created_at=gte.{today}T00:00:00'
 
-    url1 += '&order=created_at.asc'
-    url1 += '&limit=300'
+    url += '&order=created_at.asc'
+    url += '&limit=500'  # Process up to 500 pending articles
 
-    # Query 2: Grade C/D articles that need retry (retry_count < 5)
-    url2 = f'{supabase.url}/rest/v1/posts'
-    url2 += '?status=eq.draft'
-    url2 += '&ai_processed=eq.true'
-    url2 += '&or=(ai_validation_grade.eq.C,ai_validation_grade.eq.D)'
-    url2 += f'&ai_retry_count=lt.{AI_MAX_RETRIES}'
-    url2 += '&select=id,title,content,region,status,ai_retry_count,ai_validation_grade'
-    url2 += '&order=ai_retry_count.asc,created_at.asc'
-    url2 += '&limit=200'
-
-    articles = []
     try:
-        # Fetch new articles
-        response1 = requests.get(url1, headers=supabase.headers, timeout=30)
-        if response1.status_code == 200:
-            new_articles = response1.json()
-            logger.info(f'[AI] Found {len(new_articles)} new articles')
-            articles.extend(new_articles)
+        response = requests.get(url, headers=supabase.headers, timeout=30)
+        if response.status_code == 200:
+            articles = response.json()
+            logger.info(f'[AI] Found {len(articles)} unprocessed articles')
+            return articles
         else:
-            logger.error(f'[AI] Error fetching new articles: {response1.text}')
-
-        # Fetch retry candidates
-        response2 = requests.get(url2, headers=supabase.headers, timeout=30)
-        if response2.status_code == 200:
-            retry_articles = response2.json()
-            logger.info(f'[AI] Found {len(retry_articles)} retry candidates (Grade C/D, <{AI_MAX_RETRIES} attempts)')
-            articles.extend(retry_articles)
-        else:
-            logger.warning(f'[AI] Error fetching retry candidates: {response2.text}')
-
-        # Remove duplicates (by id)
-        seen = set()
-        unique_articles = []
-        for article in articles:
-            if article['id'] not in seen:
-                seen.add(article['id'])
-                unique_articles.append(article)
-
-        logger.info(f'[AI] Total articles to process: {len(unique_articles)}')
-        return unique_articles
-
+            logger.error(f'[AI] Error fetching articles: {response.text}')
+            return []
     except Exception as e:
         logger.error(f'[AI] Exception: {str(e)}')
         return []
 
 
 def process_with_local_ollama(article: Dict, supabase: SupabaseClient, ai_processor: ArticleProcessor) -> Dict[str, Any]:
-    """Process article with local Ollama and update DB.
-    
-    Retry Logic:
-    - Grade A/B: Publish immediately
-    - Grade C/D: Increment retry_count, will be retried next run (max 5 times)
-    """
-    AI_MAX_RETRIES = 5
-    
+    """Process article with local Ollama and update DB."""
     article_id = article.get('id')
-    article_content = article.get('content', '')
+    content = article.get('content', '')
     region = article.get('region', 'unknown')
-    current_retry = article.get('ai_retry_count') or 0
-    prev_grade = article.get('ai_validation_grade')
 
-    # Log retry info if this is a retry
-    if current_retry > 0:
-        logger.info(f'[AI] RETRY {current_retry + 1}/{AI_MAX_RETRIES} for article {article_id} (prev grade: {prev_grade})')
-    else:
-        logger.info(f'[AI] Processing article {article_id} from {region}')
-    
-    logger.debug(f'[AI] Content length: {len(article_content)} chars')
+    logger.info(f'[AI] Processing article {article_id} from {region}')
+    logger.debug(f'[AI] Content length: {len(content)} chars')
 
-    if not article_content or len(article_content) < 100:
+    if not content or len(content) < 100:
         logger.warning(f'[AI] Article {article_id} has insufficient content')
         return {'success': False, 'error': 'Insufficient content'}
 
     try:
         # Process with local Ollama (2-stage: convert + verify)
-        result = ai_processor.process_article(article_content)
+        result = ai_processor.process_article(content)
 
         # Determine grade
         if result.has_hallucination:
@@ -615,9 +564,6 @@ def process_with_local_ollama(article: Dict, supabase: SupabaseClient, ai_proces
             else:
                 grade = "B"
 
-        # Increment retry count
-        new_retry_count = current_retry + 1
-
         # Prepare update data
         updates = {
             'content': result.final_article,
@@ -625,7 +571,6 @@ def process_with_local_ollama(article: Dict, supabase: SupabaseClient, ai_proces
             'ai_processed': True,
             'ai_processed_at': datetime.now().isoformat(),
             'ai_validation_grade': grade,
-            'ai_retry_count': new_retry_count,
         }
 
         # Auto-publish if Grade A or B
@@ -634,22 +579,15 @@ def process_with_local_ollama(article: Dict, supabase: SupabaseClient, ai_proces
             updates['status'] = 'published'
             updates['published_at'] = datetime.now().isoformat()
             published = True
-            logger.info(f'[AI] Article {article_id}: Grade {grade} -> Published! (attempt {new_retry_count})')
-        else:
-            # Grade C/D - will be retried if retry_count < max
-            if new_retry_count >= AI_MAX_RETRIES:
-                logger.warning(f'[AI] Article {article_id}: Grade {grade}, max retries reached ({new_retry_count}/{AI_MAX_RETRIES}) - giving up')
-            else:
-                logger.info(f'[AI] Article {article_id}: Grade {grade}, will retry ({new_retry_count}/{AI_MAX_RETRIES})')
 
         # Update DB
         supabase.update('posts', updates, {'id': article_id})
 
+        logger.info(f'[AI] Article {article_id}: Grade {grade}, Published: {published}')
         return {
             'success': True,
             'published': published,
-            'grade': grade,
-            'retry_count': new_retry_count
+            'grade': grade
         }
 
     except Exception as e:

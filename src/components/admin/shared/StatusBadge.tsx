@@ -1,46 +1,95 @@
 /**
- * StatusBadge - 상태 표시 배지 컴포넌트
+ * StatusBadge - Status badge component using shadcn Badge
  *
  * @example
- * // 기사 상태
+ * // Article status
  * <StatusBadge type="article" status="published" />
  *
- * // 사용자 상태
+ * // User status
  * <StatusBadge type="user" status="active" />
  */
 
 import { UserCheck, UserX, LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/shadcn/badge";
+import { cn } from "@/lib/utils";
 
-// 상태 설정 타입
+// Status configuration type
 interface StatusConfigItem {
     label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
     className: string;
     icon?: LucideIcon;
 }
 
 type StatusConfigMap = Record<string, StatusConfigItem>;
 
-// 상태 타입별 설정
+// Status configuration by type (dark mode friendly)
 const STATUS_CONFIG: Record<string, StatusConfigMap> = {
-    // 기사 상태 (다크모드 친화적)
+    // Article status
     article: {
-        draft: { label: "승인 대기", className: "bg-amber-900/40 text-amber-300 border border-amber-700/50" },
-        published: { label: "발행됨", className: "bg-emerald-900/40 text-emerald-300 border border-emerald-700/50" },
-        limited: { label: "제한공개", className: "bg-orange-900/40 text-orange-300 border border-orange-700/50" },
-        rejected: { label: "노출불가", className: "bg-red-900/40 text-red-300 border border-red-700/50" },
-        trash: { label: "휴지통", className: "bg-slate-800/60 text-slate-400 border border-slate-600/50" },
+        draft: {
+            label: "승인 대기",
+            variant: "outline",
+            className: "bg-amber-900/40 text-amber-300 border-amber-700/50 hover:bg-amber-900/50"
+        },
+        published: {
+            label: "발행됨",
+            variant: "outline",
+            className: "bg-emerald-900/40 text-emerald-300 border-emerald-700/50 hover:bg-emerald-900/50"
+        },
+        limited: {
+            label: "제한공개",
+            variant: "outline",
+            className: "bg-orange-900/40 text-orange-300 border-orange-700/50 hover:bg-orange-900/50"
+        },
+        rejected: {
+            label: "노출불가",
+            variant: "destructive",
+            className: "bg-red-900/40 text-red-300 border-red-700/50 hover:bg-red-900/50"
+        },
+        trash: {
+            label: "휴지통",
+            variant: "secondary",
+            className: "bg-slate-800/60 text-slate-400 border-slate-600/50 hover:bg-slate-800/70"
+        },
     },
-    // 사용자 상태
+    // User status
     user: {
-        active: { label: "활성", className: "bg-green-100 text-green-800", icon: UserCheck },
-        suspended: { label: "정지", className: "bg-red-100 text-red-800", icon: UserX },
+        active: {
+            label: "활성",
+            variant: "default",
+            className: "bg-green-600 text-white hover:bg-green-700",
+            icon: UserCheck
+        },
+        suspended: {
+            label: "정지",
+            variant: "destructive",
+            className: "bg-red-600 text-white hover:bg-red-700",
+            icon: UserX
+        },
     },
-    // 봇 상태
+    // Bot status
     bot: {
-        running: { label: "실행중", className: "bg-blue-100 text-blue-700" },
-        success: { label: "성공", className: "bg-green-100 text-green-700" },
-        error: { label: "오류", className: "bg-red-100 text-red-700" },
-        idle: { label: "대기", className: "bg-gray-100 text-gray-600" },
+        running: {
+            label: "실행중",
+            variant: "default",
+            className: "bg-blue-600 text-white hover:bg-blue-700"
+        },
+        success: {
+            label: "성공",
+            variant: "default",
+            className: "bg-green-600 text-white hover:bg-green-700"
+        },
+        error: {
+            label: "오류",
+            variant: "destructive",
+            className: "bg-red-600 text-white hover:bg-red-700"
+        },
+        idle: {
+            label: "대기",
+            variant: "secondary",
+            className: "bg-gray-600 text-gray-200 hover:bg-gray-700"
+        },
     },
 };
 
@@ -56,9 +105,9 @@ export function StatusBadge({ type, status, onClick, showIcon = true }: StatusBa
 
     if (!config) {
         return (
-            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+            <Badge variant="secondary" className="text-xs">
                 {status}
-            </span>
+            </Badge>
         );
     }
 
@@ -66,17 +115,18 @@ export function StatusBadge({ type, status, onClick, showIcon = true }: StatusBa
     const isClickable = !!onClick;
 
     return (
-        <span
+        <Badge
+            variant={config.variant}
             onClick={onClick}
-            className={`
-                inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap
-                ${config.className}
-                ${isClickable ? "cursor-pointer hover:opacity-80 transition" : ""}
-            `}
+            className={cn(
+                "gap-1.5 text-xs font-medium whitespace-nowrap",
+                config.className,
+                isClickable && "cursor-pointer"
+            )}
         >
             {showIcon && Icon && <Icon className="w-3 h-3" />}
             {config.label}
-        </span>
+        </Badge>
     );
 }
 

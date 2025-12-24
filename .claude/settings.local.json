@@ -236,7 +236,13 @@
       "Bash(cmd /c \"taskkill /f /im pythonw.exe 2>nul & cd /d d:\\\\cbt\\\\koreanews & start \"\" pythonw scripts/local_scheduler.py\")",
       "Bash(cmd /c \"tasklist /fi \"\"IMAGENAME eq pythonw.exe\"\" /fo csv /nh\")",
       "Bash(cmd /c \"type d:\\\\cbt\\\\koreanews\\\\logs\\\\local_scheduler.log\")",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\user\\\\AppData\\\\Roaming\\\\Claude\\\\*.json\")",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp add --scope user shadcn-ui -- npx -y @heilgar/shadcn-ui-mcp-server)",
+      "Bash(powershell -Command \"$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut\\(''C:\\\\Users\\\\user\\\\OneDrive\\\\바탕 화면\\\\Korea NEWS Admin.lnk''\\); $Shortcut.TargetPath = ''d:\\\\cbt\\\\koreanews\\\\tools\\\\launch_admin.bat''; $Shortcut.WorkingDirectory = ''d:\\\\cbt\\\\koreanews''; $Shortcut.Save\\(\\); Write-Host ''[OK] Desktop shortcut created''\")",
+      "Bash(powershell -Command \"$s=\\(New-Object -COM WScript.Shell\\).CreateShortcut\\([Environment]::GetFolderPath\\(''Desktop''\\)+''\\\\Korea NEWS Admin.lnk''\\); $s.TargetPath=''d:\\\\cbt\\\\koreanews\\\\tools\\\\launch_admin.bat''; $s.WorkingDirectory=''d:\\\\cbt\\\\koreanews''; $s.Save\\(\\)\")",
+      "Bash(start \"\" \"d:\\\\cbt\\\\koreanews\\\\tools\\\\launch_admin.bat\")"
     ]
   }
 }

@@ -1,20 +1,22 @@
 /**
- * SlidePanel - 슬라이드 패널 컴포넌트
+ * SlidePanel - Slide panel component with shadcn styling
  *
  * @example
  * <SlidePanel
  *   isOpen={isPanelOpen}
  *   onClose={() => setIsPanelOpen(false)}
- *   title="기사 상세"
+ *   title="Article Detail"
  *   subtitle="ID: abc123"
- *   headerActions={<button>저장</button>}
+ *   headerActions={<Button>Save</Button>}
  * >
- *   <div>패널 내용</div>
+ *   <div>Panel content</div>
  * </SlidePanel>
  */
 
 import { X } from "lucide-react";
 import { ReactNode } from "react";
+import { Button } from "@/components/ui/shadcn/button";
+import { cn } from "@/lib/utils";
 
 interface SlidePanelProps {
     isOpen: boolean;
@@ -48,39 +50,42 @@ export function SlidePanel({
             {/* Backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+                    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 transition-opacity"
                     onClick={onClose}
                 />
             )}
 
             {/* Panel */}
             <div
-                className={`
-                    fixed top-0 right-0 h-full ${WIDTH_CLASSES[width]} bg-white shadow-2xl z-50
-                    transform transition-transform duration-300 ease-in-out
-                    ${isOpen ? "translate-x-0" : "translate-x-full"}
-                `}
+                className={cn(
+                    "fixed top-0 right-0 h-full bg-card border-l border-border shadow-2xl z-50",
+                    "transform transition-transform duration-300 ease-in-out",
+                    WIDTH_CLASSES[width],
+                    isOpen ? "translate-x-0" : "translate-x-full"
+                )}
             >
                 <div className="h-full flex flex-col">
                     {/* Header */}
                     {(title || headerActions) && (
-                        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <div className="p-6 border-b border-border flex justify-between items-center bg-muted/50">
                             <div>
                                 {title && (
-                                    <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+                                    <h2 className="text-lg font-bold text-foreground">{title}</h2>
                                 )}
                                 {subtitle && (
-                                    <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
                                 )}
                             </div>
                             <div className="flex gap-2 items-center">
                                 {headerActions}
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={onClose}
-                                    className="p-2 text-gray-400 hover:text-gray-600 transition"
+                                    className="text-muted-foreground hover:text-foreground"
                                 >
-                                    <X className="w-5 h-5" />
-                                </button>
+                                    <X className="h-5 w-5" />
+                                </Button>
                             </div>
                         </div>
                     )}

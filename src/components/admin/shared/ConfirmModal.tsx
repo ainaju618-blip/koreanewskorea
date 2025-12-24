@@ -1,18 +1,18 @@
 /**
- * ConfirmModal - 확인 모달 컴포넌트
+ * ConfirmModal - Confirm modal using shadcn AlertDialog
  *
  * @example
  * <ConfirmModal
  *   isOpen={showConfirm}
- *   title="삭제 확인"
- *   message="정말 삭제하시겠습니까?"
- *   confirmLabel="삭제"
+ *   title="Delete Confirm"
+ *   message="Are you sure you want to delete?"
+ *   confirmLabel="Delete"
  *   variant="danger"
  *   onConfirm={() => handleDelete()}
  *   onCancel={() => setShowConfirm(false)}
  * />
  *
- * // 5번 확인 필요한 경우
+ * // Multiple confirms required
  * <ConfirmModal
  *   requiredConfirms={5}
  *   ...
@@ -20,6 +20,17 @@
  */
 
 import { useState, useEffect } from 'react';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/shadcn/alert-dialog";
+import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -28,15 +39,15 @@ interface ConfirmModalProps {
     confirmLabel?: string;
     cancelLabel?: string;
     variant?: "default" | "danger" | "warning";
-    requiredConfirms?: number; // 여러 번 확인 필요 시 (예: 5)
+    requiredConfirms?: number;
     onConfirm: () => void;
     onCancel: () => void;
 }
 
 const VARIANT_STYLES = {
-    default: "bg-blue-600 hover:bg-blue-700",
-    danger: "bg-red-600 hover:bg-red-700",
-    warning: "bg-yellow-600 hover:bg-yellow-700",
+    default: "bg-primary text-primary-foreground hover:bg-primary/90",
+    danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    warning: "bg-yellow-600 text-white hover:bg-yellow-700",
 };
 
 export function ConfirmModal({
@@ -52,25 +63,21 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
     const [confirmCount, setConfirmCount] = useState(0);
 
-    // 모달이 닫히면 카운트 리셋
+    // Reset count when modal closes
     useEffect(() => {
         if (!isOpen) {
             setConfirmCount(0);
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
     const remainingConfirms = requiredConfirms - confirmCount;
     const isMultiConfirm = requiredConfirms > 1;
 
     const handleConfirmClick = () => {
         if (remainingConfirms <= 1) {
-            // 마지막 확인 또는 단일 확인
             onConfirm();
             setConfirmCount(0);
         } else {
-            // 아직 더 확인 필요
             setConfirmCount(prev => prev + 1);
         }
     };
@@ -81,50 +88,53 @@ export function ConfirmModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm transform scale-100 transition-all">
-                <div className="mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-                    <p className="text-gray-600 text-sm whitespace-pre-wrap">{message}</p>
+        <AlertDialog open={isOpen} onOpenChange={(open) => !open && handleCancelClick()}>
+            <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-foreground">{title}</AlertDialogTitle>
+                    <AlertDialogDescription className="text-muted-foreground whitespace-pre-wrap">
+                        {message}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
 
-                    {/* 다중 확인 진행 상황 표시 */}
-                    {isMultiConfirm && (
-                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-bold text-red-800">
-                                    안전 확인 절차
-                                </span>
-                                <span className="text-xs text-red-600">
-                                    {confirmCount} / {requiredConfirms}
-                                </span>
-                            </div>
-                            {/* 진행 바 */}
-                            <div className="w-full bg-red-200 rounded-full h-2">
-                                <div
-                                    className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${(confirmCount / requiredConfirms) * 100}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-red-700 mt-2">
-                                {remainingConfirms > 1
-                                    ? `확인 버튼을 ${remainingConfirms}번 더 눌러주세요`
-                                    : remainingConfirms === 1
-                                    ? `마지막 확인입니다. 정말 실행하시겠습니까?`
-                                    : ''}
-                            </p>
+                {/* Multi-confirm progress display */}
+                {isMultiConfirm && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold text-destructive">
+                                안전 확인 절차
+                            </span>
+                            <span className="text-xs text-destructive/80">
+                                {confirmCount} / {requiredConfirms}
+                            </span>
                         </div>
-                    )}
-                </div>
-                <div className="flex gap-2 justify-end">
-                    <button
+                        {/* Progress bar */}
+                        <div className="w-full bg-destructive/20 rounded-full h-2">
+                            <div
+                                className="bg-destructive h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(confirmCount / requiredConfirms) * 100}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-destructive/90 mt-2">
+                            {remainingConfirms > 1
+                                ? `확인 버튼을 ${remainingConfirms}번 더 눌러주세요`
+                                : remainingConfirms === 1
+                                ? `마지막 확인입니다. 정말 실행하시겠습니까?`
+                                : ''}
+                        </p>
+                    </div>
+                )}
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel
                         onClick={handleCancelClick}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition"
+                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     >
                         {cancelLabel}
-                    </button>
-                    <button
+                    </AlertDialogCancel>
+                    <AlertDialogAction
                         onClick={handleConfirmClick}
-                        className={`px-4 py-2 text-white rounded-lg font-medium transition ${VARIANT_STYLES[variant]}`}
+                        className={cn(VARIANT_STYLES[variant])}
                     >
                         {isMultiConfirm
                             ? remainingConfirms <= 1
@@ -132,10 +142,10 @@ export function ConfirmModal({
                                 : `${confirmLabel} (${remainingConfirms}번 남음)`
                             : confirmLabel
                         }
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

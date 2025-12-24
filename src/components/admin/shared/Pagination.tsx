@@ -1,5 +1,5 @@
 /**
- * Pagination - 페이지네이션 컴포넌트
+ * Pagination - Pagination component using shadcn Button
  *
  * @example
  * <Pagination
@@ -10,6 +10,8 @@
  */
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/shadcn/button";
+import { cn } from "@/lib/utils";
 
 interface PaginationProps {
     currentPage: number;
@@ -46,43 +48,50 @@ export function Pagination({
 
     return (
         <div className="flex justify-center items-center gap-2 pb-4">
-            <button
+            <Button
+                variant="outline"
+                size="icon"
                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-50 transition"
+                className="h-9 w-9 border-border"
             >
-                <ChevronLeft className="w-4 h-4" />
-            </button>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
 
             {showPageNumbers ? (
                 <div className="flex gap-1">
                     {getVisiblePages().map((page) => (
-                        <button
+                        <Button
                             key={page}
+                            variant={page === currentPage ? "default" : "ghost"}
+                            size="sm"
                             onClick={() => onPageChange(page)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                            className={cn(
+                                "h-9 min-w-9 px-3",
                                 page === currentPage
-                                    ? "bg-blue-600 text-white"
-                                    : "text-gray-600 hover:bg-gray-100"
-                            }`}
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
                         >
                             {page}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             ) : (
-                <span className="px-4 py-2 text-sm text-gray-600">
+                <span className="px-4 py-2 text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages}
                 </span>
             )}
 
-            <button
+            <Button
+                variant="outline"
+                size="icon"
                 onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-50 transition"
+                className="h-9 w-9 border-border"
             >
-                <ChevronRight className="w-4 h-4" />
-            </button>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
         </div>
     );
 }
