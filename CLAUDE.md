@@ -431,12 +431,24 @@ When discrepancy found between rules and actual code:
 |------|-------|
 | **Folder** | `koreanewshq/` |
 | **Domain** | `koreanewskorea.com` |
-| **Vercel Account** | NEW (TBD - user will provide) |
-| **Vercel Project** | TBD |
-| **Supabase Account** | NEW (TBD - user will provide) |
-| **Supabase Project** | TBD |
-| **GitHub Repo** | TBD (same repo or new?) |
+| **Account Email** | `news@koreanewskorea.com` |
+| **GitHub Repo** | `koreanewskorea/main` |
+| **GitHub URL** | https://github.com/koreanewskorea/main |
+| **Supabase Project** | `aubjcabybfuhyrcaniyf` |
+| **Supabase URL** | https://aubjcabybfuhyrcaniyf.supabase.co |
+| **Vercel Account** | TBD (use same email) |
 | **Status** | **Active Development** |
+
+### Environment Variables (koreanewshq/.env.local)
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://aubjcabybfuhyrcaniyf.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Full keys stored in: info/config/hq-secrets.md (gitignored)
+```
 
 ### Why Separate Infrastructure?
 
@@ -449,9 +461,10 @@ When discrepancy found between rules and actual code:
 
 ### Account Setup Checklist
 
-- [ ] Vercel 새 계정 생성 or 팀 생성
-- [ ] Supabase 새 프로젝트 생성
-- [ ] 위 표에 실제 값 기입
+- [x] GitHub 레포 생성 (koreanewskorea/main)
+- [x] Supabase 새 프로젝트 생성
+- [ ] Vercel 새 계정/팀 생성
+- [ ] Vercel에 GitHub 레포 연결
 - [ ] 환경변수 설정 (.env.local)
 - [ ] 도메인 연결 (koreanewskorea.com)
 

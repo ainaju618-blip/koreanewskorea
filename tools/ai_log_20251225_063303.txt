@@ -1,0 +1,9 @@
+[06:33:03] [AI] Server already running
+[06:33:04] 
+[AI] Batch 1: Loading pending articles...
+[06:33:04] [AI] No more pending articles
+[06:33:04] 
+[AI SUMMARY]
+[06:33:04]   Total processed: 0
+[06:33:04]   Success: 0
+[06:33:04]   Failed: 0

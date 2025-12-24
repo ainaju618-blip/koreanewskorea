@@ -100,8 +100,10 @@ nul
 
 .env*.local
 
-# Gemini API 키 (민감 정보)
+# Sensitive config files
 info/config/gemini_accounts.md
+info/config/hq-secrets.md
+info/config/*-secrets.md
 korea-news-reporter-portal-v2.0/
 .playwright-mcp/
 
