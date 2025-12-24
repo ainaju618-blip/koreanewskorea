@@ -5,6 +5,54 @@
 
 ---
 
+## [2025-12-25 05:00] 세션 #29 - 스케줄 자동화 시스템 개선 by Claude
+
+### 주인님 의도
+- 4시 스케줄 정상 실행 여부 확인
+- Task Scheduler 에러 해결 (267009, 2147946720)
+- AI 가공 시 로그 창 표시 (admin_gui.py와 동일하게)
+- 10분 타임아웃 OR 조건 추가 (스크래핑 미완료시에도 AI 처리 시작)
+
+### 수행 작업
+
+1. **Task Scheduler 에러 해결**
+   - 문제: run_scraper.bat에서 pythonw.exe 사용 → 출력 버퍼 문제
+   - 해결 1: pythonw.exe → python.exe 변경, 로깅 추가
+   - 해결 2: Task Scheduler 직접 python.exe 실행으로 변경
+   - 명령: `schtasks /Change /TN 'KoreaNewsScraperScheduled' /TR 'C:\\Python314\\python.exe d:\\cbt\\koreanews\\tools\\scheduled_scraper.py'`
+
+2. **AILogWindow 구현 (scheduled_scraper.py)**
+   - customtkinter 기반 로그 창 클래스 추가
+   - 스케줄 실행 시 AI 가공 진행상황 실시간 표시
+   - 로그 파일 저장 (tools/ai_log_YYYYMMDD_HHMMSS.txt)
+   - 완료 후 5초 대기 → 자동 창 닫기
+
+3. **10분 타임아웃 OR 조건 추가**
+   - 기존: 모든 스크래퍼 완료 후 AI 처리
+   - 변경: 완료 OR 10분 경과 → AI 처리 시작
+   - concurrent.futures.wait() with timeout 사용
+   - 타임아웃 시 미완료 스크래퍼 취소, bot_logs에 'timeout' 기록
+
+### 수정 파일
+- tools/run_scraper.bat: pythonw.exe → python.exe, 로깅 추가
+- tools/scheduled_scraper.py: AILogWindow 클래스, 10분 타임아웃 로직
+- Task Scheduler 설정 업데이트
+
+### 사용 도구
+- Read: scheduled_scraper.py, monitor_live.js, check_today_logs.js
+- Edit: run_scraper.bat, scheduled_scraper.py
+- Bash: schtasks, git commands
+
+### 결과
+- OK - Task Scheduler 정상 실행 확인
+- OK - AILogWindow 구현 완료
+- OK - 10분 타임아웃 기능 추가 완료
+
+### 배포
+- git commit: "feat: Add AILogWindow and 10-min timeout to scheduled scraper"
+
+---
+
 ## [2025-12-23 14:00] 세션 #28 - Gemini Multi-Key 시스템 및 AI 재가공 에러 해결 by Claude
 
 ### 주인님 의도

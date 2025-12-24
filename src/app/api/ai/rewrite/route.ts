@@ -81,22 +81,23 @@ async function getGlobalSettings() {
     console.log("[getGlobalSettings] Selected Key Label:", selectedKey.label);
     console.log("[getGlobalSettings] Key Preview:", selectedKey.key.substring(0, 15) + "...");
 
-    // Fetch system prompt from DB (still needed)
-    const { data, error } = await supabaseAdmin
-        .from("site_settings")
-        .select("key, value")
-        .in("key", ["ai_system_prompt"]);
-
-    if (error) {
-        console.log("[getGlobalSettings] DB ERROR:", error.message);
-    }
-
-    let systemPrompt: string = "";
-    for (const row of data || []) {
-        if (row.key === "ai_system_prompt") {
-            systemPrompt = String(row.value) || "";
-        }
-    }
+    // DB prompt lookup disabled - always use hardcoded DEFAULT_SYSTEM_PROMPT
+    // const { data, error } = await supabaseAdmin
+    //     .from("site_settings")
+    //     .select("key, value")
+    //     .in("key", ["ai_system_prompt"]);
+    //
+    // if (error) {
+    //     console.log("[getGlobalSettings] DB ERROR:", error.message);
+    // }
+    //
+    // let systemPrompt: string = "";
+    // for (const row of data || []) {
+    //     if (row.key === "ai_system_prompt") {
+    //         systemPrompt = String(row.value) || "";
+    //     }
+    // }
+    const systemPrompt: string = ""; // Always empty, will use DEFAULT_SYSTEM_PROMPT
 
     // Use rotated key
     const provider: AIProvider = "gemini";
@@ -181,8 +182,8 @@ export async function POST(request: NextRequest) {
         }
 
         // [DEBUG] STEP 2: AI Guard 체크
-        // 테스트 모드(API 키 직접 전달)인 경우 Guard 체크 우회
-        const isTestMode = !!(requestProvider && requestApiKey);
+        // 테스트 모드(API 키 직접 전달 또는 body.testMode)인 경우 Guard 체크 우회
+        const isTestMode = !!(requestProvider && requestApiKey) || body.testMode === true;
         const region = body.region || 'unknown';
         log("STEP-2-GUARD-CHECK", { region, textLength: text.length, isTestMode });
 
@@ -527,13 +528,84 @@ export async function POST(request: NextRequest) {
 
                 // Validate the result
                 const validationResult = validateFactAccuracy(text, parseResult.data!);
+
+                // ====================================================================
+                // 팩트 검증 체크리스트 (할루시네이션 방지)
+                // ====================================================================
+                console.log("");
+                console.log("╔══════════════════════════════════════════════════════════════╗");
+                console.log("║              팩트 정확도 검증 체크리스트                        ║");
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+
+                // 1. 시스템 프롬프트 규칙 (적용됨 - 실제 준수 여부는 아래서 검증)
+                console.log("║ [1] AI 시스템 프롬프트 (4가지 할루시네이션 방지 원칙)            ║");
+                console.log("║     [~] 팩트 기반 원칙 (지시됨, #3에서 검증)                    ║");
+                console.log("║     [~] 누락 정보 처리 (지시됨, #3에서 검증)                    ║");
+                console.log("║     [~] 객관적 서술 (지시됨, 미검증)                           ║");
+                console.log("║     [~] 지역 정확성 (지시됨, 미검증)                           ║");
+                console.log("║     참고: [~] = 프롬프트 적용됨, 실제 준수는 숫자/인용구        ║");
+                console.log("║           검증에서 확인                                        ║");
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+
+                // 2. 강제 출력 포맷
+                console.log("║ [2] AI 출력 포맷 (FORCED_OUTPUT_FORMAT)                       ║");
+                const hasNumbers = (parseResult.data?.extracted_numbers?.length || 0) > 0;
+                const hasQuotes = (parseResult.data?.extracted_quotes?.length || 0) > 0;
+                console.log(`║     ${hasNumbers ? '[v]' : '[x]'} extracted_numbers: ${parseResult.data?.extracted_numbers?.length || 0}개 추출                 ║`);
+                console.log(`║     ${hasQuotes ? '[v]' : '[ ]'} extracted_quotes: ${parseResult.data?.extracted_quotes?.length || 0}개 추출                  ║`);
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+
+                // 3. 숫자 검증
+                console.log("║ [3] 숫자 검증 (원본 vs AI)                                    ║");
+                const numCheck = validationResult.numberCheck;
+                console.log(`║     원본 숫자: ${numCheck.originalCount}개                                         ║`);
+                console.log(`║     AI 숫자: ${numCheck.aiCount}개                                           ║`);
+                console.log(`║     ${numCheck.passed ? '[v]' : '[x]'} 할루시네이션 숫자 없음: ${numCheck.extraNumbers.length === 0 ? '통과' : `실패 (${numCheck.extraNumbers.length}개 추가됨)`}           ║`);
+                if (numCheck.extraNumbers.length > 0) {
+                    console.log(`║     >>> 추가된 숫자: ${numCheck.extraNumbers.slice(0, 3).join(', ')}...          ║`);
+                }
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+
+                // 4. 인용구 검증
+                console.log("║ [4] 인용구 검증 (원본 vs AI)                                  ║");
+                const quoteCheck = validationResult.quoteCheck;
+                console.log(`║     원본 인용구: ${quoteCheck.originalCount}개                                       ║`);
+                console.log(`║     AI 인용구: ${quoteCheck.aiCount}개                                         ║`);
+                console.log(`║     ${quoteCheck.passed ? '[v]' : '[x]'} 할루시네이션 인용구 없음: ${quoteCheck.extraQuotes.length === 0 ? '통과' : `실패 (${quoteCheck.extraQuotes.length}개 추가됨)`}         ║`);
+                if (quoteCheck.extraQuotes.length > 0) {
+                    console.log(`║     >>> 추가된 인용구: "${quoteCheck.extraQuotes[0]?.substring(0, 25)}..."       ║`);
+                }
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+
+                // 5. 등급 판정
+                console.log("║ [5] 등급 판정                                                 ║");
+                console.log(`║     경고: ${validationResult.warnings.length}개                                              ║`);
+                console.log(`║     등급: ${validationResult.grade} ${validationResult.grade === 'A' ? '(통과 - 발행됨)' : '(실패 - 재시도/수동검토)'}                       ║`);
+                console.log("╠══════════════════════════════════════════════════════════════╣");
+                console.log("║     등급 A: 경고 0개 -> 발행                                  ║");
+                console.log("║     등급 B: 경고 1개 -> 수동검토 (draft)                       ║");
+                console.log("║     등급 C: 경고 2-3개 -> 수동검토 (draft)                     ║");
+                console.log("║     등급 D: 경고 4+개 -> 수동검토 (draft)                      ║");
+                console.log("╚══════════════════════════════════════════════════════════════╝");
+                console.log("");
+
                 log(`STEP-7.5-VALIDATION-ATTEMPT-${currentAttempt}`, {
                     grade: validationResult.grade,
-                    warnings: validationResult.warnings
+                    warnings: validationResult.warnings,
+                    numberCheck: {
+                        originalCount: numCheck.originalCount,
+                        aiCount: numCheck.aiCount,
+                        extraNumbers: numCheck.extraNumbers
+                    },
+                    quoteCheck: {
+                        originalCount: quoteCheck.originalCount,
+                        aiCount: quoteCheck.aiCount,
+                        extraQuotes: quoteCheck.extraQuotes
+                    }
                 });
 
-                // Check if grade is acceptable (A or B)
-                if (validationResult.grade === "A" || validationResult.grade === "B") {
+                // Check if grade is acceptable (A ONLY - strict mode for fact accuracy)
+                if (validationResult.grade === "A") {
                     log(`STEP-7-GRADE-ACCEPTED`, {
                         grade: validationResult.grade,
                         attempt: currentAttempt
@@ -696,9 +768,9 @@ export async function POST(request: NextRequest) {
             // [DEBUG] STEP 8: DB update
             if (articleId) {
                 // Grade-based publishing decision (with retry count)
-                // Grade A or B = apply AI rewrite + publish
-                // Grade C/D (after 5 retries) = cancel AI rewrite, hold as draft for manual review
-                const isAcceptable = finalGrade === "A" || finalGrade === "B";
+                // Grade A ONLY = apply AI rewrite + publish (strict mode)
+                // Grade B/C/D (after 5 retries) = cancel AI rewrite, hold as draft for manual review
+                const isAcceptable = finalGrade === "A";
 
                 log("STEP-8-DB-UPDATE-START", {
                     articleId,

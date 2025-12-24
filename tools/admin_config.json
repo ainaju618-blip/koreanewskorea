@@ -1,0 +1,8 @@
+{
+  "scraper": {
+    "region": "전체 (26개 지역)",
+    "headless": true,
+    "start_date": "2025-12-24",
+    "end_date": "2025-12-24"
+  }
+}
