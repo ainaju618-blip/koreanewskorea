@@ -1,7 +1,8 @@
 # Regional Homepage System Specification
 
-> **Version:** 0.4 (Draft)
+> **Version:** 0.5 (Draft)
 > **Created:** 2025-12-23
+> **Updated:** 2025-12-25
 > **Status:** Planning Phase
 > **Owner:** Korea NEWS Team
 > **Location:** koreanewskorea/plan/
@@ -39,8 +40,24 @@ koreanews/
 | Item | Value |
 |------|-------|
 | **Registered Name** | 코리아NEWS (Gwangju City Hall registered) |
-| **Domain 1 (Primary)** | koreanewskorea.com |
-| **Domain 2** | koreanewsone.com (existing homepage - separate) |
+| **Slogan** | **대한민국 뉴스의 중심 코리아NEWS** |
+| **Domain 1 (Primary)** | koreanewskorea.com (HQ - 전국 뉴스) |
+| **Domain 2** | koreanewsone.com (기존 - 광주·전남 지역뉴스) |
+
+### HQ Homepage (koreanewskorea.com)
+```
+브랜드:     코리아NEWS
+슬로건:     대한민국 뉴스의 중심
+범위:       전국 뉴스 (National News)
+역할:       Korea NEWS 브랜드 본부 홈페이지
+```
+
+### Regional Subdomains ([region].koreanewskorea.com)
+```
+브랜드:     코리아뉴스 + [지역명]
+예시:       코리아뉴스 광주, 코리아뉴스 담양
+범위:       해당 지역 뉴스 (70%) + 인근 (20%) + 전국 (10%)
+```
 
 ---
 
@@ -580,6 +597,7 @@ Reports:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
+| 0.5 | 2025-12-25 | Claude | Added HQ Homepage identity (slogan: 대한민국 뉴스의 중심), clarified HQ vs Regional scope |
 | 0.4 | 2025-12-23 | Claude | Added separation rule (P0), moved to koreanewskorea/plan/, updated folder structure |
 | 0.3 | 2025-12-23 | Claude | Confirmed all design decisions (URL, color, mobile, SEO, analytics) |
 | 0.2 | 2025-12-23 | Claude | Added official registration info (domains, registered name) |
