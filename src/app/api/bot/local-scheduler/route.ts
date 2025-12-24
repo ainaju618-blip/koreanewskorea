@@ -1,33 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
+import { getScheduleSettings, updateScheduler } from '@/lib/scheduler';
 
-const execAsync = promisify(exec);
-
-// Check if local scheduler is running
-async function isSchedulerRunning(): Promise<boolean> {
-    try {
-        const { stdout } = await execAsync(
-            'tasklist /fi "IMAGENAME eq pythonw.exe" /fo csv /nh',
-            { encoding: 'utf-8' }
-        );
-        return stdout.includes('pythonw.exe');
-    } catch {
-        return false;
-    }
-}
+// Track scheduler state (node-cron runs in-process)
+let schedulerInitialized = false;
 
 // GET: Check scheduler status
 export async function GET() {
     try {
-        const isRunning = await isSchedulerRunning();
+        const settings = await getScheduleSettings();
 
         return NextResponse.json({
-            running: isRunning,
-            message: isRunning ? 'Scheduler is running' : 'Scheduler is stopped'
+            running: settings.enabled && schedulerInitialized,
+            enabled: settings.enabled,
+            settings: {
+                startHour: settings.startHour,
+                endHour: settings.endHour,
+                intervalMinutes: settings.intervalMinutes,
+                runOnMinute: settings.runOnMinute,
+                lastRun: settings.lastRun
+            },
+            message: settings.enabled
+                ? (schedulerInitialized ? 'Scheduler is running' : 'Scheduler enabled but not initialized (restart server)')
+                : 'Scheduler is disabled'
         });
     } catch (error) {
+        console.error('[local-scheduler] GET error:', error);
         return NextResponse.json(
             { error: 'Failed to check scheduler status' },
             { status: 500 }
@@ -35,70 +32,60 @@ export async function GET() {
     }
 }
 
-// POST: Start or stop scheduler
+// POST: Reload scheduler (re-read settings from DB)
 export async function POST(req: NextRequest) {
     try {
-        const { action } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const { action } = body;
 
-        if (action === 'start') {
-            const isRunning = await isSchedulerRunning();
-            if (isRunning) {
-                return NextResponse.json({
-                    success: false,
-                    message: 'Scheduler is already running'
-                });
-            }
+        if (action === 'reload' || action === 'start') {
+            // Reload scheduler with current DB settings
+            await updateScheduler();
+            schedulerInitialized = true;
 
-            // Start scheduler using pythonw (no window)
-            const projectRoot = path.resolve(process.cwd());
-            const scriptPath = path.join(projectRoot, 'scripts', 'local_scheduler.py');
-
-            // Use spawn with detached option to run in background
-            const child = spawn('pythonw', [scriptPath], {
-                cwd: projectRoot,
-                detached: true,
-                stdio: 'ignore'
-            });
-            child.unref();
-
-            // Wait a moment and check if it started
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const nowRunning = await isSchedulerRunning();
+            const settings = await getScheduleSettings();
 
             return NextResponse.json({
-                success: nowRunning,
-                message: nowRunning ? 'Scheduler started successfully' : 'Failed to start scheduler'
+                success: true,
+                running: settings.enabled,
+                message: settings.enabled
+                    ? 'Scheduler reloaded and running'
+                    : 'Scheduler reloaded but disabled in settings'
             });
 
         } else if (action === 'stop') {
-            // Kill all pythonw processes (scheduler)
-            try {
-                await execAsync('taskkill /f /im pythonw.exe');
-            } catch {
-                // Process might not exist
-            }
-
-            // Wait and verify
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const stillRunning = await isSchedulerRunning();
+            // Note: This doesn't actually stop the cron job permanently
+            // It just marks it as not initialized for status reporting
+            // The actual cron is controlled by the enabled setting in DB
+            schedulerInitialized = false;
 
             return NextResponse.json({
-                success: !stillRunning,
-                message: stillRunning ? 'Failed to stop scheduler' : 'Scheduler stopped successfully'
+                success: true,
+                running: false,
+                message: 'Scheduler marked as stopped. Change enabled setting in DB to permanently disable.'
             });
 
         } else {
-            return NextResponse.json(
-                { error: 'Invalid action. Use "start" or "stop"' },
-                { status: 400 }
-            );
+            // Default: reload
+            await updateScheduler();
+            schedulerInitialized = true;
+
+            const settings = await getScheduleSettings();
+
+            return NextResponse.json({
+                success: true,
+                running: settings.enabled,
+                message: 'Scheduler updated with current settings'
+            });
         }
 
     } catch (error) {
-        console.error('Scheduler control error:', error);
+        console.error('[local-scheduler] POST error:', error);
         return NextResponse.json(
             { error: 'Failed to control scheduler' },
             { status: 500 }
         );
     }
 }
+
+// Note: schedulerInitialized is set to true when updateScheduler is called via POST

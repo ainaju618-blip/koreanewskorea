@@ -20,6 +20,10 @@ from urllib.parse import urlparse, urljoin
 from typing import Optional
 import hashlib
 
+# Load environment variables (MUST be before cloudinary config)
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
 # ============================================================
 # Cloudinary 설정
 # CLOUDINARY_ENABLED = True로 설정하면 로컬 저장만 수행

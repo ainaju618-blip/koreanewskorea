@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { updateScheduler } from '@/lib/scheduler';
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,7 +37,9 @@ export async function GET() {
 
         if (error) throw error;
 
-        const settings = JSON.parse(data.value);
+        const settings = typeof data.value === 'string'
+            ? JSON.parse(data.value)
+            : data.value;
         return NextResponse.json(settings);
 
     } catch (error) {
@@ -49,7 +52,7 @@ export async function GET() {
     }
 }
 
-// POST: Save schedule settings
+// POST: Save schedule settings and update scheduler
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -85,6 +88,15 @@ export async function POST(req: NextRequest) {
             }, { onConflict: 'key' });
 
         if (error) throw error;
+
+        // Update the running scheduler with new settings
+        try {
+            await updateScheduler();
+            console.log('[automation-schedule] Scheduler updated with new settings');
+        } catch (schedError) {
+            console.error('[automation-schedule] Failed to update scheduler:', schedError);
+            // Don't fail the request, settings were saved
+        }
 
         return NextResponse.json({ success: true, settings });
 
