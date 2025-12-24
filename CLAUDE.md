@@ -2,8 +2,8 @@
 
 > **Project:** Korea NEWS - Jeonnam/Gwangju Regional News Automation Platform
 > **Role:** Project Execution Manager (Speed & Stability First)
-> **Version:** v5.0
-> **Last Updated:** 2025-12-19
+> **Version:** v5.1
+> **Last Updated:** 2025-12-25
 
 ---
 
@@ -66,6 +66,10 @@ Main Content:
 | "What's the scraper?" | **Python module auto-collecting 27 regional press releases** |
 | "Dark mode?" | **Yes, `.admin-layout` class in globals.css** |
 | "CSS/Styles location?" | **`src/app/globals.css` (main) + `tailwind.config.ts` (theme)** |
+| "Where to find past errors?" | **`info/errors/_catalog.md` - search keywords first!** |
+| "Where to record fixed errors?" | **`info/errors/[category]/` + add to `_catalog.md`** |
+| "Session history?" | **`.claude/context/session_log.md`** |
+| "Regional homepage business?" | **`koreanewskorea/plan/BUSINESS_STRATEGY.md`** |
 
 ## 0.5 Target Agencies (27)
 
@@ -96,6 +100,8 @@ Main Content:
 | **Same error 2+ times** | **STOP** + Full system review (not partial fix) |
 | **Admin UI: cards/boxes for lists** | Code review **REJECT** (use tables) |
 | **Admin UI: mobile-first design** | Code review **REJECT** (desktop-first only) |
+| **Error not documented** after fix | Work **INCOMPLETE** - record in info/errors/ |
+| **Session log not written** | Session **INVALID** |
 
 > **Detail Rules:** See [.claude/rules/golden-rules.md](.claude/rules/golden-rules.md)
 
@@ -113,6 +119,57 @@ When same/similar error occurs 2+ times:
 7. Verify fix doesn't break other parts
 
 FORBIDDEN: Quick patch without full context review
+```
+
+## Work Completion Records (P0 - MUST)
+
+> **Every work session MUST record the following. This is NOT optional.**
+
+### 1. Error Documentation (When error fixed)
+
+```
+Location: info/errors/[category]/[error-name].md
+Catalog:  info/errors/_catalog.md (add one line)
+
+Categories:
+  - backend/     : API, Supabase, server errors
+  - frontend/    : React, UI, rendering errors
+  - deploy/      : Vercel, build, CI/CD errors
+  - scraper/     : Python scraper errors
+  - database/    : Schema, query, migration errors
+
+Format:
+  # Error Title
+  > Date, Severity, Category
+  ## Symptom
+  ## Error Message
+  ## Root Cause
+  ## Solution
+  ## Prevention
+  ## Related Files
+```
+
+### 2. Session Log (Every session)
+
+```
+Location: .claude/context/session_log.md
+
+Format:
+  ## [YYYY-MM-DD HH:MM] Session
+  ### User Intent
+  ### Work Done
+  ### Errors Encountered (if any)
+  ### Files Changed
+  ### Deployment Status
+```
+
+### 3. Search Before Work
+
+```
+Before fixing any error:
+1. Search info/errors/_catalog.md for keywords
+2. If found -> Read existing solution -> Apply
+3. If not found -> Fix -> Document new solution
 ```
 
 ---
@@ -227,9 +284,11 @@ cat .vercel/project.json # Check Vercel project link
 |    - Default: Complete -> User approval -> Commit            |
 |    - Exception: "Do it yourself" -> Autonomous commit        |
 |                                                              |
-|  REQUIRED RECORDS:                                           |
-|    - Error resolved -> info/errors/ + _catalog.md            |
-|    - Session log -> .claude/context/session_log.md           |
+|  REQUIRED RECORDS (P0):                                      |
+|    1. BEFORE fixing error -> Search info/errors/_catalog.md  |
+|    2. AFTER fixing error -> Write to info/errors/[cat]/      |
+|    3. AFTER fixing error -> Add line to _catalog.md          |
+|    4. EVERY session -> Write .claude/context/session_log.md  |
 |                                                              |
 |  PROHIBITED:                                                 |
 |    - alert/confirm -> use useToast/useConfirm                |

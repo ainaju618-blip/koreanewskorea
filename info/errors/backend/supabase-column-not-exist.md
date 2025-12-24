@@ -101,4 +101,58 @@ npx tsc --noEmit
 
 ---
 
-*Documented: 2025-12-21*
+## Case 2: koreanewskorea - source_url vs original_link
+
+> **Date:** 2025-12-25
+> **Project:** koreanewskorea (Regional Homepage)
+
+### Symptom
+
+- Regional homepage shows empty content (header/footer only)
+- Vercel runtime logs show: `column posts.source_url does not exist`
+
+### Error Message
+
+```
+[ArticleRepository.findByRegion] Error: {
+  code: '42703',
+  message: 'column posts.source_url does not exist'
+}
+```
+
+### Root Cause
+
+ArticleRepository.ts used `source_url` but actual DB column is `original_link`:
+
+```typescript
+// WRONG
+const POST_FIELDS = '...source_url...';
+
+// CORRECT
+const POST_FIELDS = '...original_link...';
+```
+
+### Solution
+
+1. Check `info/database.md` for actual column names
+2. Update `ArticleRepository.ts` POST_FIELDS
+3. Update `Article.ts` entity type
+4. Update any component using `article.source_url`
+
+### Files Changed
+
+- `koreanewskorea/common/infrastructure/repositories/ArticleRepository.ts`
+- `koreanewskorea/common/domain/entities/Article.ts`
+- `koreanewskorea/app/news/[id]/page.tsx`
+
+### How to Debug
+
+```bash
+# Check Vercel runtime logs
+cd koreanewskorea
+npx vercel logs https://koreanewskorea.vercel.app
+```
+
+---
+
+*Documented: 2025-12-21, Updated: 2025-12-25*
