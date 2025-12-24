@@ -335,14 +335,17 @@ koreanews/
 
 New features that require planning and specification before coding.
 
-| Feature | Spec Document | Status |
-|---------|---------------|--------|
-| **Regional Homepage System** | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Planning |
+| Priority | Feature | Spec Document | Status |
+|----------|---------|---------------|--------|
+| **1** | **HQ Homepage (본사)** | [koreanewshq/plan/hq-homepage-spec.md](koreanewshq/plan/hq-homepage-spec.md) | **Active** |
+| 2 | Regional Homepage System | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Paused |
 
-> **IMPORTANT:** Before working on Regional Homepage, read the business strategy first:
-> [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md)
->
-> This explains WHY we build regional sites (revenue model, SEO strategy, success metrics).
+> **IMPORTANT - HQ Homepage uses SEPARATE infrastructure:**
+> - Supabase: NEW account (not shared with koreanewsone)
+> - Vercel: NEW account (not shared with koreanews-projects)
+> - See "HQ Homepage Infrastructure" section below for details
+
+> **Business Strategy:** [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md)
 
 **Workflow for Domain A:**
 ```
@@ -382,11 +385,12 @@ Bug fixes, improvements, and maintenance of existing features.
 
 > **Read these before working on new features**
 
-| Document | Feature | Version | Status |
-|----------|---------|---------|--------|
-| [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md) | Business Context (WHY) | 1.0 | **Read First** |
-| [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Regional Homepage System | 0.4 | Planning |
-| [plan/mainplan.md](plan/mainplan.md) | Master Strategy | 1.0 | Active |
+| Priority | Document | Feature | Version | Status |
+|----------|----------|---------|---------|--------|
+| **1** | [koreanewshq/plan/hq-homepage-spec.md](koreanewshq/plan/hq-homepage-spec.md) | **HQ Homepage (본사)** | 0.1 | **Active** |
+| 2 | [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md) | Business Context (WHY) | 1.0 | Reference |
+| 3 | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Regional Homepage System | 0.4 | Paused |
+| 4 | [plan/mainplan.md](plan/mainplan.md) | Master Strategy | 1.0 | Reference |
 
 ---
 
@@ -402,21 +406,68 @@ When discrepancy found between rules and actual code:
 
 ---
 
-# Vercel Project Info
+# Infrastructure by Project
+
+## Project 1: Existing Main Site (src/)
 
 | Item | Value |
 |------|-------|
 | **Project Name** | `koreanewsone` |
 | **Team** | `koreanews-projects` |
-| **Domain (Primary)** | `koreanewskorea.com` |
-| **Domain (Secondary)** | `koreanewsone.com` |
+| **Domain** | `koreanewsone.com` |
 | **GitHub Repo** | `korea-news/koreanewsone` |
-| **Registered Name** | 코리아NEWS (Gwangju City Hall) |
+| **Supabase** | Shared with scrapers |
+| **Status** | Maintenance mode |
 
-> **NEVER create new Vercel project! Deploy to existing project only.**
+> Deploy rule: `git push` triggers auto-deploy
+
+---
+
+## Project 2: HQ Homepage (koreanewshq/) - NEW
+
+> **CRITICAL: Uses completely separate infrastructure from Project 1**
+
+| Item | Value |
+|------|-------|
+| **Folder** | `koreanewshq/` |
+| **Domain** | `koreanewskorea.com` |
+| **Vercel Account** | NEW (TBD - user will provide) |
+| **Vercel Project** | TBD |
+| **Supabase Account** | NEW (TBD - user will provide) |
+| **Supabase Project** | TBD |
+| **GitHub Repo** | TBD (same repo or new?) |
+| **Status** | **Active Development** |
+
+### Why Separate Infrastructure?
+
+```
+1. 본사 = 독립 운영 (별도 결제, 별도 관리)
+2. 장애 격리 (본사 장애가 지역에 영향 X)
+3. 스케일링 독립 (본사 트래픽 vs 지역 트래픽)
+4. 비용 분리 (명확한 비용 추적)
+```
+
+### Account Setup Checklist
+
+- [ ] Vercel 새 계정 생성 or 팀 생성
+- [ ] Supabase 새 프로젝트 생성
+- [ ] 위 표에 실제 값 기입
+- [ ] 환경변수 설정 (.env.local)
+- [ ] 도메인 연결 (koreanewskorea.com)
+
+---
+
+## Project 3: Regional Subdomains (koreanewskorea/)
+
+| Item | Value |
+|------|-------|
+| **Folder** | `koreanewskorea/` |
+| **Domain Pattern** | `{region}.koreanewskorea.com` |
+| **Infrastructure** | Shares with HQ Homepage (Project 2) |
+| **Status** | Paused (after HQ completion) |
 
 ---
 
 *This document is the control tower for AI agents working on Korea NEWS project.*
 *Detailed rules are delegated to `.claude/rules/` files.*
-*v5.0 - Restructured with AGENTS.md best practices (500-line limit, no emojis in rules, delegation)*
+*v5.2 - Added HQ Homepage project with separate infrastructure (2025-12-25)*
