@@ -30,7 +30,8 @@ import {
     Sparkles,
     Globe,
     Mail,
-    GitBranch
+    GitBranch,
+    Cpu
 } from 'lucide-react';
 
 // --- 메뉴 아이템 타입 정의 ---
@@ -102,6 +103,7 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "수집처 관리", href: "/admin/sources", icon: Building2 },
                     { label: "스케줄 설정", href: "/admin/bot/schedule", icon: Calendar },
                     { label: "수동 실행", href: "/admin/bot/run", icon: PlayCircle },
+                    { label: "AI 기사 처리", href: "/admin/bot/ai-processing", icon: Cpu },
                     { label: "수집 로그", href: "/admin/bot/logs", icon: Activity },
                     { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
                 ]

@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.error_collector import ErrorCollector
 from utils.text_cleaner import clean_article_content
@@ -311,7 +311,17 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
         target_links = collected_links[:max_articles]
 
-        for item in target_links:
+        # Pre-check duplicates before visiting detail pages (optimization)
+        urls_to_check = [item['url'] for item in target_links]
+        existing_urls = check_duplicates(urls_to_check)
+
+        # Filter out already existing articles
+        new_target_links = [item for item in target_links if item['url'] not in existing_urls]
+        skipped_by_precheck = len(target_links) - len(new_target_links)
+        if skipped_by_precheck > 0:
+            print(f"      [PRE-CHECK] {skipped_by_precheck} articles skipped (already in DB)")
+
+        for item in new_target_links:
             url = item['url']
             title = item['title']
             list_date = item['date']

@@ -54,9 +54,11 @@ function getModel(provider: AIProvider, apiKey: string) {
 }
 
 // Multiple Gemini API keys for rotation (reduces rate limit issues)
+// Free tier: 20 RPM per key, 3 keys = 60 RPM total
 const GEMINI_KEYS = [
     { key: "AIzaSyAjlrbbTCxtwpPyKkevDfUAJ-IjVu42-UI", label: "key1" },
-    { key: "AIzaSyBulyeEOg4CG_8-VS3pP9rQfG9bFYQUhjQ", label: "key2" }
+    { key: "AIzaSyBulyeEOg4CG_8-VS3pP9rQfG9bFYQUhjQ", label: "key2" },
+    { key: "AIzaSyAUW4i9VUEgeZqwkHQ1SXHoffQlkX1iPfE", label: "key3" }
 ];
 
 // Round-robin key rotation
@@ -337,26 +339,11 @@ export async function POST(request: NextRequest) {
                 const errMsg = err instanceof Error ? err.message : String(err);
 
                 // Check if rate limit error
+                // DISABLED: Backend retry removed - frontend handles retry logic
+                // This was causing 2x API calls per article (frontend retry + backend retry)
                 if (errMsg.includes("quota") || errMsg.includes("429") || errMsg.includes("rate")) {
-                    console.log("[AI-CALL] RATE LIMIT HIT! Checking for alternate key...");
-
-                    // If we haven't retried yet and we have multi-key, try getting next key
-                    if (retryCount < 1 && provider === "gemini") {
-                        const globalSettings = await getGlobalSettings();
-                        const nextKey = globalSettings.apiKeys.gemini;
-
-                        // If we got a different key, wait and retry
-                        if (nextKey && nextKey !== currentApiKey) {
-                            console.log("[AI-CALL] Got different key! Waiting 10s then retrying...");
-                            console.log("[AI-CALL] Next Key Preview:", nextKey.substring(0, 15) + "...");
-                            await new Promise(resolve => setTimeout(resolve, 10000));
-                            return tryApiCallWithFallback(nextKey, retryCount + 1);
-                        } else {
-                            console.log("[AI-CALL] Same key returned, cannot fallback. Waiting 15s then retrying same key...");
-                            await new Promise(resolve => setTimeout(resolve, 15000));
-                            return tryApiCallWithFallback(currentApiKey, retryCount + 1);
-                        }
-                    }
+                    console.log("[AI-CALL] RATE LIMIT HIT! Throwing error to frontend for handling.");
+                    // No backend retry - let frontend handle the wait and retry
                 }
                 throw err;
             }
@@ -464,66 +451,148 @@ export async function POST(request: NextRequest) {
         log("STEP-6-USAGE-LOG", { region, provider, inputTokens, outputTokens, articleId });
         await logAIUsage(region, provider, inputTokens, outputTokens, articleId);
 
-        // [DEBUG] STEP 7: JSON 파싱 모드
+        // [DEBUG] STEP 7: JSON 파싱 모드 with C/D grade retry (max 5 attempts)
         if (parseJson) {
-            log("STEP-7-PARSE-START", { rawResponseLength: rewritten?.length || 0 });
+            const MAX_RETRY_ATTEMPTS = 5;
+            let currentAttempt = 1;
+            let bestParseResult: ReturnType<typeof parseAIOutput> | null = null;
+            let bestValidationResult: ReturnType<typeof validateFactAccuracy> | null = null;
+            let bestGrade = "D";
+            let lastRewritten = rewritten;
 
-            const parseResult = parseAIOutput(rewritten || "");
+            // Retry loop for C/D grades
+            while (currentAttempt <= MAX_RETRY_ATTEMPTS) {
+                log(`STEP-7-ATTEMPT-${currentAttempt}`, {
+                    attempt: currentAttempt,
+                    maxAttempts: MAX_RETRY_ATTEMPTS,
+                    rawResponseLength: lastRewritten?.length || 0
+                });
 
-            if (!parseResult.success) {
-                log("STEP-7-PARSE-FAILED", { error: parseResult.error });
-                console.error("[ai/rewrite] Parse failed:", parseResult.error);
+                const parseResult = parseAIOutput(lastRewritten || "");
 
-                // Save error log to DB for debugging (using ai_validation_warnings column)
-                if (articleId) {
-                    await supabaseAdmin
-                        .from("posts")
-                        .update({
-                            ai_validation_warnings: [
-                                `PARSE_ERROR: ${parseResult.error}`,
-                                `RAW_LENGTH: ${rewritten?.length || 0}`,
-                                `RAW_PREVIEW: ${rewritten?.substring(0, 500)}`,
-                                `TIMESTAMP: ${new Date().toISOString()}`
-                            ],
-                            ai_validation_grade: "D",
-                            status: "draft"
-                        })
-                        .eq("id", articleId);
+                if (!parseResult.success) {
+                    log(`STEP-7-PARSE-FAILED-ATTEMPT-${currentAttempt}`, { error: parseResult.error });
+                    console.error(`[ai/rewrite] Parse failed (attempt ${currentAttempt}):`, parseResult.error);
+
+                    // If this is the last attempt, save error and return
+                    if (currentAttempt >= MAX_RETRY_ATTEMPTS) {
+                        if (articleId) {
+                            await supabaseAdmin
+                                .from("posts")
+                                .update({
+                                    ai_validation_warnings: [
+                                        `PARSE_ERROR: ${parseResult.error}`,
+                                        `RAW_LENGTH: ${lastRewritten?.length || 0}`,
+                                        `RAW_PREVIEW: ${lastRewritten?.substring(0, 500)}`,
+                                        `TIMESTAMP: ${new Date().toISOString()}`,
+                                        `ATTEMPTS: ${currentAttempt}`
+                                    ],
+                                    ai_validation_grade: "D",
+                                    ai_retry_count: currentAttempt,
+                                    status: "draft"
+                                })
+                                .eq("id", articleId);
+                        }
+
+                        return NextResponse.json({
+                            success: false,
+                            error: parseResult.error,
+                            rawResponse: lastRewritten,
+                            attempts: currentAttempt,
+                            provider,
+                            processedAt: new Date().toISOString()
+                        }, { status: 422 });
+                    }
+
+                    // Retry: make another AI call
+                    log(`STEP-7-RETRY-AI-CALL-${currentAttempt}`, { reason: "parse_failed" });
+                    try {
+                        const retryResult = await tryApiCallWithFallback(apiKey);
+                        lastRewritten = retryResult.text;
+                        // Log retry usage
+                        const retryInputTokens = (retryResult.usage as Record<string, number>)?.promptTokens || Math.ceil(text.length / 4);
+                        const retryOutputTokens = (retryResult.usage as Record<string, number>)?.completionTokens || Math.ceil((lastRewritten?.length || 0) / 4);
+                        await logAIUsage(region, provider, retryInputTokens, retryOutputTokens, articleId);
+                    } catch (retryErr) {
+                        log(`STEP-7-RETRY-AI-ERROR-${currentAttempt}`, { error: String(retryErr) });
+                    }
+                    currentAttempt++;
+                    continue;
                 }
 
-                return NextResponse.json({
-                    success: false,
-                    error: parseResult.error,
-                    rawResponse: rewritten,
-                    provider,
-                    processedAt: new Date().toISOString()
-                }, { status: 422 });
+                log(`STEP-7-PARSE-SUCCESS-ATTEMPT-${currentAttempt}`, {
+                    title: parseResult.data?.title,
+                    contentLength: parseResult.data?.content?.length || 0
+                });
+
+                // Validate the result
+                const validationResult = validateFactAccuracy(text, parseResult.data!);
+                log(`STEP-7.5-VALIDATION-ATTEMPT-${currentAttempt}`, {
+                    grade: validationResult.grade,
+                    warnings: validationResult.warnings
+                });
+
+                // Check if grade is acceptable (A or B)
+                if (validationResult.grade === "A" || validationResult.grade === "B") {
+                    log(`STEP-7-GRADE-ACCEPTED`, {
+                        grade: validationResult.grade,
+                        attempt: currentAttempt
+                    });
+                    bestParseResult = parseResult;
+                    bestValidationResult = validationResult;
+                    bestGrade = validationResult.grade;
+                    break; // Exit loop - we got a good grade
+                }
+
+                // Grade is C or D - store as best so far and retry
+                if (bestGrade === "D" || (bestGrade === "C" && validationResult.grade !== "D")) {
+                    bestParseResult = parseResult;
+                    bestValidationResult = validationResult;
+                    bestGrade = validationResult.grade;
+                }
+
+                // If not last attempt, retry with new AI call
+                if (currentAttempt < MAX_RETRY_ATTEMPTS) {
+                    log(`STEP-7-RETRY-FOR-CD-GRADE`, {
+                        currentGrade: validationResult.grade,
+                        attempt: currentAttempt,
+                        nextAttempt: currentAttempt + 1
+                    });
+
+                    console.log(`[AI-REWRITE] Grade ${validationResult.grade} - Retrying (${currentAttempt}/${MAX_RETRY_ATTEMPTS})...`);
+
+                    try {
+                        const retryResult = await tryApiCallWithFallback(apiKey);
+                        lastRewritten = retryResult.text;
+                        // Log retry usage
+                        const retryInputTokens = (retryResult.usage as Record<string, number>)?.promptTokens || Math.ceil(text.length / 4);
+                        const retryOutputTokens = (retryResult.usage as Record<string, number>)?.completionTokens || Math.ceil((lastRewritten?.length || 0) / 4);
+                        await logAIUsage(region, provider, retryInputTokens, retryOutputTokens, articleId);
+                    } catch (retryErr) {
+                        log(`STEP-7-RETRY-AI-ERROR-${currentAttempt}`, { error: String(retryErr) });
+                        // If AI call fails, keep the current result and exit
+                        break;
+                    }
+                }
+
+                currentAttempt++;
             }
 
-            log("STEP-7-PARSE-SUCCESS", {
-                title: parseResult.data?.title,
-                slug: parseResult.data?.slug,
-                contentLength: parseResult.data?.content?.length || 0,
-                summary: parseResult.data?.summary?.substring(0, 50) + "...",
-                keywords: parseResult.data?.keywords,
-                tags: parseResult.data?.tags,
-                extracted_numbers: parseResult.data?.extracted_numbers,
-                extracted_quotes: parseResult.data?.extracted_quotes
+            // Use best result after all attempts
+            const parseResult = bestParseResult!;
+            const validationResult1 = bestValidationResult!;
+
+            // Track total attempts for DB
+            const totalAttempts = currentAttempt;
+
+            log("STEP-7-FINAL-RESULT", {
+                finalGrade: bestGrade,
+                totalAttempts,
+                accepted: bestGrade === "A" || bestGrade === "B"
             });
 
-            // [DEBUG] STEP 7.5: Fact validation (1st pass)
-            const validationResult1 = validateFactAccuracy(text, parseResult.data!);
-            log("STEP-7.5-VALIDATION-PASS1", {
-                isValid: validationResult1.isValid,
-                grade: validationResult1.grade,
-                warnings: validationResult1.warnings,
-                numberCheck: validationResult1.numberCheck,
-                quoteCheck: validationResult1.quoteCheck
-            });
-
-            // Double validation: DISABLED to reduce API calls (was causing quota exceeded errors)
-            // Each article now uses only 1 API call instead of 2
-            let finalGrade = validationResult1.grade;
+            // Use the best grade from retry attempts
+            let finalGrade = bestGrade;
             let finalValidation = validationResult1;
             let finalParseResult = parseResult;
 
@@ -626,28 +695,31 @@ export async function POST(request: NextRequest) {
 
             // [DEBUG] STEP 8: DB update
             if (articleId) {
-                // Grade-based publishing decision
-                // ONLY Grade A (both passes) = apply AI rewrite + publish
-                // Grade B/C/D = cancel AI rewrite (keep original), hold as draft
-                const isGradeA = finalGrade === "A";
+                // Grade-based publishing decision (with retry count)
+                // Grade A or B = apply AI rewrite + publish
+                // Grade C/D (after 5 retries) = cancel AI rewrite, hold as draft for manual review
+                const isAcceptable = finalGrade === "A" || finalGrade === "B";
 
                 log("STEP-8-DB-UPDATE-START", {
                     articleId,
                     validationGrade: validationResult.grade,
-                    isGradeA,
-                    action: isGradeA ? "APPLY_AND_PUBLISH" : "CANCEL_AND_HOLD"
+                    finalGrade,
+                    totalAttempts,
+                    isAcceptable,
+                    action: isAcceptable ? "APPLY_AND_PUBLISH" : "HOLD_FOR_MANUAL"
                 });
 
-                if (isGradeA) {
-                    // Grade A: Apply AI rewrite and publish (passed double validation)
+                if (isAcceptable) {
+                    // Grade A or B: Apply AI rewrite and publish
                     const now = new Date().toISOString();
                     const updateData: Record<string, unknown> = {
                         ...dbUpdate,
                         status: "published",
                         published_at: now,
-                        site_published_at: now, // Site publish time for admin display
-                        ai_validation_grade: validationResult.grade,
-                        ai_double_validated: true
+                        site_published_at: now,
+                        ai_validation_grade: finalGrade,
+                        ai_retry_count: totalAttempts,
+                        ai_processed: true
                     };
 
                     const { error: updateError } = await supabaseAdmin
@@ -660,7 +732,7 @@ export async function POST(request: NextRequest) {
                         console.error("[ai/rewrite] DB update failed:", updateError);
                         return NextResponse.json({
                             success: false,
-                            error: "DB 업데이트 실패: " + updateError.message,
+                            error: "DB update failed: " + updateError.message,
                             parsed: parseResult.data,
                             provider,
                             processedAt: new Date().toISOString()
@@ -670,28 +742,34 @@ export async function POST(request: NextRequest) {
                     log("STEP-8-DB-UPDATE-SUCCESS", {
                         articleId,
                         status: "published",
-                        message: "Grade A - Article published with AI rewrite"
+                        grade: finalGrade,
+                        attempts: totalAttempts,
+                        message: `Grade ${finalGrade} - Article published with AI rewrite`
                     });
 
                     return NextResponse.json({
                         success: true,
                         published: true,
-                        message: "기사가 AI 재가공되어 발행되었습니다. (이중 검증 통과, 등급: A)",
+                        message: `AI rewrite published (Grade: ${finalGrade}, Attempts: ${totalAttempts})`,
                         parsed: finalParseResult.data,
                         validation: validationResult,
-                        doubleValidation: true,
+                        grade: finalGrade,
+                        attempts: totalAttempts,
                         articleId,
                         provider,
                         processedAt: new Date().toISOString()
                     });
                 } else {
-                    // Grade B/C/D: Cancel AI rewrite, keep original, hold as draft
-                    // Only update status and validation info, NOT content
+                    // Grade C/D after max retries: Hold as draft for manual review
                     const holdData: Record<string, unknown> = {
                         status: "draft",
-                        ai_validation_grade: validationResult.grade,
-                        ai_validation_warnings: validationResult.warnings,
-                        ai_processed: false // Mark as not processed (original kept)
+                        ai_validation_grade: finalGrade,
+                        ai_validation_warnings: [
+                            ...validationResult.warnings,
+                            `RETRY_EXHAUSTED: ${totalAttempts}/${MAX_RETRY_ATTEMPTS} attempts`
+                        ],
+                        ai_retry_count: totalAttempts,
+                        ai_processed: false
                     };
 
                     const { error: updateError } = await supabaseAdmin
@@ -704,7 +782,7 @@ export async function POST(request: NextRequest) {
                         console.error("[ai/rewrite] Hold update failed:", updateError);
                         return NextResponse.json({
                             success: false,
-                            error: "보류 처리 실패: " + updateError.message,
+                            error: "Hold update failed: " + updateError.message,
                             validation: validationResult,
                             provider,
                             processedAt: new Date().toISOString()
@@ -714,19 +792,19 @@ export async function POST(request: NextRequest) {
                     log("STEP-8-HOLD-SUCCESS", {
                         articleId,
                         status: "draft",
-                        grade: validationResult.grade,
-                        message: "AI rewrite cancelled, original kept, held as draft"
+                        grade: finalGrade,
+                        attempts: totalAttempts,
+                        message: `Grade ${finalGrade} after ${totalAttempts} attempts - held for manual review`
                     });
 
-                    // Determine which pass failed for the message
-                    const failedPass = validationResult1.grade !== "A" ? "1차" : "2차";
                     return NextResponse.json({
                         success: false,
                         published: false,
-                        cancelled: true,
-                        message: `AI 재가공이 취소되었습니다. ${failedPass} 검증 등급(${finalGrade})이 기준 미달입니다. 원본이 유지되며 보류 처리되었습니다.`,
+                        held: true,
+                        message: `${totalAttempts}회 재시도 후에도 등급 ${finalGrade}입니다. 수동 검토가 필요합니다.`,
                         validation: validationResult,
-                        doubleValidation: validationResult1.grade === "A", // True if 1st pass was A but 2nd failed
+                        grade: finalGrade,
+                        attempts: totalAttempts,
                         articleId,
                         provider,
                         processedAt: new Date().toISOString()

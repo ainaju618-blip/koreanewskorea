@@ -29,6 +29,7 @@ The `posts` table is missing AI validation columns that the code expects:
 | `ai_validation_warnings` | text[] | Warning messages array |
 | `ai_processed` | boolean | AI processing applied |
 | `ai_processed_at` | timestamptz | Processing timestamp |
+| `ai_retry_count` | integer | Number of AI retry attempts (max 5) |
 
 The columns may be documented in `info/database.md` but not actually created in Supabase.
 
@@ -45,6 +46,7 @@ ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_double_validated boolean DEFAULT f
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_validation_warnings text[];
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_processed boolean DEFAULT false;
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_processed_at timestamptz;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS ai_retry_count integer DEFAULT 0;
 
 -- Add check constraint for grade values
 ALTER TABLE posts ADD CONSTRAINT posts_ai_validation_grade_check
@@ -56,6 +58,7 @@ COMMENT ON COLUMN posts.ai_double_validated IS 'True if article passed double AI
 COMMENT ON COLUMN posts.ai_validation_warnings IS 'Array of validation warning messages';
 COMMENT ON COLUMN posts.ai_processed IS 'True if AI rewrite was applied';
 COMMENT ON COLUMN posts.ai_processed_at IS 'Timestamp when AI processing completed';
+COMMENT ON COLUMN posts.ai_retry_count IS 'Number of AI retry attempts (max 5 for C/D grades)';
 ```
 
 ---

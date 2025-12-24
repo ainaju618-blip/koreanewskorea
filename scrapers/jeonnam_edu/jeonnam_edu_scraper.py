@@ -16,7 +16,7 @@ from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, Page
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.error_collector import ErrorCollector
 from utils.scraper_utils import clean_article_content, extract_subtitle
@@ -314,13 +314,23 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
         print(f"[OK] Total {len(collected_links)} target links collected.")
 
+        # Pre-check duplicates before visiting detail pages (optimization)
+        urls_to_check = [item['url'] for item in collected_links[:max_articles]]
+        existing_urls = check_duplicates(urls_to_check)
+
+        # Filter out already existing articles
+        new_link_data = [item for item in collected_links[:max_articles] if item['url'] not in existing_urls]
+        skipped_by_precheck = len(collected_links[:max_articles]) - len(new_link_data)
+        if skipped_by_precheck > 0:
+            print(f"      [PRE-CHECK] {skipped_by_precheck} articles skipped (already in DB)")
+
         # ============================================
         # Phase 2: Visit detail pages
         # ============================================
         error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
         processed_count = 0
 
-        target_links = collected_links[:max_articles]
+        target_links = new_link_data
 
         for item in target_links:
             url = item['url']

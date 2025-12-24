@@ -1,17 +1,22 @@
 """
 Yeosu City Press Release Scraper
-- Version: v2.0
-- Last Modified: 2025-12-12
+- Version: v2.1
+- Last Modified: 2025-12-24
 - Responsible: AI Agent
 
 Special Notes:
-- URL 패턴: ?idx={ID}&mode=view
-- 페이지네이션: ?page={N}
-- 이미지: 첨부파days → web/public/images/yeosu/ 로컬 저장
+- URL pattern: ?idx={ID}&mode=view
+- Pagination: ?page={N}
+- Images: attachment or content -> web/public/images/yeosu/ local save
+
+Changes (v2.1):
+- Fixed image detection: added ybmodule.file pattern for content images
+- Fixed attachment detection: file_download links without extension check
+- Priority: content images first (more reliable), then attachments
 
 Changes (v2.0):
-- cloudinary_uploader → local_image_saver 전환
-- 이미지 경로: /images/yeosu/{filename} 형태로 반환
+- cloudinary_uploader -> local_image_saver transition
+- Image path: /images/yeosu/{filename} format returned
 """
 
 # ============================================================
@@ -35,7 +40,7 @@ from playwright_stealth import Stealth
 # 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.error_collector import ErrorCollector
@@ -243,60 +248,114 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             except:
                 continue
     
-    # 2. 이미지 추출 (첨부파days 다운로드 링크에서)
-    # 여수시 패턴: https://www.yeosu.go.kr/ybscript.io/common/file_download/{idx}/{file_id}/{filename}
+    # 2. IMAGE EXTRACTION - Content images FIRST (more reliable for Yeosu)
+    # Yeosu pattern: ./ybmodule.file/board/www_press/980x1x100/{filename}.jpg
     try:
-        attach_links = page.locator('a[href*="file_download"]')
-        attach_count = attach_links.count()
-        print(f"      [INFO] 첨부파days 링크 {attach_count}개 발견")
-        
-        if attach_count > 0:
-            for i in range(min(attach_count, 5)):
-                link = attach_links.nth(i)
-                href = link.get_attribute('href') or ''
-                # text_content() 직접 사용
-                try:
-                    link_text = link.text_content() or ''
-                except:
-                    link_text = safe_get_text(link) or ''
-                
-                print(f"      [FILE] 첨부 #{i}: {link_text[:40]}...")
-                
-                # 이미지 파days인지 확인 (URL or 텍스트에서)
-                is_image = any(ext in link_text.lower() or ext in href.lower() 
-                              for ext in ['.jpg', '.jpeg', '.png', '.gif'])
-                
-                if is_image and href:
-                    full_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
-                    print(f"      [IMG] 이미지 첨부파days 발견!")
-                    
-                    # Save image locally (web/public/images/yeosu/)
+        # 2-1. Look for content images with ybmodule.file pattern (Yeosu-specific)
+        content_imgs = page.locator('img[src*="ybmodule.file"], img[src*="board/www_press"]')
+        content_img_count = content_imgs.count()
+        print(f"      [INFO] Content images (ybmodule): {content_img_count}")
+
+        if content_img_count > 0:
+            for i in range(min(content_img_count, 5)):
+                img = content_imgs.nth(i)
+                src = safe_get_attr(img, 'src')
+                if src:
+                    # Check if it's a real content image (not icon/button)
+                    if any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet']):
+                        continue
+
+                    # Build full URL (handle relative paths like ./ybmodule.file/...)
+                    if src.startswith('./'):
+                        full_url = urljoin(url, src)  # Use current page URL as base
+                    elif src.startswith('/'):
+                        full_url = urljoin(BASE_URL, src)
+                    elif not src.startswith('http'):
+                        full_url = urljoin(BASE_URL, src)
+                    else:
+                        full_url = src
+
+                    print(f"      [IMG] Content image found: {src[:60]}...")
                     local_path = download_and_upload_image(full_url, BASE_URL, REGION_CODE)
                     if local_path:
                         thumbnail_url = local_path
-                        print(f"      [SAVED] 로컬 저장 완료: {local_path}")
-                    break
+                        print(f"      [SAVED] Local save complete: {local_path}")
+                        break
+                    else:
+                        # Try original URL if local save fails
+                        thumbnail_url = full_url
+                        print(f"      [FALLBACK] Using original URL")
+                        break
     except Exception as e:
-        print(f"      [WARN] 첨부파days 처리 실패: {e}")
-    
-    # 3. 본문 내 이미지 (fallback)
+        print(f"      [WARN] Content image extraction failed: {e}")
+
+    # 2-2. Fallback: general board_view images
     if not thumbnail_url:
         try:
             imgs = page.locator('.board_view img, .view_cont img, .content_view img, article img')
-            for i in range(min(imgs.count(), 3)):
+            img_count = imgs.count()
+            print(f"      [INFO] General board images: {img_count}")
+
+            for i in range(min(img_count, 5)):
                 src = safe_get_attr(imgs.nth(i), 'src')
-                if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet']):
-                    full_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
-                    print(f"      [IMG] 본문 이미지 발견: {src[:50]}...")
+                if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'bullet', 'top', 'bottom']):
+                    # Build full URL
+                    if src.startswith('./'):
+                        full_url = urljoin(url, src)
+                    elif src.startswith('/'):
+                        full_url = urljoin(BASE_URL, src)
+                    elif not src.startswith('http'):
+                        full_url = urljoin(BASE_URL, src)
+                    else:
+                        full_url = src
+
+                    print(f"      [IMG] Board image found: {src[:50]}...")
                     local_path = download_and_upload_image(full_url, BASE_URL, REGION_CODE)
                     if local_path:
                         thumbnail_url = local_path
-                        print(f"      [SAVED] 로컬 저장 완료")
+                        print(f"      [SAVED] Local save complete")
+                        break
                     else:
-                        thumbnail_url = full_url  # 로컬 저장 실패 시 원본 URL 사용
-                    break
-        except:
-            pass
+                        thumbnail_url = full_url
+                        break
+        except Exception as e:
+            print(f"      [WARN] Board image extraction failed: {e}")
+
+    # 2-3. Final fallback: attachment file_download links (less reliable)
+    if not thumbnail_url:
+        try:
+            attach_links = page.locator('a[href*="file_download"]')
+            attach_count = attach_links.count()
+            print(f"      [INFO] Attachment links: {attach_count}")
+
+            if attach_count > 0:
+                for i in range(min(attach_count, 5)):
+                    link = attach_links.nth(i)
+                    href = link.get_attribute('href') or ''
+                    try:
+                        link_text = link.text_content() or ''
+                    except:
+                        link_text = safe_get_text(link) or ''
+
+                    print(f"      [FILE] Attachment #{i}: {link_text[:40]}...")
+
+                    # Check if it's likely an image file (by extension in filename or URL)
+                    is_image = any(ext in link_text.lower() or ext in href.lower()
+                                  for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'])
+
+                    # Also accept file_download links even without clear extension
+                    # if it's the first attachment (often the main image)
+                    if (is_image or i == 0) and href:
+                        full_url = urljoin(BASE_URL, href) if not href.startswith('http') else href
+                        print(f"      [IMG] Trying attachment as image...")
+
+                        local_path = download_and_upload_image(full_url, BASE_URL, REGION_CODE)
+                        if local_path:
+                            thumbnail_url = local_path
+                            print(f"      [SAVED] Attachment saved: {local_path}")
+                            break
+        except Exception as e:
+            print(f"      [WARN] Attachment processing failed: {e}")
 
     # Clean content
     content = clean_article_content(content)
@@ -420,9 +479,19 @@ def collect_articles(days: int = 3, max_articles: int = 30, dry_run: bool = Fals
 
                 except Exception as e:
                     continue
-            
+
+            # Pre-check duplicates before visiting detail pages (optimization)
+            urls_to_check = [item['url'] for item in link_data]
+            existing_urls = check_duplicates(urls_to_check)
+
+            # Filter out already existing articles
+            new_link_data = [item for item in link_data if item['url'] not in existing_urls]
+            skipped_by_precheck = len(link_data) - len(new_link_data)
+            if skipped_by_precheck > 0:
+                print(f"      [PRE-CHECK] {skipped_by_precheck} articles skipped (already in DB)")
+
             # Collect and send detail pages
-            for item in link_data:
+            for item in new_link_data:
                 if collected_count >= max_articles:
                     break
                     

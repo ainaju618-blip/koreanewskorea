@@ -42,6 +42,7 @@
 | `ai_processed_at` | timestamptz | AI 재가공 일시 |
 | `ai_validation_grade` | text | AI 검증 등급 (A/B/C/D) |
 | `ai_validation_warnings` | text[] | AI 검증 경고 목록 |
+| `ai_retry_count` | integer | AI 재시도 횟수 (최대 5회) |
 
 ### reporters (기자)
 | 컬럼 | 타입 | 설명 |

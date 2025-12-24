@@ -24,6 +24,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 # 설정 상수
 API_URL = os.getenv('BOT_API_URL', 'http://localhost:3000/api/bot/ingest')
 LOG_API_URL = os.getenv('BOT_LOG_API_URL', 'http://localhost:3000/api/bot/logs')
+DUPLICATE_CHECK_URL = os.getenv('BOT_DUPLICATE_CHECK_URL', 'http://localhost:3000/api/bot/check-duplicate')
 API_KEY = os.getenv('BOT_API_KEY', '')
 REQUEST_TIMEOUT = 10  # 초
 MAX_RETRIES = 3
@@ -101,6 +102,70 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         print(f'   [ERROR] 예외 발생: {str(e)}')
         return {'success': False, 'status': 'error', 'message': str(e)}
+
+
+def check_duplicates(urls: list) -> set:
+    """
+    Check which URLs already exist in DB BEFORE visiting detail pages.
+    This saves time by avoiding unnecessary page loads for duplicate articles.
+
+    Args:
+        urls: List of original_link URLs to check
+
+    Returns:
+        Set of URLs that already exist in DB (should be skipped)
+
+    Usage:
+        from utils.api_client import check_duplicates
+
+        # After collecting URLs from list page
+        all_urls = ['http://...', 'http://...', ...]
+        existing_urls = check_duplicates(all_urls)
+
+        for url in all_urls:
+            if url in existing_urls:
+                print(f'[SKIP] Already exists: {url}')
+                continue
+            # Only visit detail page for new articles
+            content = fetch_detail(url)
+    """
+    if not urls:
+        return set()
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {API_KEY}'
+    }
+
+    try:
+        resp = requests.post(
+            DUPLICATE_CHECK_URL,
+            json={'urls': urls},
+            headers=headers,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        if resp.status_code == 200:
+            data = resp.json()
+            existing = set(data.get('exists', []))
+            if existing:
+                print(f'   [PRE-CHECK] {len(existing)}/{len(urls)} articles already exist in DB')
+            return existing
+        else:
+            print(f'   [WARN] Duplicate check failed ({resp.status_code}), proceeding without pre-check')
+            return set()
+
+    except requests.exceptions.Timeout:
+        print('   [WARN] Duplicate check timeout, proceeding without pre-check')
+        return set()
+
+    except requests.exceptions.ConnectionError:
+        print('   [WARN] Duplicate check connection failed, proceeding without pre-check')
+        return set()
+
+    except Exception as e:
+        print(f'   [WARN] Duplicate check error: {str(e)}, proceeding without pre-check')
+        return set()
 
 
 def log_to_server(

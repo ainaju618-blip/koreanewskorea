@@ -140,6 +140,9 @@ function AdminNewsListPage() {
     // Stop signal for bulk operations
     const stopBulkRef = useRef(false);
 
+    // Ref for immediate duplicate execution prevention (useState is async)
+    const bulkProcessingRef = useRef(false);
+
     // Stop button handler
     const handleStopBulk = () => {
         stopBulkRef.current = true;
@@ -522,6 +525,14 @@ function AdminNewsListPage() {
         isResume: boolean = false,
         previouslyProcessed: number = 0
     ) => {
+        // CRITICAL: Immediate synchronous guard to prevent duplicate execution
+        // useState (isBulkProcessing) is async and cannot prevent rapid double calls
+        if (bulkProcessingRef.current) {
+            console.warn('[GUARD] executeBulkApprove blocked - already processing (ref check)');
+            return;
+        }
+        bulkProcessingRef.current = true; // Set immediately before any async operation
+
         console.log('=== 선택 승인 시작 ===', isResume ? '(재개)' : '(새 작업)');
         const ids = overrideIds || Array.from(selectedIds);
         console.log('선택된 ID 개수:', ids.length);
@@ -529,6 +540,7 @@ function AdminNewsListPage() {
         if (ids.length === 0) {
             showWarning('승인할 기사가 없습니다.');
             clearBulkJob(); // Clear any stale job
+            bulkProcessingRef.current = false; // Reset ref on early return
             return;
         }
 
@@ -737,22 +749,16 @@ function AdminNewsListPage() {
                     try {
                         const articleStartTime = Date.now();
 
-                        // [DEBUG] AI API 호출 전 상세 로그
+                        // ============================================================
+                        // [STEP 1] API 호출 준비
+                        // ============================================================
+                        console.log('');
                         console.log('╔════════════════════════════════════════════════════════════════╗');
-                        console.log('║       AI REWRITE API CALL START - FRONTEND DEBUG               ║');
+                        console.log(`║  [${i + 1}/${ids.length}] AI REWRITE - STEP 1: PREPARING REQUEST`);
                         console.log('╚════════════════════════════════════════════════════════════════╝');
-                        console.log('[FRONTEND] Timestamp:', new Date().toISOString());
-                        console.log('[FRONTEND] Article Index:', i + 1, '/', ids.length);
-                        console.log('[FRONTEND] Article ID:', article.id);
-                        console.log('[FRONTEND] Article Title:', article.title);
-                        console.log('[FRONTEND] Article Source:', article.source);
-                        console.log('[FRONTEND] Region Code:', articleRegion);
-                        console.log('[FRONTEND] Content Length:', article.content?.length || 0);
-                        console.log('[FRONTEND] Content Preview:', article.content?.substring(0, 100) + '...');
-                        console.log('[FRONTEND] AI Enabled:', aiEnabled);
-                        console.log('[FRONTEND] Enabled Regions:', enabledRegions);
-                        console.log('[FRONTEND] Is Region Enabled:', enabledRegions.includes(articleRegion));
-                        console.log('[FRONTEND] NOTE: API will use parseJson=true, which may trigger DOUBLE VALIDATION (2x API calls) if Grade A!');
+                        console.log(`[STEP1] Timestamp: ${new Date().toISOString()}`);
+                        console.log(`[STEP1] Article: ${article.title.substring(0, 40)}...`);
+                        console.log(`[STEP1] Source: ${article.source} -> Region: ${articleRegion}`);
 
                         addProgressLog('AI 재가공', `${article.source} -> AI 호출 중...`, 'info');
 
@@ -763,7 +769,14 @@ function AdminNewsListPage() {
                             region: articleRegion
                         };
 
-                        console.log('[DEBUG] Request Body:', JSON.stringify(requestBody, null, 2).substring(0, 500));
+                        // ============================================================
+                        // [STEP 2] API 호출 - 응답 대기 시작
+                        // ============================================================
+                        console.log('');
+                        console.log(`[STEP2] >>> API 호출 시작 - 응답 대기 중... (await fetch)`);
+                        console.log(`[STEP2] Endpoint: /api/ai/rewrite`);
+                        console.log(`[STEP2] Method: POST`);
+                        console.log(`[STEP2] Waiting for response...`);
 
                         const rewriteRes = await fetch('/api/ai/rewrite', {
                             method: 'POST',
@@ -773,70 +786,97 @@ function AdminNewsListPage() {
 
                         const articleDuration = Date.now() - articleStartTime;
 
+                        // ============================================================
+                        // [STEP 3] 응답 수신 완료
+                        // ============================================================
+                        console.log('');
+                        console.log(`[STEP3] <<< 응답 수신 완료! (${articleDuration}ms 소요)`);
+                        console.log(`[STEP3] Status: ${rewriteRes.status} ${rewriteRes.ok ? 'OK' : 'ERROR'}`);
+                        console.log(`[STEP3] Proceeding to process response...`);
+
                         // [DEBUG] API 응답 상세 로그
                         console.log('[DEBUG] Response Status:', rewriteRes.status);
                         console.log('[DEBUG] Response OK:', rewriteRes.ok);
                         console.log('[DEBUG] Response Headers:', Object.fromEntries(rewriteRes.headers.entries()));
                         console.log('[DEBUG] Duration:', articleDuration, 'ms');
 
+                        // ============================================================
+                        // [STEP 4] 응답 처리
+                        // ============================================================
                         if (rewriteRes.ok) {
+                            console.log('');
+                            console.log(`[STEP4] 응답 처리 중 - SUCCESS 응답`);
+
                             const rewriteData = await rewriteRes.json();
-
-                            // [DEBUG] 성공 응답 상세 로그
-                            console.log('[DEBUG] Response Data Keys:', Object.keys(rewriteData));
-                            console.log('[DEBUG] Success:', rewriteData.success);
-                            console.log('[DEBUG] Published:', rewriteData.published);
-                            console.log('[DEBUG] Validation:', rewriteData.validation);
-
-                            // Grade check: Only Grade A articles are published
                             const grade = rewriteData.validation?.grade || 'unknown';
                             const isGradeA = grade === 'A';
 
+                            console.log(`[STEP4] Grade: ${grade}, Published: ${rewriteData.success && isGradeA}`);
+
                             if (rewriteData.success && isGradeA) {
-                                // Grade A: Successfully published with AI rewrite
+                                console.log(`[STEP4] ✓ Grade A - 발행 완료!`);
                                 addProgressLog('AI 재가공', `Grade A - 발행 완료! (${(articleDuration / 1000).toFixed(1)}초)`, 'success', articleDuration);
                                 successCount++;
                             } else if (rewriteData.cancelled) {
-                                // Grade B/C/D: AI rewrite cancelled, held as draft
+                                console.log(`[STEP4] ⚠ Grade ${grade} - 보류됨`);
                                 addProgressLog('AI 재가공', `Grade ${grade} - 보류됨 (할루시네이션 감지)`, 'warning', articleDuration);
                                 skipCount++;
                             } else if (rewriteData.parsed) {
-                                // Preview mode (no articleId case) - should not happen in bulk approve
+                                console.log(`[STEP4] ℹ 미리보기 모드`);
                                 addProgressLog('AI 재가공', `미리보기 모드`, 'info', articleDuration);
                                 skipCount++;
                             } else {
-                                console.log('[DEBUG] Parse failed - Full response:', JSON.stringify(rewriteData, null, 2));
+                                console.log(`[STEP4] ✗ 파싱 실패`);
                                 addProgressLog('AI 재가공', `파싱 실패`, 'error', articleDuration);
                                 failCount++;
                             }
                         } else {
-                            // [DEBUG] 에러 응답 상세 로그
-                            const responseText = await rewriteRes.text();
-                            console.log('[DEBUG] ========== API ERROR RESPONSE ==========');
-                            console.log('[DEBUG] Status:', rewriteRes.status);
-                            console.log('[DEBUG] Status Text:', rewriteRes.statusText);
-                            console.log('[DEBUG] Response Text:', responseText);
+                            // ============================================================
+                            // [STEP 4-ERROR] 에러 응답 처리
+                            // ============================================================
+                            console.log('');
+                            console.log(`[STEP4-ERROR] 응답 처리 중 - ERROR 응답 (${rewriteRes.status})`);
 
+                            const responseText = await rewriteRes.text();
                             let errorData: any = {};
                             try {
                                 errorData = JSON.parse(responseText);
-                                console.log('[DEBUG] Parsed Error Data:', errorData);
                             } catch (parseErr) {
-                                console.log('[DEBUG] Response is not JSON');
+                                // Not JSON
                             }
 
                             const errorMsg = errorData.error || `HTTP ${rewriteRes.status}: ${rewriteRes.statusText}`;
+                            console.log(`[STEP4-ERROR] Error: ${errorMsg.substring(0, 100)}...`);
                             addProgressLog('AI 재가공', `API 오류: ${errorMsg}`, 'error');
                             failCount++;
+
+                            // Parse retry time from error message
+                            const retryMatch = errorMsg.match(/retry in (\d+\.?\d*)s/i);
+                            if (retryMatch && i < ids.length - 1) {
+                                const retrySeconds = Math.ceil(parseFloat(retryMatch[1])) + 5;
+                                console.log('');
+                                console.log(`[STEP4-WAIT] Rate Limit 감지! ${retrySeconds}초 대기 시작...`);
+                                addProgressLog('대기', `Rate Limit 회복 대기 중... (${retrySeconds}초)`, 'warning');
+                                await new Promise(resolve => setTimeout(resolve, retrySeconds * 1000));
+                                console.log(`[STEP4-WAIT] ${retrySeconds}초 대기 완료!`);
+                            }
                         }
 
-                        console.log('[DEBUG] ========== AI REWRITE API CALL END ==========');
-
-                        // Rate limit prevention: Wait 3 seconds before next API call
+                        // ============================================================
+                        // [STEP 5] 다음 기사 처리 준비
+                        // ============================================================
                         if (i < ids.length - 1) {
-                            addProgressLog('대기', '다음 기사 처리 전 3초 대기 중... (Rate Limit 방지)', 'info');
-                            console.log('[DEBUG] Waiting 3 seconds before next API call to avoid rate limiting...');
-                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            console.log('');
+                            console.log(`[STEP5] 기사 ${i + 1}/${ids.length} 처리 완료`);
+                            console.log(`[STEP5] 다음 기사 처리 전 5초 대기 시작...`);
+                            addProgressLog('대기', '다음 기사 처리 전 5초 대기 중... (Rate Limit 방지)', 'info');
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            console.log(`[STEP5] 5초 대기 완료! 다음 기사로 진행...`);
+                            console.log('');
+                            console.log('────────────────────────────────────────────────────────────────');
+                        } else {
+                            console.log('');
+                            console.log(`[STEP5] 마지막 기사 ${i + 1}/${ids.length} 처리 완료!`);
                         }
 
                     } catch (err) {
@@ -851,11 +891,11 @@ function AdminNewsListPage() {
                         addProgressLog('AI 재가공', `에러 발생: ${errMsg}`, 'error');
                         failCount++;
 
-                        // Rate limit prevention after error: Wait 5 seconds (longer due to error)
+                        // Rate limit prevention after error: Wait 15 seconds (longer for quota recovery)
                         if (i < ids.length - 1) {
-                            addProgressLog('대기', '에러 후 5초 대기 중... (Rate Limit 회복)', 'info');
-                            console.log('[DEBUG] Waiting 5 seconds after error before next API call...');
-                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            addProgressLog('대기', '에러 후 15초 대기 중... (Rate Limit 회복)', 'info');
+                            console.log('[DEBUG] Waiting 15 seconds after error before next API call...');
+                            await new Promise(resolve => setTimeout(resolve, 15000));
                         }
                     }
                 } else {
@@ -924,6 +964,7 @@ function AdminNewsListPage() {
             showError(`승인 처리 중 오류: ${errorMessage}`);
         } finally {
             setIsBulkProcessing(false);
+            bulkProcessingRef.current = false; // Reset ref on completion
         }
     };
 

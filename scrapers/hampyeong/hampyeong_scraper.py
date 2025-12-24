@@ -32,7 +32,7 @@ from playwright.sync_api import sync_playwright, Page
 # 3. Local Modules
 # ============================================================
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
 from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
 from utils.error_collector import ErrorCollector
@@ -465,11 +465,21 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 print("      [STOP] 이 페이지에 유효한 기사가 없음, 탐색 중지")
                 break
             
+            # Pre-check duplicates before visiting detail pages (optimization)
+            urls_to_check = [item['url'] for item in link_data]
+            existing_urls = check_duplicates(urls_to_check)
+
+            # Filter out already existing articles
+            new_link_data = [item for item in link_data if item['url'] not in existing_urls]
+            skipped_by_precheck = len(link_data) - len(new_link_data)
+            if skipped_by_precheck > 0:
+                print(f"      [PRE-CHECK] {skipped_by_precheck} articles skipped (already in DB)")
+
             # Collect and send detail pages
             consecutive_old = 0  # Consecutive old article counter
             stop_scraping = False
-            
-            for item in link_data:
+
+            for item in new_link_data:
                 if collected_count >= max_articles or stop_scraping:
                     break
                 

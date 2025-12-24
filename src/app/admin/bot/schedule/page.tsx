@@ -1,283 +1,298 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Calendar, Clock, Loader2, Play, History, AlertCircle,
-    ExternalLink, GitBranch, CheckCircle2, XCircle, Timer,
-    Plus, X, Save, RotateCcw
+    CheckCircle2, XCircle, Timer, Save, Power, Settings,
+    Zap, Monitor, RefreshCw, Square, PlayCircle
 } from "lucide-react";
+import Link from "next/link";
 import { useToast } from '@/components/ui/Toast';
 
-interface WorkflowRun {
-    id: number;
-    status: string;
-    conclusion: string | null;
-    createdAt: string;
-    updatedAt: string;
-    event: string;
-    url: string;
+interface ScheduleSettings {
+    enabled: boolean;
+    startHour: number;
+    endHour: number;
+    intervalMinutes: number;
+    runOnMinute: number;
 }
 
-interface BotLog {
-    id: number;
-    region: string;
-    status: string;
-    articles_count: number;
-    started_at: string;
-    ended_at: string | null;
-    metadata?: { skipped_count?: number };
+interface AutomationStats {
+    lastRun?: { timestamp: string; status: string };
+    todayStats?: { processed: number; published: number; held: number };
 }
 
-interface GitHubActionsData {
-    schedules: string[];
-    runs: WorkflowRun[];
-    botLogs: BotLog[];
-    workflowUrl: string;
+interface SchedulerStatus {
+    running: boolean;
+    message: string;
 }
 
-// Region name mapping
-const REGION_NAMES: Record<string, string> = {
-    gwangju: '광주시', jeonnam: '전남도', mokpo: '목포시', yeosu: '여수시',
-    suncheon: '순천시', naju: '나주시', gwangyang: '광양시', damyang: '담양군',
-    gokseong: '곡성군', gurye: '구례군', goheung: '고흥군', boseong: '보성군',
-    hwasun: '화순군', jangheung: '장흥군', gangjin: '강진군', haenam: '해남군',
-    yeongam: '영암군', muan: '무안군', hampyeong: '함평군', yeonggwang: '영광군',
-    jangseong: '장성군', wando: '완도군', jindo: '진도군', shinan: '신안군',
-    gwangju_edu: '광주교육청', jeonnam_edu: '전남교육청'
-};
+// Generate scheduled times based on settings
+function generateScheduledTimes(settings: ScheduleSettings): string[] {
+    const times: string[] = [];
+    if (!settings.enabled) return times;
 
-// Convert UTC cron to KST time display
-function cronToKST(cron: string): { time: string; description: string } {
-    const parts = cron.split(' ');
-    if (parts.length !== 5) return { time: cron, description: '' };
-
-    const [minute, hour] = parts;
-    const utcHour = parseInt(hour);
-    const utcMinute = parseInt(minute);
-
-    // UTC to KST (+9)
-    let kstHour = utcHour + 9;
-    if (kstHour >= 24) kstHour -= 24;
-
-    const timeStr = `${String(kstHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')}`;
-    return {
-        time: timeStr,
-        description: `KST (UTC ${String(utcHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')})`
-    };
+    let hour = settings.startHour;
+    while (hour <= settings.endHour) {
+        const timeStr = `${String(hour).padStart(2, '0')}:${String(settings.runOnMinute).padStart(2, '0')}`;
+        times.push(timeStr);
+        hour += Math.floor(settings.intervalMinutes / 60);
+        if (settings.intervalMinutes < 60) break; // For intervals less than 1 hour, just show start time
+    }
+    return times;
 }
 
-// Calculate next run times from multiple cron expressions
-function getNextRunTimes(schedules: string[], count: number = 5): Date[] {
+// Calculate next run times
+function getNextRunTimes(settings: ScheduleSettings, count: number = 5): Date[] {
+    if (!settings.enabled) return [];
+
     const now = new Date();
     const results: Date[] = [];
 
-    for (const cron of schedules) {
-        const parts = cron.split(' ');
-        if (parts.length !== 5) continue;
-
-        const [minutePart, hourPart] = parts;
-        const minute = parseInt(minutePart);
-        const hour = parseInt(hourPart);
-
-        // Generate next 7 days of this schedule
-        for (let day = 0; day < 7; day++) {
+    for (let day = 0; day < 7 && results.length < count; day++) {
+        let hour = settings.startHour;
+        while (hour <= settings.endHour && results.length < count) {
             const runTime = new Date(now);
             runTime.setDate(now.getDate() + day);
-            // UTC time
-            runTime.setUTCHours(hour, minute, 0, 0);
+            runTime.setHours(hour, settings.runOnMinute, 0, 0);
 
             if (runTime > now) {
                 results.push(runTime);
             }
+            hour += Math.floor(settings.intervalMinutes / 60) || 1;
         }
     }
 
-    return results.sort((a, b) => a.getTime() - b.getTime()).slice(0, count);
+    return results;
 }
 
 export default function BotSchedulePage() {
     const { showSuccess, showError } = useToast();
-    const [data, setData] = useState<GitHubActionsData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isTriggering, setIsTriggering] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    // Schedule editor states
-    const [editedSchedules, setEditedSchedules] = useState<string[]>([]);
-    const [newTime, setNewTime] = useState('');
+    // States
+    const [settings, setSettings] = useState<ScheduleSettings>({
+        enabled: false,
+        startHour: 9,
+        endHour: 20,
+        intervalMinutes: 60,
+        runOnMinute: 30
+    });
+    const [stats, setStats] = useState<AutomationStats>({});
+    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Ref to track unsaved changes (prevents overwriting during auto-refresh)
-    const hasUnsavedChangesRef = useRef(false);
+    // Scheduler status
+    const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus>({ running: false, message: '' });
+    const [isControlling, setIsControlling] = useState(false);
 
-    const fetchData = useCallback(async (showRefresh = false) => {
-        if (showRefresh) setIsRefreshing(true);
+    // Edited settings (for unsaved changes)
+    const [editedSettings, setEditedSettings] = useState<ScheduleSettings>(settings);
+
+    // Load settings
+    const fetchSettings = useCallback(async () => {
         try {
-            const res = await fetch('/api/admin/github-actions');
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Failed to fetch data');
-            }
-            const result = await res.json();
-            setData(result);
-            setError(null);
-        } catch (err: any) {
-            setError(err.message);
-            console.error("Failed to load GitHub Actions data:", err);
+            // Load schedule settings
+            const scheduleRes = await fetch('/api/bot/automation-schedule');
+            const scheduleData = await scheduleRes.json();
+
+            // Load automation stats
+            const automationRes = await fetch('/api/bot/full-automation');
+            const automationData = await automationRes.json();
+
+            const loadedSettings: ScheduleSettings = {
+                enabled: automationData.enabled || false,
+                startHour: scheduleData.startHour ?? 9,
+                endHour: scheduleData.endHour ?? 20,
+                intervalMinutes: scheduleData.intervalMinutes ?? 60,
+                runOnMinute: scheduleData.runOnMinute ?? 30
+            };
+
+            setSettings(loadedSettings);
+            setEditedSettings(loadedSettings);
+            setStats({
+                lastRun: automationData.lastRun,
+                todayStats: automationData.todayStats
+            });
+            setHasChanges(false);
+
+        } catch (err) {
+            console.error('Failed to load settings:', err);
+            showError('Failed to load settings');
         } finally {
             setIsLoading(false);
-            setIsRefreshing(false);
         }
-    }, []);
+    }, [showError]);
 
     useEffect(() => {
-        fetchData();
-        // Auto-refresh every 30 seconds
-        const interval = setInterval(() => fetchData(), 30000);
-        return () => clearInterval(interval);
-    }, [fetchData]);
+        fetchSettings();
+        fetchSchedulerStatus();
+    }, [fetchSettings]);
 
-    // Keep ref in sync with state
-    useEffect(() => {
-        hasUnsavedChangesRef.current = hasChanges;
-    }, [hasChanges]);
-
-    // Initialize edited schedules when data is loaded
-    // IMPORTANT: Don't overwrite user's unsaved changes during auto-refresh
-    useEffect(() => {
-        if (data?.schedules) {
-            // Skip if user has unsaved changes (prevents auto-refresh overwrite)
-            if (hasUnsavedChangesRef.current) {
-                return;
-            }
-            const kstTimes = data.schedules.map(cron => cronToKST(cron).time);
-            setEditedSchedules(kstTimes);
-            setHasChanges(false);
-        }
-    }, [data?.schedules]);
-
-    // Schedule limits
-    const MAX_SCHEDULES = 10;
-
-    // Add new schedule time
-    const handleAddTime = () => {
-        if (!newTime) return;
-
-        // Check max limit
-        if (editedSchedules.length >= MAX_SCHEDULES) {
-            showError(`최대 ${MAX_SCHEDULES}개까지만 추가할 수 있습니다.`);
-            return;
-        }
-
-        // Parse time from input (handles "HH:MM" or "HH:MM:SS" formats)
-        const timeParts = newTime.split(':');
-        if (timeParts.length < 2) {
-            showError('시간 형식이 올바르지 않습니다.');
-            return;
-        }
-
-        const h = parseInt(timeParts[0], 10);
-        const m = parseInt(timeParts[1], 10);
-
-        // Validate hour and minute ranges
-        if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
-            showError('시간 형식이 올바르지 않습니다. 00:00 ~ 23:59 범위로 입력하세요.');
-            return;
-        }
-
-        // Format to HH:MM
-        const formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-        // Check for duplicates
-        if (editedSchedules.includes(formattedTime)) {
-            showError('이미 추가된 시간입니다.');
-            return;
-        }
-
-        // Add and sort
-        const newSchedules = [...editedSchedules, formattedTime].sort();
-        setEditedSchedules(newSchedules);
-        setNewTime('');
-        setHasChanges(true);
-    };
-
-    // Remove schedule time
-    const handleRemoveTime = (timeToRemove: string) => {
-        const newSchedules = editedSchedules.filter(t => t !== timeToRemove);
-        setEditedSchedules(newSchedules);
-        setHasChanges(true);
-    };
-
-    // Reset all schedules
-    const handleResetSchedules = () => {
-        setEditedSchedules([]);
-        setHasChanges(true);
-    };
-
-    // Save schedules to GitHub with verification
-    const handleSaveSchedules = async () => {
-        setIsSaving(true);
+    // Fetch scheduler status
+    const fetchSchedulerStatus = async () => {
         try {
-            console.log('[Schedule Save] Saving schedules:', editedSchedules);
+            const res = await fetch('/api/bot/local-scheduler');
+            if (res.ok) {
+                const data = await res.json();
+                setSchedulerStatus(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch scheduler status:', err);
+        }
+    };
 
-            const res = await fetch('/api/admin/github-actions', {
-                method: 'PUT',
+    // Start/Stop scheduler
+    const handleSchedulerControl = async (action: 'start' | 'stop') => {
+        setIsControlling(true);
+        try {
+            const res = await fetch('/api/bot/local-scheduler', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ schedules: editedSchedules })
+                body: JSON.stringify({ action })
             });
 
-            const result = await res.json();
-            console.log('[Schedule Save] API Response:', result);
+            const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(result.error || '스케줄 저장에 실패했습니다.');
+            if (data.success) {
+                showSuccess(data.message);
+                await fetchSchedulerStatus();
+            } else {
+                showError(data.message || 'Failed to control scheduler');
+            }
+        } catch (err) {
+            console.error('Scheduler control error:', err);
+            showError('Failed to control scheduler');
+        } finally {
+            setIsControlling(false);
+        }
+    };
+
+    // Handle setting changes
+    const handleChange = (field: keyof ScheduleSettings, value: number | boolean) => {
+        setEditedSettings(prev => ({ ...prev, [field]: value }));
+        setHasChanges(true);
+    };
+
+    // Save settings
+    const handleSave = async (): Promise<boolean> => {
+        setIsSaving(true);
+        try {
+            // Save schedule settings
+            const scheduleRes = await fetch('/api/bot/automation-schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enabled: editedSettings.enabled,
+                    startHour: editedSettings.startHour,
+                    endHour: editedSettings.endHour,
+                    intervalMinutes: editedSettings.intervalMinutes,
+                    runOnMinute: editedSettings.runOnMinute
+                })
+            });
+
+            if (!scheduleRes.ok) {
+                throw new Error('Failed to save schedule');
             }
 
-            // Check if verification passed
-            if (!result.verified) {
-                throw new Error('GitHub 저장 검증 실패 - 다시 시도해주세요.');
+            // Save enabled status to full-automation
+            const automationRes = await fetch('/api/bot/full-automation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: editedSettings.enabled })
+            });
+
+            if (!automationRes.ok) {
+                throw new Error('Failed to save automation status');
             }
 
-            showSuccess(`스케줄이 GitHub에 저장되었습니다! (${editedSchedules.join(', ')} KST)`);
+            setSettings(editedSettings);
             setHasChanges(false);
+            showSuccess('Schedule saved successfully!');
+            return true;
 
-            // Refresh data after save to show updated schedules
-            setTimeout(() => fetchData(true), 1000);
-        } catch (err: any) {
-            console.error('[Schedule Save] Error:', err);
-            showError(err.message || '스케줄 저장에 실패했습니다.');
+        } catch (err) {
+            console.error('Failed to save:', err);
+            showError('Failed to save settings');
+            return false;
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleTriggerWorkflow = async () => {
-        setIsTriggering(true);
+    // Save settings and start scheduler
+    const handleSaveAndStart = async () => {
+        const saveSuccess = await handleSave();
+        if (!saveSuccess) return;
+
+        // Refresh status first to get current state
         try {
-            const res = await fetch('/api/admin/github-actions', {
+            const res = await fetch('/api/bot/local-scheduler');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.running) {
+                    showSuccess('Settings saved! Scheduler is already running.');
+                    setSchedulerStatus(data);
+                    return;
+                }
+            }
+        } catch {
+            // Continue to try starting
+        }
+
+        // Start scheduler
+        await handleSchedulerControl('start');
+    };
+
+    // Save settings and restart scheduler (stop then start)
+    const handleSaveAndRestart = async () => {
+        const saveSuccess = await handleSave();
+        if (!saveSuccess) return;
+
+        setIsControlling(true);
+        try {
+            // Stop scheduler first
+            const stopRes = await fetch('/api/bot/local-scheduler', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ region: 'all', days: '1' })
+                body: JSON.stringify({ action: 'stop' })
             });
+            await stopRes.json();
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Failed to trigger workflow');
+            // Wait a moment for process to fully stop
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Start scheduler with new settings
+            const startRes = await fetch('/api/bot/local-scheduler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'start' })
+            });
+            const startData = await startRes.json();
+
+            if (startData.success) {
+                showSuccess('Settings saved and scheduler restarted!');
+                await fetchSchedulerStatus();
+            } else {
+                showError(startData.message || 'Failed to restart scheduler');
             }
-
-            showSuccess('GitHub Actions workflow triggered successfully');
-            // Refresh after 3 seconds to show new run
-            setTimeout(() => fetchData(true), 3000);
-        } catch (err: any) {
-            showError(err.message || 'Failed to trigger workflow');
+        } catch (err) {
+            console.error('Restart error:', err);
+            showError('Failed to restart scheduler');
         } finally {
-            setIsTriggering(false);
+            setIsControlling(false);
         }
     };
 
-    const nextRunTimes = data?.schedules ? getNextRunTimes(data.schedules, 5) : [];
+    // Toggle enabled
+    const handleToggle = async () => {
+        const newEnabled = !editedSettings.enabled;
+        setEditedSettings(prev => ({ ...prev, enabled: newEnabled }));
+        setHasChanges(true);
+    };
+
+    const scheduledTimes = generateScheduledTimes(editedSettings);
+    const nextRunTimes = getNextRunTimes(editedSettings, 5);
 
     if (isLoading) {
         return (
@@ -293,244 +308,327 @@ export default function BotSchedulePage() {
             <header className="flex justify-between items-start">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
-                            <GitBranch className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center">
+                            <Calendar className="w-6 h-6 text-white" />
                         </div>
-                        GitHub Actions Scheduler
+                        Schedule Settings
                     </h1>
                     <p className="text-sm text-gray-400 mt-2">
-                        GitHub Actions workflow schedule and execution status
+                        Local scheduler for automated scraping and AI processing
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={handleTriggerWorkflow}
-                        disabled={isTriggering}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 shadow-sm transition disabled:opacity-50"
+                        onClick={fetchSettings}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition"
                     >
-                        {isTriggering ? (
+                        <RefreshCw className="w-4 h-4" />
+                        Refresh
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={!hasChanges || isSaving}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm transition ${
+                            hasChanges
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {isSaving ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Starting...
+                                Saving...
                             </>
                         ) : (
                             <>
-                                <Play className="w-4 h-4" />
-                                Run Now
+                                <Save className="w-4 h-4" />
+                                Save
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={handleSaveAndStart}
+                        disabled={isSaving || isControlling}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm transition ${
+                            isSaving || isControlling
+                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                    >
+                        {isSaving || isControlling ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Processing...
+                            </>
+                        ) : (
+                            <>
+                                <PlayCircle className="w-4 h-4" />
+                                Save & Start
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={handleSaveAndRestart}
+                        disabled={isSaving || isControlling}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium shadow-sm transition ${
+                            isSaving || isControlling
+                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                : 'bg-orange-600 text-white hover:bg-orange-700'
+                        }`}
+                    >
+                        {isSaving || isControlling ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Restarting...
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw className="w-4 h-4" />
+                                Save & Restart
                             </>
                         )}
                     </button>
                 </div>
             </header>
 
-            {/* Error Message */}
-            {error && (
-                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-400" />
-                    <p className="text-sm text-red-300">{error}</p>
+            {/* Unsaved Changes Warning */}
+            {hasChanges && (
+                <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-400" />
+                    <p className="text-sm text-yellow-300">You have unsaved changes. Click Save to apply.</p>
                 </div>
             )}
 
             {/* Main Grid */}
             <div className="grid grid-cols-3 gap-6">
-                {/* Left Column - Schedule Info */}
+                {/* Left Column - Settings */}
                 <div className="col-span-2 space-y-6">
-                    {/* Schedule Editor Card */}
+                    {/* Master Switch */}
+                    <div className={`rounded-xl border-2 p-5 ${
+                        editedSettings.enabled
+                            ? 'bg-green-900/30 border-green-500'
+                            : 'bg-gray-800/50 border-gray-600'
+                    }`}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Zap className={`w-8 h-8 ${editedSettings.enabled ? 'text-green-400' : 'text-gray-500'}`} />
+                                <div>
+                                    <h3 className="font-bold text-lg text-white">Automation Master Switch</h3>
+                                    <p className="text-sm text-gray-400">
+                                        {editedSettings.enabled
+                                            ? 'Local scheduler will run automation'
+                                            : 'Automation is disabled'
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleToggle}
+                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                                    editedSettings.enabled ? 'bg-green-500' : 'bg-gray-600'
+                                }`}
+                            >
+                                <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                                    editedSettings.enabled ? 'translate-x-7' : 'translate-x-1'
+                                }`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Schedule Settings Card */}
                     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                         <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-purple-400" />
-                                스케줄 설정
-                                {hasChanges && (
-                                    <span className="text-xs bg-yellow-600 text-yellow-100 px-2 py-0.5 rounded-full ml-2">
-                                        미저장
-                                    </span>
-                                )}
+                                <Settings className="w-5 h-5 text-purple-400" />
+                                Schedule Configuration
                             </h3>
                         </div>
-                        <div className="p-6">
-                            {/* Schedule Editor UI */}
-                            <div className="space-y-4">
-                                {/* Time chips row */}
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {editedSchedules.map((time) => (
-                                        <div
-                                            key={time}
-                                            className="flex items-center gap-1 bg-purple-900/50 border border-purple-600 text-purple-200 px-3 py-2 rounded-lg"
-                                        >
-                                            <span className="text-lg font-bold">{time}</span>
-                                            <button
-                                                onClick={() => handleRemoveTime(time)}
-                                                className="ml-1 text-purple-400 hover:text-red-400 transition"
-                                                title="Remove"
+                        <div className="p-6 space-y-6">
+                            {/* Time Range */}
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Start Hour (KST)
+                                    </label>
+                                    <select
+                                        value={editedSettings.startHour}
+                                        onChange={(e) => handleChange('startHour', parseInt(e.target.value))}
+                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                    >
+                                        {Array.from({ length: 24 }, (_, i) => (
+                                            <option key={i} value={i}>
+                                                {String(i).padStart(2, '0')}:00
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        End Hour (KST)
+                                    </label>
+                                    <select
+                                        value={editedSettings.endHour}
+                                        onChange={(e) => handleChange('endHour', parseInt(e.target.value))}
+                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                    >
+                                        {Array.from({ length: 24 }, (_, i) => (
+                                            <option key={i} value={i}>
+                                                {String(i).padStart(2, '0')}:00
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Interval and Minute */}
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Interval
+                                    </label>
+                                    <select
+                                        value={editedSettings.intervalMinutes}
+                                        onChange={(e) => handleChange('intervalMinutes', parseInt(e.target.value))}
+                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                    >
+                                        <option value={30}>Every 30 minutes</option>
+                                        <option value={60}>Every 1 hour</option>
+                                        <option value={120}>Every 2 hours</option>
+                                        <option value={180}>Every 3 hours</option>
+                                        <option value={240}>Every 4 hours</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Run at Minute
+                                    </label>
+                                    <select
+                                        value={editedSettings.runOnMinute}
+                                        onChange={(e) => handleChange('runOnMinute', parseInt(e.target.value))}
+                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"
+                                    >
+                                        {[0, 10, 15, 20, 30, 40, 45, 50].map(m => (
+                                            <option key={m} value={m}>
+                                                XX:{String(m).padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="bg-gray-700/50 rounded-lg p-4">
+                                <h4 className="text-sm font-medium text-gray-300 mb-3">Daily Schedule Preview</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {scheduledTimes.length > 0 ? (
+                                        scheduledTimes.map((time) => (
+                                            <span
+                                                key={time}
+                                                className="px-3 py-1.5 bg-purple-900/50 border border-purple-600 text-purple-200 rounded-lg text-sm font-medium"
                                             >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-
-                                    {/* Add time input */}
-                                    <div className="flex items-center gap-1">
-                                        <input
-                                            type="time"
-                                            value={newTime}
-                                            onChange={(e) => setNewTime(e.target.value)}
-                                            className="bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-purple-500"
-                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTime()}
-                                        />
-                                        <button
-                                            onClick={handleAddTime}
-                                            className="flex items-center gap-1 bg-gray-700 border border-gray-600 text-gray-300 px-3 py-2 rounded-lg hover:bg-gray-600 hover:text-white transition"
-                                            title="Add time"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            <span className="text-sm">추가</span>
-                                        </button>
-                                    </div>
-
-                                    {/* Reset button */}
-                                    <button
-                                        onClick={handleResetSchedules}
-                                        disabled={editedSchedules.length === 0 || isSaving}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ml-auto ${
-                                            editedSchedules.length > 0
-                                                ? 'bg-red-600 text-white hover:bg-red-700'
-                                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                        title="Reset all schedules"
-                                    >
-                                        <RotateCcw className="w-4 h-4" />
-                                        초기화
-                                    </button>
-
-                                    {/* Save button */}
-                                    <button
-                                        onClick={handleSaveSchedules}
-                                        disabled={!hasChanges || isSaving}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
-                                            hasChanges
-                                                ? 'bg-green-600 text-white hover:bg-green-700'
-                                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                    >
-                                        {isSaving ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                저장 중...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="w-4 h-4" />
-                                                저장
-                                            </>
-                                        )}
-                                    </button>
+                                                {time}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="text-gray-500 text-sm">Enable automation to see schedule</span>
+                                    )}
                                 </div>
-
-                                {/* Help text */}
-                                <div className="flex items-start gap-2 text-sm text-gray-400 bg-gray-700/30 p-3 rounded-lg">
-                                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p>
-                                            한국 시간(KST) 기준으로 시간을 추가하세요. 스크래퍼가 매일 지정된 시간에 자동 실행됩니다.
-                                            <span className="ml-2 text-purple-400">({editedSchedules.length}/{MAX_SCHEDULES})</span>
-                                        </p>
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            저장 버튼을 누르면 GitHub 워크플로우 파일이 자동으로 업데이트되고, 화면에 즉시 반영됩니다.
-                                        </p>
-                                    </div>
-                                </div>
+                                {scheduledTimes.length > 0 && (
+                                    <p className="text-xs text-gray-500 mt-3">
+                                        Total: {scheduledTimes.length} runs per day
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Recent Runs Card */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                        <div className="p-4 border-b border-gray-700 bg-gray-750 flex justify-between items-center">
+                    {/* Local Scheduler Control */}
+                    <div className={`rounded-xl border-2 overflow-hidden ${
+                        schedulerStatus.running
+                            ? 'bg-blue-900/30 border-blue-500'
+                            : 'bg-gray-800 border-gray-700'
+                    }`}>
+                        <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
-                                <History className="w-5 h-5 text-green-400" />
-                                Recent Workflow Runs
+                                <Monitor className="w-5 h-5 text-blue-400" />
+                                Local Scheduler Control
                             </h3>
-                            {data?.workflowUrl && (
-                                <a
-                                    href={data.workflowUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
-                                >
-                                    View on GitHub <ExternalLink className="w-3 h-3" />
-                                </a>
-                            )}
                         </div>
-                        <div className="p-4">
-                            {data?.runs && data.runs.length > 0 ? (
-                                <div className="space-y-2">
-                                    {data.runs.map((run) => (
-                                        <a
-                                            key={run.id}
-                                            href={run.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                {run.status === 'completed' ? (
-                                                    run.conclusion === 'success' ? (
-                                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                    ) : (
-                                                        <XCircle className="w-5 h-5 text-red-500" />
-                                                    )
-                                                ) : (
-                                                    <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />
-                                                )}
-                                                <div>
-                                                    <div className="text-sm font-medium">
-                                                        {new Date(run.createdAt).toLocaleDateString('ko-KR', {
-                                                            timeZone: 'Asia/Seoul',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {run.event === 'schedule' ? 'Scheduled' : 'Manual'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                                    run.status === 'completed'
-                                                        ? run.conclusion === 'success'
-                                                            ? 'bg-green-900/50 text-green-400'
-                                                            : 'bg-red-900/50 text-red-400'
-                                                        : 'bg-yellow-900/50 text-yellow-400'
-                                                }`}>
-                                                    {run.status === 'completed' ? run.conclusion : run.status}
-                                                </span>
-                                                <ExternalLink className="w-4 h-4 text-gray-500" />
-                                            </div>
-                                        </a>
-                                    ))}
+                        <div className="p-6 space-y-4">
+                            {/* Status */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full ${
+                                        schedulerStatus.running ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
+                                    }`} />
+                                    <span className={`font-medium ${
+                                        schedulerStatus.running ? 'text-green-400' : 'text-gray-400'
+                                    }`}>
+                                        {schedulerStatus.running ? 'Running' : 'Stopped'}
+                                    </span>
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <History className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                                    <p>No recent runs</p>
-                                </div>
-                            )}
+                                <button
+                                    onClick={fetchSchedulerStatus}
+                                    className="text-gray-400 hover:text-white transition"
+                                    title="Refresh status"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Control Buttons */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => handleSchedulerControl('start')}
+                                    disabled={schedulerStatus.running || isControlling}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition ${
+                                        schedulerStatus.running || isControlling
+                                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                            : 'bg-green-600 text-white hover:bg-green-700'
+                                    }`}
+                                >
+                                    {isControlling ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <PlayCircle className="w-5 h-5" />
+                                    )}
+                                    Start
+                                </button>
+                                <button
+                                    onClick={() => handleSchedulerControl('stop')}
+                                    disabled={!schedulerStatus.running || isControlling}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition ${
+                                        !schedulerStatus.running || isControlling
+                                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                            : 'bg-red-600 text-white hover:bg-red-700'
+                                    }`}
+                                >
+                                    {isControlling ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Square className="w-5 h-5" />
+                                    )}
+                                    Stop
+                                </button>
+                            </div>
+
+                            {/* Info */}
+                            <div className="text-xs text-gray-500 space-y-1">
+                                <p>Log file: logs/local_scheduler.log</p>
+                                <p>Timeout: 15 min per run</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column - Next Runs & Info */}
+                {/* Right Column - Status */}
                 <div className="space-y-6">
-                    {/* Next Runs Card */}
+                    {/* Next Runs */}
                     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                         <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
                                 <Timer className="w-5 h-5 text-blue-400" />
-                                예정된 실행
+                                Next Scheduled Runs
                             </h3>
                         </div>
                         <div className="p-4">
@@ -540,14 +638,14 @@ export default function BotSchedulePage() {
                                         <div
                                             key={idx}
                                             className={`flex items-center justify-between p-3 rounded-lg ${
-                                                idx === 0 ? 'bg-purple-900/30 border border-purple-700' : 'bg-gray-700/50'
+                                                idx === 0 ? 'bg-green-900/30 border border-green-700' : 'bg-gray-700/50'
                                             }`}
                                         >
-                                            <span className={`text-sm ${idx === 0 ? 'text-purple-300 font-semibold' : 'text-gray-400'}`}>
-                                                {time.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric' })}
+                                            <span className={`text-sm ${idx === 0 ? 'text-green-300 font-semibold' : 'text-gray-400'}`}>
+                                                {time.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
                                             </span>
-                                            <span className={`text-sm font-mono ${idx === 0 ? 'text-purple-300' : 'text-gray-500'}`}>
-                                                {time.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' })}
+                                            <span className={`text-sm font-mono ${idx === 0 ? 'text-green-300' : 'text-gray-500'}`}>
+                                                {time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     ))}
@@ -555,183 +653,81 @@ export default function BotSchedulePage() {
                             ) : (
                                 <div className="text-center py-6 text-gray-500">
                                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                                    <p className="text-sm">예정된 실행 없음</p>
+                                    <p className="text-sm">Enable automation to see schedule</p>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Real-time Bot Logs Card */}
+                    {/* Today Stats */}
                     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                        <div className="p-4 border-b border-gray-700 bg-gray-750 flex justify-between items-center">
+                        <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
                                 <History className="w-5 h-5 text-green-400" />
-                                실시간 수집 로그
-                                {isRefreshing && (
-                                    <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-                                )}
+                                Today's Stats
                             </h3>
-                            <a
-                                href="/admin/bot/logs"
-                                className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
-                            >
-                                전체 보기 <ExternalLink className="w-3 h-3" />
-                            </a>
                         </div>
-                        <div className="p-4">
-                            {data?.botLogs && data.botLogs.length > 0 ? (
-                                <div className="space-y-2">
-                                    {data.botLogs.slice(0, 5).map((log) => {
-                                        const regionName = REGION_NAMES[log.region] || log.region;
-                                        const startTime = new Date(log.started_at);
-                                        const now = new Date();
-                                        const diffMs = now.getTime() - startTime.getTime();
-                                        const diffMins = Math.floor(diffMs / 60000);
-                                        const timeAgo = diffMins < 1 ? '방금' : diffMins < 60 ? `${diffMins}분 전` : `${Math.floor(diffMins / 60)}시간 전`;
-
-                                        return (
-                                            <div
-                                                key={log.id}
-                                                className={`flex items-center justify-between p-2.5 rounded-lg ${
-                                                    log.status === 'running'
-                                                        ? 'bg-yellow-900/20 border border-yellow-700/50'
-                                                        : 'bg-gray-700/50'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    {log.status === 'success' ? (
-                                                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                                    ) : log.status === 'failed' ? (
-                                                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                                    ) : (
-                                                        <Loader2 className="w-4 h-4 text-yellow-500 animate-spin flex-shrink-0" />
-                                                    )}
-                                                    <span className="text-sm font-medium truncate max-w-[80px]">
-                                                        {regionName}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs">
-                                                    {log.status === 'running' ? (
-                                                        <span className="text-yellow-400">수집 중...</span>
-                                                    ) : (
-                                                        <span className="text-gray-400">
-                                                            {log.articles_count}건
-                                                            {log.metadata?.skipped_count ? ` (+${log.metadata.skipped_count} 중복)` : ''}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-gray-500">{timeAgo}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="text-center py-6 text-gray-500">
-                                    <History className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                                    <p className="text-sm">최근 로그 없음</p>
+                        <div className="p-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-400">Processed</span>
+                                <span className="font-bold text-white">{stats.todayStats?.processed || 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-400">Published</span>
+                                <span className="font-bold text-green-400">{stats.todayStats?.published || 0}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-400">Held</span>
+                                <span className="font-bold text-yellow-400">{stats.todayStats?.held || 0}</span>
+                            </div>
+                            {stats.lastRun && (
+                                <div className="pt-3 border-t border-gray-700">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        {stats.lastRun.status === 'success' ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <XCircle className="w-4 h-4 text-red-500" />
+                                        )}
+                                        <span className="text-gray-400">Last run:</span>
+                                        <span className="text-gray-300">
+                                            {new Date(stats.lastRun.timestamp).toLocaleString('ko-KR')}
+                                        </span>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Info Box - Detailed */}
+                    {/* Quick Links */}
                     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                         <div className="p-4 border-b border-gray-700 bg-gray-750">
                             <h3 className="font-semibold flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-blue-400" />
-                                스크래핑 안내
-                            </h3>
-                        </div>
-                        <div className="p-4 space-y-4 text-sm">
-                            {/* Scraping Method */}
-                            <div>
-                                <h4 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
-                                    <GitBranch className="w-4 h-4" />
-                                    수집 방식
-                                </h4>
-                                <ul className="space-y-1 text-xs text-gray-300 ml-6">
-                                    <li>• 26개 지역 보도자료 병렬 수집</li>
-                                    <li>• 최대 10개 스크래퍼 동시 실행</li>
-                                    <li>• 지역별 독립 실행 (실패 시 다른 지역 영향 없음)</li>
-                                </ul>
-                            </div>
-
-                            {/* Execution Flow */}
-                            <div>
-                                <h4 className="font-semibold text-yellow-400 mb-2 flex items-center gap-2">
-                                    <Play className="w-4 h-4" />
-                                    실행 흐름
-                                </h4>
-                                <ul className="space-y-1 text-xs text-gray-300 ml-6">
-                                    <li>1. GitHub Actions 스케줄 트리거</li>
-                                    <li>2. 26개 지역 스크래퍼 병렬 시작</li>
-                                    <li>3. 각 지역 보도자료 페이지 크롤링</li>
-                                    <li>4. 중복 체크 후 신규 기사만 저장</li>
-                                    <li>5. 이미지 Cloudinary 업로드</li>
-                                </ul>
-                            </div>
-
-                            {/* Log Recording */}
-                            <div>
-                                <h4 className="font-semibold text-purple-400 mb-2 flex items-center gap-2">
-                                    <History className="w-4 h-4" />
-                                    로그 기록
-                                </h4>
-                                <ul className="space-y-1 text-xs text-gray-300 ml-6">
-                                    <li>• 실시간 진행 상황 DB 기록</li>
-                                    <li>• 수집된 기사 수 / 중복 스킵 수 표시</li>
-                                    <li>• 성공/실패 상태 자동 업데이트</li>
-                                    <li>• <a href="/admin/bot/logs" className="text-blue-400 hover:underline">봇 로그</a>에서 상세 확인 가능</li>
-                                </ul>
-                            </div>
-
-                            {/* Monitoring */}
-                            <div>
-                                <h4 className="font-semibold text-cyan-400 mb-2 flex items-center gap-2">
-                                    <Clock className="w-4 h-4" />
-                                    모니터링
-                                </h4>
-                                <ul className="space-y-1 text-xs text-gray-300 ml-6">
-                                    <li>• 이 페이지 30초마다 자동 새로고침</li>
-                                    <li>• 실행 중 작업 진행률 표시</li>
-                                    <li>• GitHub에서 상세 로그 확인 가능</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                        <div className="p-4 border-b border-gray-700 bg-gray-750">
-                            <h3 className="font-semibold flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-orange-400" />
-                                바로가기
+                                <Zap className="w-5 h-5 text-orange-400" />
+                                Quick Links
                             </h3>
                         </div>
                         <div className="p-4 space-y-2">
-                            <a
-                                href={data?.workflowUrl || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
-                            >
-                                <span>GitHub 워크플로우</span>
-                                <ExternalLink className="w-4 h-4 text-gray-500" />
-                            </a>
-                            <a
-                                href="/admin/bot/logs"
-                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
-                            >
-                                <span>봇 로그</span>
-                                <History className="w-4 h-4 text-gray-500" />
-                            </a>
-                            <a
+                            <Link
                                 href="/admin/bot/run"
                                 className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
                             >
-                                <span>수동 스크래퍼</span>
+                                <span>Manual Run</span>
                                 <Play className="w-4 h-4 text-gray-500" />
-                            </a>
+                            </Link>
+                            <Link
+                                href="/admin/bot/ai-processing"
+                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
+                            >
+                                <span>AI Processing</span>
+                                <Power className="w-4 h-4 text-gray-500" />
+                            </Link>
+                            <Link
+                                href="/admin/bot/logs"
+                                className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition text-sm"
+                            >
+                                <span>Bot Logs</span>
+                                <History className="w-4 h-4 text-gray-500" />
+                            </Link>
                         </div>
                     </div>
                 </div>

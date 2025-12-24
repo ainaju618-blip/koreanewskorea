@@ -21,7 +21,7 @@ from playwright.sync_api import sync_playwright, Page
 
 # Set local module path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.api_client import send_article_to_server, log_to_server, ensure_server_running
+from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
 from utils.scraper_utils import (
     safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category
 )
@@ -348,8 +348,18 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                     print(f"      [WARN] Item parse error: {e}")
                     continue
 
+            # Pre-check duplicates before visiting detail pages (optimization)
+            urls_to_check = [item['url'] for item in items]
+            existing_urls = check_duplicates(urls_to_check)
+
+            # Filter out already existing articles
+            new_items = [item for item in items if item['url'] not in existing_urls]
+            skipped_by_precheck = len(items) - len(new_items)
+            if skipped_by_precheck > 0:
+                print(f"      [PRE-CHECK] {skipped_by_precheck} articles skipped (already in DB)")
+
             # Collect details
-            for item in items:
+            for item in new_items:
                 if collected_count >= max_articles:
                     break
 
