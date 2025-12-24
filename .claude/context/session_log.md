@@ -5,6 +5,64 @@
 
 ---
 
+## [2025-12-25 06:30] 세션 #30 - Regional Homepage Error Fix & Documentation by Claude
+
+### 주인님 의도
+- koreanewskorea.vercel.app 빈 화면 문제 수정
+- 비즈니스 전략 문서화 (어떤 개발자도 이해할 수 있도록)
+- 에러/작업 기록 시스템이 제대로 전달되도록 개선
+
+### 수행 작업
+
+1. **Regional Homepage 에러 수정**
+   - 증상: 헤더/푸터만 보이고 메인 콘텐츠 빈 화면
+   - 원인: Vercel 런타임 로그에서 `column posts.source_url does not exist` 발견
+   - 해결: DB 실제 컬럼명 `original_link`로 변경 (3개 파일)
+   - 파일: ArticleRepository.ts, Article.ts, news/[id]/page.tsx
+
+2. **비즈니스 전략 문서 작성**
+   - koreanewskorea/plan/BUSINESS_STRATEGY.md 생성
+   - 2-track 구조, 수익 모델, 성공 지표 문서화
+   - START_HERE.md에 Step 0 (비즈니스 이해) 추가
+   - CLAUDE.md에 비즈니스 문서 링크 추가
+
+3. **에러 기록 시스템 강화 (CLAUDE.md v5.1)**
+   - Critical Rules에 에러 문서화 P0 규칙 추가
+   - 'Work Completion Records (P0)' 신규 섹션 추가
+   - FAQ에 에러 카탈로그, 세션 로그 항목 추가
+   - Quick Reference Card 4단계 기록 요구사항 추가
+
+4. **에러 카탈로그 업데이트**
+   - info/errors/backend/supabase-column-not-exist.md에 Case 2 추가
+   - koreanewskorea source_url 에러 케이스 문서화
+
+### 수정 파일
+- CLAUDE.md (v5.0 → v5.1)
+- koreanewskorea/plan/BUSINESS_STRATEGY.md (신규)
+- koreanewskorea/START_HERE.md
+- koreanewskorea/common/infrastructure/repositories/ArticleRepository.ts
+- koreanewskorea/common/domain/entities/Article.ts
+- koreanewskorea/app/news/[id]/page.tsx
+- info/errors/backend/supabase-column-not-exist.md
+
+### 사용 도구
+- Read: 다수 파일
+- Edit: CLAUDE.md, 에러 카탈로그, 엔티티/리포지토리
+- Write: BUSINESS_STRATEGY.md
+- Bash: git, vercel logs
+- Playwright: koreanewskorea.vercel.app 확인
+
+### 결과
+- OK - Regional Homepage 정상 표시 확인
+- OK - 비즈니스 전략 문서화 완료
+- OK - 에러 기록 시스템 상위 지침에 명확히 반영
+
+### 배포
+- git commit: "docs: Enhance error recording system visibility in CLAUDE.md"
+- Vercel 자동 배포 완료
+
+---
+
 ## [2025-12-25 05:00] 세션 #29 - 스케줄 자동화 시스템 개선 by Claude
 
 ### 주인님 의도
