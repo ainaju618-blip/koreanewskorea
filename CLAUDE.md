@@ -280,9 +280,15 @@ New features that require planning and specification before coding.
 |---------|---------------|--------|
 | **Regional Homepage System** | [koreanewskorea/plan/regional-homepage-spec.md](koreanewskorea/plan/regional-homepage-spec.md) | Planning |
 
+> **IMPORTANT:** Before working on Regional Homepage, read the business strategy first:
+> [koreanewskorea/plan/BUSINESS_STRATEGY.md](koreanewskorea/plan/BUSINESS_STRATEGY.md)
+>
+> This explains WHY we build regional sites (revenue model, SEO strategy, success metrics).
+
 **Workflow for Domain A:**
 ```
-1. Read the spec document FIRST
+0. Read BUSINESS_STRATEGY.md (understand WHY)
+1. Read the spec document (understand WHAT)
 2. Check the checklist in the spec
 3. Work only on items marked for current phase
 4. Update checklist after completing work
