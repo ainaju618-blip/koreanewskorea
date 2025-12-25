@@ -77,17 +77,17 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Suspense fallback={<NewsGridSkeleton />}>
                   <NewsGrid
-                    categoryName="광주"
-                    categoryNameEn="Gwangju"
-                    categorySlug="gwangju"
+                    categoryName="순천"
+                    categoryNameEn="Suncheon"
+                    categorySlug="suncheon"
                     limit={3}
                   />
                 </Suspense>
                 <Suspense fallback={<NewsGridSkeleton />}>
                   <NewsGrid
-                    categoryName="전남"
-                    categoryNameEn="Jeonnam"
-                    categorySlug="jeonnam"
+                    categoryName="목포"
+                    categoryNameEn="Mokpo"
+                    categorySlug="mokpo"
                     limit={3}
                   />
                 </Suspense>

@@ -153,8 +153,8 @@ export default function Header() {
                         <Image
                             src="/logo-koreanews.png"
                             alt="Korea NEWS Logo"
-                            width={90}
-                            height={50}
+                            width={108}
+                            height={60}
                             className="object-contain"
                             priority
                         />
@@ -164,7 +164,7 @@ export default function Header() {
                     <div className="flex flex-col items-center justify-center flex-1">
                         <Link href="/" className="group flex items-center gap-1.5">
                             <span className="text-4xl md:text-5xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
-                                Korea<span className="text-primary">NEWS</span>
+                                코리아<span className="text-primary">NEWS</span>
                             </span>
                         </Link>
                     </div>
