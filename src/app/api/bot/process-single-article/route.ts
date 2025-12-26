@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getJobLogger, JobLogger } from '@/lib/job-logger';
+import { getJobLogger } from '@/lib/job-logger';
+import {
+    renderVerificationPrompt,
+    renderFixPrompt,
+    parseVerificationResult,
+    GRADE_DEFINITIONS,
+    type VerificationResult as VerificationParseResult
+} from '@/lib/verification-prompts';
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,41 +17,77 @@ const supabaseAdmin = createClient(
 // Get job logger instance for real-time monitoring
 const jobLogger = getJobLogger(supabaseAdmin);
 
-// Local Ollama configuration - Using qwen2.5:14b for better accuracy
+// ============================================================================
+// Solar 10.7B Production Configuration (Expert Optimized - 2025-12-26)
+// ============================================================================
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
+const PRIMARY_MODEL = 'solar:10.7b';      // Upstage Korean Enterprise Model
+const FALLBACK_MODEL = 'qwen2.5:14b';     // Fallback for expansion
+
+// Expert-optimized settings for Solar 10.7B (prevent KV cache explosion)
+const SOLAR_OPTIONS = {
+    num_ctx: 4096,          // Korean KV cache optimization
+    num_predict: 2048,      // Prevent output over-expansion (262% issue)
+    temperature: 0.30,      // Expert: 0.30 for stable output (was 0.35)
+    repeat_penalty: 1.00,   // Expert: 1.00 for length preservation (was 1.02)
+    top_p: 0.9,
+    num_gpu: 35,            // GPU layers for RTX 4070 12GB
+    gpu_layers: 35          // Prevent VRAM overflow
+};
 
 // Retry configuration
-const MAX_RETRIES = 10;
-const MIN_LENGTH_RATIO = 0.85;  // 85% minimum (was 70%, increased for better quality)
-const MIN_OUTPUT_TOKENS = 2048;  // Minimum tokens for generation
+const MAX_RETRIES = 5;          // Maximum verification attempts
+const MIN_LENGTH_RATIO = 0.85;  // 85% minimum length ratio
+const API_TIMEOUT_MS = 300000;  // 5 minutes (increased for stable processing)
 
 // ============================================================================
-// LAYER 0: Ollama API Call
+// LAYER 0: Ollama API Call (with Solar 10.7B optimized settings)
+// Expert: temperature 0.30, repeat_penalty 1.00 for length preservation
 // ============================================================================
-async function callOllama(prompt: string, minTokens: number = MIN_OUTPUT_TOKENS): Promise<string> {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            model: OLLAMA_MODEL,
-            prompt: prompt,
-            stream: false,
-            options: {
-                num_predict: minTokens,      // Minimum tokens to generate
-                temperature: 0.3,            // Lower = more focused/consistent
-                top_p: 0.9,                  // Slightly narrow sampling
-                repeat_penalty: 1.1          // Avoid repetition
-            }
-        })
-    });
+async function callOllama(
+    prompt: string,
+    minTokens: number = SOLAR_OPTIONS.num_predict,
+    model: string = PRIMARY_MODEL
+): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
-    if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status}`);
+    try {
+        console.log(`[Ollama] Calling ${model} (tokens: ${minTokens})...`);
+        const startTime = Date.now();
+
+        const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: model,
+                prompt: prompt,
+                stream: false,
+                options: {
+                    ...SOLAR_OPTIONS,
+                    num_predict: minTokens   // Override with specific token count
+                }
+            }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+        if (!response.ok) {
+            throw new Error(`Ollama API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`[Ollama] Response in ${elapsed}s, output: ${(data.response || '').length} chars`);
+        return data.response || '';
+    } catch (error: unknown) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error(`Ollama API timeout after ${API_TIMEOUT_MS / 1000}s`);
+        }
+        throw error;
     }
-
-    const data = await response.json();
-    return data.response || '';
 }
 
 // ============================================================================
@@ -223,39 +266,42 @@ function compareFacts(original: ExtractedFacts, converted: ExtractedFacts, conve
 
 // ============================================================================
 // LAYER 3: LLM Verification #1 - Hallucination Detection
+// Uses PRIMARY_MODEL (korean:8b) for fast verification
 // ============================================================================
 async function verifyHallucination(original: string, converted: string): Promise<{
     passed: boolean;
     details: string;
 }> {
-    const prompt = `[CRITICAL TASK] You are a strict fact-checker for a news agency.
-Compare the converted article against the original press release.
+    const prompt = `[팩트체크] 당신은 뉴스 기관의 엄격한 팩트체커입니다.
+변환된 기사를 원본 보도자료와 비교하세요.
 
-YOUR ONLY JOB: Find ANY fabricated/added information that does NOT exist in the original.
+당신의 임무: 원본에 없는 날조/추가된 정보 찾기
 
-CHECK FOR:
-1. Numbers that don't match (amounts, dates, quantities)
-2. Names that don't exist in original
-3. Quotes that were invented
-4. Claims or statements not in original
-5. Speculative language ("expected to", "likely", "probably")
+확인 항목:
+1. 일치하지 않는 숫자 (금액, 날짜, 수량)
+2. 원본에 없는 이름
+3. 날조된 인용문
+4. 원본에 없는 주장이나 진술
+5. 추측 표현 ("예상된다", "전망이다", "아마")
 
-RESPOND IN THIS EXACT FORMAT:
-[HALLUCINATION CHECK]
-- Fabricated content found: YES or NO
-- If YES, list each item:
-  * [type]: [specific content]
-- Final verdict: PASS or FAIL
+응답 형식:
+[할루시네이션 검사]
+- 날조된 내용: 있음 또는 없음
+- 있으면 목록:
+  * [유형]: [구체적 내용]
+- 최종 판정: 통과 또는 실패
 
-[Original]
+[원본]
 ${original}
 
-[Converted]
+[변환된 기사]
 ${converted}`;
 
-    const response = await callOllama(prompt);
+    const response = await callOllama(prompt, 2048, PRIMARY_MODEL);
 
-    const hasFabrication = response.toLowerCase().includes('fabricated content found: yes') ||
+    const hasFabrication = response.includes('날조된 내용: 있음') ||
+                          response.includes('최종 판정: 실패') ||
+                          response.toLowerCase().includes('fabricated content found: yes') ||
                           response.toLowerCase().includes('final verdict: fail');
 
     return {
@@ -266,45 +312,51 @@ ${converted}`;
 
 // ============================================================================
 // LAYER 4: LLM Verification #2 - Cross-Validation (Independent Check)
+// Uses PRIMARY_MODEL (korean:8b) for fast verification
 // ============================================================================
 async function verifyCrossValidation(original: string, converted: string): Promise<{
     passed: boolean;
     score: number;
     details: string;
 }> {
-    const prompt = `[INDEPENDENT VERIFICATION] You are a second fact-checker providing independent verification.
+    const prompt = `[독립 검증] 당신은 두 번째 팩트체커로 독립적인 검증을 제공합니다.
 
-Score the converted article on a scale of 0-100 based on:
-- Factual accuracy (40 points): All facts match original exactly
-- Completeness (30 points): No important information missing
-- No additions (30 points): No invented content
+변환된 기사를 0-100점으로 채점하세요:
+- 사실 정확성 (40점): 모든 사실이 원본과 정확히 일치
+- 완전성 (30점): 중요한 정보 누락 없음
+- 추가 없음 (30점): 날조된 내용 없음
 
-RESPOND IN THIS EXACT FORMAT:
-[SCORE]
-Accuracy: X/40
-Completeness: X/30
-No additions: X/30
-TOTAL: X/100
+응답 형식:
+[점수]
+정확성: X/40
+완전성: X/30
+추가없음: X/30
+총점: X/100
 
-[ISSUES FOUND]
-- List any issues here, or "None"
+[발견된 문제]
+- 문제 목록 또는 "없음"
 
-[VERDICT]
-PASS (80+) or FAIL (<80)
+[판정]
+통과 (80점 이상) 또는 실패 (80점 미만)
 
-[Original]
+[원본]
 ${original}
 
-[Converted]
+[변환된 기사]
 ${converted}`;
 
-    const response = await callOllama(prompt);
+    const response = await callOllama(prompt, 2048, PRIMARY_MODEL);
 
-    // Extract score
-    const scoreMatch = response.match(/TOTAL:\s*(\d+)/);
+    // Extract score - support both Korean and English formats
+    let scoreMatch = response.match(/총점:\s*(\d+)/);
+    if (!scoreMatch) {
+        scoreMatch = response.match(/TOTAL:\s*(\d+)/i);
+    }
     const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
 
-    const passed = score >= 80 && !response.toLowerCase().includes('verdict]\nfail');
+    const passed = score >= 80 &&
+                   !response.includes('판정]\n실패') &&
+                   !response.toLowerCase().includes('verdict]\nfail');
 
     return {
         passed,
@@ -332,7 +384,8 @@ function verifyLength(original: string, converted: string): {
 }
 
 // ============================================================================
-// HELPER: Expand Short Content
+// HELPER: Expand Short Content (2nd Pass with FALLBACK_MODEL)
+// Expert: Use qwen2.5:14b for high-quality expansion
 // ============================================================================
 async function expandContent(
     shortArticle: string,
@@ -341,54 +394,81 @@ async function expandContent(
 ): Promise<string> {
     const currentLength = shortArticle.length;
     const additionalNeeded = targetLength - currentLength;
+    const currentRatio = ((currentLength / originalPressRelease.length) * 100).toFixed(1);
 
-    const expandPrompt = `# Task: EXPAND this news article
+    console.log(`[2nd Pass] Expanding with ${FALLBACK_MODEL}: ${currentLength} -> ${targetLength}+ chars`);
 
-## Current Article (TOO SHORT - ${currentLength} chars, need ${targetLength}+ chars)
+    // Expert-recommended 2nd pass prompt: focus on adding missing facts only
+    const expandPrompt = `# 2차 확장 작업 (누락 사실 추가)
+
+## 현재 기사 (길이 부족: ${currentRatio}%, 목표 90%+)
 ${shortArticle}
 
 ---
 
-## Original Press Release (Source of Truth)
+## 원본 보도자료 (사실의 원천)
 ${originalPressRelease}
 
 ---
 
-# Instructions
-1. The article above is TOO SHORT. You must EXPAND it.
-2. Add ${additionalNeeded}+ more characters of content.
-3. Use ONLY information from the Original Press Release.
-4. DO NOT add any new information not in the press release.
-5. Add more details, context, and restructure for better flow.
-6. Keep the same structure but make each section more detailed.
-7. Include ALL facts, numbers, dates, names from the original.
+# 규칙
+1. 기존 기사 문장은 최대한 유지합니다.
+2. 누락된 사실을 추가하는 문장만 덧붙이세요.
+3. 전체 길이가 ${targetLength}자 이상이 되도록 문단을 보강합니다.
+4. 원본에 없는 내용은 절대 추가하지 마세요.
+5. 숫자, 날짜, 이름은 원본과 완전히 동일하게.
 
-# Output
-Write the COMPLETE expanded article (not just additions).
-Start with [Subtitle: ...] on the first line.
+# 필요 추가량
+- 현재: ${currentLength}자
+- 목표: ${targetLength}자+
+- 추가 필요: ${additionalNeeded}자+
 
-[Expanded Article]`;
+# 출력
+완전한 확장된 기사를 작성하세요 (추가분만 아님).
 
-    const response = await callOllama(expandPrompt, Math.max(MIN_OUTPUT_TOKENS, Math.ceil(targetLength / 2) + 1000));
+[확장된 기사]`;
+
+    // Use FALLBACK_MODEL (qwen2.5:14b) for high-quality expansion
+    const response = await callOllama(
+        expandPrompt,
+        Math.max(SOLAR_OPTIONS.num_predict, Math.ceil(targetLength / 2) + 1000),
+        FALLBACK_MODEL
+    );
 
     // Remove all subtitle/structure markers from expanded content
     const content = response
-        .replace(/\[(?:부제목|Subtitle):\s*.+?\]\n*/gi, '')
+        .replace(/\[(?:부제목|Subtitle|제목|확장된 기사):\s*.+?\]\n*/gi, '')
         .replace(/^##\s*(?:부제목|Subtitle)[:\s]+.+?\n*/gim, '')
         .replace(/\*\*(?:부제목|Subtitle)[:\s]*\*\*\s*.+?\n*/gi, '')
         .replace(/^###\s*Lead\s*/gim, '')
         .replace(/^###\s*Body\s*/gim, '')
+        .replace(/^\[확장된 기사\]\s*/gim, '')
         .trim();
 
     // If expansion is longer, use it; otherwise return original
     if (content.length > shortArticle.length) {
+        console.log(`[2nd Pass] Expanded: ${shortArticle.length} -> ${content.length} chars (+${content.length - shortArticle.length})`);
         return content;
     }
+    console.log(`[2nd Pass] Expansion failed, keeping original`);
     return shortArticle;
 }
 
 // ============================================================================
-// MASTER: Convert with Enhanced Prompt (includes feedback from previous attempts)
+// HELPER: Split text into sentences (Korean)
+// ============================================================================
+function splitSentences(text: string): string[] {
+    // Korean sentence splitting: ends with . ? ! followed by space or newline
+    return text
+        .split(/(?<=[.?!])\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 5);  // Filter very short fragments
+}
+
+// ============================================================================
+// MASTER: Convert with Solar 10.7B Optimized Prompt
+// Expert: Fact preservation + Length control (prevent over-expansion)
+// Key improvement: Show extracted facts directly in prompt
 // ============================================================================
 async function convertToNews(
     pressRelease: string,
@@ -397,95 +477,59 @@ async function convertToNews(
 ): Promise<{ content: string; subtitle: string }> {
     const inputLength = pressRelease.length;
     const minOutputLength = Math.floor(inputLength * MIN_LENGTH_RATIO);
+    const maxOutputLength = Math.floor(inputLength * 1.15);  // Cap at 115% to prevent over-expansion
+    const sentences = splitSentences(pressRelease);
+    const sentenceCount = sentences.length;
 
-    let lengthGuidance = '';
-    if (inputLength < 500) {
-        lengthGuidance = '[Short] Lead paragraph + details';
-    } else if (inputLength < 1500) {
-        lengthGuidance = '[Medium] Lead + structured info + quotes (if any)';
-    } else {
-        lengthGuidance = '[Long] Lead + subtopics + quotes';
-    }
+    // PRE-EXTRACT FACTS: Show AI exactly what must be preserved
+    const extractedFacts = extractFacts(pressRelease);
+    const keyNumbers = [...new Set(extractedFacts.numbers.filter(n => n.length >= 2))].slice(0, 20);
+    const keyDates = [...new Set(extractedFacts.dates)].slice(0, 10);
+    const keyNames = [...new Set(extractedFacts.names)].slice(0, 10);
 
     // Add feedback from previous failed attempts
     const feedbackSection = previousFeedback ? `
----
-# CRITICAL: Previous Attempt Failed!
+═══════════════════════════════════════════════════════════════
+⚠️ 경고: 이전 시도 실패! 아래 문제를 반드시 수정하세요:
 ${previousFeedback}
-You MUST fix these issues in this attempt.
----
+═══════════════════════════════════════════════════════════════
 ` : '';
 
-    const prompt = `# Role
-You are an expert editor who ONLY reformats government press releases.
-You have 20 years of experience at a regional newspaper in Gwangju/Jeonnam.
-Your ONLY job is to restructure - NEVER add any new information.
+    // Solar 10.7B Optimized Prompt v2 (Fact-focused, 2025-12-27)
+    // Key changes: Show extracted facts, strict length cap, stronger enforcement
+    const prompt = `# 역할
+한국 지방정부 보도자료를 기사로 재구성하는 편집기자
 ${feedbackSection}
----
 
-# ABSOLUTE RULES (Violation = Immediate Rejection)
+# ⚠️ 필수 보존 사실 (아래 항목 100% 포함 필수 - 누락시 실패)
+📊 숫자 (${keyNumbers.length}개): ${keyNumbers.join(', ') || '없음'}
+📅 날짜 (${keyDates.length}개): ${keyDates.join(', ') || '없음'}
+👤 인물 (${keyNames.length}개): ${keyNames.join(', ') || '없음'}
 
-## 1. Source Truth ONLY
-- Use ONLY facts explicitly stated in the press release
-- NEVER add numbers, statistics, analysis, or predictions
-- NEVER use speculative language ("expected to", "likely", "will probably")
+# 출력 규칙 (엄격히 준수)
+1. 길이: ${minOutputLength}~${maxOutputLength}자 (85~115%)
+2. 위 숫자/날짜/인물 100% 그대로 포함
+3. 원문에 없는 내용 절대 추가 금지
+4. 문장 ${sentenceCount}개 유지 (±2)
 
-## 2. If Unknown, Leave Out
-- If information is not in the press release, DO NOT write about it
-- NEVER guess or fill in gaps with common knowledge
-- If you cannot write without adding info, mark as "[OMITTED - hallucination risk]"
+# 출력 형식
+[제목]
+(10-20자 제목)
 
-## 3. Preserve Numbers & Names EXACTLY
-- Copy all numbers, dates, amounts, names EXACTLY as written
-- Do not create new abbreviations
-- Keep the 5W1H structure identical to original
+[부제목]
+(20-40자 부제목)
 
-## 4. Quote Rules
-- Use ONLY quotes that exist in the press release
-- NEVER invent quotes
-- If no quotes exist, write without quotes
+[본문]
+(기사 본문 - 위 필수 사실 모두 포함)
 
-## 5. Forbidden Areas
-- NO background information not in the press release
-- NO policy interpretations
-- NO external statistics or current events
-
-## 6. LENGTH REQUIREMENT (CRITICAL!)
-- Original: ${inputLength} characters
-- Minimum output: ${minOutputLength} characters (${MIN_LENGTH_RATIO * 100}%+ of original)
-- Structure: ${lengthGuidance}
-- Include ALL important information. RESTRUCTURE, do not summarize.
-
----
-
-# Output Format
-
-## Subtitle (MUST be first line)
-[Subtitle: One sentence summary of key point]
-
-## Body Structure
-- Lead: 2-3 sentences with core facts
-- Body: Details with structured formatting
-- Quotes: Only if they exist in original
-
----
-
-[Press Release]
+# 원문 (${inputLength}자)
 ${pressRelease}
 
----
-# FINAL REMINDER - LENGTH IS CRITICAL!
-- You MUST write at least ${minOutputLength} characters (${MIN_LENGTH_RATIO * 100}% of original)
-- DO NOT summarize. RESTRUCTURE and REWRITE while keeping ALL information.
-- Every fact, number, date, name from the original MUST appear in your output.
-- If your output is shorter than ${minOutputLength} characters, it will be REJECTED.
----
-
-[News Article]`;
+[뉴스 기사]`;
 
     // Calculate required tokens based on input length (Korean ~2 chars per token)
-    const estimatedTokens = Math.max(MIN_OUTPUT_TOKENS, Math.ceil(inputLength / 2) + 500);
-    const response = await callOllama(prompt, estimatedTokens);
+    const estimatedTokens = Math.max(SOLAR_OPTIONS.num_predict, Math.ceil(inputLength / 2) + 500);
+    const response = await callOllama(prompt, estimatedTokens, PRIMARY_MODEL);
 
     // Extract subtitle - support multiple formats:
     // 1. [Subtitle: text] or [부제목: text]
@@ -527,7 +571,68 @@ ${pressRelease}
 }
 
 // ============================================================================
-// MASTER: Multi-Layer Verification with Retry
+// Verification Log: Save each verification attempt to verification_logs table
+// ============================================================================
+async function logVerificationAttempt(
+    articleId: string,
+    round: number,
+    grade: 'A' | 'B' | 'C' | 'D',
+    summary: string,
+    improvement: string,
+    lengthRatio: number,
+    processingTimeMs: number
+): Promise<void> {
+    try {
+        const { error } = await supabaseAdmin
+            .from('verification_logs')
+            .insert({
+                article_id: articleId,
+                round: round,
+                grade: grade,
+                summary: summary.slice(0, 1000),  // Limit to 1000 chars
+                improvement: improvement.slice(0, 1000),
+                model_used: PRIMARY_MODEL,
+                length_ratio: lengthRatio,
+                processing_time_ms: processingTimeMs
+            });
+
+        if (error) {
+            console.warn(`[verification_logs] Failed to log: ${error.message}`);
+        } else {
+            console.log(`[verification_logs] Round ${round}: Grade ${grade} logged`);
+        }
+    } catch (err) {
+        console.warn(`[verification_logs] Error: ${err}`);
+    }
+}
+
+// ============================================================================
+// Update posts verification status
+// ============================================================================
+async function updatePostVerificationStatus(
+    articleId: string,
+    status: 'pending' | 'approved' | 'rejected' | 'reverify',
+    round: number
+): Promise<void> {
+    try {
+        const { error } = await supabaseAdmin
+            .from('posts')
+            .update({
+                verification_status: status,
+                verification_round: round
+            })
+            .eq('id', articleId);
+
+        if (error) {
+            console.warn(`[posts] Failed to update verification status: ${error.message}`);
+        }
+    } catch (err) {
+        console.warn(`[posts] Error updating verification status: ${err}`);
+    }
+}
+
+// ============================================================================
+// MASTER: Multi-Layer Verification with Retry (5-round with logging)
 // ============================================================================
 interface VerificationResult {
     passed: boolean;
@@ -559,6 +664,7 @@ async function processWithMultiLayerVerification(
     await jobLogger.findRunningSession();
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        const attemptStartTime = Date.now();
         console.log(`[process-single] ${articleId}: Attempt ${attempt}/${MAX_RETRIES}`);
 
         // Generate feedback from previous attempt
@@ -693,6 +799,44 @@ async function processWithMultiLayerVerification(
             grade = 'B';  // Minor issues in cross-validation
         }
 
+        // Generate summary and improvement text for logging
+        const summaryParts: string[] = [];
+        const improvementParts: string[] = [];
+
+        if (!layer5_length.passed) {
+            summaryParts.push(`Length: ${(layer5_length.ratio * 100).toFixed(1)}% (need 85%+)`);
+            improvementParts.push('Increase content length to match original');
+        }
+        if (!layer1_extraction.passed) {
+            summaryParts.push(`Missing: ${layer1_extraction.missingNumbers.length} nums, ${layer1_extraction.missingDates.length} dates`);
+            improvementParts.push('Preserve all numbers, dates, names from original');
+        }
+        if (!layer3_hallucination.passed) {
+            summaryParts.push('Hallucination detected');
+            improvementParts.push('Remove all fabricated content not in original');
+        }
+        if (!layer4_crossValidation.passed) {
+            summaryParts.push(`Cross-validation: ${layer4_crossValidation.score}/100`);
+            improvementParts.push('Improve accuracy and completeness');
+        }
+        if (allPassed) {
+            summaryParts.push('All checks passed');
+        }
+
+        const attemptEndTime = Date.now();
+        const attemptDuration = attemptEndTime - attemptStartTime;
+
+        // Log this verification attempt to verification_logs table
+        await logVerificationAttempt(
+            articleId,
+            attempt,
+            grade,
+            summaryParts.join('; ') || 'Verification complete',
+            improvementParts.join('; ') || 'No improvement needed',
+            layer5_length.ratio,
+            attemptDuration
+        );
+
         // ====================================================================
         // 다층 검증 체크리스트 (Ollama 기반)
         // ====================================================================
@@ -747,6 +891,9 @@ async function processWithMultiLayerVerification(
 
         // If all passed, we're done! (STRICT MODE: Only Grade A is acceptable)
         if (allPassed) {
+            // Update post verification status to approved
+            await updatePostVerificationStatus(articleId, 'approved', attempt);
+
             return {
                 passed: true,
                 grade: 'A',
@@ -771,7 +918,9 @@ async function processWithMultiLayerVerification(
         }
     }
 
-    // All retries exhausted
+    // All retries exhausted - update verification status to rejected
+    await updatePostVerificationStatus(articleId, 'rejected', MAX_RETRIES);
+
     return {
         passed: false,
         grade: 'D',
@@ -895,7 +1044,7 @@ export async function POST(request: NextRequest) {
             crossValidationScore: result.details?.layer4_crossValidation.score || 0,
             subtitle: result.subtitle || '',
             processingTime: elapsed,
-            model: OLLAMA_MODEL,
+            model: PRIMARY_MODEL,
             warnings: warnings.length > 0 ? warnings : undefined,
             // Validation details for GUI display
             validation: result.details ? {
