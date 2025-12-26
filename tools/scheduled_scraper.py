@@ -737,7 +737,7 @@ def process_ai_articles(supabase, job_logger=None) -> Dict[str, Any]:
 
     # Update AI log
     if ai_log_id:
-        status = 'success' if total_failed == 0 else 'failed'
+        status = 'completed' if total_failed == 0 else 'failed'  # Use 'completed' not 'success' for DB constraint
         log_msg = f"Processed:{total_processed}, Success:{total_success}, Failed:{total_failed}\n" + "\n".join(log_messages[-10:])
         update_bot_log(supabase, ai_log_id, status, log_msg, total_success)
 
@@ -952,7 +952,7 @@ def main():
 
                     # Update log
                     if region in log_ids:
-                        status = 'success' if result['success'] else 'failed'
+                        status = 'completed' if result['success'] else 'failed'  # Use 'completed' not 'success'
                         message = result.get('output', '')[:500] or result.get('error', '')[:500]
                         update_bot_log(supabase, log_ids[region], status, message, result.get('articles', 0))
 
