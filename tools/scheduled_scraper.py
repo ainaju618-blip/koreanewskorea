@@ -5,7 +5,9 @@ Scheduled Scraper Runner + AI Processing
 - Then processes all pending articles with AI
 - Logs results to Supabase
 
-Usage: python tools/scheduled_scraper.py
+Usage:
+  python tools/scheduled_scraper.py           # With GUI
+  python tools/scheduled_scraper.py --headless  # Without GUI (Task Scheduler)
 """
 
 import os
@@ -16,17 +18,29 @@ import socket
 import time
 import requests
 import threading
+import argparse
 from datetime import datetime
 from typing import List, Dict, Any
 
-# GUI imports for AI log window
-try:
-    import customtkinter as ctk
-    from tkinter import messagebox
-    GUI_AVAILABLE = True
-except ImportError:
+# Parse command line arguments early
+_parser = argparse.ArgumentParser(description='Scheduled Scraper Runner')
+_parser.add_argument('--headless', action='store_true',
+                     help='Run without GUI (recommended for Task Scheduler)')
+_args, _ = _parser.parse_known_args()
+HEADLESS_MODE = _args.headless
+
+# GUI imports for AI log window (skip in headless mode)
+if HEADLESS_MODE:
     GUI_AVAILABLE = False
-    print("[경고] customtkinter 미설치, GUI 없이 실행")
+    print("[정보] Headless 모드 - GUI 비활성화")
+else:
+    try:
+        import customtkinter as ctk
+        from tkinter import messagebox
+        GUI_AVAILABLE = True
+    except ImportError:
+        GUI_AVAILABLE = False
+        print("[경고] customtkinter 미설치, GUI 없이 실행")
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,8 +66,8 @@ ALL_REGIONS = [
     'jangseong', 'wando', 'jindo', 'shinan', 'gwangju_edu', 'jeonnam_edu'
 ]
 
-# Max parallel workers
-MAX_WORKERS = 5
+# Max parallel workers (reduced from 5 to 3 to save ~1GB memory)
+MAX_WORKERS = 3
 
 # Color theme for GUI
 COLORS = {
@@ -181,12 +195,12 @@ class AILogWindow:
         self._schedule_update()
 
     def _schedule_update(self):
-        """Schedule GUI update"""
+        """Schedule GUI update (500ms interval to reduce CPU usage)"""
         if self._closing:
             return  # Stop update loop when closing
         if hasattr(self, 'root') and self.root.winfo_exists():
             self.root.update()  # Full update to keep window responsive
-            self.root.after(100, self._schedule_update)
+            self.root.after(500, self._schedule_update)  # Reduced from 100ms to 500ms
 
     def _add_log(self, message):
         """Add log message with timestamp"""
@@ -815,9 +829,15 @@ def run_scraper(region: str, start_date: str, end_date: str) -> Dict[str, Any]:
 
 
 def main():
-    """Main execution"""
+    """Main execution with robust error handling"""
     schedule_start_time = time.time()  # Record schedule start time
     TIMEOUT_SECONDS = 600  # 10 minutes timeout
+
+    # Initialize tracking variables for finally block
+    job_logger = None
+    supabase = None
+    final_status = 'unknown_error'
+    error_message = None
 
     # Log trigger to file
     trigger_log_path = os.path.join(PROJECT_ROOT, 'tools', 'trigger_log.txt')
@@ -830,235 +850,268 @@ def main():
     print(f"[{datetime.now()}] 예약 스크래퍼 실행 시작...")
     print(f"[정보] 제한시간: {TIMEOUT_SECONDS // 60}분")
 
-    # =========================================================================
-    # STEP 0: Start Ollama server FIRST (required for AI processing)
-    # =========================================================================
-    print("\n" + "=" * 50)
-    print("[0단계] Ollama 서버 확인 중...")
-    print("=" * 50)
+    try:  # Main try block - ensures cleanup in finally
 
-    if not is_ollama_running():
-        print("[OLLAMA] 실행 중이 아님, 시작 중...")
-        if not start_ollama():
-            print("[경고] Ollama 시작 실패 - AI 처리가 실패할 수 있음")
+        # =========================================================================
+        # STEP 0: Start Ollama server FIRST (required for AI processing)
+        # =========================================================================
+        print("\n" + "=" * 50)
+        print("[0단계] Ollama 서버 확인 중...")
+        print("=" * 50)
+
+        if not is_ollama_running():
+            print("[OLLAMA] 실행 중이 아님, 시작 중...")
+            if not start_ollama():
+                print("[경고] Ollama 시작 실패 - AI 처리가 실패할 수 있음")
+            else:
+                print("[OLLAMA] 서버 시작 성공")
         else:
-            print("[OLLAMA] 서버 시작 성공")
-    else:
-        print("[OLLAMA] 이미 실행 중")
+            print("[OLLAMA] 이미 실행 중")
 
-    # =========================================================================
-    # STEP 1: Database connection
-    # =========================================================================
-    supabase = get_supabase()
-    if not supabase:
-        print("[오류] Supabase 연결 실패")
-        return
+        # =========================================================================
+        # STEP 1: Database connection
+        # =========================================================================
+        supabase = get_supabase()
+        if not supabase:
+            print("[오류] Supabase 연결 실패")
+            raise Exception("Supabase 연결 실패")
 
-    # =========================================================================
-    # Initialize Job Logger for real-time monitoring
-    # =========================================================================
-    reset_logger()  # Reset any previous instance
-    job_logger = get_logger(supabase)
-    session_id = job_logger.start_session('scheduled')
-    if session_id:
-        print(f"[작업로거] 세션 시작됨: {session_id}")
-    else:
-        print("[경고] 작업 로거 세션 시작 실패")
+        # =========================================================================
+        # Initialize Job Logger for real-time monitoring
+        # =========================================================================
+        reset_logger()  # Reset any previous instance
+        job_logger = get_logger(supabase)
+        session_id = job_logger.start_session('scheduled')
+        if session_id:
+            print(f"[작업로거] 세션 시작됨: {session_id}")
+        else:
+            print("[경고] 작업 로거 세션 시작 실패")
 
-    # Today's date
-    today = datetime.now().strftime('%Y-%m-%d')
-    start_date = today
-    end_date = today
+        # Today's date
+        today = datetime.now().strftime('%Y-%m-%d')
+        start_date = today
+        end_date = today
 
-    print(f"[정보] 날짜 범위: {start_date} ~ {end_date}")
-    print(f"[정보] 지역 수: {len(ALL_REGIONS)}개")
-    print(f"[정보] 최대 병렬: {MAX_WORKERS}개")
+        print(f"[정보] 날짜 범위: {start_date} ~ {end_date}")
+        print(f"[정보] 지역 수: {len(ALL_REGIONS)}개")
+        print(f"[정보] 최대 병렬: {MAX_WORKERS}개")
 
-    # Create log entries for all regions first
-    log_ids = {}
-    for region in ALL_REGIONS:
-        log_id = create_bot_log(supabase, region)
-        if log_id:
-            log_ids[region] = log_id
-        # Log scraping start for each region
-        job_logger.log_scraping_start(region)
+        # Create log entries for all regions first
+        log_ids = {}
+        for region in ALL_REGIONS:
+            log_id = create_bot_log(supabase, region)
+            if log_id:
+                log_ids[region] = log_id
+            # Log scraping start for each region
+            job_logger.log_scraping_start(region)
 
-    # Run scrapers in parallel with timeout
-    results = []
-    timed_out = False
+        # Run scrapers in parallel with timeout
+        results = []
+        timed_out = False
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_region = {
-            executor.submit(run_scraper, region, start_date, end_date): region
-            for region in ALL_REGIONS
-        }
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_to_region = {
+                executor.submit(run_scraper, region, start_date, end_date): region
+                for region in ALL_REGIONS
+            }
 
-        # Calculate remaining time until timeout
-        elapsed = time.time() - schedule_start_time
-        remaining_timeout = max(0, TIMEOUT_SECONDS - elapsed)
+            # Calculate remaining time until timeout
+            elapsed = time.time() - schedule_start_time
+            remaining_timeout = max(0, TIMEOUT_SECONDS - elapsed)
 
-        # Wait for futures with timeout
-        done, not_done = concurrent.futures.wait(
-            future_to_region.keys(),
-            timeout=remaining_timeout,
-            return_when=concurrent.futures.ALL_COMPLETED
-        )
+            # Wait for futures with timeout
+            done, not_done = concurrent.futures.wait(
+                future_to_region.keys(),
+                timeout=remaining_timeout,
+                return_when=concurrent.futures.ALL_COMPLETED
+            )
 
-        # Check if we timed out
-        if not_done:
-            timed_out = True
-            elapsed_min = (time.time() - schedule_start_time) / 60
-            print(f"\n[시간초과] {elapsed_min:.1f}분 경과. {len(not_done)}개 스크래퍼가 아직 실행 중.")
-            print("[정보] 완료된 스크래퍼로 AI 처리 진행...")
+            # Check if we timed out
+            if not_done:
+                timed_out = True
+                elapsed_min = (time.time() - schedule_start_time) / 60
+                print(f"\n[시간초과] {elapsed_min:.1f}분 경과. {len(not_done)}개 스크래퍼가 아직 실행 중.")
+                print("[정보] 완료된 스크래퍼로 AI 처리 진행...")
 
-            # Cancel remaining futures
-            for future in not_done:
-                future.cancel()
+                # Cancel remaining futures
+                for future in not_done:
+                    future.cancel()
+                    region = future_to_region[future]
+                    # Mark as timed out in bot_logs
+                    if region in log_ids:
+                        update_bot_log(supabase, log_ids[region], 'timeout',
+                                       f'{TIMEOUT_SECONDS // 60}분 시간초과로 취소됨', 0)
+                    print(f"[시간초과] {region}: 취소됨")
+
+            # Process completed futures
+            for future in done:
                 region = future_to_region[future]
-                # Mark as timed out in bot_logs
-                if region in log_ids:
-                    update_bot_log(supabase, log_ids[region], 'timeout',
-                                   f'{TIMEOUT_SECONDS // 60}분 시간초과로 취소됨', 0)
-                print(f"[시간초과] {region}: 취소됨")
+                try:
+                    result = future.result()
+                    results.append(result)
 
-        # Process completed futures
-        for future in done:
-            region = future_to_region[future]
+                    # Update log
+                    if region in log_ids:
+                        status = 'success' if result['success'] else 'failed'
+                        message = result.get('output', '')[:500] or result.get('error', '')[:500]
+                        update_bot_log(supabase, log_ids[region], status, message, result.get('articles', 0))
+
+                    status_icon = '[OK]' if result['success'] else '[실패]'
+                    print(f"{status_icon} {region}: {result.get('articles', 0)}건")
+
+                    # Log scraping completion to job_logger
+                    if result['success']:
+                        articles_count = result.get('articles', 0)
+                        job_logger.log_scraping_complete(
+                            region=region,
+                            collected=articles_count,
+                            duplicates=0,  # Will be detailed later with enhanced scraper
+                            skipped=0,
+                            failed=0
+                        )
+                    else:
+                        error_msg = result.get('error', '알 수 없는 오류')[:200]
+                        job_logger.log_scraping_error(region, 'execution', error_msg)
+
+                except Exception as e:
+                    print(f"[오류] {region}: {e}")
+                    results.append({
+                        'region': region,
+                        'success': False,
+                        'error': str(e)
+                    })
+                    job_logger.log_scraping_error(region, 'exception', str(e)[:200])
+
+        # Summary
+        succeeded = sum(1 for r in results if r['success'])
+        failed = len(results) - succeeded
+        total_articles = sum(r.get('articles', 0) for r in results)
+        timed_out_count = len(ALL_REGIONS) - len(results) if timed_out else 0
+
+        print(f"\n[요약]")
+        print(f"  성공: {succeeded}개 지역")
+        print(f"  실패: {failed}개 지역")
+        if timed_out:
+            print(f"  시간초과: {timed_out_count}개 지역")
+        print(f"  총 기사: {total_articles}건")
+
+        # Update lastRun in site_settings
+        try:
+            supabase.table('site_settings').upsert({
+                'key': 'automation_schedule',
+                'value': {
+                    'lastRun': datetime.now().isoformat(),
+                    'lastResult': {
+                        'succeeded': succeeded,
+                        'failed': failed,
+                        'timed_out': timed_out_count,
+                        'articles': total_articles
+                    }
+                },
+                'updated_at': datetime.now().isoformat()
+            }, on_conflict='key').execute()
+        except Exception as e:
+            print(f"[경고] lastRun 업데이트 실패: {e}")
+
+        if timed_out:
+            print(f"\n[{datetime.now()}] 수집 단계 종료 (시간초과).")
+        else:
+            print(f"\n[{datetime.now()}] 수집 완료.")
+
+        # =========================================================================
+        # Phase 2: AI Processing (runs after scraping completes OR timeout)
+        # =========================================================================
+        print("\n" + "=" * 60)
+        print("[2단계] AI 기사 처리 시작...")
+        if timed_out:
+            print("[정보] 모든 대기 기사 처리 중 (시간초과된 스크래퍼 포함)")
+        print("=" * 60)
+
+        ai_result = process_ai_articles(supabase, job_logger)
+
+        # Update site_settings with AI result
+        try:
+            supabase.table('site_settings').upsert({
+                'key': 'ai_processing_last_run',
+                'value': {
+                    'lastRun': datetime.now().isoformat(),
+                    'result': ai_result
+                },
+                'updated_at': datetime.now().isoformat()
+            }, on_conflict='key').execute()
+        except Exception as e:
+            print(f"[경고] AI lastRun 업데이트 실패: {e}")
+
+        # Final summary
+        print("\n" + "=" * 60)
+        print("[최종 요약]")
+        print("=" * 60)
+        print(f"  수집: {succeeded}개 지역, {total_articles}건")
+        print(f"  AI 처리: {ai_result.get('processed', 0)}건 처리, "
+              f"{ai_result.get('success_count', 0)}건 성공, "
+              f"{ai_result.get('failed_count', 0)}건 실패")
+
+        # End job logger session
+        final_status = 'completed'
+        if failed > 0 or ai_result.get('failed_count', 0) > 0:
+            final_status = 'completed_with_errors'
+        if timed_out:
+            final_status = 'completed_with_timeout'
+
+        print(f"[작업로거] 최종 상태: {final_status}")
+
+    except Exception as e:
+        # Catch any unexpected error during main execution
+        import traceback
+        error_message = f"{type(e).__name__}: {e}"
+        final_status = 'crashed'
+        print(f"\n[치명적 오류] main() 실행 중 예외 발생:")
+        print(f"  오류: {error_message}")
+        print(f"  추적:\n{traceback.format_exc()}")
+
+    finally:
+        # =========================================================================
+        # CLEANUP: Always executed - even on crash
+        # =========================================================================
+        print("\n" + "=" * 60)
+        print("[정리] 서버 및 세션 정리 중...")
+        print("=" * 60)
+
+        # 1. End job logger session (if initialized)
+        if job_logger:
             try:
-                result = future.result()
-                results.append(result)
-
-                # Update log
-                if region in log_ids:
-                    status = 'success' if result['success'] else 'failed'
-                    message = result.get('output', '')[:500] or result.get('error', '')[:500]
-                    update_bot_log(supabase, log_ids[region], status, message, result.get('articles', 0))
-
-                status_icon = '[OK]' if result['success'] else '[실패]'
-                print(f"{status_icon} {region}: {result.get('articles', 0)}건")
-
-                # Log scraping completion to job_logger
-                if result['success']:
-                    articles_count = result.get('articles', 0)
-                    job_logger.log_scraping_complete(
-                        region=region,
-                        collected=articles_count,
-                        duplicates=0,  # Will be detailed later with enhanced scraper
-                        skipped=0,
-                        failed=0
-                    )
-                else:
-                    error_msg = result.get('error', '알 수 없는 오류')[:200]
-                    job_logger.log_scraping_error(region, 'execution', error_msg)
-
+                job_logger.end_session(final_status)
+                print(f"[작업로거] 세션 종료: {final_status}")
             except Exception as e:
-                print(f"[오류] {region}: {e}")
-                results.append({
-                    'region': region,
-                    'success': False,
-                    'error': str(e)
-                })
-                job_logger.log_scraping_error(region, 'exception', str(e)[:200])
+                print(f"[경고] 작업로거 세션 종료 실패: {e}")
 
-    # Summary
-    succeeded = sum(1 for r in results if r['success'])
-    failed = len(results) - succeeded
-    total_articles = sum(r.get('articles', 0) for r in results)
-    timed_out_count = len(ALL_REGIONS) - len(results) if timed_out else 0
+        # 2. Stop dev server
+        try:
+            stop_dev_server()
+        except Exception as e:
+            print(f"[경고] 개발 서버 종료 실패: {e}")
 
-    print(f"\n[요약]")
-    print(f"  성공: {succeeded}개 지역")
-    print(f"  실패: {failed}개 지역")
-    if timed_out:
-        print(f"  시간초과: {timed_out_count}개 지역")
-    print(f"  총 기사: {total_articles}건")
+        # 3. Stop Ollama server
+        try:
+            stop_ollama()
+        except Exception as e:
+            print(f"[경고] Ollama 서버 종료 실패: {e}")
 
-    # Update lastRun in site_settings
-    try:
-        supabase.table('site_settings').upsert({
-            'key': 'automation_schedule',
-            'value': {
-                'lastRun': datetime.now().isoformat(),
-                'lastResult': {
-                    'succeeded': succeeded,
-                    'failed': failed,
-                    'timed_out': timed_out_count,
-                    'articles': total_articles
-                }
-            },
-            'updated_at': datetime.now().isoformat()
-        }, on_conflict='key').execute()
-    except Exception as e:
-        print(f"[경고] lastRun 업데이트 실패: {e}")
+        # 4. ALWAYS log completion to trigger_log (success or failure)
+        try:
+            completion_msg = f"[{datetime.now()}] === SCHEDULED TASK {final_status.upper()} ==="
+            if error_message:
+                completion_msg += f" (Error: {error_message[:100]})"
+            completion_msg += "\n"
 
-    if timed_out:
-        print(f"\n[{datetime.now()}] 수집 단계 종료 (시간초과).")
-    else:
-        print(f"\n[{datetime.now()}] 수집 완료.")
+            with open(trigger_log_path, 'a', encoding='utf-8') as f:
+                f.write(completion_msg)
+            print(f"[완료 로그] 기록됨: {final_status}")
+        except Exception as e:
+            print(f"[경고] 완료 로그 기록 실패: {e}")
 
-    # =========================================================================
-    # Phase 2: AI Processing (runs after scraping completes OR timeout)
-    # =========================================================================
-    print("\n" + "=" * 60)
-    print("[2단계] AI 기사 처리 시작...")
-    if timed_out:
-        print("[정보] 모든 대기 기사 처리 중 (시간초과된 스크래퍼 포함)")
-    print("=" * 60)
-
-    ai_result = process_ai_articles(supabase, job_logger)
-
-    # Update site_settings with AI result
-    try:
-        supabase.table('site_settings').upsert({
-            'key': 'ai_processing_last_run',
-            'value': {
-                'lastRun': datetime.now().isoformat(),
-                'result': ai_result
-            },
-            'updated_at': datetime.now().isoformat()
-        }, on_conflict='key').execute()
-    except Exception as e:
-        print(f"[경고] AI lastRun 업데이트 실패: {e}")
-
-    # Final summary
-    print("\n" + "=" * 60)
-    print("[최종 요약]")
-    print("=" * 60)
-    print(f"  수집: {succeeded}개 지역, {total_articles}건")
-    print(f"  AI 처리: {ai_result.get('processed', 0)}건 처리, "
-          f"{ai_result.get('success_count', 0)}건 성공, "
-          f"{ai_result.get('failed_count', 0)}건 실패")
-
-    # End job logger session
-    final_status = 'completed'
-    if failed > 0 or ai_result.get('failed_count', 0) > 0:
-        final_status = 'completed_with_errors'
-    if timed_out:
-        final_status = 'completed_with_timeout'
-    job_logger.end_session(final_status)
-    print(f"[작업로거] 세션 종료: {final_status}")
-
-    # =========================================================================
-    # Cleanup: Stop all servers
-    # =========================================================================
-    print("\n" + "=" * 60)
-    print("[정리] 서버 종료 중...")
-    print("=" * 60)
-
-    # Stop dev server
-    stop_dev_server()
-
-    # Stop Ollama server
-    stop_ollama()
-
-    # Log completion to file
-    try:
-        with open(trigger_log_path, 'a', encoding='utf-8') as f:
-            f.write(f"[{datetime.now()}] === SCHEDULED TASK COMPLETED ===\n")
-    except:
-        pass
-
-    print(f"\n[{datetime.now()}] 예약 실행 완료. 모든 서버 종료됨.")
+        elapsed_total = time.time() - schedule_start_time
+        print(f"\n[{datetime.now()}] 예약 실행 {'완료' if final_status != 'crashed' else '중단'}. (총 {elapsed_total:.1f}초)")
 
 
 class FlushingWriter:

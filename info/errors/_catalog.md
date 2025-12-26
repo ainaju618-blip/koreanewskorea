@@ -29,6 +29,7 @@
 | UnboundLocalError, success_count, 변수, 초기화 | `unbound-local-error.md` | success_count 변수 초기화 안됨 |
 | UnicodeEncodeError, cp949, \u2027, \u2013, 특수문자 | `unicode-encode-error.md` | 유니코드 특수문자 출력 실패 |
 | 종합테스트, 26개, 스크래퍼, 라운드로빈 | `SCRAPER_TEST_REPORT_20251226.md` | 26개 스크래퍼 종합 테스트 보고서 |
+| 스케줄러, 리소스, 메모리, 크래시, 다운, resource, memory, crash | `SCHEDULER_RESOURCE_ANALYSIS_20251226.md` | 스케줄러 리소스 과다 소모로 다운 |
 
 ---
 
