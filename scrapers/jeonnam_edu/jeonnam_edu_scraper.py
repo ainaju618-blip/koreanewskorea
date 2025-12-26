@@ -23,6 +23,15 @@ from utils.scraper_utils import clean_article_content, extract_subtitle
 from utils.category_detector import detect_category
 from utils.category_detector import detect_category
 
+
+def safe_str(text: str) -> str:
+    """Safely encode text for Windows console output (cp949)"""
+    try:
+        return text.encode('cp949', errors='replace').decode('cp949')
+    except:
+        return text
+
+
 # ============================================
 # 상수 정의
 # ============================================
@@ -337,7 +346,7 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
             title = item['title']
             list_date = item['date']
 
-            print(f"   [{processed_count+1}] Processing: {title[:40]}...")
+            print(f"   [{processed_count+1}] Processing: {safe_str(title[:40])}...")
 
             content, thumbnail_url, pub_date, department, error_reason = fetch_detail(page, url)
             error_collector.increment_processed()

@@ -38,6 +38,15 @@ from utils.cloudinary_uploader import download_and_upload_image
 from utils.error_collector import ErrorCollector
 from utils.category_classifier import detect_category
 
+
+def safe_str(text: str) -> str:
+    """Safely encode text for Windows console output (cp949)"""
+    try:
+        return text.encode('cp949', errors='replace').decode('cp949')
+    except:
+        return text
+
+
 # ============================================================
 # 4. Constants
 # ============================================================
@@ -367,7 +376,8 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         page_num = 1
         max_pages = 10  # Search up to 10 pages
         collected_count = 0  # Initialize collected_count
-        
+        success_count = 0  # Initialize success_count
+
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)
             print(f"   [PAGE] 페이지 {page_num} 수집 중...")
@@ -486,7 +496,7 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                 title = item['title']
                 full_url = item['url']
 
-                print(f"      [ARTICLE] {title[:40]}...")
+                print(f"      [ARTICLE] {safe_str(title[:40])}...")
                 log_to_server(REGION_CODE, '실행중', f"수집 중: {title[:20]}...", 'info')
                 
                 content, thumbnail_url, detail_date, department, error_reason = fetch_detail(page, full_url)

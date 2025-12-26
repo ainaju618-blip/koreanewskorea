@@ -26,6 +26,9 @@
 | javascript, download, expect, 다운로드 | `js-download.md` | JS 다운로드 이미지 |
 | argparse, exit, code 2, 인자 | `argparse-exit2.md` | CLI 인자 오류 |
 | encoding, cp949, utf-8, 인코딩 | `encoding.md` | 인코딩 에러 |
+| UnboundLocalError, success_count, 변수, 초기화 | `unbound-local-error.md` | success_count 변수 초기화 안됨 |
+| UnicodeEncodeError, cp949, \u2027, \u2013, 특수문자 | `unicode-encode-error.md` | 유니코드 특수문자 출력 실패 |
+| 종합테스트, 26개, 스크래퍼, 라운드로빈 | `SCRAPER_TEST_REPORT_20251226.md` | 26개 스크래퍼 종합 테스트 보고서 |
 
 ---
 
@@ -66,7 +69,8 @@
 | type_check, reporter, 타입 | `constraint-type.md` | reporters 타입 제약 |
 | migration, alter, schema, 스키마 | `migration.md` | 스키마 변경 오류 |
 | ai, column, schema cache, ai_validation_grade, 컬럼 없음 | `ai-column-missing.md` | AI 컬럼 누락으로 DB 업데이트 실패 |
+| bot_logs, status_check, timeout, constraint, 제약조건 | `bot-logs-timeout-constraint.md` | bot_logs 테이블 timeout 상태 제약조건 위반 |
 
 ---
 
-*최종 업데이트: 2025-12-23*
+*최종 업데이트: 2025-12-26*

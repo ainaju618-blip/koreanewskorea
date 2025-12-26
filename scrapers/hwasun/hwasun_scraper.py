@@ -336,7 +336,8 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         page_num = 1
         max_pages = 10  # Search up to 10 pages maximum
         collected_count = 0  # Initialize collected_count
-        
+        success_count = 0  # Initialize success_count
+
         while page_num <= max_pages and collected_count < max_articles:
             list_url = build_list_url(page_num)
             print(f"   [PAGE] Collecting page {page_num}...")

@@ -14,6 +14,15 @@ import requests
 from typing import Dict, Any, Optional, Callable
 from dotenv import load_dotenv
 
+
+def safe_str(text: str) -> str:
+    """Safely encode text for Windows console output (cp949)"""
+    try:
+        return str(text).encode('cp949', errors='replace').decode('cp949')
+    except:
+        return str(text)
+
+
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -67,12 +76,12 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         
         if resp.status_code == 201:
             # 새로 생성됨
-            print(f'   [OK] 전송 완료: {article_data.get("title", "제목없음")[:40]}')
+            print(f'   [OK] 전송 완료: {safe_str(article_data.get("title", "제목없음")[:40])}')
             return {'success': True, 'status': 'created', 'message': '기사 저장 완료'}
 
         elif resp.status_code == 200:
             # 이미 존재함 (중복)
-            print(f'   [SKIP] 이미 존재: {article_data.get("title", "제목없음")[:40]}')
+            print(f'   [SKIP] 이미 존재: {safe_str(article_data.get("title", "제목없음")[:40])}')
             return {'success': True, 'status': 'exists', 'message': '이미 존재하는 기사'}
 
         elif resp.status_code == 401:
@@ -83,12 +92,12 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         elif resp.status_code == 400:
             # 필수 필드 누락
             error_msg = resp.json().get('error', '필수 필드 누락')
-            print(f'   [FAIL] 요청 오류: {error_msg}')
+            print(f'   [FAIL] 요청 오류: {safe_str(error_msg)}')
             return {'success': False, 'status': 'error', 'message': error_msg}
 
         else:
             # 기타 서버 오류
-            print(f'   [FAIL] 서버 오류 ({resp.status_code}): {resp.text[:100]}')
+            print(f'   [FAIL] 서버 오류 ({resp.status_code}): {safe_str(resp.text[:100])}')
             return {'success': False, 'status': 'error', 'message': f'서버 오류: {resp.status_code}'}
 
     except requests.exceptions.Timeout:
@@ -100,7 +109,7 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         return {'success': False, 'status': 'error', 'message': '서버 연결 실패'}
 
     except Exception as e:
-        print(f'   [ERROR] 예외 발생: {str(e)}')
+        print(f'   [ERROR] 예외 발생: {safe_str(str(e))}')
         return {'success': False, 'status': 'error', 'message': str(e)}
 
 
