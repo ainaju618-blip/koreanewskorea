@@ -332,6 +332,7 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
     
     error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
     collected_articles = []  # For dry-run return
+    success_count = 0  # Initialize for dry-run mode
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)

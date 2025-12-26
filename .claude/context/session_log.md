@@ -5,6 +5,63 @@
 
 ---
 
+## [2025-12-26 19:00] 세션 #33 - 스크래퍼 버그 추가 수정 by Claude
+
+### 주인님 의도
+- 세션 #32에서 주인님이 수정한 6개 스크래퍼 외 나머지 오류 스크래퍼 수정
+- 수정 후 오류 문서 기록 및 커밋
+
+### 수행 작업
+
+1. **UnboundLocalError 수정 (4개 스크래퍼)**
+   - gurye_scraper.py (L392): `success_count = 0` 초기화 추가
+   - jangheung_scraper.py (L335): `success_count = 0` 초기화 추가
+   - yeongam_scraper.py (L325): `success_count = 0` 초기화 추가
+   - wando_scraper.py (L365): `success_count = 0` 초기화 추가
+
+2. **UnicodeEncodeError 수정 (1개 스크래퍼)**
+   - gwangju_scraper.py (L23-27): `safe_str()` 함수 추가
+   - gwangju_scraper.py (L232): print 문에 `safe_str(title[:30])` 적용
+
+3. **오류 문서화**
+   - `info/errors/scraper/unbound-local-error.md` 생성
+   - `info/errors/scraper/unicode-encode-error.md` 생성
+   - 총 10개 스크래퍼 영향 (Type A), 3개 파일 영향 (Type B) 기록
+
+### 테스트 결과
+
+| 스크래퍼 | 결과 | 비고 |
+|----------|------|------|
+| gurye | ✅ OK | DRY-RUN 정상 완료 |
+| jangheung | ✅ OK | DRY-RUN 정상 완료 |
+| yeongam | ✅ OK | DRY-RUN 정상 완료 |
+| wando | ✅ OK | DRY-RUN 정상 완료 |
+| gwangju | ✅ OK | DRY-RUN 정상 완료 (IMAGE_MISSING 스킵) |
+
+### 수정 파일
+- `scrapers/gurye/gurye_scraper.py` (수정)
+- `scrapers/jangheung/jangheung_scraper.py` (수정)
+- `scrapers/yeongam/yeongam_scraper.py` (수정)
+- `scrapers/wando/wando_scraper.py` (수정)
+- `scrapers/gwangju/gwangju_scraper.py` (수정)
+- `info/errors/scraper/unbound-local-error.md` (신규)
+- `info/errors/scraper/unicode-encode-error.md` (신규)
+- `.claude/context/session_log.md` (이 파일)
+
+### 총 수정 현황 (세션 #32 + #33)
+
+**주인님 수정 (세션 #32, 6개):**
+- gwangyang, hampyeong, jangseong, jindo, muan, sinan (Type A)
+- jeonnam_edu, api_client.py (Type B)
+
+**Claude 수정 (세션 #33, 5개):**
+- gurye, jangheung, yeongam, wando (Type A)
+- gwangju (Type B)
+
+**합계: 11개 스크래퍼/파일 오류 수정 완료**
+
+---
+
 ## [2025-12-26 18:45] 세션 #32 - 스크래퍼 버그 수정 by Claude
 
 ### 주인님 의도

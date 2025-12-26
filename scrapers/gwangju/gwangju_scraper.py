@@ -19,6 +19,14 @@ BASE_URL = 'https://www.gwangju.go.kr'
 LIST_URL = 'https://www.gwangju.go.kr/boardList.do?boardId=BD_0000000027&pageId=www789'
 GWANGJU_LIST_SELECTORS = ['tr td.title a', 'a[href*="boardView.do"]']
 
+
+def safe_str(s):
+    """Safely convert string for Windows console output (cp949)"""
+    if s is None:
+        return ''
+    return s.encode('cp949', errors='replace').decode('cp949')
+
+
 def normalize_date(date_str: str) -> str:
     if not date_str:
         return datetime.now().strftime('%Y-%m-%d')
@@ -221,7 +229,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                 
             url = item['url']
             title = item['title']
-            print(f"   [{processed_count+1}] 분석 중: {title[:30]}...")
+            print(f"   [{processed_count+1}] 분석 중: {safe_str(title[:30])}...")
             
             content, thumbnail_url, pub_date, error_reason = fetch_detail(page, url)
             error_collector.increment_processed()
