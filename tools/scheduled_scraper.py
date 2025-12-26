@@ -626,7 +626,7 @@ def process_ai_articles(supabase, job_logger=None) -> Dict[str, Any]:
                     # Ollama API only needs articleId (content fetched from DB)
                     response = requests.post(api_url, json={
                         'articleId': article_id
-                    }, timeout=180)
+                    }, timeout=300)
 
                     if response.status_code == 200:
                         data = response.json()
@@ -680,7 +680,7 @@ def process_ai_articles(supabase, job_logger=None) -> Dict[str, Any]:
                     if log_window:
                         log_window.log_article_result(False, message="시간 초과")
                     if job_logger:
-                        job_logger.log_ai_error(region, article_id, 'timeout', '요청 시간 초과 (180초)')
+                        job_logger.log_ai_error(region, article_id, 'timeout', '요청 시간 초과 (300초)')
                 except requests.exceptions.ConnectionError:
                     total_failed += 1
                     log_both(f"          -> 연결 오류", "error")
