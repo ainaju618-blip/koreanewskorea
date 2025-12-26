@@ -1,30 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getJobLogger, JobLogger } from '@/lib/job-logger';
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Local Ollama configuration - Korean news-specialized model
+// Get job logger instance for real-time monitoring
+const jobLogger = getJobLogger(supabaseAdmin);
+
+// Local Ollama configuration - Using qwen2.5:14b for better accuracy
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'benedict/linkbricks-hermes3-llama3.1-8b-korean-advanced-q4';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b';
 
 // Retry configuration
 const MAX_RETRIES = 10;
-const MIN_LENGTH_RATIO = 0.7;  // 70% minimum
+const MIN_LENGTH_RATIO = 0.85;  // 85% minimum (was 70%, increased for better quality)
+const MIN_OUTPUT_TOKENS = 2048;  // Minimum tokens for generation
 
 // ============================================================================
 // LAYER 0: Ollama API Call
 // ============================================================================
-async function callOllama(prompt: string): Promise<string> {
+async function callOllama(prompt: string, minTokens: number = MIN_OUTPUT_TOKENS): Promise<string> {
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             model: OLLAMA_MODEL,
             prompt: prompt,
-            stream: false
+            stream: false,
+            options: {
+                num_predict: minTokens,      // Minimum tokens to generate
+                temperature: 0.3,            // Lower = more focused/consistent
+                top_p: 0.9,                  // Slightly narrow sampling
+                repeat_penalty: 1.1          // Avoid repetition
+            }
         })
     });
 
@@ -321,6 +332,62 @@ function verifyLength(original: string, converted: string): {
 }
 
 // ============================================================================
+// HELPER: Expand Short Content
+// ============================================================================
+async function expandContent(
+    shortArticle: string,
+    originalPressRelease: string,
+    targetLength: number
+): Promise<string> {
+    const currentLength = shortArticle.length;
+    const additionalNeeded = targetLength - currentLength;
+
+    const expandPrompt = `# Task: EXPAND this news article
+
+## Current Article (TOO SHORT - ${currentLength} chars, need ${targetLength}+ chars)
+${shortArticle}
+
+---
+
+## Original Press Release (Source of Truth)
+${originalPressRelease}
+
+---
+
+# Instructions
+1. The article above is TOO SHORT. You must EXPAND it.
+2. Add ${additionalNeeded}+ more characters of content.
+3. Use ONLY information from the Original Press Release.
+4. DO NOT add any new information not in the press release.
+5. Add more details, context, and restructure for better flow.
+6. Keep the same structure but make each section more detailed.
+7. Include ALL facts, numbers, dates, names from the original.
+
+# Output
+Write the COMPLETE expanded article (not just additions).
+Start with [Subtitle: ...] on the first line.
+
+[Expanded Article]`;
+
+    const response = await callOllama(expandPrompt, Math.max(MIN_OUTPUT_TOKENS, Math.ceil(targetLength / 2) + 1000));
+
+    // Remove all subtitle/structure markers from expanded content
+    const content = response
+        .replace(/\[(?:부제목|Subtitle):\s*.+?\]\n*/gi, '')
+        .replace(/^##\s*(?:부제목|Subtitle)[:\s]+.+?\n*/gim, '')
+        .replace(/\*\*(?:부제목|Subtitle)[:\s]*\*\*\s*.+?\n*/gi, '')
+        .replace(/^###\s*Lead\s*/gim, '')
+        .replace(/^###\s*Body\s*/gim, '')
+        .trim();
+
+    // If expansion is longer, use it; otherwise return original
+    if (content.length > shortArticle.length) {
+        return content;
+    }
+    return shortArticle;
+}
+
+// ============================================================================
 // MASTER: Convert with Enhanced Prompt (includes feedback from previous attempts)
 // ============================================================================
 async function convertToNews(
@@ -406,13 +473,55 @@ ${feedbackSection}
 [Press Release]
 ${pressRelease}
 
+---
+# FINAL REMINDER - LENGTH IS CRITICAL!
+- You MUST write at least ${minOutputLength} characters (${MIN_LENGTH_RATIO * 100}% of original)
+- DO NOT summarize. RESTRUCTURE and REWRITE while keeping ALL information.
+- Every fact, number, date, name from the original MUST appear in your output.
+- If your output is shorter than ${minOutputLength} characters, it will be REJECTED.
+---
+
 [News Article]`;
 
-    const response = await callOllama(prompt);
+    // Calculate required tokens based on input length (Korean ~2 chars per token)
+    const estimatedTokens = Math.max(MIN_OUTPUT_TOKENS, Math.ceil(inputLength / 2) + 500);
+    const response = await callOllama(prompt, estimatedTokens);
 
-    const subtitleMatch = response.match(/\[(?:부제목|Subtitle):\s*(.+?)\]/i);
-    const subtitle = subtitleMatch ? subtitleMatch[1].trim() : '';
-    const content = response.replace(/\[(?:부제목|Subtitle):\s*.+?\]\n*/gi, '').trim();
+    // Extract subtitle - support multiple formats:
+    // 1. [Subtitle: text] or [부제목: text]
+    // 2. ## Subtitle: text or ## 부제목: text
+    // 3. **Subtitle:** text or **부제목:** text
+    let subtitle = '';
+    let subtitleMatch = response.match(/\[(?:부제목|Subtitle):\s*(.+?)\]/i);
+    if (!subtitleMatch) {
+        subtitleMatch = response.match(/^##\s*(?:부제목|Subtitle)[:\s]+(.+?)(?:\n|###|$)/im);
+    }
+    if (!subtitleMatch) {
+        subtitleMatch = response.match(/\*\*(?:부제목|Subtitle)[:\s]*\*\*\s*(.+?)(?:\n|$)/i);
+    }
+    if (subtitleMatch) {
+        subtitle = subtitleMatch[1].trim();
+    }
+
+    // Remove subtitle markers from content
+    let content = response
+        .replace(/\[(?:부제목|Subtitle):\s*.+?\]\n*/gi, '')
+        .replace(/^##\s*(?:부제목|Subtitle)[:\s]+.+?\n*/gim, '')
+        .replace(/\*\*(?:부제목|Subtitle)[:\s]*\*\*\s*.+?\n*/gi, '')
+        .replace(/^###\s*Lead\s*/gim, '')
+        .replace(/^###\s*Body\s*/gim, '')
+        .trim();
+
+    // Auto-expand if content is too short (less than 90% to ensure buffer above 85% minimum)
+    const lengthRatio = content.length / inputLength;
+    if (lengthRatio < 0.90 && content.length > 100) {
+        console.log(`[EXPAND] Content too short (${(lengthRatio * 100).toFixed(1)}%), attempting expansion...`);
+        const expandedContent = await expandContent(content, pressRelease, minOutputLength);
+        if (expandedContent.length > content.length) {
+            console.log(`[EXPAND] Expanded from ${content.length} to ${expandedContent.length} chars`);
+            content = expandedContent;
+        }
+    }
 
     return { content, subtitle };
 }
@@ -437,12 +546,17 @@ interface VerificationResult {
 
 async function processWithMultiLayerVerification(
     originalContent: string,
-    articleId: string
+    articleId: string,
+    region: string = 'unknown',
+    title: string = ''
 ): Promise<VerificationResult> {
     let lastContent = '';
     let lastSubtitle = '';
     let lastDetails: VerificationResult['details'] | null = null;
     let allWarnings: string[] = [];
+
+    // Try to find running session for logging
+    await jobLogger.findRunningSession();
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         console.log(`[process-single] ${articleId}: Attempt ${attempt}/${MAX_RETRIES}`);
@@ -478,8 +592,35 @@ async function processWithMultiLayerVerification(
         const convertedFacts = extractFacts(content);
         const layer1_extraction = compareFacts(originalFacts, convertedFacts, content);
 
+        // Log Layer 1&2 results
+        const allMissing = [
+            ...layer1_extraction.missingNumbers,
+            ...layer1_extraction.missingDates,
+            ...layer1_extraction.missingNames,
+            ...layer1_extraction.missingOrgs
+        ];
+        await jobLogger.logLayer1_2(
+            region,
+            articleId,
+            originalFacts as unknown as Record<string, unknown>,
+            convertedFacts as unknown as Record<string, unknown>,
+            allMissing,
+            layer1_extraction.addedContent,
+            layer1_extraction.passed
+        );
+
         // LAYER 5: Length Check (No LLM - instant)
         const layer5_length = verifyLength(originalContent, content);
+
+        // Log Layer 5 results
+        await jobLogger.logLayer5(
+            region,
+            articleId,
+            originalContent.length,
+            content.length,
+            layer5_length.ratio,
+            layer5_length.passed
+        );
 
         // Early exit if length fails (no need for expensive LLM calls)
         if (!layer5_length.passed) {
@@ -495,10 +636,40 @@ async function processWithMultiLayerVerification(
 
         // LAYER 3 & 4: Run LLM verifications IN PARALLEL
         console.log(`[process-single] ${articleId}: Running Layer 3 & 4 in parallel...`);
+
+        // Log Layer 3 & 4 start
+        await Promise.all([
+            jobLogger.logLayer3Start(region, articleId),
+            jobLogger.logLayer4Start(region, articleId)
+        ]);
+
         const [layer3_hallucination, layer4_crossValidation] = await Promise.all([
             verifyHallucination(originalContent, content),
             verifyCrossValidation(originalContent, content)
         ]);
+
+        // Log Layer 3 results
+        await jobLogger.logLayer3(
+            region,
+            articleId,
+            layer3_hallucination.passed ? [] : [layer3_hallucination.details],
+            layer3_hallucination.details,
+            layer3_hallucination.passed
+        );
+
+        // Log Layer 4 results (parse score from details if available)
+        const scoreMatch = layer4_crossValidation.details?.match(/(\d+)\/100/);
+        const parsedScore = scoreMatch ? parseInt(scoreMatch[1]) : layer4_crossValidation.score;
+        await jobLogger.logLayer4(
+            region,
+            articleId,
+            Math.round(parsedScore * 0.4),  // Approximate accuracy component
+            Math.round(parsedScore * 0.3),  // Approximate completeness component
+            Math.round(parsedScore * 0.3),  // Approximate no_additions component
+            parsedScore,
+            layer4_crossValidation.passed ? [] : [layer4_crossValidation.details],
+            layer4_crossValidation.passed
+        );
 
         lastDetails = {
             layer1_extraction,
@@ -591,7 +762,13 @@ async function processWithMultiLayerVerification(
         // Previously Grade B was acceptable, now it requires manual review
 
         // Otherwise, add warning and retry
-        allWarnings.push(`Attempt ${attempt}: Grade ${grade} - ${!layer5_length.passed ? 'Length fail' : !layer3_hallucination.passed ? 'Hallucination' : 'Missing facts'}`);
+        const retryReason = !layer5_length.passed ? 'Length fail' : !layer3_hallucination.passed ? 'Hallucination' : 'Missing facts';
+        allWarnings.push(`Attempt ${attempt}: Grade ${grade} - ${retryReason}`);
+
+        // Log retry
+        if (attempt < MAX_RETRIES) {
+            await jobLogger.logRetry(region, articleId, attempt, MAX_RETRIES, retryReason);
+        }
     }
 
     // All retries exhausted
@@ -624,7 +801,7 @@ export async function POST(request: NextRequest) {
         // Get article content
         const { data: article, error: fetchError } = await supabaseAdmin
             .from('posts')
-            .select('id, title, content, region')
+            .select('id, title, content, region, source')
             .eq('id', articleId)
             .single();
 
@@ -635,17 +812,38 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log(`[process-single] Starting: ${articleId} - ${article.title?.substring(0, 30)}...`);
+        // Get region from source or region field
+        const articleRegion = article.source || article.region || 'unknown';
+        const articleTitle = article.title || '';
+
+        console.log(`[process-single] Starting: ${articleId} - ${articleTitle.substring(0, 30)}...`);
         const startTime = Date.now();
 
         // Run multi-layer verification with retry
-        const result = await processWithMultiLayerVerification(article.content, articleId);
+        const result = await processWithMultiLayerVerification(
+            article.content,
+            articleId,
+            articleRegion,
+            articleTitle
+        );
 
         const elapsed = Date.now() - startTime;
         console.log(`[process-single] ${articleId}: Final Grade ${result.grade}, Attempts: ${result.attempt}, Time: ${elapsed}ms`);
 
         // Determine if we should publish (STRICT MODE: Grade A ONLY)
         const shouldPublish = result.passed && result.grade === 'A';
+
+        // Log final result to job_logs
+        await jobLogger.logResult(
+            articleRegion,
+            articleId,
+            articleTitle,
+            result.grade,
+            shouldPublish,
+            result.attempt,
+            elapsed,
+            shouldPublish ? undefined : (result.allWarnings[result.allWarnings.length - 1] || 'Manual review required')
+        );
         const now = new Date().toISOString();
 
         // Build warnings array

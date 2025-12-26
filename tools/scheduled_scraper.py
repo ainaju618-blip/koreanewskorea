@@ -26,12 +26,16 @@ try:
     GUI_AVAILABLE = True
 except ImportError:
     GUI_AVAILABLE = False
-    print("[WARN] customtkinter not available, running without GUI")
+    print("[경고] customtkinter 미설치, GUI 없이 실행")
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'scrapers'))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, 'tools'))
+
+# Import job logger for real-time monitoring
+from job_logger import JobLogger, get_logger, reset_logger
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -77,7 +81,7 @@ class AILogWindow:
 
         # Create root window
         self.root = ctk.CTk()
-        self.root.title("AI Processing Log - Scheduled Execution")
+        self.root.title("AI 처리 로그 - 예약 실행")
         self.root.geometry("900x700")
         self.root.minsize(700, 500)
 
@@ -100,7 +104,7 @@ class AILogWindow:
         # Title
         ctk.CTkLabel(
             header_frame,
-            text="AI Processing Monitor (Scheduled)",
+            text="AI 처리 모니터 (예약 실행)",
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color=COLORS['text']
         ).grid(row=0, column=0, padx=20, pady=15, sticky="w")
@@ -108,10 +112,10 @@ class AILogWindow:
         # Stats
         self.stat_frames = {}
         stats = [
-            ("total", "Total", "0", COLORS['text']),
-            ("success", "Success", "0", COLORS['success']),
-            ("failed", "Failed", "0", COLORS['danger']),
-            ("grade_a", "Grade A", "0", "#4ade80"),
+            ("total", "전체", "0", COLORS['text']),
+            ("success", "성공", "0", COLORS['success']),
+            ("failed", "실패", "0", COLORS['danger']),
+            ("grade_a", "A등급", "0", "#4ade80"),
         ]
 
         for i, (key, label, val, color) in enumerate(stats):
@@ -147,7 +151,7 @@ class AILogWindow:
 
         self.progress_label = ctk.CTkLabel(
             progress_frame,
-            text="Waiting...",
+            text="대기 중...",
             font=ctk.CTkFont(size=13),
             text_color=COLORS['text_secondary']
         )
@@ -159,30 +163,41 @@ class AILogWindow:
 
         # State
         self.stats = {"total": 0, "success": 0, "failed": 0, "grade_a": 0}
+        self._closing = False  # Flag to stop update loop
 
         # Welcome message
         self._add_log("=" * 60)
-        self._add_log("  AI Processing Log - Scheduled Execution")
-        self._add_log("  Real-time monitoring of article processing")
+        self._add_log("  AI 처리 로그 - 예약 실행")
+        self._add_log("  기사 처리 실시간 모니터링")
         self._add_log("=" * 60)
         self._add_log("")
+
+        # Force window to show immediately
+        self.root.update()
+        self.root.deiconify()  # Ensure window is visible
+        self.root.lift()  # Bring to front
 
         # Start GUI update loop
         self._schedule_update()
 
     def _schedule_update(self):
         """Schedule GUI update"""
+        if self._closing:
+            return  # Stop update loop when closing
         if hasattr(self, 'root') and self.root.winfo_exists():
-            self.root.update_idletasks()
+            self.root.update()  # Full update to keep window responsive
             self.root.after(100, self._schedule_update)
 
     def _add_log(self, message):
         """Add log message with timestamp"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-        if hasattr(self, 'log_text'):
-            self.log_text.insert("end", f"[{timestamp}] {message}\n")
-            self.log_text.see("end")
-            self.root.update_idletasks()
+        if hasattr(self, 'log_text') and hasattr(self, 'root'):
+            try:
+                self.log_text.insert("end", f"[{timestamp}] {message}\n")
+                self.log_text.see("end")
+                self.root.update()  # Full update for visibility
+            except Exception:
+                pass  # Window may be closed
 
     def log(self, message, level="info"):
         """Public method to add log"""
@@ -199,57 +214,66 @@ class AILogWindow:
         """Log article processing start"""
         self._add_log("")
         self._add_log("-" * 50)
-        self._add_log(f"Article [{idx}/{total}]")
-        self._add_log(f"  Region: {region}")
-        self._add_log(f"  Title: {title[:50]}...")
+        self._add_log(f"기사 [{idx}/{total}]")
+        self._add_log(f"  지역: {region}")
+        self._add_log(f"  제목: {title[:50]}...")
         self.stats["total"] = idx
         self._update_stats()
         self._update_progress(idx, total)
 
     def log_validation_step(self, attempt, max_attempts, grade, passed):
         """Log validation step"""
-        status = "PASS" if passed else "RETRY"
+        status = "통과" if passed else "재시도"
         icon = "[OK]" if passed else "[!!]"
-        self._add_log(f"  Validation [{attempt}/{max_attempts}]: Grade {grade} -> {icon} {status}")
+        self._add_log(f"  검증 [{attempt}/{max_attempts}]: 등급 {grade} -> {icon} {status}")
 
     def log_article_result(self, success, grade="", message=""):
         """Log article result"""
         if success:
-            self._add_log(f"  Result: [SUCCESS] Published (Grade: {grade})")
+            self._add_log(f"  결과: [성공] 발행됨 (등급: {grade})")
             self.stats["success"] += 1
             if grade == "A":
                 self.stats["grade_a"] += 1
         else:
-            self._add_log(f"  Result: [FAILED] {message}")
+            self._add_log(f"  결과: [실패] {message}")
             self.stats["failed"] += 1
         self._update_stats()
 
     def _update_stats(self):
         """Update stats display"""
-        for key, label in self.stat_frames.items():
-            label.configure(text=str(self.stats.get(key, 0)))
-        self.root.update_idletasks()
+        try:
+            for key, label in self.stat_frames.items():
+                label.configure(text=str(self.stats.get(key, 0)))
+            self.root.update()  # Full update for visibility
+        except Exception:
+            pass  # Window may be closed
 
     def _update_progress(self, current, total):
         """Update progress bar"""
-        progress = current / total if total > 0 else 0
-        self.progress_bar.set(progress)
-        self.progress_label.configure(
-            text=f"Processing: {current}/{total} ({int(progress*100)}%)"
-        )
-        self.root.update_idletasks()
+        try:
+            progress = current / total if total > 0 else 0
+            self.progress_bar.set(progress)
+            self.progress_label.configure(
+                text=f"처리 중: {current}/{total} ({int(progress*100)}%)"
+            )
+            self.root.update()  # Full update for visibility
+        except Exception:
+            pass  # Window may be closed
 
     def set_complete(self):
         """Mark processing as complete"""
-        self.progress_bar.set(1.0)
-        self.progress_label.configure(text="Processing Complete!")
-        self._add_log("")
-        self._add_log("=" * 50)
-        self._add_log("  PROCESSING COMPLETE")
-        self._add_log(f"  Total: {self.stats['total']} | Success: {self.stats['success']} | Failed: {self.stats['failed']}")
-        self._add_log(f"  Grade A: {self.stats['grade_a']}")
-        self._add_log("=" * 50)
-        self.root.update_idletasks()
+        try:
+            self.progress_bar.set(1.0)
+            self.progress_label.configure(text="처리 완료!")
+            self._add_log("")
+            self._add_log("=" * 50)
+            self._add_log("  처리 완료")
+            self._add_log(f"  전체: {self.stats['total']} | 성공: {self.stats['success']} | 실패: {self.stats['failed']}")
+            self._add_log(f"  A등급: {self.stats['grade_a']}")
+            self._add_log("=" * 50)
+            self.root.update()  # Full update for visibility
+        except Exception:
+            pass  # Window may be closed
 
     def mainloop(self):
         """Start GUI mainloop"""
@@ -257,22 +281,32 @@ class AILogWindow:
             self.root.mainloop()
 
     def destroy(self):
-        """Destroy window"""
+        """Destroy window - ensure complete cleanup"""
+        self._closing = True  # Stop update loop
         if hasattr(self, 'root'):
-            self.root.destroy()
+            try:
+                # Process any pending events
+                self.root.update()
+                # Withdraw first (hide immediately)
+                self.root.withdraw()
+                # Then destroy
+                self.root.destroy()
+                self.root.quit()  # Exit mainloop if running
+            except Exception:
+                pass  # Ignore errors during cleanup
 
 
 # Region names for logging (Korean)
 REGION_NAMES = {
-    'gwangju': 'Gwangju', 'jeonnam': 'Jeonnam', 'mokpo': 'Mokpo',
-    'yeosu': 'Yeosu', 'suncheon': 'Suncheon', 'naju': 'Naju',
-    'gwangyang': 'Gwangyang', 'damyang': 'Damyang', 'gokseong': 'Gokseong',
-    'gurye': 'Gurye', 'goheung': 'Goheung', 'boseong': 'Boseong',
-    'hwasun': 'Hwasun', 'jangheung': 'Jangheung', 'gangjin': 'Gangjin',
-    'haenam': 'Haenam', 'yeongam': 'Yeongam', 'muan': 'Muan',
-    'hampyeong': 'Hampyeong', 'yeonggwang': 'Yeonggwang', 'jangseong': 'Jangseong',
-    'wando': 'Wando', 'jindo': 'Jindo', 'shinan': 'Shinan',
-    'gwangju_edu': 'GwangjuEdu', 'jeonnam_edu': 'JeonnamEdu'
+    'gwangju': '광주시', 'jeonnam': '전라남도', 'mokpo': '목포시',
+    'yeosu': '여수시', 'suncheon': '순천시', 'naju': '나주시',
+    'gwangyang': '광양시', 'damyang': '담양군', 'gokseong': '곡성군',
+    'gurye': '구례군', 'goheung': '고흥군', 'boseong': '보성군',
+    'hwasun': '화순군', 'jangheung': '장흥군', 'gangjin': '강진군',
+    'haenam': '해남군', 'yeongam': '영암군', 'muan': '무안군',
+    'hampyeong': '함평군', 'yeonggwang': '영광군', 'jangseong': '장성군',
+    'wando': '완도군', 'jindo': '진도군', 'shinan': '신안군',
+    'gwangju_edu': '광주교육청', 'jeonnam_edu': '전남교육청'
 }
 
 
@@ -291,12 +325,12 @@ def create_bot_log(supabase, region: str) -> int:
         result = supabase.table('bot_logs').insert({
             'region': region,
             'status': 'running',
-            'log_message': 'Starting scraper...',
+            'log_message': '스크래퍼 시작 중...',
             'started_at': datetime.now().isoformat()
         }).execute()
         return result.data[0]['id']
     except Exception as e:
-        print(f"[ERROR] Failed to create log for {region}: {e}")
+        print(f"[오류] {region} 로그 생성 실패: {e}")
         return None
 
 
@@ -310,7 +344,70 @@ def update_bot_log(supabase, log_id: int, status: str, message: str, articles: i
             'ended_at': datetime.now().isoformat()
         }).eq('id', log_id).execute()
     except Exception as e:
-        print(f"[ERROR] Failed to update log {log_id}: {e}")
+        print(f"[오류] 로그 {log_id} 업데이트 실패: {e}")
+
+
+# =========================================================================
+# Ollama Server Functions
+# =========================================================================
+
+OLLAMA_URL = 'http://localhost:11434'
+
+
+def is_ollama_running():
+    """Check if Ollama server is running on localhost:11434"""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex(('localhost', 11434))
+        sock.close()
+        return result == 0
+    except:
+        return False
+
+
+def start_ollama():
+    """Start Ollama server"""
+    print("[OLLAMA] Ollama 서버 시작 중...")
+
+    try:
+        # Start Ollama serve in background (hidden)
+        subprocess.Popen(
+            'ollama serve',
+            shell=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+
+        # Wait for Ollama to be ready (max 30 seconds)
+        for i in range(30):
+            time.sleep(1)
+            if is_ollama_running():
+                print(f"[OLLAMA] 서버 준비 완료 ({i+1}초)")
+                return True
+            if i % 5 == 4:
+                print(f"[OLLAMA] 서버 대기 중... ({i+1}초)")
+
+        print("[OLLAMA] 서버 시작 실패")
+        return False
+    except Exception as e:
+        print(f"[OLLAMA] 서버 시작 오류: {e}")
+        return False
+
+
+def stop_ollama():
+    """Stop Ollama server"""
+    print("[OLLAMA] 서버 종료 중...")
+    try:
+        subprocess.run(
+            'taskkill /f /im ollama.exe',
+            shell=True,
+            capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        time.sleep(1)
+        print("[OLLAMA] 서버 종료 완료")
+    except Exception as e:
+        print(f"[OLLAMA] 서버 종료 오류: {e}")
 
 
 # =========================================================================
@@ -331,39 +428,56 @@ def is_server_running():
 
 def start_dev_server():
     """Start the Next.js dev server"""
-    print("[AI] Starting dev server...")
+    print("[AI] 개발 서버 시작 중...")
 
     # Kill existing node processes if any
-    subprocess.run('taskkill /f /im node.exe', shell=True, capture_output=True)
+    subprocess.run('taskkill /f /im node.exe', shell=True, capture_output=True,
+                   creationflags=subprocess.CREATE_NO_WINDOW)
     time.sleep(2)
 
-    # Start new server
+    # Start new server (hidden)
     subprocess.Popen(
         'npm run dev',
         shell=True,
         cwd=PROJECT_ROOT,
-        creationflags=subprocess.CREATE_NEW_CONSOLE
+        creationflags=subprocess.CREATE_NO_WINDOW
     )
 
     # Wait for server to be ready (max 30 seconds)
     for i in range(30):
         time.sleep(1)
         if is_server_running():
-            print(f"[AI] Server ready ({i+1}s)")
+            print(f"[AI] 서버 준비 완료 ({i+1}초)")
             return True
         if i % 5 == 4:
-            print(f"[AI] Waiting for server... ({i+1}s)")
+            print(f"[AI] 서버 대기 중... ({i+1}초)")
 
-    print("[AI] Server failed to start")
+    print("[AI] 서버 시작 실패")
     return False
 
 
-def process_ai_articles(supabase) -> Dict[str, Any]:
+def stop_dev_server():
+    """Stop the Next.js dev server"""
+    print("[AI] 개발 서버 종료 중...")
+    try:
+        subprocess.run(
+            'taskkill /f /im node.exe',
+            shell=True,
+            capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        time.sleep(1)
+        print("[AI] 개발 서버 종료 완료")
+    except Exception as e:
+        print(f"[AI] 서버 종료 오류: {e}")
+
+
+def process_ai_articles(supabase, job_logger=None) -> Dict[str, Any]:
     """Process all pending articles with AI"""
     global ai_log_window
 
     print("\n" + "=" * 50)
-    print("[AI PROCESSING] Starting AI article processing...")
+    print("[AI 처리] AI 기사 처리 시작...")
     print("=" * 50)
 
     # Create log window if GUI available
@@ -371,9 +485,9 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
     if GUI_AVAILABLE:
         try:
             log_window = AILogWindow()
-            log_window.log("Starting AI article processing...")
+            log_window.log("AI 기사 처리 시작...")
         except Exception as e:
-            print(f"[WARN] Could not create log window: {e}")
+            print(f"[경고] 로그 창 생성 실패: {e}")
             log_window = None
 
     # Log file for saving
@@ -393,27 +507,27 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
         result = supabase.table('bot_logs').insert({
             'region': 'ai_processing',
             'status': 'running',
-            'log_message': 'AI processing started...',
+            'log_message': 'AI 처리 시작됨...',
             'started_at': datetime.now().isoformat()
         }).execute()
         ai_log_id = result.data[0]['id']
     except Exception as e:
-        log_both(f"[AI] Failed to create log: {e}", "error")
+        log_both(f"[AI] 로그 생성 실패: {e}", "error")
 
     # Check/start server
     if not is_server_running():
-        log_both("[AI] Starting dev server...")
+        log_both("[AI] 개발 서버 시작 중...")
         if not start_dev_server():
             if ai_log_id:
-                update_bot_log(supabase, ai_log_id, 'failed', 'Dev server failed to start', 0)
+                update_bot_log(supabase, ai_log_id, 'failed', '개발 서버 시작 실패', 0)
             if log_window:
-                log_window.log("Dev server failed to start", "error")
+                log_window.log("개발 서버 시작 실패", "error")
                 log_window.set_complete()
                 time.sleep(3)
                 log_window.destroy()
-            return {'success': False, 'error': 'Server failed', 'processed': 0}
+            return {'success': False, 'error': '서버 실패', 'processed': 0}
     else:
-        log_both("[AI] Server already running")
+        log_both("[AI] 서버 이미 실행 중")
 
     time.sleep(1)
 
@@ -424,46 +538,89 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
     total_failed = 0
     log_messages = []
 
+    # Get initial count for job_logger
+    try:
+        initial_count_result = supabase.table('posts').select(
+            'id', count='exact'
+        ).eq('status', 'draft').or_(
+            'ai_processed.is.null,ai_processed.eq.false'
+        ).execute()
+        initial_pending = initial_count_result.count or 0
+        if job_logger:
+            job_logger.log_ai_phase_start(initial_pending)
+    except:
+        initial_pending = 0
+
     batch_num = 0
+    article_index = 0  # Global article index for logging
     while True:
         batch_num += 1
-        log_both(f"\n[AI] Batch {batch_num}: Loading pending articles...")
+        log_both(f"\n[AI] 배치 {batch_num}: 대기 기사 로드 중...")
 
         try:
-            result = supabase.table('posts').select(
+            # 1. Get unprocessed articles (ai_processed is null or false)
+            result1 = supabase.table('posts').select(
                 'id, title, source, content'
             ).eq('status', 'draft').or_(
                 'ai_processed.is.null,ai_processed.eq.false'
-            ).order('created_at', desc=True).limit(100).execute()
+            ).order('created_at', desc=True).limit(50).execute()
 
-            if not result.data:
-                log_both("[AI] No more pending articles")
+            unprocessed = result1.data if result1.data else []
+
+            # 2. Get C/D grade articles for retry
+            result2 = supabase.table('posts').select(
+                'id, title, source, content'
+            ).eq('status', 'draft').eq(
+                'ai_processed', True
+            ).in_(
+                'ai_validation_grade', ['C', 'D']
+            ).order('created_at', desc=True).limit(50).execute()
+
+            retry_articles = result2.data if result2.data else []
+
+            # Combine and dedupe
+            all_articles = unprocessed + retry_articles
+            seen_ids = set()
+            pending = []
+            for article in all_articles:
+                if article['id'] not in seen_ids:
+                    seen_ids.add(article['id'])
+                    pending.append(article)
+
+            log_both(f"[AI] 미처리 {len(unprocessed)}건 + C/D등급 {len(retry_articles)}건 = 총 {len(pending)}건")
+
+            if not pending:
+                log_both("[AI] 대기 기사 없음")
                 break
 
-            pending = result.data
-            log_both(f"[AI] Found {len(pending)} articles in batch {batch_num}")
-            log_messages.append(f"Batch {batch_num}: {len(pending)} articles")
+            log_messages.append(f"배치 {batch_num}: {len(pending)}건")
 
             for idx, article in enumerate(pending):
+                article_index += 1
                 article_id = article['id']
                 title = (article.get('title') or '')[:40]
+                full_title = article.get('title') or ''
                 content = article.get('content', '')
                 region = article.get('source', 'unknown')
                 region_name = REGION_NAMES.get(region, region)
 
                 if not content:
-                    log_both(f"  [{idx+1}/{len(pending)}] Skip (no content): {title}")
+                    log_both(f"  [{idx+1}/{len(pending)}] 건너뜀 (본문 없음): {title}")
                     total_failed += 1
                     if log_window:
-                        log_window.log_article_result(False, message="No content")
+                        log_window.log_article_result(False, message="본문 없음")
+                    if job_logger:
+                        job_logger.log_article_skipped(region, full_title, 'no_content')
                     continue
 
                 # Log article start
                 log_both(f"  [{idx+1}/{len(pending)}] {region_name} | {title}...")
                 if log_window:
                     log_window.log_article_start(idx+1, len(pending), region_name, title)
+                if job_logger:
+                    job_logger.log_ai_article_start(region, article_id, full_title, article_index, initial_pending)
 
-                log_both(f"          -> AI processing...")
+                log_both(f"          -> AI 처리 중...")
 
                 try:
                     # Ollama API only needs articleId (content fetched from DB)
@@ -475,39 +632,69 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
                         data = response.json()
                         grade = data.get('grade', '?')
                         attempts = data.get('attempts', 1)
+                        published = data.get('success') or data.get('published')
 
-                        if data.get('success') or data.get('published'):
+                        if published:
                             total_success += 1
-                            log_both(f"          -> OK (Grade:{grade}, Attempts:{attempts})", "success")
+                            log_both(f"          -> 완료 (등급:{grade}, 시도:{attempts})", "success")
                             if log_window:
                                 log_window.log_article_result(True, grade=grade)
+                            if job_logger:
+                                job_logger.log_ai_result(
+                                    region=region,
+                                    article_id=article_id,
+                                    title=full_title,
+                                    grade=grade,
+                                    published=True,
+                                    attempts=attempts,
+                                    duration_ms=0  # Will be populated by API
+                                )
                         else:
                             total_failed += 1
                             msg = data.get('message', data.get('error', ''))[:30]
-                            log_both(f"          -> HOLD: {msg}", "warning")
+                            log_both(f"          -> 보류: {msg}", "warning")
                             if log_window:
                                 log_window.log_article_result(False, message=msg)
+                            if job_logger:
+                                job_logger.log_ai_result(
+                                    region=region,
+                                    article_id=article_id,
+                                    title=full_title,
+                                    grade=grade,
+                                    published=False,
+                                    attempts=attempts,
+                                    duration_ms=0,
+                                    reason=msg
+                                )
                     else:
                         total_failed += 1
                         log_both(f"          -> HTTP {response.status_code}", "error")
                         if log_window:
                             log_window.log_article_result(False, message=f"HTTP {response.status_code}")
+                        if job_logger:
+                            job_logger.log_ai_error(region, article_id, 'http_error', f"HTTP {response.status_code}")
 
                 except requests.exceptions.Timeout:
                     total_failed += 1
-                    log_both(f"          -> Timeout", "error")
+                    log_both(f"          -> 시간 초과", "error")
                     if log_window:
-                        log_window.log_article_result(False, message="Timeout")
+                        log_window.log_article_result(False, message="시간 초과")
+                    if job_logger:
+                        job_logger.log_ai_error(region, article_id, 'timeout', '요청 시간 초과 (180초)')
                 except requests.exceptions.ConnectionError:
                     total_failed += 1
-                    log_both(f"          -> Connection error", "error")
+                    log_both(f"          -> 연결 오류", "error")
                     if log_window:
-                        log_window.log_article_result(False, message="Connection error")
+                        log_window.log_article_result(False, message="연결 오류")
+                    if job_logger:
+                        job_logger.log_ai_error(region, article_id, 'connection', 'API 서버 연결 오류')
                 except Exception as e:
                     total_failed += 1
-                    log_both(f"          -> Error: {str(e)[:30]}", "error")
+                    log_both(f"          -> 오류: {str(e)[:30]}", "error")
                     if log_window:
                         log_window.log_article_result(False, message=str(e)[:30])
+                    if job_logger:
+                        job_logger.log_ai_error(region, article_id, 'exception', str(e)[:200])
 
                 total_processed += 1
 
@@ -519,19 +706,24 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
             time.sleep(2)
 
         except Exception as e:
-            print(f"[AI] Batch error: {e}")
-            log_messages.append(f"Batch {batch_num} error: {str(e)[:50]}")
+            print(f"[AI] 배치 오류: {e}")
+            log_messages.append(f"배치 {batch_num} 오류: {str(e)[:50]}")
             break
 
     # Summary
-    log_both(f"\n[AI SUMMARY]")
-    log_both(f"  Total processed: {total_processed}")
-    log_both(f"  Success: {total_success}")
-    log_both(f"  Failed: {total_failed}")
+    log_both(f"\n[AI 요약]")
+    log_both(f"  처리 완료: {total_processed}건")
+    log_both(f"  성공: {total_success}건")
+    log_both(f"  실패: {total_failed}건")
+
+    # Log AI phase complete
+    ai_duration = int(time.time() - schedule_start_time) if 'schedule_start_time' in dir() else 0
+    if job_logger:
+        job_logger.log_ai_phase_complete(ai_duration)
 
     # Update AI log
     if ai_log_id:
-        status = 'completed' if total_failed == 0 else 'partial'
+        status = 'success' if total_failed == 0 else 'failed'
         log_msg = f"Processed:{total_processed}, Success:{total_success}, Failed:{total_failed}\n" + "\n".join(log_messages[-10:])
         update_bot_log(supabase, ai_log_id, status, log_msg, total_success)
 
@@ -539,14 +731,14 @@ def process_ai_articles(supabase) -> Dict[str, Any]:
     try:
         with open(log_file_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(log_lines))
-        log_both(f"[AI] Log saved: {log_file_path}")
+        log_both(f"[AI] 로그 저장됨: {log_file_path}")
     except Exception as e:
-        print(f"[WARN] Failed to save log file: {e}")
+        print(f"[경고] 로그 파일 저장 실패: {e}")
 
     # Complete and close window
     if log_window:
         log_window.set_complete()
-        log_window.log(f"Log saved to: {log_file_path}")
+        log_window.log(f"로그 저장됨: {log_file_path}")
         # Wait 5 seconds before closing
         time.sleep(5)
         log_window.destroy()
@@ -627,22 +819,60 @@ def main():
     schedule_start_time = time.time()  # Record schedule start time
     TIMEOUT_SECONDS = 600  # 10 minutes timeout
 
-    print(f"[{datetime.now()}] Starting scheduled scraper run...")
-    print(f"[INFO] Timeout: {TIMEOUT_SECONDS // 60} minutes")
+    # Log trigger to file
+    trigger_log_path = os.path.join(PROJECT_ROOT, 'tools', 'trigger_log.txt')
+    try:
+        with open(trigger_log_path, 'a', encoding='utf-8') as f:
+            f.write(f"[{datetime.now()}] === SCHEDULED TASK TRIGGERED ===\n")
+    except:
+        pass
 
+    print(f"[{datetime.now()}] 예약 스크래퍼 실행 시작...")
+    print(f"[정보] 제한시간: {TIMEOUT_SECONDS // 60}분")
+
+    # =========================================================================
+    # STEP 0: Start Ollama server FIRST (required for AI processing)
+    # =========================================================================
+    print("\n" + "=" * 50)
+    print("[0단계] Ollama 서버 확인 중...")
+    print("=" * 50)
+
+    if not is_ollama_running():
+        print("[OLLAMA] 실행 중이 아님, 시작 중...")
+        if not start_ollama():
+            print("[경고] Ollama 시작 실패 - AI 처리가 실패할 수 있음")
+        else:
+            print("[OLLAMA] 서버 시작 성공")
+    else:
+        print("[OLLAMA] 이미 실행 중")
+
+    # =========================================================================
+    # STEP 1: Database connection
+    # =========================================================================
     supabase = get_supabase()
     if not supabase:
-        print("[ERROR] Supabase connection failed")
+        print("[오류] Supabase 연결 실패")
         return
+
+    # =========================================================================
+    # Initialize Job Logger for real-time monitoring
+    # =========================================================================
+    reset_logger()  # Reset any previous instance
+    job_logger = get_logger(supabase)
+    session_id = job_logger.start_session('scheduled')
+    if session_id:
+        print(f"[작업로거] 세션 시작됨: {session_id}")
+    else:
+        print("[경고] 작업 로거 세션 시작 실패")
 
     # Today's date
     today = datetime.now().strftime('%Y-%m-%d')
     start_date = today
     end_date = today
 
-    print(f"[INFO] Date range: {start_date} ~ {end_date}")
-    print(f"[INFO] Regions: {len(ALL_REGIONS)}")
-    print(f"[INFO] Max parallel: {MAX_WORKERS}")
+    print(f"[정보] 날짜 범위: {start_date} ~ {end_date}")
+    print(f"[정보] 지역 수: {len(ALL_REGIONS)}개")
+    print(f"[정보] 최대 병렬: {MAX_WORKERS}개")
 
     # Create log entries for all regions first
     log_ids = {}
@@ -650,6 +880,8 @@ def main():
         log_id = create_bot_log(supabase, region)
         if log_id:
             log_ids[region] = log_id
+        # Log scraping start for each region
+        job_logger.log_scraping_start(region)
 
     # Run scrapers in parallel with timeout
     results = []
@@ -676,8 +908,8 @@ def main():
         if not_done:
             timed_out = True
             elapsed_min = (time.time() - schedule_start_time) / 60
-            print(f"\n[TIMEOUT] {elapsed_min:.1f} minutes elapsed. {len(not_done)} scrapers still running.")
-            print("[INFO] Proceeding to AI processing with completed scrapers...")
+            print(f"\n[시간초과] {elapsed_min:.1f}분 경과. {len(not_done)}개 스크래퍼가 아직 실행 중.")
+            print("[정보] 완료된 스크래퍼로 AI 처리 진행...")
 
             # Cancel remaining futures
             for future in not_done:
@@ -686,8 +918,8 @@ def main():
                 # Mark as timed out in bot_logs
                 if region in log_ids:
                     update_bot_log(supabase, log_ids[region], 'timeout',
-                                   f'Cancelled after {TIMEOUT_SECONDS // 60} min timeout', 0)
-                print(f"[TIMEOUT] {region}: Cancelled")
+                                   f'{TIMEOUT_SECONDS // 60}분 시간초과로 취소됨', 0)
+                print(f"[시간초과] {region}: 취소됨")
 
         # Process completed futures
         for future in done:
@@ -698,20 +930,35 @@ def main():
 
                 # Update log
                 if region in log_ids:
-                    status = 'completed' if result['success'] else 'failed'
+                    status = 'success' if result['success'] else 'failed'
                     message = result.get('output', '')[:500] or result.get('error', '')[:500]
                     update_bot_log(supabase, log_ids[region], status, message, result.get('articles', 0))
 
-                status_icon = '[OK]' if result['success'] else '[FAIL]'
-                print(f"{status_icon} {region}: {result.get('articles', 0)} articles")
+                status_icon = '[OK]' if result['success'] else '[실패]'
+                print(f"{status_icon} {region}: {result.get('articles', 0)}건")
+
+                # Log scraping completion to job_logger
+                if result['success']:
+                    articles_count = result.get('articles', 0)
+                    job_logger.log_scraping_complete(
+                        region=region,
+                        collected=articles_count,
+                        duplicates=0,  # Will be detailed later with enhanced scraper
+                        skipped=0,
+                        failed=0
+                    )
+                else:
+                    error_msg = result.get('error', '알 수 없는 오류')[:200]
+                    job_logger.log_scraping_error(region, 'execution', error_msg)
 
             except Exception as e:
-                print(f"[ERROR] {region}: {e}")
+                print(f"[오류] {region}: {e}")
                 results.append({
                     'region': region,
                     'success': False,
                     'error': str(e)
                 })
+                job_logger.log_scraping_error(region, 'exception', str(e)[:200])
 
     # Summary
     succeeded = sum(1 for r in results if r['success'])
@@ -719,12 +966,12 @@ def main():
     total_articles = sum(r.get('articles', 0) for r in results)
     timed_out_count = len(ALL_REGIONS) - len(results) if timed_out else 0
 
-    print(f"\n[SUMMARY]")
-    print(f"  Succeeded: {succeeded}")
-    print(f"  Failed: {failed}")
+    print(f"\n[요약]")
+    print(f"  성공: {succeeded}개 지역")
+    print(f"  실패: {failed}개 지역")
     if timed_out:
-        print(f"  Timed out: {timed_out_count}")
-    print(f"  Total articles: {total_articles}")
+        print(f"  시간초과: {timed_out_count}개 지역")
+    print(f"  총 기사: {total_articles}건")
 
     # Update lastRun in site_settings
     try:
@@ -742,23 +989,23 @@ def main():
             'updated_at': datetime.now().isoformat()
         }, on_conflict='key').execute()
     except Exception as e:
-        print(f"[WARN] Failed to update lastRun: {e}")
+        print(f"[경고] lastRun 업데이트 실패: {e}")
 
     if timed_out:
-        print(f"\n[{datetime.now()}] Scraping phase ended (timeout).")
+        print(f"\n[{datetime.now()}] 수집 단계 종료 (시간초과).")
     else:
-        print(f"\n[{datetime.now()}] Scraping completed.")
+        print(f"\n[{datetime.now()}] 수집 완료.")
 
     # =========================================================================
     # Phase 2: AI Processing (runs after scraping completes OR timeout)
     # =========================================================================
     print("\n" + "=" * 60)
-    print("[PHASE 2] Starting AI article processing...")
+    print("[2단계] AI 기사 처리 시작...")
     if timed_out:
-        print("[INFO] Processing all pending articles (including from timed-out scrapers)")
+        print("[정보] 모든 대기 기사 처리 중 (시간초과된 스크래퍼 포함)")
     print("=" * 60)
 
-    ai_result = process_ai_articles(supabase)
+    ai_result = process_ai_articles(supabase, job_logger)
 
     # Update site_settings with AI result
     try:
@@ -771,19 +1018,107 @@ def main():
             'updated_at': datetime.now().isoformat()
         }, on_conflict='key').execute()
     except Exception as e:
-        print(f"[WARN] Failed to update AI lastRun: {e}")
+        print(f"[경고] AI lastRun 업데이트 실패: {e}")
 
     # Final summary
     print("\n" + "=" * 60)
-    print("[FINAL SUMMARY]")
+    print("[최종 요약]")
     print("=" * 60)
-    print(f"  Scraping: {succeeded} regions, {total_articles} articles")
-    print(f"  AI Processing: {ai_result.get('processed', 0)} processed, "
-          f"{ai_result.get('success_count', 0)} success, "
-          f"{ai_result.get('failed_count', 0)} failed")
+    print(f"  수집: {succeeded}개 지역, {total_articles}건")
+    print(f"  AI 처리: {ai_result.get('processed', 0)}건 처리, "
+          f"{ai_result.get('success_count', 0)}건 성공, "
+          f"{ai_result.get('failed_count', 0)}건 실패")
 
-    print(f"\n[{datetime.now()}] Scheduled run completed.")
+    # End job logger session
+    final_status = 'completed'
+    if failed > 0 or ai_result.get('failed_count', 0) > 0:
+        final_status = 'completed_with_errors'
+    if timed_out:
+        final_status = 'completed_with_timeout'
+    job_logger.end_session(final_status)
+    print(f"[작업로거] 세션 종료: {final_status}")
+
+    # =========================================================================
+    # Cleanup: Stop all servers
+    # =========================================================================
+    print("\n" + "=" * 60)
+    print("[정리] 서버 종료 중...")
+    print("=" * 60)
+
+    # Stop dev server
+    stop_dev_server()
+
+    # Stop Ollama server
+    stop_ollama()
+
+    # Log completion to file
+    try:
+        with open(trigger_log_path, 'a', encoding='utf-8') as f:
+            f.write(f"[{datetime.now()}] === SCHEDULED TASK COMPLETED ===\n")
+    except:
+        pass
+
+    print(f"\n[{datetime.now()}] 예약 실행 완료. 모든 서버 종료됨.")
+
+
+class FlushingWriter:
+    """Auto-flushing file writer for immediate log output"""
+    def __init__(self, file):
+        self.file = file
+    def write(self, text):
+        self.file.write(text)
+        self.file.flush()
+    def flush(self):
+        self.file.flush()
 
 
 if __name__ == "__main__":
-    main()
+    # Redirect all output to log file for pythonw.exe execution
+    import traceback
+
+    log_file_path = os.path.join(PROJECT_ROOT, 'tools', f'schedule_run_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+
+    try:
+        # Open log file with no buffering for immediate writes
+        log_file = open(log_file_path, 'w', encoding='utf-8', buffering=1)
+
+        # Redirect stdout and stderr to auto-flushing log file
+        flushing_writer = FlushingWriter(log_file)
+        sys.stdout = flushing_writer
+        sys.stderr = flushing_writer
+
+        print(f"[{datetime.now()}] === SCHEDULED SCRAPER STARTED ===")
+        print(f"[INFO] Log file: {log_file_path}")
+        print(f"[INFO] Python: {sys.executable}")
+        print(f"[INFO] Working dir: {os.getcwd()}")
+        print("")
+
+        # Run main function
+        main()
+
+        print(f"\n[{datetime.now()}] === SCHEDULED SCRAPER COMPLETED ===")
+
+    except Exception as e:
+        # Log any uncaught exception
+        error_msg = f"\n[FATAL ERROR] {datetime.now()}\n"
+        error_msg += f"Exception: {type(e).__name__}: {e}\n"
+        error_msg += f"Traceback:\n{traceback.format_exc()}\n"
+
+        try:
+            print(error_msg)
+        except:
+            pass
+
+        # Also write to separate error file
+        error_file_path = os.path.join(PROJECT_ROOT, 'tools', f'schedule_error_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+        try:
+            with open(error_file_path, 'w', encoding='utf-8') as ef:
+                ef.write(error_msg)
+        except:
+            pass
+
+    finally:
+        try:
+            log_file.close()
+        except:
+            pass
