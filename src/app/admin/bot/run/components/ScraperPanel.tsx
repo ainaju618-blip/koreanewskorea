@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw, FileText, ChevronDown, ChevronUp, Github, Zap, X } from "lucide-react";
+import { Play, Calendar, Filter, AlertCircle, Loader2, CheckCircle, Activity, XCircle, Clock, StopCircle, RotateCcw, FileText, ChevronDown, ChevronUp, Github, Zap, X, Monitor } from "lucide-react";
 import { RegionCheckboxGroup, SelectionControls } from "./RegionCheckboxGroup";
 import { DetailedResultPanel } from "./DetailedResultPanel";
 import { localRegions, agencyRegions, allRegions, getRegionLabel } from "./regionData";
@@ -906,10 +906,26 @@ export function ScraperPanel() {
             {/* Control Panel */}
             <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-opacity ${isRunning ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="p-4 border-b border-gray-100 bg-blue-50/50">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Filter className="w-5 h-5 text-blue-600" />
-                        수집 조건 설정
-                    </h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                            <Filter className="w-5 h-5 text-blue-600" />
+                            수집 조건 설정
+                        </h3>
+                        <button
+                            onClick={() => {
+                                window.open(
+                                    '/admin/bot/monitor-popup',
+                                    'JobMonitor',
+                                    'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no'
+                                );
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition"
+                            title="Open real-time job monitor in popup window"
+                        >
+                            <Monitor className="w-4 h-4" />
+                            실시간 모니터
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 space-y-4">

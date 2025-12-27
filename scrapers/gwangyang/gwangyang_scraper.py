@@ -351,11 +351,16 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 1024}
+            viewport={'width': 1280, 'height': 1024},
+            locale='ko-KR',  # Force Korean locale
+            timezone_id='Asia/Seoul'  # Korean timezone
         )
         context.set_extra_http_headers({
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+            'Accept-Language': 'ko-KR,ko;q=1.0',  # Korean ONLY - no English fallback
+            'X-Requested-With': 'XMLHttpRequest',
+            # Prevent Google Translate auto-detection
+            'Cache-Control': 'no-cache'
         })
         
         page = context.new_page()
@@ -408,6 +413,10 @@ def collect_articles(max_articles: int = 30, days: Optional[int] = None, start_d
                     # Extract title and URL
                     title = safe_get_text(link)
                     if title:
+                        title = title.strip()
+                        # Remove "새글" badge prefix (common in Korean gov sites)
+                        title = re.sub(r'^새글\s*', '', title)
+                        title = re.sub(r'^\[?새글\]?\s*', '', title)
                         title = title.strip()
                     href = safe_get_attr(link, 'href')
                     

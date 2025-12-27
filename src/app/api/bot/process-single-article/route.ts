@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getJobLogger } from '@/lib/job-logger';
+import { shareToSocialMedia } from '@/lib/social';
 import {
     renderVerificationPrompt,
     renderFixPrompt,
@@ -18,22 +19,30 @@ const supabaseAdmin = createClient(
 const jobLogger = getJobLogger(supabaseAdmin);
 
 // ============================================================================
-// Solar 10.7B Production Configuration (Expert Optimized - 2025-12-26)
+// Llama Korean 8B Production Configuration (Expert Optimized - 2025-12-27)
+// Changed from Solar 10.7B due to mixed language output issues
 // ============================================================================
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const PRIMARY_MODEL = 'solar:10.7b';      // Upstage Korean Enterprise Model
-const FALLBACK_MODEL = 'qwen2.5:14b';     // Fallback for expansion
+const PRIMARY_MODEL = 'benedict/linkbricks-llama3.1-korean:8b';  // Korean-native model
+const FALLBACK_MODEL = 'exaone3.5:7.8b';  // EXAONE as fallback (also Korean-native)
 
-// Expert-optimized settings for Solar 10.7B (prevent KV cache explosion)
-const SOLAR_OPTIONS = {
-    num_ctx: 4096,          // Korean KV cache optimization
-    num_predict: 2048,      // Prevent output over-expansion (262% issue)
-    temperature: 0.30,      // Expert: 0.30 for stable output (was 0.35)
-    repeat_penalty: 1.00,   // Expert: 1.00 for length preservation (was 1.02)
-    top_p: 0.9,
-    num_gpu: 35,            // GPU layers for RTX 4070 12GB
-    gpu_layers: 35          // Prevent VRAM overflow
+// Expert-optimized settings for Llama Korean 8B (2025-12-27 V2 Consultation)
+const MODEL_OPTIONS = {
+    num_ctx: 4096,          // Context window
+    num_predict: 1024,      // Will be dynamically calculated per article
+    temperature: 0.25,      // EXPERT V2: Slightly higher for natural flow
+    repeat_penalty: 1.12,   // EXPERT V2: Prevent repetition
+    top_p: 0.85,            // Focused output
+    num_gpu: 30,            // GPU layers for RTX 4070 12GB
+    gpu_layers: 30          // Prevent VRAM overflow (8.5GB model)
+    // No mirostat - expert says disable for Korean models
 };
+
+// Stop sequences for Hanja/English prevention
+const STOP_SEQUENCES = [
+    "\u5149", "\u63D0", "\u8FB2", "\u80B2", "\u589E", "\u65B0",  // Common Hanja
+    "Sunset", "Sunrise", "Consulting"  // English words
+];
 
 // Retry configuration
 const MAX_RETRIES = 5;          // Maximum verification attempts
@@ -46,14 +55,15 @@ const API_TIMEOUT_MS = 300000;  // 5 minutes (increased for stable processing)
 // ============================================================================
 async function callOllama(
     prompt: string,
-    minTokens: number = SOLAR_OPTIONS.num_predict,
-    model: string = PRIMARY_MODEL
+    minTokens: number = MODEL_OPTIONS.num_predict,
+    model: string = PRIMARY_MODEL,
+    useStopSequences: boolean = true  // EXPERT: Use stop sequences by default
 ): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
     try {
-        console.log(`[Ollama] Calling ${model} (tokens: ${minTokens})...`);
+        console.log(`[Ollama] Calling ${model} (tokens: ${minTokens}, stop: ${useStopSequences})...`);
         const startTime = Date.now();
 
         const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
@@ -64,9 +74,11 @@ async function callOllama(
                 prompt: prompt,
                 stream: false,
                 options: {
-                    ...SOLAR_OPTIONS,
+                    ...MODEL_OPTIONS,
                     num_predict: minTokens   // Override with specific token count
-                }
+                },
+                // EXPERT: Stop sequences to prevent Hanja/English at generation level
+                ...(useStopSequences && { stop: STOP_SEQUENCES })
             }),
             signal: controller.signal
         });
@@ -297,7 +309,8 @@ ${original}
 [변환된 기사]
 ${converted}`;
 
-    const response = await callOllama(prompt, 2048, PRIMARY_MODEL);
+    // EXPERT: Verification calls should NOT use stop sequences (need full analysis)
+    const response = await callOllama(prompt, 2048, PRIMARY_MODEL, false);
 
     const hasFabrication = response.includes('날조된 내용: 있음') ||
                           response.includes('최종 판정: 실패') ||
@@ -345,7 +358,8 @@ ${original}
 [변환된 기사]
 ${converted}`;
 
-    const response = await callOllama(prompt, 2048, PRIMARY_MODEL);
+    // EXPERT: Verification calls should NOT use stop sequences (need full analysis)
+    const response = await callOllama(prompt, 2048, PRIMARY_MODEL, false);
 
     // Extract score - support both Korean and English formats
     let scoreMatch = response.match(/총점:\s*(\d+)/);
@@ -431,7 +445,7 @@ ${originalPressRelease}
     // Use FALLBACK_MODEL (qwen2.5:14b) for high-quality expansion
     const response = await callOllama(
         expandPrompt,
-        Math.max(SOLAR_OPTIONS.num_predict, Math.ceil(targetLength / 2) + 1000),
+        Math.max(MODEL_OPTIONS.num_predict, Math.ceil(targetLength / 2) + 1000),
         FALLBACK_MODEL
     );
 
@@ -466,9 +480,299 @@ function splitSentences(text: string): string[] {
 }
 
 // ============================================================================
-// MASTER: Convert with Solar 10.7B Optimized Prompt
-// Expert: Fact preservation + Length control (prevent over-expansion)
-// Key improvement: Show extracted facts directly in prompt
+// LIGHTWEIGHT MODE: Generate Title/Subtitle/Summary Only (Keep Original Content)
+// Purpose: Minimize hallucination risk by preserving original press release content
+// Only AI-generated: title, subtitle, summary
+// ============================================================================
+interface MetadataResult {
+    title: string;
+    subtitle: string;
+    summary: string;
+    validated: boolean;
+    validationDetails?: string;
+}
+
+// ============================================================================
+// METADATA VALIDATOR: Verify numbers/names in title exist in original content
+// Critical for preventing hallucinated statistics or names in headlines
+// ============================================================================
+interface ValidationResult {
+    isValid: boolean;
+    invalidNumbers: string[];
+    invalidNames: string[];
+    details: string;
+}
+
+function validateMetadataFacts(
+    metadata: { title: string; subtitle: string; summary: string },
+    originalContent: string
+): ValidationResult {
+    const invalidNumbers: string[] = [];
+    const invalidNames: string[] = [];
+
+    // Extract numbers from title and subtitle (most critical)
+    // Patterns: 1000, 1,000, 100만, 50억, 30%, 12월, 25일
+    const numberPattern = /\d+(?:,\d{3})*(?:\.\d+)?(?:만|억|천|백)?(?:%|퍼센트|원|명|개|건|회|차|일|월|년|kg|톤)?/g;
+
+    const titleNumbers = metadata.title.match(numberPattern) || [];
+    const subtitleNumbers = metadata.subtitle.match(numberPattern) || [];
+    const allMetadataNumbers = [...titleNumbers, ...subtitleNumbers];
+
+    // Verify each number exists in original content
+    for (const num of allMetadataNumbers) {
+        // Extract just the numeric part for flexible matching
+        const numericPart = num.replace(/[^0-9,.]/g, '');
+        if (numericPart.length < 2) continue;  // Skip single digits
+
+        // Check if this number appears in original content
+        const foundInOriginal = originalContent.includes(numericPart) ||
+                               originalContent.includes(num) ||
+                               originalContent.replace(/,/g, '').includes(numericPart.replace(/,/g, ''));
+
+        if (!foundInOriginal) {
+            invalidNumbers.push(num);
+            console.log(`[VALIDATE] Number NOT in original: "${num}"`);
+        }
+    }
+
+    // Extract Korean names from title and subtitle
+    // Pattern: 2-4 Korean syllables followed by position/title
+    const namePattern = /[가-힣]{2,4}(?:\s+)?(?:씨|대표|회장|군수|시장|도지사|장관|의원|교수|박사|선생|위원장|면장|과장|팀장|국장|실장|청장)/g;
+
+    const titleNames = metadata.title.match(namePattern) || [];
+    const subtitleNames = metadata.subtitle.match(namePattern) || [];
+    const allMetadataNames = [...titleNames, ...subtitleNames];
+
+    // Verify each name exists in original content
+    for (const name of allMetadataNames) {
+        // Extract just the name part (first 2-4 chars)
+        const namePart = name.match(/^[가-힣]{2,4}/)?.[0] || '';
+        if (namePart.length < 2) continue;
+
+        const foundInOriginal = originalContent.includes(namePart) ||
+                               originalContent.includes(name);
+
+        if (!foundInOriginal) {
+            invalidNames.push(name);
+            console.log(`[VALIDATE] Name NOT in original: "${name}"`);
+        }
+    }
+
+    const isValid = invalidNumbers.length === 0 && invalidNames.length === 0;
+    const details = isValid
+        ? 'All facts verified'
+        : `Invalid: ${invalidNumbers.length} numbers, ${invalidNames.length} names`;
+
+    return { isValid, invalidNumbers, invalidNames, details };
+}
+
+// ============================================================================
+// SANITIZE METADATA: Remove unverified numbers/names from title
+// Fallback when regeneration fails - better to have clean title than wrong data
+// ============================================================================
+function sanitizeMetadata(
+    metadata: { title: string; subtitle: string; summary: string },
+    validation: ValidationResult
+): { title: string; subtitle: string; summary: string } {
+    let { title, subtitle, summary } = metadata;
+
+    // Remove invalid numbers from title and subtitle
+    for (const num of validation.invalidNumbers) {
+        title = title.replace(num, '').replace(/\s{2,}/g, ' ').trim();
+        subtitle = subtitle.replace(num, '').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // Remove invalid names from title and subtitle
+    for (const name of validation.invalidNames) {
+        title = title.replace(name, '').replace(/\s{2,}/g, ' ').trim();
+        subtitle = subtitle.replace(name, '').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // Clean up any leftover punctuation artifacts
+    title = title.replace(/^[,\s]+|[,\s]+$/g, '').replace(/,\s*,/g, ',').trim();
+    subtitle = subtitle.replace(/^[,\s]+|[,\s]+$/g, '').replace(/,\s*,/g, ',').trim();
+
+    return { title, subtitle, summary };
+}
+
+const MAX_METADATA_RETRIES = 2;  // Max retries for metadata generation
+
+async function generateMetadataOnly(
+    pressRelease: string,
+    originalTitle: string = '',  // Fallback title from scraper
+    attempt: number = 1
+): Promise<MetadataResult> {
+    // Extract key facts for title/subtitle generation context
+    const extractedFacts = extractFacts(pressRelease);
+    const keyNames = [...new Set(extractedFacts.names)].slice(0, 5);
+    const keyOrgs = [...new Set(extractedFacts.organizations)].slice(0, 5);
+    const keyNumbers = [...new Set(extractedFacts.numbers.filter(n => n.length >= 2))].slice(0, 10);
+
+    // Get first 500 chars for context (usually contains key info)
+    const contextSnippet = pressRelease.substring(0, 500);
+
+    // Enhanced prompt with explicit fact constraints
+    const prompt = `# 역할
+보도자료의 제목, 부제목, 요약만 작성하는 편집자
+
+# ⛔ 절대 금지
+- 본문 출력 금지! (제목/부제목/요약만 출력)
+- 한자 금지
+- 영어 금지
+- 원문에 없는 숫자/수치 사용 금지!
+- 원문에 없는 인물명 사용 금지!
+
+# 원문에 있는 정보만 사용하세요
+- 기관: ${keyOrgs.join(', ') || '없음'}
+- 인물: ${keyNames.join(', ') || '없음'}
+- 숫자: ${keyNumbers.slice(0, 5).join(', ') || '없음'}
+
+# 원문 요약
+${contextSnippet}...
+
+# 출력 (이것만 출력하세요!)
+[제목]
+10-25자 (원문에 있는 정보만!)
+
+[부제목]
+20-40자 (원문에 있는 정보만!)
+
+[요약]
+50-100자
+
+본문은 절대 출력하지 마세요!`;
+
+    // Very small token count - only title/subtitle/summary (no body!)
+    const response = await callOllama(prompt, 256, PRIMARY_MODEL, true);
+
+    // Parse title
+    let title = '';
+    const titleMatch = response.match(/\[제목\]\s*\n?(.+?)(?:\n|$)/i);
+    if (titleMatch) {
+        title = titleMatch[1].trim();
+    }
+
+    // Parse subtitle
+    let subtitle = '';
+    const subtitleMatch = response.match(/\[부제목\]\s*\n?(.+?)(?:\n|$)/i);
+    if (subtitleMatch) {
+        subtitle = subtitleMatch[1].trim();
+    }
+
+    // Parse summary
+    let summary = '';
+    const summaryMatch = response.match(/\[요약\]\s*\n?([\s\S]+?)(?:\[|$)/i);
+    if (summaryMatch) {
+        summary = summaryMatch[1].trim();
+    }
+
+    // Clean up - remove any Hanja/English
+    const cleanText = (text: string) => text
+        .replace(/[\u4E00-\u9FFF\u3400-\u4DBF]/g, '')  // Remove Hanja
+        .replace(/[a-zA-Z]{3,}/g, '')  // Remove English words
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+    let cleanedTitle = cleanText(title);
+    let cleanedSubtitle = cleanText(subtitle);
+    const cleanedSummary = cleanText(summary);
+
+    // ========================================================================
+    // CRITICAL: Validate that numbers/names in title exist in original content
+    // ========================================================================
+    const validation = validateMetadataFacts(
+        { title: cleanedTitle, subtitle: cleanedSubtitle, summary: cleanedSummary },
+        pressRelease
+    );
+
+    if (!validation.isValid) {
+        console.log(`[METADATA] Attempt ${attempt}: Validation FAILED - ${validation.details}`);
+
+        // Strategy 1: Retry generation (up to MAX_METADATA_RETRIES)
+        if (attempt < MAX_METADATA_RETRIES) {
+            console.log(`[METADATA] Retrying generation (attempt ${attempt + 1})...`);
+            return generateMetadataOnly(pressRelease, originalTitle, attempt + 1);
+        }
+
+        // Strategy 2: Sanitize (remove invalid data from title)
+        console.log(`[METADATA] Max retries reached. Sanitizing title...`);
+        const sanitized = sanitizeMetadata(
+            { title: cleanedTitle, subtitle: cleanedSubtitle, summary: cleanedSummary },
+            validation
+        );
+        cleanedTitle = sanitized.title;
+        cleanedSubtitle = sanitized.subtitle;
+
+        // Strategy 3: Fallback to original title if sanitized title is too short
+        if (cleanedTitle.length < 5 && originalTitle) {
+            console.log(`[METADATA] Sanitized title too short. Using original: "${originalTitle}"`);
+            cleanedTitle = originalTitle.replace(/^새글\s*/, '').trim();
+        }
+
+        return {
+            title: cleanedTitle,
+            subtitle: cleanedSubtitle,
+            summary: cleanedSummary,
+            validated: false,
+            validationDetails: validation.details
+        };
+    }
+
+    console.log(`[METADATA] Validation PASSED - all facts verified`);
+    return {
+        title: cleanedTitle,
+        subtitle: cleanedSubtitle,
+        summary: cleanedSummary,
+        validated: true
+    };
+}
+
+// ============================================================================
+// PARAGRAPH FORMATTER: Add line breaks after Korean sentence endings
+// Only formatting - no content modification
+// ============================================================================
+function formatParagraphs(content: string): string {
+    // Step 0: Strip existing embedded summary HTML (legacy cleanup)
+    // Summary is now displayed from ai_summary field via frontend template
+    let formatted = content
+        .replace(/<div class="article-summary"[^>]*>[\s\S]*?<\/div>\s*/g, '')
+        .replace(/<strong>요약<\/strong>\s*\|\s*/g, '');
+
+    // Step 1: Normalize line breaks and periods
+    formatted = formatted
+        .replace(/\r\n/g, '\n')     // Windows -> Unix line breaks
+        .replace(/\r/g, '\n')       // Old Mac -> Unix line breaks
+        .replace(/。/g, '.')        // Full-width period -> half-width
+        .replace(/！/g, '!')        // Full-width exclamation
+        .replace(/？/g, '?');       // Full-width question
+
+    // Step 2: Add line breaks after Korean sentence endings
+    // Korean sentences typically end with: 다, 요, 음, 임, 됨, 함, 함, 냐, 까, 네, 지, 죠
+    // Examples: 합니다, 했다, 있습니다, 됩니다, 입니다, 해요, 이다, 한다
+    const sentenceEndPattern = /(다|요|음|임|됨|함|냐|까|네|지|죠)[.]\s*/g;
+    formatted = formatted.replace(sentenceEndPattern, '$1.\n\n');
+
+    // Step 3: Handle sentences ending with other patterns
+    // "ㄴ다", "ㄹ다" patterns: 간다, 한다, 본다, 될 것이다
+    formatted = formatted.replace(/([가-힣])[.]\s*(?=[가-힣"'])/g, '$1.\n\n');
+
+    // Step 4: Handle exclamation and question marks
+    formatted = formatted.replace(/([!?])\s*(?=[가-힣"'])/g, '$1\n\n');
+
+    // Step 5: Clean up
+    // - Remove excessive line breaks (max 2 newlines)
+    // - But preserve intentional paragraph breaks
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    // - Trim whitespace at start/end
+    formatted = formatted.trim();
+
+    return formatted;
+}
+
+// ============================================================================
+// LEGACY: Full Convert with Solar 10.7B Optimized Prompt
+// NOTE: This is kept for backwards compatibility but LIGHTWEIGHT mode is preferred
 // ============================================================================
 async function convertToNews(
     pressRelease: string,
@@ -490,46 +794,57 @@ async function convertToNews(
     // Add feedback from previous failed attempts
     const feedbackSection = previousFeedback ? `
 ═══════════════════════════════════════════════════════════════
-⚠️ 경고: 이전 시도 실패! 아래 문제를 반드시 수정하세요:
+WARNING: Previous attempt failed! Fix these issues:
 ${previousFeedback}
 ═══════════════════════════════════════════════════════════════
 ` : '';
 
-    // Solar 10.7B Optimized Prompt v2 (Fact-focused, 2025-12-27)
-    // Key changes: Show extracted facts, strict length cap, stronger enforcement
-    const prompt = `# 역할
-한국 지방정부 보도자료를 기사로 재구성하는 편집기자
+    // Solar 10.7B Optimized Prompt v3 (Korean-only + Fact-focused, 2025-12-27)
+    // Key changes: Korean-only output, no Hanja/Chinese, strict fact preservation
+    const prompt = `# Role
+Editor rewriting Korean local government press releases into news articles
 ${feedbackSection}
 
-# ⚠️ 필수 보존 사실 (아래 항목 100% 포함 필수 - 누락시 실패)
-📊 숫자 (${keyNumbers.length}개): ${keyNumbers.join(', ') || '없음'}
-📅 날짜 (${keyDates.length}개): ${keyDates.join(', ') || '없음'}
-👤 인물 (${keyNames.length}개): ${keyNames.join(', ') || '없음'}
+# FORBIDDEN (Violation = Immediate Fail)
+- No Hanja: No Chinese/Japanese characters
+- No English: No English words
+- No "새글" prefix in title
+- Only Korean + Arabic numerals allowed
 
-# 출력 규칙 (엄격히 준수)
-1. 길이: ${minOutputLength}~${maxOutputLength}자 (85~115%)
-2. 위 숫자/날짜/인물 100% 그대로 포함
-3. 원문에 없는 내용 절대 추가 금지
-4. 문장 ${sentenceCount}개 유지 (±2)
+# Required Facts (Must Include 100%)
+Numbers: ${keyNumbers.join(', ') || 'none'}
+Dates: ${keyDates.join(', ') || 'none'}
+Names: ${keyNames.join(', ') || 'none'}
 
-# 출력 형식
-[제목]
-(10-20자 제목)
+# Output Rules
+1. Length: ${minOutputLength}~${maxOutputLength} chars (85~115%)
+2. Include 100% of facts above
+3. No content not in original
+4. Korean only (no Hanja!)
 
-[부제목]
-(20-40자 부제목)
+# Output Format
+[Title]
+(Korean 10-20 chars)
 
-[본문]
-(기사 본문 - 위 필수 사실 모두 포함)
+[Subtitle]
+(Korean 20-40 chars)
 
-# 원문 (${inputLength}자)
+[Body]
+(Korean article body)
+
+# Original (${inputLength} chars)
 ${pressRelease}
 
-[뉴스 기사]`;
+[News Article]`;
 
-    // Calculate required tokens based on input length (Korean ~2 chars per token)
-    const estimatedTokens = Math.max(SOLAR_OPTIONS.num_predict, Math.ceil(inputLength / 2) + 500);
-    const response = await callOllama(prompt, estimatedTokens, PRIMARY_MODEL);
+    // EXPERT: Dynamic num_predict calculation (120% of original, capped at 2048)
+    // Korean averages ~2 chars per token, so divide by 2 and add buffer
+    const dynamicNumPredict = Math.min(
+        Math.floor((inputLength * 1.2) / 2) + 200,  // 120% of original + buffer
+        2048  // Hard cap to prevent over-expansion
+    );
+    console.log(`[Convert] Dynamic num_predict: ${dynamicNumPredict} (input: ${inputLength} chars)`);
+    const response = await callOllama(prompt, dynamicNumPredict, PRIMARY_MODEL);
 
     // Extract subtitle - support multiple formats:
     // 1. [Subtitle: text] or [부제목: text]
@@ -555,6 +870,22 @@ ${pressRelease}
         .replace(/^###\s*Lead\s*/gim, '')
         .replace(/^###\s*Body\s*/gim, '')
         .trim();
+
+    // POST-PROCESSING: Remove forbidden characters
+    // 1. Remove "새글" prefix
+    content = content.replace(/^새글\s*/gm, '');
+    // 2. Remove Chinese/Japanese characters (Hanja: CJK Unified Ideographs)
+    content = content.replace(/[\u4E00-\u9FFF\u3400-\u4DBF]/g, '');
+    // 3. Clean up any resulting double spaces or empty lines
+    content = content.replace(/\s{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+    // Also clean subtitle
+    if (subtitle) {
+        subtitle = subtitle
+            .replace(/^새글\s*/g, '')
+            .replace(/[\u4E00-\u9FFF\u3400-\u4DBF]/g, '')
+            .trim();
+    }
 
     // Auto-expand if content is too short (less than 90% to ensure buffer above 85% minimum)
     const lengthRatio = content.length / inputLength;
@@ -933,12 +1264,72 @@ async function processWithMultiLayerVerification(
 }
 
 // ============================================================================
+// LIGHTWEIGHT MODE PROCESSOR
+// Purpose: Generate title/subtitle/summary ONLY, NEVER touch body content
+// Key Rule: Body content stays 100% original from Supabase DB
+// Benefits: Zero hallucination risk, fast processing, SEO-friendly metadata
+// ============================================================================
+interface LightweightResult {
+    success: boolean;
+    title: string;
+    subtitle: string;
+    summary: string;
+    processingTime: number;
+    validated: boolean;
+    validationDetails?: string;
+    // NOTE: No content field - body is NEVER modified
+}
+
+async function processLightweight(
+    originalContent: string,
+    articleId: string,
+    originalTitle: string = '',  // Fallback title from scraper
+    _region: string = 'unknown'  // Reserved for future logging
+): Promise<LightweightResult> {
+    const startTime = Date.now();
+
+    console.log(`[LIGHTWEIGHT] ${articleId}: Generating title/subtitle/summary only...`);
+    console.log(`[LIGHTWEIGHT] Body content will remain UNCHANGED (DB original)`);
+
+    // Generate title, subtitle, summary using AI
+    // AI sees the content but ONLY outputs metadata, NOT body
+    // Pass original title as fallback for validation failures
+    const metadata = await generateMetadataOnly(originalContent, originalTitle);
+
+    const elapsed = Date.now() - startTime;
+
+    console.log(`[LIGHTWEIGHT] ${articleId}: Complete in ${elapsed}ms`);
+    console.log(`  Title: ${metadata.title}`);
+    console.log(`  Subtitle: ${metadata.subtitle}`);
+    console.log(`  Summary: ${metadata.summary.substring(0, 50)}...`);
+    console.log(`  Validated: ${metadata.validated ? 'YES' : 'NO'}`);
+    if (!metadata.validated) {
+        console.log(`  Validation: ${metadata.validationDetails}`);
+    }
+    console.log(`  Body: UNCHANGED (original preserved)`);
+
+    return {
+        success: true,
+        title: metadata.title,
+        subtitle: metadata.subtitle,
+        summary: metadata.summary,
+        processingTime: elapsed,
+        validated: metadata.validated,
+        validationDetails: metadata.validationDetails
+        // No content returned - original DB content is preserved
+    };
+}
+
+// ============================================================================
 // POST Handler
+// Supports two modes:
+//   - lightweight (default): Keep original content, only generate metadata
+//   - full: Full rewrite with multi-layer verification
 // ============================================================================
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { articleId } = body;
+        const { articleId, mode = 'lightweight' } = body;  // Default to lightweight mode
 
         if (!articleId) {
             return NextResponse.json(
@@ -965,10 +1356,80 @@ export async function POST(request: NextRequest) {
         const articleRegion = article.source || article.region || 'unknown';
         const articleTitle = article.title || '';
 
-        console.log(`[process-single] Starting: ${articleId} - ${articleTitle.substring(0, 30)}...`);
+        console.log(`[process-single] Starting (${mode}): ${articleId} - ${articleTitle.substring(0, 30)}...`);
         const startTime = Date.now();
 
-        // Run multi-layer verification with retry
+        // ========================================================================
+        // LIGHTWEIGHT MODE: Generate metadata only, NEVER touch body content
+        // Body stays 100% original from Supabase DB
+        // Title/Subtitle validation: numbers/names must exist in original content
+        // ========================================================================
+        if (mode === 'lightweight') {
+            const result = await processLightweight(
+                article.content,
+                articleId,
+                articleTitle,  // Pass original title for fallback
+                articleRegion
+            );
+
+            const now = new Date().toISOString();
+
+            // Update metadata + format paragraphs (content unchanged, only line breaks added)
+            const formattedContent = formatParagraphs(article.content);
+            const updateData: Record<string, unknown> = {
+                title: result.title || articleTitle,  // Use generated or keep original
+                subtitle: result.subtitle || '',
+                ai_summary: result.summary || '',  // Use ai_summary column (not summary)
+                content: formattedContent,  // Original content with paragraph formatting only
+                ai_processed: true,
+                ai_processed_at: now,
+                ai_validation_grade: result.validated ? 'A' : 'B',  // B if validation failed
+                ai_validation_warnings: result.validated ? null : [result.validationDetails],
+                ai_retry_count: 1,
+                status: 'published',
+                published_at: now,
+                site_published_at: now
+            };
+
+            const { error: updateError } = await supabaseAdmin
+                .from('posts')
+                .update(updateData)
+                .eq('id', articleId);
+
+            if (updateError) {
+                throw new Error(`DB update failed: ${updateError.message}`);
+            }
+
+            // Auto-share to social media (non-blocking)
+            const socialResult = await shareToSocialMedia(
+                articleId,
+                result.title || articleTitle,
+                result.summary,
+                articleRegion
+            );
+
+            return NextResponse.json({
+                success: true,
+                mode: 'lightweight',
+                published: true,
+                grade: result.validated ? 'A' : 'B',
+                title: result.title,
+                subtitle: result.subtitle,
+                summary: result.summary,
+                processingTime: result.processingTime,
+                validated: result.validated,
+                validationDetails: result.validationDetails,
+                model: PRIMARY_MODEL,
+                message: result.validated
+                    ? 'Body UNCHANGED, title/subtitle/summary verified'
+                    : 'Body UNCHANGED, title sanitized (unverified data removed)',
+                social: socialResult
+            });
+        }
+
+        // ========================================================================
+        // FULL MODE: Multi-layer verification with content rewrite
+        // ========================================================================
         const result = await processWithMultiLayerVerification(
             article.content,
             articleId,
@@ -1034,6 +1495,17 @@ export async function POST(request: NextRequest) {
             throw new Error(`DB update failed: ${updateError.message}`);
         }
 
+        // Auto-share to social media if published (non-blocking)
+        let socialResult = null;
+        if (shouldPublish) {
+            socialResult = await shareToSocialMedia(
+                articleId,
+                articleTitle,
+                undefined,  // No summary in full mode
+                articleRegion
+            );
+        }
+
         return NextResponse.json({
             success: true,
             published: shouldPublish,
@@ -1068,7 +1540,8 @@ export async function POST(request: NextRequest) {
                     passed: result.details.layer5_length.passed,
                     ratio: Math.round(result.details.layer5_length.ratio * 100)
                 }
-            } : undefined
+            } : undefined,
+            social: socialResult
         });
 
     } catch (error: unknown) {

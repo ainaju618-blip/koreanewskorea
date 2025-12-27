@@ -527,21 +527,15 @@ export function validateFactAccuracy(
 
 /**
  * Create DB update object
- * Add summary as styled box at top of content
+ * Summary is stored in ai_summary field and displayed via frontend template
+ * (No longer embedded in content - template handles styling)
  */
 export function toDBUpdate(parsed: ParsedArticle): Record<string, unknown> {
-    // Add summary at top of content (styled summary box)
-    const summaryBox = parsed.summary
-        ? `<div class="article-summary" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #0284c7; padding: 16px 20px; margin-bottom: 24px; border-radius: 0 8px 8px 0; font-size: 1.05em; line-height: 1.6; color: #0c4a6e;"><strong>요약</strong> | ${parsed.summary}</div>\n\n`
-        : "";
-
-    const contentWithSummary = summaryBox + parsed.content;
-
     return {
         title: parsed.title,
         slug: parsed.slug,
-        content: contentWithSummary,
-        ai_summary: parsed.summary,
+        content: parsed.content,  // Pure content without embedded summary
+        ai_summary: parsed.summary,  // Displayed via frontend template
         keywords: parsed.keywords,
         tags: parsed.tags,
         ai_processed: true,

@@ -6,41 +6,76 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Local Ollama configuration - Korean news-specialized model
+// Local Ollama configuration - Solar:10.7b (Upstage Korean Enterprise Model)
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-// Use Korean news-specialized model (trained on 10M Korean news corpus)
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'benedict/linkbricks-hermes3-llama3.1-8b-korean-advanced-q4';
+const PRIMARY_MODEL = 'solar:10.7b';      // Best quality Korean model (Upstage)
+const FALLBACK_MODEL = 'qwen2.5:14b';     // Fallback for expansion
 
-// Call local Ollama API
-async function callOllama(prompt: string): Promise<string> {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            model: OLLAMA_MODEL,
-            prompt: prompt,
-            stream: false
-        })
-    });
+// Ollama API settings - Korean model optimized parameters
+const NUM_CTX = 4096;             // Reduced from 8192 (Korean KV cache optimization)
+const NUM_PREDICT = 2048;         // Reduced from 4096
+const API_TIMEOUT_MS = 180000;    // 3 minutes (Korean models faster with optimized settings)
 
-    if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status}`);
+// Call local Ollama API with timeout and expert-recommended parameters
+async function callOllama(prompt: string, model: string = PRIMARY_MODEL): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    try {
+        console.log(`[Ollama] Calling ${model}...`);
+        const startTime = Date.now();
+
+        const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: model,
+                prompt: prompt,
+                stream: false,
+                options: {
+                    num_ctx: NUM_CTX,
+                    num_predict: NUM_PREDICT,
+                    temperature: 0.35,      // Expert: balanced output
+                    top_p: 0.9,
+                    repeat_penalty: 1.02,   // Expert: lowered to preserve length
+                    num_gpu: 32,            // GPU layers limit for Korean models
+                    gpu_layers: 32          // Prevent VRAM overflow on RTX 4070 12GB
+                }
+            }),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+        if (!response.ok) {
+            throw new Error(`Ollama API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`[Ollama] Response in ${elapsed}s, output: ${(data.response || '').length} chars`);
+        return data.response || '';
+    } catch (error: unknown) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error(`Ollama API timeout after ${API_TIMEOUT_MS / 1000}s`);
+        }
+        throw error;
     }
-
-    const data = await response.json();
-    return data.response || '';
 }
 
 // Stage 1: Convert press release to news article (Korean prompt)
 // retryCount: 0 = first attempt, 1+ = retry with stricter rules
 async function convertToNews(pressRelease: string, retryCount: number = 0): Promise<{ content: string; subtitle: string }> {
     // Different prompts for retries - progressively stricter
+    const inputLength = pressRelease.length;
     const baseRules = `1. 오타와 띄어쓰기 오류를 수정한다
 2. 불필요한 정보(담당자, 전화번호, HTML 태그, 저작권 문구 등)는 제거한다
-3. 핵심 내용만 정리하여 간결하게 작성한다
-4. 원본의 사실(숫자, 날짜, 이름)은 반드시 그대로 유지한다
-5. 원본에 없는 내용은 절대 추가하지 않는다
-6. 반드시 첫 줄에 [부제목: 한 문장 요약]을 작성한다`;
+3. 원본의 사실(숫자, 날짜, 이름)은 반드시 그대로 유지한다
+4. 원본에 없는 내용은 절대 추가하지 않는다
+5. 반드시 첫 줄에 [부제목: 한 문장 요약]을 작성한다
+6. [중요] 원본 길이(${inputLength}자)와 비슷하게 작성한다. 요약하지 않는다!
+7. [중요] 모든 정보를 포함하여 완전한 기사로 작성한다`;
 
     const retryRules = retryCount > 0 ? `
 [중요 - 이전 시도에서 팩트체크 실패]
@@ -248,7 +283,7 @@ async function processArticle(article: { id: string; title: string; content: str
 // POST: Trigger AI processing on pending articles using local Ollama
 export async function POST() {
     console.log('[run-ai-processing] POST request received');
-    console.log(`[run-ai-processing] Using Ollama at ${OLLAMA_BASE_URL} with model ${OLLAMA_MODEL}`);
+    console.log(`[run-ai-processing] Using Ollama at ${OLLAMA_BASE_URL} with primary model ${PRIMARY_MODEL}`);
 
     try {
         // Check if Ollama is running
@@ -334,11 +369,12 @@ export async function POST() {
 
         return NextResponse.json({
             success: true,
-            message: `Processed ${articles.length} articles with local Ollama (${OLLAMA_MODEL})`,
+            message: `Processed ${articles.length} articles with Ollama (primary: ${PRIMARY_MODEL}, fallback: ${FALLBACK_MODEL})`,
             published,
             held,
             failed,
-            model: OLLAMA_MODEL
+            primaryModel: PRIMARY_MODEL,
+            fallbackModel: FALLBACK_MODEL
         });
 
     } catch (error: unknown) {

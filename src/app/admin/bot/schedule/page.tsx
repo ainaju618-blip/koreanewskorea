@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
     Calendar, Clock, Loader2, Play, History, AlertCircle,
     CheckCircle2, XCircle, Timer, Save, Power, Settings,
-    Zap, Monitor, RefreshCw, Square, PlayCircle
+    Zap, Monitor, RefreshCw, Square, PlayCircle, RotateCcw
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from '@/components/ui/Toast';
@@ -85,6 +85,10 @@ export default function BotSchedulePage() {
     // Scheduler status
     const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus>({ running: false, message: '' });
     const [isControlling, setIsControlling] = useState(false);
+
+    // Reset state
+    const [isResetting, setIsResetting] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     // Edited settings (for unsaved changes)
     const [editedSettings, setEditedSettings] = useState<ScheduleSettings>(settings);
@@ -291,6 +295,50 @@ export default function BotSchedulePage() {
         setHasChanges(true);
     };
 
+    // Full reset
+    const handleFullReset = async () => {
+        setIsResetting(true);
+        setShowResetConfirm(false);
+
+        try {
+            const res = await fetch('/api/bot/reset-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showSuccess('All settings initialized successfully');
+
+                // Reset local state to defaults
+                const defaultSettings: ScheduleSettings = {
+                    enabled: false,
+                    startHour: 9,
+                    endHour: 20,
+                    intervalMinutes: 60,
+                    runOnMinute: 30
+                };
+                setSettings(defaultSettings);
+                setEditedSettings(defaultSettings);
+                setHasChanges(false);
+
+                // Refresh scheduler status
+                await fetchSchedulerStatus();
+
+                // Reset stats
+                setStats({});
+            } else {
+                showError(data.message || 'Failed to initialize');
+            }
+        } catch (err) {
+            console.error('Reset error:', err);
+            showError('Failed to initialize settings');
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
     const scheduledTimes = generateScheduledTimes(editedSettings);
     const nextRunTimes = getNextRunTimes(editedSettings, 5);
 
@@ -318,6 +366,18 @@ export default function BotSchedulePage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowResetConfirm(true)}
+                        disabled={isResetting}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-900/50 text-red-300 border border-red-700 rounded-lg font-medium hover:bg-red-900 transition"
+                    >
+                        {isResetting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <RotateCcw className="w-4 h-4" />
+                        )}
+                        초기화
+                    </button>
                     <button
                         onClick={fetchSettings}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition"
@@ -732,6 +792,59 @@ export default function BotSchedulePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Reset Confirmation Modal */}
+            {showResetConfirm && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 max-w-md w-full mx-4 shadow-2xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 bg-red-900/50 rounded-full flex items-center justify-center">
+                                <AlertCircle className="w-6 h-6 text-red-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">전체 초기화</h3>
+                                <p className="text-sm text-gray-400">모든 스케줄 설정을 초기화합니다</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-900/50 rounded-lg p-4 mb-6 text-sm text-gray-300 space-y-2">
+                            <p className="font-medium text-red-400">다음 항목이 초기화됩니다:</p>
+                            <ul className="list-disc list-inside space-y-1 text-gray-400">
+                                <li>스케줄러 중지</li>
+                                <li>스케줄 설정 기본값으로 리셋</li>
+                                <li>자동화 비활성화</li>
+                                <li>실행 중인 작업 로그 초기화</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowResetConfirm(false)}
+                                className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleFullReset}
+                                disabled={isResetting}
+                                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition flex items-center justify-center gap-2"
+                            >
+                                {isResetting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        초기화 중...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCcw className="w-4 h-4" />
+                                        초기화 실행
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

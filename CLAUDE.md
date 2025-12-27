@@ -2,7 +2,7 @@
 
 > **Project:** Korea NEWS - Jeonnam/Gwangju Regional News Automation Platform
 > **Role:** Project Execution Manager (Speed & Stability First)
-> **Version:** v5.1
+> **Version:** v5.2
 > **Last Updated:** 2025-12-25
 
 ---
@@ -102,8 +102,41 @@ Main Content:
 | **Admin UI: mobile-first design** | Code review **REJECT** (desktop-first only) |
 | **Error not documented** after fix | Work **INCOMPLETE** - record in info/errors/ |
 | **Session log not written** | Session **INVALID** |
+| **User-facing UI not in Korean** | Code review **REJECT** (must be Korean) |
 
 > **Detail Rules:** See [.claude/rules/golden-rules.md](.claude/rules/golden-rules.md)
+
+## Korean Localization Rules (P0 - MUST)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  사용자가 보는 모든 UI는 반드시 한글로 작성한다.             │
+│                                                              │
+│  ✅ 한글 필수 (User-facing):                                 │
+│     - 버튼 텍스트: "저장", "취소", "실행", "설정"           │
+│     - 레이블: "다음 실행", "최근 활동", "상태"              │
+│     - 메시지: 알림, 오류, 확인 다이얼로그                   │
+│     - 메뉴, 탭, 헤더 텍스트                                 │
+│     - 툴팁, placeholder                                      │
+│                                                              │
+│  ❌ 영어 필수 (Code-facing):                                 │
+│     - 변수명, 함수명, 클래스명                              │
+│     - 코드 주석 (// English only)                           │
+│     - 파일명, 폴더명                                        │
+│     - Git 커밋 메시지                                       │
+│     - 로그 메시지 (console.log)                             │
+│                                                              │
+│  예시:                                                       │
+│     ❌ <button>Save</button>                                 │
+│     ✅ <button>저장</button>                                 │
+│                                                              │
+│     ❌ text="Next Run"                                       │
+│     ✅ text="다음 실행"                                      │
+│                                                              │
+│     ❌ // 다음 실행 시간 계산                                │
+│     ✅ // Calculate next run time                            │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Repeated Error Protocol (P0 - MUST)
 
@@ -436,7 +469,7 @@ When discrepancy found between rules and actual code:
 | **GitHub URL** | https://github.com/koreanewskorea/main |
 | **Supabase Project** | `aubjcabybfuhyrcaniyf` |
 | **Supabase URL** | https://aubjcabybfuhyrcaniyf.supabase.co |
-| **Vercel Account** | TBD (use same email) |
+| **Vercel Account** | `koreanewskoreas-projects` (Hobby) |
 | **Status** | **Active Development** |
 
 ### Environment Variables (koreanewshq/.env.local)
@@ -463,10 +496,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 - [x] GitHub 레포 생성 (koreanewskorea/main)
 - [x] Supabase 새 프로젝트 생성
-- [ ] Vercel 새 계정/팀 생성
-- [ ] Vercel에 GitHub 레포 연결
-- [ ] 환경변수 설정 (.env.local)
+- [x] Vercel 새 계정/팀 생성 (koreanewskoreas-projects)
+- [x] Vercel에 GitHub 레포 연결
+- [x] 환경변수 설정 (Vercel Dashboard)
 - [ ] 도메인 연결 (koreanewskorea.com)
+- [ ] 첫 배포 실행
 
 ---
 

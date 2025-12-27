@@ -114,3 +114,4 @@ claude-hub/.claude/
 
 logs/
 *.log
+_backup/
