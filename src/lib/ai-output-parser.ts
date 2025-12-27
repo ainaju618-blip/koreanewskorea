@@ -306,6 +306,11 @@ function normalizeQuotes(arr: unknown): string[] {
 function normalizeContent(content: string): string {
     let normalized = String(content).trim();
 
+    // 1. Remove subtitle pattern at the beginning: "- 제목 -" or "- 제목 형식 -"
+    // Matches: - text - at the start (with optional whitespace)
+    normalized = normalized.replace(/^\s*-\s+[^-\n]+\s+-\s*/m, "");
+    normalized = normalized.trim();
+
     // Convert markdown to HTML (simple processing)
     // #### subtitle -> <h4>
     normalized = normalized.replace(/^####\s+(.+)$/gm, "<h4>$1</h4>");
@@ -317,6 +322,11 @@ function normalizeContent(content: string): string {
 
     // Wrap consecutive <li> with <ul>
     normalized = normalized.replace(/(<li>[\s\S]*?<\/li>)+/g, "<ul>$&</ul>");
+
+    // 2. Split sentences into paragraphs
+    // Korean articles: split after period followed by space (but not for abbreviations)
+    // Pattern: sentence ending with period, followed by a Korean character (next sentence start)
+    normalized = normalized.replace(/([.!?])\s+([가-힣A-Z])/g, "$1\n\n$2");
 
     // Wrap paragraphs separated by blank lines with <p>
     const paragraphs = normalized.split(/\n\n+/);
