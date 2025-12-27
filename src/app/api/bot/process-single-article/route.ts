@@ -738,6 +738,10 @@ function formatParagraphs(content: string): string {
         .replace(/<div class="article-summary"[^>]*>[\s\S]*?<\/div>\s*/g, '')
         .replace(/<strong>요약<\/strong>\s*\|\s*/g, '');
 
+    // Step 0.5: Remove subtitle pattern at the beginning: "- 제목 -" or "- 제목 형식 -"
+    // Pattern: - text - at the start (with optional whitespace/newlines)
+    formatted = formatted.replace(/^\s*-\s+[^-\n]+\s+-\s*/m, '').trim();
+
     // Step 1: Normalize line breaks and periods
     formatted = formatted
         .replace(/\r\n/g, '\n')     // Windows -> Unix line breaks
