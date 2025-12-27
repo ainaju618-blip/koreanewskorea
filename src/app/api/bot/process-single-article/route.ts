@@ -488,6 +488,7 @@ interface MetadataResult {
     title: string;
     subtitle: string;
     summary: string;
+    tags: string[];  // Auto-generated tags from content
     validated: boolean;
     validationDetails?: string;
 }
@@ -597,6 +598,44 @@ function sanitizeMetadata(
 
 const MAX_METADATA_RETRIES = 2;  // Max retries for metadata generation
 
+// Generate tags from extracted facts (no AI needed - rule-based)
+function generateTagsFromContent(
+    organizations: string[],
+    names: string[],
+    content: string
+): string[] {
+    const tags: string[] = [];
+
+    // Add organization names as tags (max 3)
+    const uniqueOrgs = [...new Set(organizations)].slice(0, 3);
+    tags.push(...uniqueOrgs);
+
+    // Add important person names (max 2)
+    const uniqueNames = [...new Set(names)].slice(0, 2);
+    tags.push(...uniqueNames);
+
+    // Extract keyword patterns from content
+    const keywordPatterns = [
+        /축제/g, /행사/g, /사업/g, /지원/g, /협약/g,
+        /투자/g, /개발/g, /건설/g, /준공/g, /착공/g,
+        /교육/g, /문화/g, /관광/g, /환경/g, /복지/g,
+        /농업/g, /수산/g, /산업/g, /경제/g, /일자리/g,
+        /안전/g, /재난/g, /방역/g, /의료/g, /보건/g
+    ];
+
+    for (const pattern of keywordPatterns) {
+        if (pattern.test(content) && tags.length < 6) {
+            const keyword = pattern.source;
+            if (!tags.includes(keyword)) {
+                tags.push(keyword);
+            }
+        }
+    }
+
+    // Remove duplicates and limit to 6 tags
+    return [...new Set(tags)].slice(0, 6);
+}
+
 async function generateMetadataOnly(
     pressRelease: string,
     originalTitle: string = '',  // Fallback title from scraper
@@ -607,6 +646,14 @@ async function generateMetadataOnly(
     const keyNames = [...new Set(extractedFacts.names)].slice(0, 5);
     const keyOrgs = [...new Set(extractedFacts.organizations)].slice(0, 5);
     const keyNumbers = [...new Set(extractedFacts.numbers.filter(n => n.length >= 2))].slice(0, 10);
+
+    // Generate tags from extracted facts (rule-based, no AI)
+    const generatedTags = generateTagsFromContent(
+        extractedFacts.organizations,
+        extractedFacts.names,
+        pressRelease
+    );
+    console.log(`[METADATA] Generated tags: ${generatedTags.join(', ')}`);
 
     // Get first 500 chars for context (usually contains key info)
     const contextSnippet = pressRelease.substring(0, 500);
@@ -713,6 +760,7 @@ ${contextSnippet}...
             title: cleanedTitle,
             subtitle: cleanedSubtitle,
             summary: cleanedSummary,
+            tags: generatedTags,
             validated: false,
             validationDetails: validation.details
         };
@@ -723,13 +771,14 @@ ${contextSnippet}...
         title: cleanedTitle,
         subtitle: cleanedSubtitle,
         summary: cleanedSummary,
+        tags: generatedTags,
         validated: true
     };
 }
 
 // ============================================================================
 // PARAGRAPH FORMATTER: Add line breaks after Korean sentence endings
-// Only formatting - no content modification
+// Converts plain text to HTML paragraphs for proper rendering
 // ============================================================================
 function formatParagraphs(content: string): string {
     // Step 0: Strip existing embedded summary HTML (legacy cleanup)
@@ -742,6 +791,21 @@ function formatParagraphs(content: string): string {
     // Pattern: - text - at the start (with optional whitespace/newlines)
     formatted = formatted.replace(/^\s*-\s+[^-\n]+\s+-\s*/m, '').trim();
 
+    // Step 0.6: Strip existing HTML tags to start fresh (preserve text only)
+    // This ensures consistent paragraph formatting
+    const hasExistingHtml = /<[^>]+>/.test(formatted);
+    if (hasExistingHtml) {
+        formatted = formatted
+            .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')  // </p><p> -> line break
+            .replace(/<br\s*\/?>/gi, '\n')           // <br> -> line break
+            .replace(/<[^>]+>/g, '')                  // Remove all other tags
+            .replace(/&nbsp;/g, ' ')                  // &nbsp; -> space
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"');
+    }
+
     // Step 1: Normalize line breaks and periods
     formatted = formatted
         .replace(/\r\n/g, '\n')     // Windows -> Unix line breaks
@@ -751,27 +815,33 @@ function formatParagraphs(content: string): string {
         .replace(/？/g, '?');       // Full-width question
 
     // Step 2: Add line breaks after Korean sentence endings
-    // Korean sentences typically end with: 다, 요, 음, 임, 됨, 함, 함, 냐, 까, 네, 지, 죠
-    // Examples: 합니다, 했다, 있습니다, 됩니다, 입니다, 해요, 이다, 한다
-    const sentenceEndPattern = /(다|요|음|임|됨|함|냐|까|네|지|죠)[.]\s*/g;
-    formatted = formatted.replace(sentenceEndPattern, '$1.\n\n');
+    // Pattern: Korean char + period + space(s) + Korean char (next sentence)
+    // Examples: "펼쳤다. 이날" -> "펼쳤다.\n\n이날"
+    formatted = formatted.replace(/([가-힣])[.]\s+(?=[가-힣"'])/g, '$1.\n\n');
 
-    // Step 3: Handle sentences ending with other patterns
-    // "ㄴ다", "ㄹ다" patterns: 간다, 한다, 본다, 될 것이다
-    formatted = formatted.replace(/([가-힣])[.]\s*(?=[가-힣"'])/g, '$1.\n\n');
+    // Step 3: Handle exclamation and question marks
+    formatted = formatted.replace(/([!?])\s+(?=[가-힣"'])/g, '$1\n\n');
 
-    // Step 4: Handle exclamation and question marks
-    formatted = formatted.replace(/([!?])\s*(?=[가-힣"'])/g, '$1\n\n');
-
-    // Step 5: Clean up
-    // - Remove excessive line breaks (max 2 newlines)
-    // - But preserve intentional paragraph breaks
+    // Step 4: Clean up excessive line breaks (max 2 newlines)
     formatted = formatted.replace(/\n{3,}/g, '\n\n');
-
-    // - Trim whitespace at start/end
     formatted = formatted.trim();
 
-    return formatted;
+    // Step 5: Convert to HTML paragraphs (CRITICAL for browser rendering!)
+    // Split by double newlines and wrap each in <p> tags
+    const paragraphs = formatted.split(/\n\n+/);
+    const htmlParagraphs = paragraphs
+        .map((p) => {
+            p = p.trim();
+            if (!p) return '';
+            // If already starts with HTML tag (shouldn't happen after cleanup), keep as is
+            if (p.startsWith('<')) return p;
+            // Wrap in <p> tag, convert single newlines to <br>
+            return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+    return htmlParagraphs;
 }
 
 // ============================================================================
@@ -1278,6 +1348,7 @@ interface LightweightResult {
     title: string;
     subtitle: string;
     summary: string;
+    tags: string[];
     processingTime: number;
     validated: boolean;
     validationDetails?: string;
@@ -1306,6 +1377,7 @@ async function processLightweight(
     console.log(`  Title: ${metadata.title}`);
     console.log(`  Subtitle: ${metadata.subtitle}`);
     console.log(`  Summary: ${metadata.summary.substring(0, 50)}...`);
+    console.log(`  Tags: ${metadata.tags.join(', ')}`);
     console.log(`  Validated: ${metadata.validated ? 'YES' : 'NO'}`);
     if (!metadata.validated) {
         console.log(`  Validation: ${metadata.validationDetails}`);
@@ -1317,6 +1389,7 @@ async function processLightweight(
         title: metadata.title,
         subtitle: metadata.subtitle,
         summary: metadata.summary,
+        tags: metadata.tags,
         processingTime: elapsed,
         validated: metadata.validated,
         validationDetails: metadata.validationDetails
@@ -1384,6 +1457,7 @@ export async function POST(request: NextRequest) {
                 title: result.title || articleTitle,  // Use generated or keep original
                 subtitle: result.subtitle || '',
                 ai_summary: result.summary || '',  // Use ai_summary column (not summary)
+                tags: result.tags || [],  // AI-generated tags from content analysis
                 content: formattedContent,  // Original content with paragraph formatting only
                 ai_processed: true,
                 ai_processed_at: now,

@@ -197,6 +197,14 @@ function getCategoryColor(category: string) {
     return colors[category] || 'bg-slate-500';
 }
 
+// 평문에 줄바꿈 추가 (마침표 뒤 한글이면 문단 분리)
+// DB에 <p> 태그 없이 저장된 기사도 올바르게 표시됨
+function formatPlainTextToParagraphs(text: string): string {
+    // 마침표/느낌표/물음표 + 공백 + 한글 -> 줄바꿈 추가
+    const withBreaks = text.replace(/([.!?])\s+(?=[가-힣"'])/g, '$1</p><p>');
+    return `<p>${withBreaks}</p>`;
+}
+
 // 본문에서 이미지 URL을 실제 img 태그로 변환
 // SEO: title 매개변수 추가하여 이미지 alt 텍스트 최적화
 function renderContent(content: string, title: string) {
@@ -243,11 +251,14 @@ function renderContent(content: string, title: string) {
                         );
                     }
 
-                    // 일반 텍스트는 <p>로 감싸기
+                    // 평문(plain text): 마침표 기준으로 문단 분리하여 HTML로 변환
+                    const formattedHtml = formatPlainTextToParagraphs(cleanedText);
                     return (
-                        <p key={i} className="mb-4">
-                            {cleanedText}
-                        </p>
+                        <div
+                            key={i}
+                            className="html-content mb-4"
+                            dangerouslySetInnerHTML={{ __html: formattedHtml }}
+                        />
                     );
                 } else {
                     // SEO: 의미 있는 alt 텍스트 생성
@@ -490,13 +501,13 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                     {renderContent(news.content, news.title)}
                 </div>
 
-                {/* 태그 (키워드) */}
+                {/* 태그 (키워드) - 클릭 시 태그별 기사 목록으로 이동 */}
                 {news.tags && news.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-12">
                         {news.tags.map((tag: string, i: number) => (
                             <Link
                                 key={i}
-                                href={`/search?q=${encodeURIComponent(tag)}`}
+                                href={`/tag/${encodeURIComponent(tag)}`}
                                 className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors"
                             >
                                 #{tag}
