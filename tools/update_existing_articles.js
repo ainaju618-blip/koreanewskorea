@@ -72,7 +72,7 @@ async function main() {
     const args = process.argv.slice(2);
     let dateFilter = null;
     let regionFilter = null;
-    let limit = 100;
+    let limit = 1000;
 
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '--date' && args[i + 1]) {
@@ -183,7 +183,7 @@ Options:
   --today         Update articles from today
   --date YYYY-MM-DD  Update articles from specific date
   --region CODE   Filter by region (e.g., gwangyang, damyang)
-  --limit N       Maximum articles to process (default: 100)
+  --limit N       Maximum articles to process (default: 1000)
   --help          Show this help
 
 Examples:

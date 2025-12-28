@@ -126,13 +126,13 @@ export default function BotDashboardPage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                             <Bot className="w-6 h-6 text-white" />
                         </div>
                         봇 관리 센터
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#8b949e] mt-2">
                         뉴스 수집 봇의 실시간 상태를 모니터링하고 제어합니다.
                     </p>
                 </div>
@@ -141,20 +141,20 @@ export default function BotDashboardPage() {
                         onClick={() => setAutoRefresh(!autoRefresh)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium border transition flex items-center gap-2 ${
                             autoRefresh
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : 'bg-white text-gray-500 border-gray-300'
+                                ? 'bg-green-900/30 text-green-400 border-green-800'
+                                : 'bg-[#21262d] text-[#8b949e] border-[#30363d]'
                         }`}
                     >
                         {autoRefresh ? (
                             <Activity className="w-4 h-4 animate-pulse" />
                         ) : (
-                            <div className="w-4 h-4 rounded-full bg-gray-300" />
+                            <div className="w-4 h-4 rounded-full bg-[#484f58]" />
                         )}
                         {autoRefresh ? "자동 갱신 ON" : "자동 갱신 OFF"}
                     </button>
                     <button
                         onClick={fetchData}
-                        className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                        className="p-2 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#30363d] transition"
                         title="새로고침"
                     >
                         <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -252,9 +252,9 @@ export default function BotDashboardPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-blue-600" />
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-6">
+                <h3 className="font-semibold text-[#e6edf3] mb-4 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-blue-400" />
                     빠른 작업
                 </h3>
                 <div className="grid grid-cols-4 gap-4">
@@ -309,25 +309,25 @@ interface StatCardProps {
 function StatCard({ icon: Icon, label, value, subValue, trend, trendColor, bgColor, iconColor, isLoading }: StatCardProps) {
     if (isLoading) {
         return (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 animate-pulse">
-                <div className="h-10 w-10 bg-gray-200 rounded-lg mb-3"></div>
-                <div className="h-3 w-20 bg-gray-200 rounded mb-2"></div>
-                <div className="h-6 w-16 bg-gray-200 rounded"></div>
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-5 animate-pulse">
+                <div className="h-10 w-10 bg-[#21262d] rounded-lg mb-3"></div>
+                <div className="h-3 w-20 bg-[#21262d] rounded mb-2"></div>
+                <div className="h-6 w-16 bg-[#21262d] rounded"></div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-5">
             <div className="flex items-start justify-between mb-3">
                 <div className={`w-10 h-10 ${bgColor} rounded-lg flex items-center justify-center`}>
                     <Icon className={`w-5 h-5 ${iconColor}`} />
                 </div>
             </div>
-            <p className="text-xs text-gray-500 mb-1">{label}</p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xs text-[#8b949e] mb-1">{label}</p>
+            <p className="text-2xl font-bold text-[#e6edf3]">
                 {value}
-                {subValue && <span className="text-sm font-normal text-gray-500 ml-1">{subValue}</span>}
+                {subValue && <span className="text-sm font-normal text-[#8b949e] ml-1">{subValue}</span>}
             </p>
             <p className={`text-xs ${trendColor} mt-1 font-medium`}>{trend}</p>
         </div>
@@ -344,18 +344,18 @@ interface ActionButtonProps {
 
 function ActionButton({ icon: Icon, label, description, href, color }: ActionButtonProps) {
     const colorStyles = {
-        blue: "border-blue-200 hover:border-blue-400 hover:bg-blue-50",
-        purple: "border-purple-200 hover:border-purple-400 hover:bg-purple-50",
-        green: "border-green-200 hover:border-green-400 hover:bg-green-50",
-        orange: "border-orange-200 hover:border-orange-400 hover:bg-orange-50",
+        blue: "border-blue-800 hover:border-blue-600 hover:bg-blue-900/30",
+        purple: "border-purple-800 hover:border-purple-600 hover:bg-purple-900/30",
+        green: "border-green-800 hover:border-green-600 hover:bg-green-900/30",
+        orange: "border-orange-800 hover:border-orange-600 hover:bg-orange-900/30",
     };
 
     return (
         <Link href={href}>
-            <div className={`border-2 ${colorStyles[color]} rounded-lg p-4 cursor-pointer transition-all duration-200 flex flex-col items-center text-center h-full`}>
-                <Icon className="w-8 h-8 text-gray-700 mb-2" />
-                <p className="font-medium text-gray-900 text-sm mb-1">{label}</p>
-                <p className="text-xs text-gray-500">{description}</p>
+            <div className={`border-2 ${colorStyles[color]} rounded-lg p-4 cursor-pointer transition-all duration-200 flex flex-col items-center text-center h-full bg-[#161b22]`}>
+                <Icon className="w-8 h-8 text-[#c9d1d9] mb-2" />
+                <p className="font-medium text-[#e6edf3] text-sm mb-1">{label}</p>
+                <p className="text-xs text-[#8b949e]">{description}</p>
             </div>
         </Link>
     );

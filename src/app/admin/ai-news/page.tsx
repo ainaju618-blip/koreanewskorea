@@ -301,13 +301,13 @@ function AINewsPage() {
             />
 
             {/* 필터 툴바 */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6e7681] w-4 h-4" />
                     <input
                         type="text"
                         placeholder="제목 또는 내용 검색..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                        className="w-full pl-10 pr-4 py-2 border border-[#30363d] rounded-lg text-sm bg-[#0d1117] text-[#e6edf3] placeholder-[#6e7681] focus:ring-2 focus:ring-purple-500 outline-none"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -331,24 +331,24 @@ function AINewsPage() {
             {/* 메인 콘텐츠: 2단 레이아웃 */}
             <div className="flex gap-4 h-[calc(100%-280px)]">
                 {/* 왼쪽: 기사 목록 */}
-                <div className="w-1/2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="w-1/2 bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden flex flex-col">
                     <div className="flex-1 overflow-auto">
                         {loading ? (
                             <div className="flex items-center justify-center h-full">
                                 <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
                             </div>
                         ) : filteredArticles.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                            <div className="flex flex-col items-center justify-center h-full text-[#6e7681]">
                                 <Globe className="w-12 h-12 mb-2" />
                                 <p>AI 뉴스가 없습니다.</p>
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-100">
+                            <div className="divide-y divide-[#21262d]">
                                 {filteredArticles.map((article) => (
                                     <div
                                         key={article.id}
                                         onClick={() => selectArticle(article)}
-                                        className={`p-4 cursor-pointer hover:bg-gray-50 transition ${selectedArticle?.id === article.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                                        className={`p-4 cursor-pointer hover:bg-[#21262d] transition ${selectedArticle?.id === article.id ? 'bg-purple-900/30 border-l-4 border-purple-500' : ''
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
@@ -372,8 +372,8 @@ function AINewsPage() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <h3 className="font-medium text-gray-900 truncate">{article.title}</h3>
-                                                <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                                                <h3 className="font-medium text-[#e6edf3] truncate">{article.title}</h3>
+                                                <p className="text-sm text-[#8b949e] line-clamp-2 mt-1">
                                                     {article.content.substring(0, 100)}...
                                                 </p>
                                             </div>
@@ -385,7 +385,7 @@ function AINewsPage() {
                     </div>
 
                     {/* 페이지네이션 */}
-                    <div className="border-t border-gray-200 p-3">
+                    <div className="border-t border-[#30363d] p-3">
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
@@ -395,11 +395,11 @@ function AINewsPage() {
                 </div>
 
                 {/* 오른쪽: 기사 상세 + 편집 */}
-                <div className="w-1/2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="w-1/2 bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden flex flex-col">
                     {selectedArticle ? (
                         <>
                             {/* 헤더 */}
-                            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                            <div className="p-4 border-b border-[#30363d] flex items-center justify-between bg-[#21262d]">
                                 <div className="flex items-center gap-2">
                                     <Edit3 className="w-5 h-5 text-purple-600" />
                                     <span className="font-medium">기사 편집</span>
@@ -429,7 +429,7 @@ function AINewsPage() {
                                     </button>
                                     <button
                                         onClick={clearSelection}
-                                        className="p-1.5 text-gray-400 hover:text-gray-600"
+                                        className="p-1.5 text-[#6e7681] hover:text-[#c9d1d9]"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
@@ -453,20 +453,20 @@ function AINewsPage() {
 
                                 {/* 제목 */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                                    <label className="block text-sm font-medium text-[#c9d1d9] mb-1">제목</label>
                                     <input
                                         type="text"
                                         value={editTitle}
                                         onChange={(e) => setEditTitle(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        className="w-full px-3 py-2 border border-[#30363d] rounded-lg bg-[#0d1117] text-[#e6edf3] focus:ring-2 focus:ring-purple-500 outline-none"
                                     />
                                 </div>
 
                                 {/* 원본 제목 */}
                                 {selectedArticle.original_title && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-400 mb-1">원본 제목 (영문)</label>
-                                        <p className="text-sm text-gray-500 bg-gray-50 p-2 rounded-lg">
+                                        <label className="block text-sm font-medium text-[#6e7681] mb-1">원본 제목 (영문)</label>
+                                        <p className="text-sm text-[#8b949e] bg-[#21262d] p-2 rounded-lg">
                                             {selectedArticle.original_title}
                                         </p>
                                     </div>
@@ -474,16 +474,16 @@ function AINewsPage() {
 
                                 {/* 본문 */}
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">본문</label>
+                                    <label className="block text-sm font-medium text-[#c9d1d9] mb-1">본문</label>
                                     <textarea
                                         value={editContent}
                                         onChange={(e) => setEditContent(e.target.value)}
-                                        className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                                        className="w-full h-64 px-3 py-2 border border-[#30363d] rounded-lg bg-[#0d1117] text-[#e6edf3] focus:ring-2 focus:ring-purple-500 outline-none resize-none"
                                     />
                                 </div>
 
                                 {/* 메타 정보 */}
-                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                                <div className="grid grid-cols-2 gap-4 text-sm text-[#8b949e]">
                                     <div>
                                         <span className="font-medium">출처:</span> {selectedArticle.source}
                                     </div>
@@ -506,7 +506,7 @@ function AINewsPage() {
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                        <div className="flex-1 flex flex-col items-center justify-center text-[#6e7681]">
                             <Sparkles className="w-16 h-16 mb-4 opacity-50" />
                             <p className="text-lg">기사를 선택하세요</p>
                             <p className="text-sm">왼쪽 목록에서 편집할 기사를 클릭하세요</p>

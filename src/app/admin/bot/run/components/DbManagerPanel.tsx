@@ -201,24 +201,24 @@ export function DbManagerPanel() {
     const totalArticles = stats.reduce((sum, s) => sum + s.count, 0);
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
+        <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden h-full flex flex-col">
             {/* Header */}
-            <div className="p-4 border-b border-gray-100 bg-red-50/50">
+            <div className="p-4 border-b border-[#30363d] bg-red-900/20">
                 <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                        <Database className="w-5 h-5 text-red-600" />
+                    <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2">
+                        <Database className="w-5 h-5 text-red-500" />
                         DB 관리 (기사 삭제)
                     </h3>
                     <button
                         onClick={fetchStats}
                         disabled={loading}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                        className="p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg transition"
                         title="새로고침"
                     >
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#8b949e] mt-1">
                     스크래퍼 테스트 전 기존 기사를 삭제하세요
                 </p>
             </div>
@@ -227,19 +227,19 @@ export function DbManagerPanel() {
             <div className="p-4 flex-1 overflow-y-auto space-y-4">
                 {/* 삭제 결과 알림 */}
                 {deleteResult && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
-                        <Trash2 className="w-4 h-4 text-green-600 mt-0.5" />
+                    <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 flex items-start gap-2">
+                        <Trash2 className="w-4 h-4 text-green-400 mt-0.5" />
                         <div>
-                            <p className="text-sm font-medium text-green-800">
+                            <p className="text-sm font-medium text-green-300">
                                 {deleteResult.total}건 삭제 완료
                             </p>
-                            <p className="text-xs text-green-600 mt-0.5">
+                            <p className="text-xs text-green-400 mt-0.5">
                                 {deleteResult.sources.join(', ')}
                             </p>
                         </div>
                         <button
                             onClick={() => setDeleteResult(null)}
-                            className="ml-auto text-green-500 hover:text-green-700"
+                            className="ml-auto text-green-500 hover:text-green-300"
                         >
                             ×
                         </button>
@@ -247,13 +247,13 @@ export function DbManagerPanel() {
                 )}
 
                 {/* 통계 요약 */}
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-[#21262d] rounded-lg p-3">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">전체 기사 수</span>
-                        <span className="font-bold text-gray-900">{totalArticles.toLocaleString()}건</span>
+                        <span className="text-[#8b949e]">전체 기사 수</span>
+                        <span className="font-bold text-[#e6edf3]">{totalArticles.toLocaleString()}건</span>
                     </div>
                     {selectedSources.length > 0 && (
-                        <div className="flex items-center justify-between text-sm mt-1 text-red-600">
+                        <div className="flex items-center justify-between text-sm mt-1 text-red-400">
                             <span>선택된 지역 기사 수</span>
                             <span className="font-bold">{selectedTotalCount.toLocaleString()}건</span>
                         </div>
@@ -261,15 +261,15 @@ export function DbManagerPanel() {
                 </div>
 
                 {/* 기간 필터 (선택적) */}
-                <div className="border border-gray-200 rounded-lg p-3">
+                <div className="border border-[#30363d] rounded-lg p-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={useDateFilter}
                             onChange={(e) => setUseDateFilter(e.target.checked)}
-                            className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                            className="rounded border-[#30363d] bg-[#0d1117] text-red-500 focus:ring-red-500"
                         />
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <span className="text-sm font-medium text-[#c9d1d9] flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             특정 기간만 삭제
                         </span>
@@ -281,14 +281,14 @@ export function DbManagerPanel() {
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1"
+                                className="flex-1 text-sm border border-[#30363d] bg-[#0d1117] text-[#e6edf3] rounded px-2 py-1"
                             />
-                            <span className="text-gray-400">~</span>
+                            <span className="text-[#8b949e]">~</span>
                             <input
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="flex-1 text-sm border border-gray-300 rounded px-2 py-1"
+                                className="flex-1 text-sm border border-[#30363d] bg-[#0d1117] text-[#e6edf3] rounded px-2 py-1"
                             />
                         </div>
                     )}
@@ -337,10 +337,10 @@ export function DbManagerPanel() {
             </div>
 
             {/* Footer - 삭제 버튼 */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-2">
+            <div className="p-4 border-t border-[#30363d] bg-[#0d1117] space-y-2">
                 {selectedSources.length > 0 && (
-                    <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-xs text-red-700 flex items-center gap-1">
+                    <div className="mb-3 p-2 bg-red-900/30 border border-red-700 rounded-lg">
+                        <p className="text-xs text-red-400 flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" />
                             {selectedSources.length}개 지역, 약 {selectedTotalCount.toLocaleString()}건이 삭제됩니다
                         </p>
@@ -362,7 +362,7 @@ export function DbManagerPanel() {
                 <button
                     onClick={() => setDeleteAllModal(true)}
                     disabled={deleting || totalArticles === 0}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#21262d] text-[#e6edf3] rounded-lg text-sm font-medium hover:bg-[#30363d] border border-[#30363d] disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
                     <Trash2 className="w-4 h-4" />
                     전체 삭제 ({totalArticles.toLocaleString()}건)

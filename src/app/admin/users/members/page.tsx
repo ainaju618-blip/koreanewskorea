@@ -44,9 +44,9 @@ export default function MembersPage() {
 
     // 역할 옵션
     const roleOptions = [
-        { value: 'admin', label: '관리자', icon: ShieldCheck, color: 'text-purple-600' },
-        { value: 'reporter', label: '기자', icon: User, color: 'text-blue-600' },
-        { value: 'subscriber', label: '구독자', icon: User, color: 'text-gray-600' }
+        { value: 'admin', label: '관리자', icon: ShieldCheck, color: 'text-purple-400' },
+        { value: 'reporter', label: '기자', icon: User, color: 'text-blue-400' },
+        { value: 'subscriber', label: '구독자', icon: User, color: 'text-[#8b949e]' }
     ];
 
     // 삭제 확인 모달
@@ -190,7 +190,7 @@ export default function MembersPage() {
             />
 
             {/* Filter - 공통 컴포넌트 사용 */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm">
                 <FilterTabs
                     tabs={[
                         { key: 'all', label: '전체' },
@@ -205,35 +205,35 @@ export default function MembersPage() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
                     </div>
                 ) : users.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <div className="text-center py-12 text-[#8b949e]">
+                        <Users className="w-12 h-12 mx-auto mb-4 text-[#484f58]" />
                         <p>등록된 회원이 없습니다.</p>
                     </div>
                 ) : (
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">상태</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">이메일</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">이름</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">역할</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">연락처</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">가입일</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">작업</th>
+                            <tr className="bg-[#0d1117] border-b border-[#30363d]">
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">상태</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">이메일</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">이름</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">역할</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">연락처</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">가입일</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">작업</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#21262d]">
                             {users.map((user) => {
                                 const roleOpt = roleOptions.find(r => r.value === user.role);
                                 const RoleIcon = roleOpt?.icon || User;
                                 return (
-                                    <tr key={user.id} className="hover:bg-gray-50">
+                                    <tr key={user.id} className="hover:bg-[#21262d]">
                                         <td className="p-4">
                                             <StatusBadge
                                                 type="user"
@@ -243,11 +243,11 @@ export default function MembersPage() {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2">
-                                                <Mail className="w-4 h-4 text-gray-400" />
-                                                <span className="text-sm font-medium text-gray-900">{user.email}</span>
+                                                <Mail className="w-4 h-4 text-[#8b949e]" />
+                                                <span className="text-sm font-medium text-[#e6edf3]">{user.email}</span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm text-gray-600">{user.name || '-'}</td>
+                                        <td className="p-4 text-sm text-[#c9d1d9]">{user.name || '-'}</td>
                                         <td className="p-4">
                                             <span className={`inline-flex items-center gap-1 text-sm font-medium ${roleOpt?.color}`}>
                                                 <RoleIcon className="w-4 h-4" />
@@ -256,26 +256,26 @@ export default function MembersPage() {
                                         </td>
                                         <td className="p-4">
                                             {user.phone ? (
-                                                <span className="flex items-center gap-1 text-sm text-gray-600">
+                                                <span className="flex items-center gap-1 text-sm text-[#c9d1d9]">
                                                     <Phone className="w-3 h-3" />
                                                     {user.phone}
                                                 </span>
                                             ) : '-'}
                                         </td>
-                                        <td className="p-4 text-sm text-gray-500">
+                                        <td className="p-4 text-sm text-[#8b949e]">
                                             {new Date(user.created_at).toLocaleDateString('ko-KR')}
                                         </td>
                                         <td className="p-4">
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => openModal(user)}
-                                                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                    className="p-1.5 text-[#8b949e] hover:text-blue-400 hover:bg-blue-900/30 rounded"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(user)}
-                                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                                    className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-red-900/30 rounded"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -292,46 +292,46 @@ export default function MembersPage() {
             {/* Modal */}
             {showModal && (
                 <>
-                    <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowModal(false)} />
-                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-[480px]">
-                        <div className="p-6 border-b border-gray-100">
-                            <h2 className="text-lg font-bold text-gray-900">
+                    <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowModal(false)} />
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#161b22] rounded-xl shadow-2xl z-50 w-[480px] border border-[#30363d]">
+                        <div className="p-6 border-b border-[#30363d]">
+                            <h2 className="text-lg font-bold text-[#e6edf3]">
                                 {editingUser ? '회원 정보 수정' : '신규 회원 등록'}
                             </h2>
                         </div>
                         <div className="p-6 space-y-4">
                             {/* 이메일 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">이메일 *</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">이메일 *</label>
                                 <input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="user@example.com"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                                     disabled={!!editingUser}
                                 />
                             </div>
 
                             {/* 이름 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">이름</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="홍길동"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
 
                             {/* 역할 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">역할</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">역할</label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] focus:ring-2 focus:ring-blue-500 outline-none"
                                 >
                                     {roleOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -341,11 +341,11 @@ export default function MembersPage() {
 
                             {/* 상태 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">상태</label>
                                 <select
                                     value={formData.status}
                                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] focus:ring-2 focus:ring-blue-500 outline-none"
                                 >
                                     <option value="active">활성</option>
                                     <option value="suspended">정지</option>
@@ -354,20 +354,20 @@ export default function MembersPage() {
 
                             {/* 연락처 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">연락처</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">연락처</label>
                                 <input
                                     type="tel"
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="010-1234-5678"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
                         </div>
-                        <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+                        <div className="p-6 border-t border-[#30363d] flex justify-end gap-3">
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-4 py-2 text-[#c9d1d9] border border-[#30363d] rounded-lg hover:bg-[#21262d]"
                             >
                                 취소
                             </button>

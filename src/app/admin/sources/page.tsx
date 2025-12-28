@@ -66,13 +66,13 @@ interface NewsSource {
     updated_at: string;
 }
 
-// 상태 배지 컴포넌트
+// Status badge component
 const ScraperStatusBadge = ({ status }: { status: string }) => {
     const config: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-        completed: { label: '완료', color: 'bg-green-100 text-green-700', icon: <CheckCircle className="w-3 h-3" /> },
-        developing: { label: '개발중', color: 'bg-yellow-100 text-yellow-700', icon: <Clock className="w-3 h-3" /> },
-        planned: { label: '예정', color: 'bg-blue-100 text-blue-700', icon: <FileText className="w-3 h-3" /> },
-        none: { label: '미개발', color: 'bg-gray-100 text-gray-500', icon: <AlertCircle className="w-3 h-3" /> }
+        completed: { label: '완료', color: 'bg-green-900/40 text-green-400 border border-green-800', icon: <CheckCircle className="w-3 h-3" /> },
+        developing: { label: '개발중', color: 'bg-yellow-900/40 text-yellow-400 border border-yellow-800', icon: <Clock className="w-3 h-3" /> },
+        planned: { label: '예정', color: 'bg-blue-900/40 text-blue-400 border border-blue-800', icon: <FileText className="w-3 h-3" /> },
+        none: { label: '미개발', color: 'bg-[#21262d] text-[#8b949e] border border-[#30363d]', icon: <AlertCircle className="w-3 h-3" /> }
     };
     const { label, color, icon } = config[status] || config.none;
 
@@ -305,17 +305,17 @@ export default function SourcesManagementPage() {
     return (
         <div className="space-y-6">
             {/* Top Navigation Tabs */}
-            <div className="flex items-center gap-4 border-b border-gray-200 pb-4 mb-6">
-                <h1 className="text-2xl font-bold">수집처 관리</h1>
+            <div className="flex items-center gap-4 border-b border-[#30363d] pb-4 mb-6">
+                <h1 className="text-2xl font-bold text-[#e6edf3]">수집처 관리</h1>
                 <div className="flex-1" />
-                <div className="flex bg-gray-100 p-1 rounded-lg">
-                    <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white text-blue-600 shadow-sm rounded-md">
+                <div className="flex bg-[#21262d] p-1 rounded-lg">
+                    <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#161b22] text-blue-400 shadow-sm rounded-md border border-[#30363d]">
                         <List className="w-4 h-4" />
                         수집처 관리
                     </div>
                     <Link
                         href="/admin/settings/ai"
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 rounded-md transition"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#8b949e] hover:text-[#e6edf3] rounded-md transition"
                     >
                         <Settings className="w-4 h-4" />
                         AI 설정
@@ -341,14 +341,14 @@ export default function SourcesManagementPage() {
                 <div className="flex gap-2">
                     <button
                         onClick={() => openPanel()}
-                        className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 flex items-center gap-2 font-medium shadow-sm"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium shadow-sm"
                     >
                         <Plus className="w-4 h-4" />
                         수집처 추가
                     </button>
                     <button
                         onClick={fetchSources}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2 shadow-sm"
+                        className="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded-lg text-[#c9d1d9] hover:bg-[#30363d] flex items-center gap-2 shadow-sm"
                     >
                         <RefreshCw className="w-4 h-4" />
                         새로고침
@@ -356,41 +356,41 @@ export default function SourcesManagementPage() {
                 </div>
             </div>
 
-            {/* 통계 카드 */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">전체 기관</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <p className="text-sm text-[#8b949e]">전체 기관</p>
+                    <p className="text-2xl font-bold text-[#e6edf3]">{stats.total}</p>
                 </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">스크래퍼 완료</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <p className="text-sm text-[#8b949e]">스크래퍼 완료</p>
+                    <p className="text-2xl font-bold text-green-400">{stats.completed}</p>
                 </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">개발 중</p>
-                    <p className="text-2xl font-bold text-yellow-600">{stats.developing}</p>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <p className="text-sm text-[#8b949e]">개발 중</p>
+                    <p className="text-2xl font-bold text-yellow-400">{stats.developing}</p>
                 </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">개발 예정</p>
-                    <p className="text-2xl font-bold text-blue-600">{stats.planned}</p>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <p className="text-sm text-[#8b949e]">개발 예정</p>
+                    <p className="text-2xl font-bold text-blue-400">{stats.planned}</p>
                 </div>
             </div>
 
-            {/* 필터 툴바 */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Filter Toolbar */}
+            <div className="bg-[#161b22] p-4 rounded-xl border border-[#30363d] shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6e7681] w-4 h-4" />
                         <input
                             type="text"
                             placeholder="기관명 또는 코드 검색..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full pl-10 pr-4 py-2 border border-[#30363d] rounded-lg text-sm bg-[#0d1117] text-[#c9d1d9] placeholder-[#6e7681] focus:ring-2 focus:ring-blue-500 outline-none"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <select
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        className="border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#c9d1d9]"
                         value={filterRegion}
                         onChange={(e) => setFilterRegion(e.target.value)}
                     >
@@ -414,19 +414,19 @@ export default function SourcesManagementPage() {
                 />
             </div>
 
-            {/* 테이블 */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Table */}
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
                     </div>
                 ) : filteredSources.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <div className="text-center py-12 text-[#8b949e]">
+                        <Building2 className="w-12 h-12 mx-auto mb-4 text-[#484f58]" />
                         <p>등록된 수집처가 없습니다.</p>
                         <button
                             onClick={() => openPanel()}
-                            className="mt-4 text-emerald-600 hover:underline"
+                            className="mt-4 text-blue-400 hover:underline"
                         >
                             첫 번째 기관 추가하기
                         </button>
@@ -434,39 +434,39 @@ export default function SourcesManagementPage() {
                 ) : (
                     <table className="w-full text-left text-sm">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-10">No</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">기관명</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">코드</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-14">지역</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">유형</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-12">AI</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">보도자료 URL</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">상태</th>
-                                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase w-16">작업</th>
+                            <tr className="bg-[#21262d] border-b border-[#30363d]">
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-10">No</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase">기관명</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase">코드</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-14">지역</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-16">유형</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-12">AI</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase">보도자료 URL</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-16">상태</th>
+                                <th className="px-3 py-2 text-xs font-semibold text-[#8b949e] uppercase w-16">작업</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#21262d]">
                             {filteredSources.map((source, index) => (
-                                <tr key={source.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openPanel(source)}>
-                                    <td className="px-3 py-1.5 text-gray-400">{index + 1}</td>
+                                <tr key={source.id} className="hover:bg-[#21262d] cursor-pointer" onClick={() => openPanel(source)}>
+                                    <td className="px-3 py-1.5 text-[#8b949e]">{index + 1}</td>
                                     <td className="px-3 py-1.5">
-                                        <span className="font-medium text-gray-900">{source.name}</span>
+                                        <span className="font-medium text-[#e6edf3]">{source.name}</span>
                                     </td>
                                     <td className="px-3 py-1.5">
-                                        <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{source.code}</code>
+                                        <code className="text-xs bg-[#21262d] px-1.5 py-0.5 rounded text-[#8b949e]">{source.code}</code>
                                     </td>
                                     <td className="px-3 py-1.5">
-                                        <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${source.region === '광주' ? 'bg-purple-100 text-purple-700' :
-                                            source.region === '전남' ? 'bg-blue-100 text-blue-700' :
-                                                source.region === 'AI' ? 'bg-emerald-100 text-emerald-700' :
-                                                    source.region === '뉴스' ? 'bg-orange-100 text-orange-700' :
-                                                        'bg-gray-100 text-gray-700'
+                                        <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap ${source.region === '광주' ? 'bg-purple-900/40 text-purple-400' :
+                                            source.region === '전남' ? 'bg-blue-900/40 text-blue-400' :
+                                                source.region === 'AI' ? 'bg-emerald-900/40 text-emerald-400' :
+                                                    source.region === '뉴스' ? 'bg-orange-900/40 text-orange-400' :
+                                                        'bg-[#21262d] text-[#8b949e]'
                                             }`}>
                                             {source.region}
                                         </span>
                                     </td>
-                                    <td className="px-3 py-1.5 text-gray-600">{source.org_type}</td>
+                                    <td className="px-3 py-1.5 text-[#8b949e]">{source.org_type}</td>
                                     <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             onClick={async () => {
@@ -480,10 +480,10 @@ export default function SourcesManagementPage() {
                                                         fetchSources();
                                                     }
                                                 } catch (err) {
-                                                    console.error('AI 토글 실패:', err);
+                                                    console.error('AI toggle failed:', err);
                                                 }
                                             }}
-                                            className={`relative w-10 h-5 rounded-full transition-colors ${source.ai_rewrite_enabled ? 'bg-purple-600' : 'bg-gray-300'
+                                            className={`relative w-10 h-5 rounded-full transition-colors ${source.ai_rewrite_enabled ? 'bg-purple-600' : 'bg-[#484f58]'
                                                 }`}
                                             title={source.ai_rewrite_enabled ? 'AI 재가공 활성화됨' : 'AI 재가공 비활성화'}
                                         >
@@ -500,13 +500,13 @@ export default function SourcesManagementPage() {
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[180px]"
+                                                className="text-blue-400 hover:underline flex items-center gap-1 truncate max-w-[180px]"
                                             >
                                                 <ExternalLink className="w-3 h-3 flex-shrink-0" />
                                                 <span className="truncate">{new URL(source.press_list_url).hostname}</span>
                                             </a>
                                         ) : (
-                                            <span className="text-gray-400">-</span>
+                                            <span className="text-[#484f58]">-</span>
                                         )}
                                     </td>
                                     <td className="px-3 py-1.5">
@@ -516,13 +516,13 @@ export default function SourcesManagementPage() {
                                         <div className="flex gap-1">
                                             <button
                                                 onClick={() => openPanel(source)}
-                                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                className="p-1 text-[#8b949e] hover:text-blue-400 hover:bg-blue-900/30 rounded"
                                             >
                                                 <Edit2 className="w-3.5 h-3.5" />
                                             </button>
                                             <button
                                                 onClick={() => confirmDelete(source)}
-                                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                className="p-1 text-[#8b949e] hover:text-red-400 hover:bg-red-900/30 rounded"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
                                             </button>
@@ -556,40 +556,40 @@ export default function SourcesManagementPage() {
                 <div className="space-y-6">
                     {/* 기본 정보 */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                            <Building2 className="w-4 h-4" />
+                        <h3 className="text-sm font-bold text-[#e6edf3] flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-blue-400" />
                             기본 정보
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">기관명 *</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">기관명 *</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="예: 나주시"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">영문 코드 *</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">영문 코드 *</label>
                                 <input
                                     type="text"
                                     value={formData.code}
                                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
                                     placeholder="예: naju"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono placeholder:text-[#484f58]"
                                 />
-                                <p className="text-xs text-gray-500 mt-1">스크래퍼 폴더명과 동일하게 입력</p>
+                                <p className="text-xs text-[#8b949e] mt-1">스크래퍼 폴더명과 동일하게 입력</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">지역</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">지역</label>
                                 <select
                                     value={formData.region}
                                     onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                                 >
                                     {regionOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -597,11 +597,11 @@ export default function SourcesManagementPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">기관 유형</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">기관 유형</label>
                                 <select
                                     value={formData.org_type}
                                     onChange={(e) => setFormData({ ...formData, org_type: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                                 >
                                     {orgTypeOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -612,117 +612,117 @@ export default function SourcesManagementPage() {
                     </div>
 
                     {/* URL 정보 */}
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                            <Globe className="w-4 h-4" />
+                    <div className="space-y-4 pt-4 border-t border-[#30363d]">
+                        <h3 className="text-sm font-bold text-[#e6edf3] flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-green-400" />
                             URL 정보
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">기관 홈페이지</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">기관 홈페이지</label>
                             <input
                                 type="url"
                                 value={formData.homepage_url}
                                 onChange={(e) => setFormData({ ...formData, homepage_url: e.target.value })}
                                 placeholder="https://www.naju.go.kr"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">보도자료 목록 URL</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">보도자료 목록 URL</label>
                             <input
                                 type="url"
                                 value={formData.press_list_url}
                                 onChange={(e) => setFormData({ ...formData, press_list_url: e.target.value })}
                                 placeholder="https://www.naju.go.kr/news/..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">상세 URL 패턴 (선택)</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">상세 URL 패턴 (선택)</label>
                             <input
                                 type="text"
                                 value={formData.press_detail_pattern}
                                 onChange={(e) => setFormData({ ...formData, press_detail_pattern: e.target.value })}
                                 placeholder="예: /news/view?id={id}"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-sm"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-sm placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>
 
                     {/* 연락처 정보 */}
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
+                    <div className="space-y-4 pt-4 border-t border-[#30363d]">
+                        <h3 className="text-sm font-bold text-[#e6edf3] flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-purple-400" />
                             연락처 정보
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">대표 전화</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">대표 전화</label>
                             <input
                                 type="tel"
                                 value={formData.main_phone}
                                 onChange={(e) => setFormData({ ...formData, main_phone: e.target.value })}
                                 placeholder="061-XXX-XXXX"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">홍보 담당 부서</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">홍보 담당 부서</label>
                                 <input
                                     type="text"
                                     value={formData.contact_dept}
                                     onChange={(e) => setFormData({ ...formData, contact_dept: e.target.value })}
                                     placeholder="예: 홍보담당관실"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">담당자명</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">담당자명</label>
                                 <input
                                     type="text"
                                     value={formData.contact_name}
                                     onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
                                     placeholder="예: 홍길동"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">담당자 전화</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">담당자 전화</label>
                                 <input
                                     type="tel"
                                     value={formData.contact_phone}
                                     onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
                                     placeholder="061-XXX-XXXX"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">담당자 이메일</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">담당자 이메일</label>
                                 <input
                                     type="email"
                                     value={formData.contact_email}
                                     onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
                                     placeholder="example@naju.go.kr"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* 개발 정보 */}
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                        <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
+                    <div className="space-y-4 pt-4 border-t border-[#30363d]">
+                        <h3 className="text-sm font-bold text-[#e6edf3] flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-orange-400" />
                             개발 정보
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">스크래퍼 상태</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">스크래퍼 상태</label>
                             <select
                                 value={formData.scraper_status}
                                 onChange={(e) => setFormData({ ...formData, scraper_status: e.target.value as any })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                             >
                                 {statusOptions.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -730,13 +730,13 @@ export default function SourcesManagementPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">기술 메모</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">기술 메모</label>
                             <textarea
                                 value={formData.tech_notes}
                                 onChange={(e) => setFormData({ ...formData, tech_notes: e.target.value })}
                                 placeholder="JS 렌더링 필요, 로그인 필요, 특이사항 등..."
                                 rows={3}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] text-[#e6edf3] rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>

@@ -40,11 +40,11 @@ export default function GeneralSettingsPage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <Settings className="w-7 h-7 text-blue-600" />
+                    <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
+                        <Settings className="w-7 h-7 text-blue-500" />
                         사이트 정보
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#8b949e] mt-2">
                         웹사이트 기본 정보를 설정합니다.
                     </p>
                 </div>
@@ -61,168 +61,168 @@ export default function GeneralSettingsPage() {
             {/* Settings Form */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 기본 정보 */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2 pb-3 border-b border-gray-100">
-                        <Globe className="w-5 h-5 text-blue-600" />
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-6 space-y-4">
+                    <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2 pb-3 border-b border-[#30363d]">
+                        <Globe className="w-5 h-5 text-blue-500" />
                         기본 정보
                     </h3>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">사이트명</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">사이트명</label>
                         <input
                             type="text"
                             value={settings.siteName}
                             onChange={(e) => handleChange('siteName', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">사이트 설명</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">사이트 설명</label>
                         <input
                             type="text"
                             value={settings.siteDescription}
                             onChange={(e) => handleChange('siteDescription', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">사이트 URL</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">사이트 URL</label>
                         <input
                             type="url"
                             value={settings.siteUrl}
                             onChange={(e) => handleChange('siteUrl', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">로고 URL</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">로고 URL</label>
                             <input
                                 type="text"
                                 value={settings.logoUrl}
                                 onChange={(e) => handleChange('logoUrl', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">파비콘 URL</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">파비콘 URL</label>
                             <input
                                 type="text"
                                 value={settings.faviconUrl}
                                 onChange={(e) => handleChange('faviconUrl', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* 연락처 정보 */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2 pb-3 border-b border-gray-100">
-                        <Mail className="w-5 h-5 text-blue-600" />
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-6 space-y-4">
+                    <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2 pb-3 border-b border-[#30363d]">
+                        <Mail className="w-5 h-5 text-blue-500" />
                         연락처 정보
                     </h3>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">대표 이메일</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">대표 이메일</label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8b949e]" />
                             <input
                                 type="email"
                                 value={settings.contactEmail}
                                 onChange={(e) => handleChange('contactEmail', e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">대표 전화</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">대표 전화</label>
                         <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8b949e]" />
                             <input
                                 type="tel"
                                 value={settings.contactPhone}
                                 onChange={(e) => handleChange('contactPhone', e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-1">주소</label>
                         <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8b949e]" />
                             <input
                                 type="text"
                                 value={settings.address}
                                 onChange={(e) => handleChange('address', e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* SNS 링크 */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4 lg:col-span-2">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2 pb-3 border-b border-gray-100">
-                        <Globe className="w-5 h-5 text-blue-600" />
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm p-6 space-y-4 lg:col-span-2">
+                    <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2 pb-3 border-b border-[#30363d]">
+                        <Globe className="w-5 h-5 text-blue-500" />
                         SNS 링크
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">Facebook</label>
                             <div className="relative">
-                                <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600" />
+                                <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
                                 <input
                                     type="url"
                                     value={settings.facebook}
                                     onChange={(e) => handleChange('facebook', e.target.value)}
                                     placeholder="https://facebook.com/..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Twitter</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">Twitter</label>
                             <div className="relative">
-                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-500" />
+                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-400" />
                                 <input
                                     type="url"
                                     value={settings.twitter}
                                     onChange={(e) => handleChange('twitter', e.target.value)}
                                     placeholder="https://twitter.com/..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">Instagram</label>
                             <div className="relative">
-                                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pink-500" />
+                                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-pink-400" />
                                 <input
                                     type="url"
                                     value={settings.instagram}
                                     onChange={(e) => handleChange('instagram', e.target.value)}
                                     placeholder="https://instagram.com/..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube</label>
+                            <label className="block text-sm font-medium text-[#c9d1d9] mb-1">YouTube</label>
                             <div className="relative">
-                                <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-600" />
+                                <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
                                 <input
                                     type="url"
                                     value={settings.youtube}
                                     onChange={(e) => handleChange('youtube', e.target.value)}
                                     placeholder="https://youtube.com/..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-[#e6edf3] placeholder:text-[#484f58]"
                                 />
                             </div>
                         </div>

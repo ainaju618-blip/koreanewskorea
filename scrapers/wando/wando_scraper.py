@@ -184,19 +184,31 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
     
     # 3. 본문 추출
     content = ""
-    
+
     try:
         # JavaScript로 본문 추출
         js_code = """
         () => {
             // 완도군 특화: 본문 콘텐츠 영역 찾기
-            
+
+            // Remove unnecessary elements before extraction
+            const removeSelectors = [
+                '.location', '.breadcrumb', '.nav', 'header', 'footer',
+                '.satisfaction', '.survey', '.print-btn', '.share-btn',
+                '.file-list', '.attach-list', '.attached', '[class*="attach"]',
+                '[class*="survey"]', '[class*="footer"]', '[class*="contact"]'
+            ];
+
+            removeSelectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => el.remove());
+            });
+
             // 방법 1: 일반적인 콘텐츠 선택자
             const contentSelectors = [
                 '.view_content', '.board_view_content', '.view_body',
                 '.con-wrap', 'article'
             ];
-            
+
             for (const sel of contentSelectors) {
                 const elem = document.querySelector(sel);
                 if (elem) {
@@ -206,7 +218,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     }
                 }
             }
-            
+
             // 방법 2: div[class*="view"] 탐색
             const viewDivs = document.querySelectorAll('div[class*="view"], div[class*="content"]');
             for (const div of viewDivs) {
@@ -215,24 +227,24 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
                     return text;
                 }
             }
-            
+
             // 방법 3: 가장 긴 텍스트를 가진 div 찾기
             const divs = document.querySelectorAll('div');
             let maxText = '';
-            
+
             for (const div of divs) {
                 const text = div.innerText?.trim();
-                if (text && text.length > maxText.length && 
+                if (text && text.length > maxText.length &&
                     !text.includes('로그인') && !text.includes('회원가입') &&
                     text.length < 10000) {
                     maxText = text;
                 }
             }
-            
+
             if (maxText.length > 100) {
                 return maxText;
             }
-            
+
             return '';
         }
         """
@@ -243,6 +255,23 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], str, Optiona
             content = re.sub(r'등록자\s*[:\s]+[^\n]+', '', content)
             content = re.sub(r'조회수\s*[:\s]+\d+', '', content)
             content = re.sub(r'첨부파일\s*\(\d+\)[^\n]*', '', content)
+
+            # ====== Wando-specific cleanup (header/footer removal) ======
+            # Remove header: breadcrumb, navigation
+            content = re.sub(r'^보도자료\s*\n?', '', content)
+            content = re.sub(r'^Home\s+[^\n]+\n?', '', content, flags=re.MULTILINE)
+            content = re.sub(r'프린트\s*(페이지)?\s*공유하기\s*\n?', '', content)
+            content = re.sub(r'[^>\n]*>\s*[^>\n]*>\s*보도자료\s*\n?', '', content)
+
+            # Remove footer: attachments, contact info, survey
+            content = re.sub(r'\n?-?[^\n]*\.(jpg|jpeg|png|gif|hwp|pdf|docx?)\s*\[\d+\s*kb\]\s*\[바로보기\]\s*파일.*', '', content, flags=re.IGNORECASE | re.DOTALL)
+            content = re.sub(r'\n?"?\s*문의전화.*', '', content, flags=re.DOTALL)
+            content = re.sub(r'\n?최종수정일.*', '', content, flags=re.DOTALL)
+            content = re.sub(r'\n?이 페이지에서 제공하는 정보.*', '', content, flags=re.DOTALL)
+            content = re.sub(r'\n?만족도\s*조사.*', '', content, flags=re.DOTALL)
+            content = re.sub(r'\n?매우만족.*', '', content, flags=re.DOTALL)
+            content = re.sub(r'\n?의견\s*:.*', '', content, flags=re.DOTALL)
+
             content = clean_article_content(content)
             content = content.strip()[:5000]
     except Exception as e:

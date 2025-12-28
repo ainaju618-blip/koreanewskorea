@@ -20,7 +20,7 @@ async function checkDuplicates() {
         .select('original_link, title, published_at, status, id')
         .neq('status', 'trash')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .limit(10000);
 
     // Check for duplicate URLs
     const urlMap = new Map();

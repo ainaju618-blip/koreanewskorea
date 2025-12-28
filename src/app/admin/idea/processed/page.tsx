@@ -123,14 +123,14 @@ const SAMPLE_PROCESSED: ProcessedArticle[] = [
 function QualityBadge({ passed, score }: { passed: boolean; score?: number }) {
     if (passed) {
         return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-900/50 text-emerald-400">
                 <CheckCircle className="w-3 h-3" />
                 통과 {score !== undefined && `(${Math.round(score * 100)}%)`}
             </span>
         );
     }
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-400">
             <AlertCircle className="w-3 h-3" />
             실패 {score !== undefined && `(${Math.round(score * 100)}%)`}
         </span>
@@ -141,14 +141,14 @@ function QualityBadge({ passed, score }: { passed: boolean; score?: number }) {
 function PublishBadge({ postId }: { postId?: number }) {
     if (postId) {
         return (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-900/50 text-blue-400">
                 <Send className="w-3 h-3" />
                 발행됨
             </span>
         );
     }
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#21262d] text-[#8b949e]">
             <FileText className="w-3 h-3" />
             대기
         </span>
@@ -168,16 +168,16 @@ function ArticleDetailModal({
     if (!article) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#161b22] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-[#30363d]">
+                <div className="flex items-center justify-between p-6 border-b border-[#30363d]">
                     <div>
-                        <span className="text-xs text-gray-500">{article.source_name}</span>
-                        <h2 className="text-lg font-bold text-gray-900 mt-1">
+                        <span className="text-xs text-[#8b949e]">{article.source_name}</span>
+                        <h2 className="text-lg font-bold text-[#e6edf3] mt-1">
                             {article.rewritten_title || article.title_ko || article.original_title}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <button onClick={onClose} className="text-[#8b949e] hover:text-[#e6edf3]">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -186,22 +186,22 @@ function ArticleDetailModal({
                     <div className="grid grid-cols-2 gap-6">
                         {/* 왼쪽: 가공 결과 */}
                         <div className="space-y-4">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <FileSearch className="w-4 h-4 text-amber-500" />
+                            <h3 className="font-bold text-[#e6edf3] flex items-center gap-2">
+                                <FileSearch className="w-4 h-4 text-amber-400" />
                                 가공된 기사
                             </h3>
 
                             {article.rewritten_content ? (
-                                <div className="bg-amber-50 rounded-lg p-4">
-                                    <h4 className="font-medium text-gray-900 mb-2">
+                                <div className="bg-amber-900/20 rounded-lg p-4 border border-amber-800/30">
+                                    <h4 className="font-medium text-[#e6edf3] mb-2">
                                         {article.rewritten_title}
                                     </h4>
-                                    <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    <div className="text-sm text-[#c9d1d9] whitespace-pre-wrap">
                                         {article.rewritten_content}
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                                <div className="bg-[#21262d] rounded-lg p-4 text-center text-[#8b949e]">
                                     재작성된 콘텐츠가 없습니다
                                 </div>
                             )}
@@ -209,10 +209,10 @@ function ArticleDetailModal({
                             {/* 태그 */}
                             {article.tags && article.tags.length > 0 && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-700 mb-2">태그</p>
+                                    <p className="text-sm font-medium text-[#c9d1d9] mb-2">태그</p>
                                     <div className="flex flex-wrap gap-1">
                                         {article.tags.map((tag, i) => (
-                                            <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                            <span key={i} className="px-2 py-0.5 bg-[#21262d] text-[#8b949e] rounded text-xs">
                                                 #{tag}
                                             </span>
                                         ))}
@@ -223,53 +223,53 @@ function ArticleDetailModal({
 
                         {/* 오른쪽: 추출된 사실 + 품질 정보 */}
                         <div className="space-y-4">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <BarChart3 className="w-4 h-4 text-blue-500" />
+                            <h3 className="font-bold text-[#e6edf3] flex items-center gap-2">
+                                <BarChart3 className="w-4 h-4 text-blue-400" />
                                 추출된 사실
                             </h3>
 
                             {article.facts ? (
-                                <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+                                <div className="bg-blue-900/20 rounded-lg p-4 space-y-2 border border-blue-800/30">
                                     {article.facts.who && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">누가:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.who}</span>
+                                            <span className="font-medium text-[#c9d1d9]">누가:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.who}</span>
                                         </div>
                                     )}
                                     {article.facts.what && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">무엇을:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.what}</span>
+                                            <span className="font-medium text-[#c9d1d9]">무엇을:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.what}</span>
                                         </div>
                                     )}
                                     {article.facts.when && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">언제:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.when}</span>
+                                            <span className="font-medium text-[#c9d1d9]">언제:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.when}</span>
                                         </div>
                                     )}
                                     {article.facts.where && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">어디서:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.where}</span>
+                                            <span className="font-medium text-[#c9d1d9]">어디서:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.where}</span>
                                         </div>
                                     )}
                                     {article.facts.why && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">왜:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.why}</span>
+                                            <span className="font-medium text-[#c9d1d9]">왜:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.why}</span>
                                         </div>
                                     )}
                                     {article.facts.how && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">어떻게:</span>{' '}
-                                            <span className="text-gray-600">{article.facts.how}</span>
+                                            <span className="font-medium text-[#c9d1d9]">어떻게:</span>{' '}
+                                            <span className="text-[#8b949e]">{article.facts.how}</span>
                                         </div>
                                     )}
                                     {article.facts.numbers && article.facts.numbers.length > 0 && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">수치:</span>
-                                            <ul className="list-disc list-inside text-gray-600 mt-1">
+                                            <span className="font-medium text-[#c9d1d9]">수치:</span>
+                                            <ul className="list-disc list-inside text-[#8b949e] mt-1">
                                                 {article.facts.numbers.map((n, i) => (
                                                     <li key={i}>{n}</li>
                                                 ))}
@@ -278,8 +278,8 @@ function ArticleDetailModal({
                                     )}
                                     {article.facts.key_facts && article.facts.key_facts.length > 0 && (
                                         <div className="text-sm">
-                                            <span className="font-medium text-gray-700">핵심 사실:</span>
-                                            <ul className="list-disc list-inside text-gray-600 mt-1">
+                                            <span className="font-medium text-[#c9d1d9]">핵심 사실:</span>
+                                            <ul className="list-disc list-inside text-[#8b949e] mt-1">
                                                 {article.facts.key_facts.map((f, i) => (
                                                     <li key={i}>{f}</li>
                                                 ))}
@@ -288,21 +288,21 @@ function ArticleDetailModal({
                                     )}
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                                <div className="bg-[#21262d] rounded-lg p-4 text-center text-[#8b949e]">
                                     추출된 사실이 없습니다
                                 </div>
                             )}
 
                             {/* 품질 정보 */}
-                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                            <div className="bg-[#21262d] rounded-lg p-4 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-gray-700">품질 검사</span>
+                                    <span className="text-sm font-medium text-[#c9d1d9]">품질 검사</span>
                                     <QualityBadge passed={article.quality_passed} score={article.similarity_score} />
                                 </div>
                                 {article.quality_notes && (
-                                    <p className="text-sm text-red-600">{article.quality_notes}</p>
+                                    <p className="text-sm text-red-400">{article.quality_notes}</p>
                                 )}
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-[#8b949e]">
                                     유사도 기준: 30% 이하
                                 </div>
                             </div>
@@ -312,7 +312,7 @@ function ArticleDetailModal({
                                 href={article.source_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                                className="inline-flex items-center gap-1 text-blue-400 hover:underline text-sm"
                             >
                                 원문 보기 <ExternalLink className="w-3 h-3" />
                             </a>
@@ -320,10 +320,10 @@ function ArticleDetailModal({
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-[#30363d] bg-[#0d1117]">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="px-4 py-2 text-[#c9d1d9] hover:bg-[#21262d] rounded-lg transition-colors"
                     >
                         닫기
                     </button>
@@ -390,40 +390,40 @@ export default function ProcessedArticlesPage() {
 
             {/* 통계 */}
             <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg p-4 border border-gray-100">
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    <p className="text-xs text-gray-500">전체</p>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <p className="text-2xl font-bold text-[#e6edf3]">{stats.total}</p>
+                    <p className="text-xs text-[#8b949e]">전체</p>
                 </div>
-                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-                    <p className="text-2xl font-bold text-emerald-700">{stats.passed}</p>
-                    <p className="text-xs text-emerald-600">품질 통과</p>
+                <div className="bg-emerald-900/20 rounded-lg p-4 border border-emerald-800/30">
+                    <p className="text-2xl font-bold text-emerald-400">{stats.passed}</p>
+                    <p className="text-xs text-emerald-500">품질 통과</p>
                 </div>
-                <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                    <p className="text-2xl font-bold text-red-700">{stats.failed}</p>
-                    <p className="text-xs text-red-600">품질 실패</p>
+                <div className="bg-red-900/20 rounded-lg p-4 border border-red-800/30">
+                    <p className="text-2xl font-bold text-red-400">{stats.failed}</p>
+                    <p className="text-xs text-red-500">품질 실패</p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <p className="text-2xl font-bold text-blue-700">{stats.published}</p>
-                    <p className="text-xs text-blue-600">발행됨</p>
+                <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-800/30">
+                    <p className="text-2xl font-bold text-blue-400">{stats.published}</p>
+                    <p className="text-xs text-blue-500">발행됨</p>
                 </div>
             </div>
 
             {/* 필터 */}
-            <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100">
+            <div className="flex items-center gap-4 bg-[#161b22] p-4 rounded-xl border border-[#30363d]">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#484f58]" />
                     <input
                         type="text"
                         placeholder="기사 제목 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm"
+                        className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-sm text-[#e6edf3] placeholder:text-[#484f58]"
                     />
                 </div>
                 <select
                     value={filterQuality}
                     onChange={(e) => setFilterQuality(e.target.value as 'all' | 'passed' | 'failed')}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3]"
                 >
                     <option value="all">모든 품질</option>
                     <option value="passed">통과</option>
@@ -432,7 +432,7 @@ export default function ProcessedArticlesPage() {
                 <select
                     value={filterPublish}
                     onChange={(e) => setFilterPublish(e.target.value as 'all' | 'published' | 'pending')}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3]"
                 >
                     <option value="all">모든 상태</option>
                     <option value="published">발행됨</option>
@@ -441,37 +441,37 @@ export default function ProcessedArticlesPage() {
             </div>
 
             {/* 기사 목록 */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-[#0d1117] border-b border-[#30363d]">
                         <tr>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">기사</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">소스</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">품질</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">발행</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">가공일</th>
-                            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">작업</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">기사</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">소스</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">품질</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">발행</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">가공일</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">작업</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#30363d]">
                         {filteredArticles.map((article) => (
-                            <tr key={article.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={article.id} className="hover:bg-[#21262d] transition-colors">
                                 <td className="px-4 py-3">
                                     <div className="max-w-md">
-                                        <p className="font-medium text-gray-900 truncate">
+                                        <p className="font-medium text-[#e6edf3] truncate">
                                             {article.rewritten_title || article.title_ko || article.original_title}
                                         </p>
                                         {article.tags && article.tags.length > 0 && (
                                             <div className="flex gap-1 mt-1">
                                                 {article.tags.slice(0, 3).map((tag, i) => (
-                                                    <span key={i} className="text-xs text-gray-400">#{tag}</span>
+                                                    <span key={i} className="text-xs text-[#6e7681]">#{tag}</span>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className="text-sm text-gray-600">{article.source_name}</span>
+                                    <span className="text-sm text-[#8b949e]">{article.source_name}</span>
                                 </td>
                                 <td className="px-4 py-3">
                                     <QualityBadge passed={article.quality_passed} score={article.similarity_score} />
@@ -480,7 +480,7 @@ export default function ProcessedArticlesPage() {
                                     <PublishBadge postId={article.post_id} />
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-[#8b949e]">
                                         {new Date(article.processed_at).toLocaleDateString('ko-KR')}
                                     </span>
                                 </td>
@@ -488,7 +488,7 @@ export default function ProcessedArticlesPage() {
                                     <div className="flex items-center justify-end gap-1">
                                         <button
                                             onClick={() => setSelectedArticle(article)}
-                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-[#8b949e] hover:text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"
                                             title="상세 보기"
                                         >
                                             <Eye className="w-4 h-4" />
@@ -496,7 +496,7 @@ export default function ProcessedArticlesPage() {
                                         {article.quality_passed && !article.post_id && (
                                             <button
                                                 onClick={() => handlePublish(article.id)}
-                                                className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 rounded-lg transition-colors"
                                                 title="발행"
                                             >
                                                 <Send className="w-4 h-4" />
@@ -510,8 +510,8 @@ export default function ProcessedArticlesPage() {
                 </table>
 
                 {filteredArticles.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        <FileSearch className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <div className="text-center py-12 text-[#8b949e]">
+                        <FileSearch className="w-12 h-12 mx-auto mb-3 text-[#484f58]" />
                         <p>가공된 기사가 없습니다</p>
                     </div>
                 )}

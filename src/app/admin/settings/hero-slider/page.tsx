@@ -198,11 +198,11 @@ export default function HeroSliderSettingsPage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
                         <Sliders className="w-7 h-7 text-red-600" />
                         Hero Slider Settings
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#8b949e] mt-2">
                         Configure regions and transition timing for the main page hero slider
                     </p>
                 </div>
@@ -224,11 +224,11 @@ export default function HeroSliderSettingsPage() {
                 {/* Settings Panel */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Enable/Disable Toggle */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="font-semibold text-gray-900">Enable Slider</h3>
-                                <p className="text-sm text-gray-500">Turn the hero slider on or off</p>
+                                <h3 className="font-semibold text-[#e6edf3]">Enable Slider</h3>
+                                <p className="text-sm text-[#8b949e]">Turn the hero slider on or off</p>
                             </div>
                             <button
                                 onClick={() => setSettings((prev) => ({ ...prev, enabled: !prev.enabled }))}
@@ -246,8 +246,8 @@ export default function HeroSliderSettingsPage() {
                     </div>
 
                     {/* Transition Interval */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                        <h3 className="font-semibold text-gray-900 mb-4">Transition Interval</h3>
+                    <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-6">
+                        <h3 className="font-semibold text-[#e6edf3] mb-4">Transition Interval</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {INTERVAL_OPTIONS.map((option) => (
                                 <button
@@ -255,13 +255,13 @@ export default function HeroSliderSettingsPage() {
                                     onClick={() => setSettings((prev) => ({ ...prev, interval: option.value }))}
                                     className={`p-3 rounded-lg border text-center transition-all ${
                                         settings.interval === option.value
-                                            ? 'border-red-500 bg-red-50 text-red-700'
-                                            : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                            ? 'border-red-500 bg-red-500/20 text-red-400'
+                                            : 'border-[#30363d] hover:border-[#6e7681] text-[#c9d1d9]'
                                     }`}
                                 >
                                     <div className="text-lg font-bold">{option.value / 1000}s</div>
                                     {option.value === 4000 && (
-                                        <div className="text-xs text-gray-500">Recommended</div>
+                                        <div className="text-xs text-[#8b949e]">Recommended</div>
                                     )}
                                 </button>
                             ))}
@@ -269,11 +269,11 @@ export default function HeroSliderSettingsPage() {
                     </div>
 
                     {/* Region Slots */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-6">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h3 className="font-semibold text-gray-900">Region Slots ({settings.regions.length})</h3>
-                                <p className="text-sm text-gray-500">
+                                <h3 className="font-semibold text-[#e6edf3]">Region Slots ({settings.regions.length})</h3>
+                                <p className="text-sm text-[#8b949e]">
                                     Drag to reorder. Same region can appear multiple times.
                                 </p>
                             </div>
@@ -292,22 +292,22 @@ export default function HeroSliderSettingsPage() {
                                         onDragEnd={handleDragEnd}
                                         className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-move ${
                                             draggedIndex === index
-                                                ? 'border-red-400 bg-red-50 opacity-50'
-                                                : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                                                ? 'border-red-400 bg-red-500/10 opacity-50'
+                                                : 'border-[#30363d] bg-[#21262d] hover:bg-[#30363d]'
                                         }`}
                                     >
-                                        <GripVertical className="w-4 h-4 text-gray-400" />
-                                        <span className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold">
+                                        <GripVertical className="w-4 h-4 text-[#6e7681]" />
+                                        <span className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-sm font-bold">
                                             {index + 1}
                                         </span>
                                         <div className="flex-1">
-                                            <span className="font-medium text-gray-900">{region.nameKr}</span>
-                                            <span className="text-gray-400 mx-2">|</span>
-                                            <span className="text-gray-500 text-sm">{region.name}</span>
+                                            <span className="font-medium text-[#e6edf3]">{region.nameKr}</span>
+                                            <span className="text-[#6e7681] mx-2">|</span>
+                                            <span className="text-[#8b949e] text-sm">{region.name}</span>
                                         </div>
                                         <button
                                             onClick={() => removeRegion(index)}
-                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                            className="p-1.5 text-[#6e7681] hover:text-red-400 hover:bg-red-500/10 rounded"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -315,37 +315,37 @@ export default function HeroSliderSettingsPage() {
                                 );
                             })}
                             {settings.regions.length === 0 && (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-[#6e7681]">
                                     No regions added. Add regions below.
                                 </div>
                             )}
                         </div>
 
                         {/* Add Region */}
-                        <div className="border-t border-gray-200 pt-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-3">Add Region</h4>
+                        <div className="border-t border-[#30363d] pt-4">
+                            <h4 className="text-sm font-medium text-[#c9d1d9] mb-3">Add Region</h4>
                             <div className="flex flex-wrap gap-2">
                                 {ALL_REGIONS.slice(0, 7).map((region) => (
                                     <button
                                         key={region.code}
                                         onClick={() => addRegion(region.code)}
-                                        className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full flex items-center gap-1 transition-colors"
+                                        className="px-3 py-1.5 text-sm bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] rounded-full flex items-center gap-1 transition-colors"
                                     >
                                         <Plus className="w-3 h-3" />
                                         {region.nameKr}
                                     </button>
                                 ))}
                                 <details className="relative">
-                                    <summary className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full cursor-pointer list-none">
+                                    <summary className="px-3 py-1.5 text-sm bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] rounded-full cursor-pointer list-none">
                                         More regions...
                                     </summary>
-                                    <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
+                                    <div className="absolute top-full left-0 mt-2 p-3 bg-[#161b22] border border-[#30363d] rounded-lg shadow-lg z-10 min-w-[200px] max-h-[300px] overflow-y-auto">
                                         <div className="flex flex-wrap gap-2">
                                             {ALL_REGIONS.slice(7).map((region) => (
                                                 <button
                                                     key={region.code}
                                                     onClick={() => addRegion(region.code)}
-                                                    className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded flex items-center gap-1"
+                                                    className="px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] rounded flex items-center gap-1"
                                                 >
                                                     <Plus className="w-3 h-3" />
                                                     {region.nameKr}
@@ -361,16 +361,16 @@ export default function HeroSliderSettingsPage() {
 
                 {/* Preview Panel */}
                 <div className="space-y-4">
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                            <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2">
                                 <Eye className="w-4 h-4" />
                                 Preview
                             </h3>
                             <button
                                 onClick={loadPreview}
                                 disabled={loadingPreview}
-                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                className="p-2 text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#21262d] rounded"
                             >
                                 <RefreshCw className={`w-4 h-4 ${loadingPreview ? 'animate-spin' : ''}`} />
                             </button>
@@ -380,8 +380,8 @@ export default function HeroSliderSettingsPage() {
                             <div className="space-y-3">
                                 {[1, 2, 3].map((i) => (
                                     <div key={i} className="animate-pulse">
-                                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
-                                        <div className="h-3 bg-gray-100 rounded w-full" />
+                                        <div className="h-4 bg-[#21262d] rounded w-1/4 mb-2" />
+                                        <div className="h-3 bg-[#21262d] rounded w-full" />
                                     </div>
                                 ))}
                             </div>
@@ -390,25 +390,25 @@ export default function HeroSliderSettingsPage() {
                                 {preview.map((article, idx) => (
                                     <div
                                         key={article.id}
-                                        className="p-3 bg-gray-50 rounded-lg border border-gray-100"
+                                        className="p-3 bg-[#21262d] rounded-lg border border-[#30363d]"
                                     >
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded">
+                                            <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-medium rounded">
                                                 {idx + 1}. {article.regionName}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-700 line-clamp-2">
+                                        <p className="text-sm text-[#c9d1d9] line-clamp-2">
                                             {article.title}
                                         </p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-gray-400">
+                            <div className="text-center py-8 text-[#6e7681]">
                                 <p className="mb-3">No preview available</p>
                                 <button
                                     onClick={loadPreview}
-                                    className="text-red-600 hover:text-red-700 text-sm"
+                                    className="text-red-400 hover:text-red-300 text-sm"
                                 >
                                     Load Preview
                                 </button>
@@ -417,9 +417,9 @@ export default function HeroSliderSettingsPage() {
                     </div>
 
                     {/* Info */}
-                    <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm text-blue-300">
                         <p className="font-medium mb-2">How it works:</p>
-                        <ul className="list-disc list-inside space-y-1 text-blue-700">
+                        <ul className="list-disc list-inside space-y-1 text-blue-400">
                             <li>Each slot shows the latest article from that region</li>
                             <li>Same region twice = shows 1st and 2nd latest articles</li>
                             <li>Hover on slider pauses auto-transition</li>

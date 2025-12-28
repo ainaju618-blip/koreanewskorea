@@ -48,10 +48,10 @@ interface AISource {
 // 상태 배지
 function StatusBadge({ status }: { status: RawArticle['status'] }) {
     const config = {
-        pending: { color: 'bg-yellow-100 text-yellow-700', icon: Clock, label: '대기' },
-        processing: { color: 'bg-blue-100 text-blue-700', icon: RefreshCw, label: '처리중' },
-        done: { color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle, label: '완료' },
-        error: { color: 'bg-red-100 text-red-700', icon: AlertCircle, label: '오류' }
+        pending: { color: 'bg-yellow-900/50 text-yellow-400', icon: Clock, label: '대기' },
+        processing: { color: 'bg-blue-900/50 text-blue-400', icon: RefreshCw, label: '처리중' },
+        done: { color: 'bg-emerald-900/50 text-emerald-400', icon: CheckCircle, label: '완료' },
+        error: { color: 'bg-red-900/50 text-red-400', icon: AlertCircle, label: '오류' }
     };
     const { color, icon: Icon, label } = config[status];
 
@@ -84,21 +84,21 @@ function ArticleDetailModal({
     const cleanSummary = article.summary ? stripHtml(article.summary) : null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#161b22] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-[#30363d]">
+                <div className="flex items-center justify-between p-6 border-b border-[#30363d]">
                     <div className="flex-1 min-w-0 pr-4">
-                        <span className="text-xs text-gray-500">{article.source_name}</span>
-                        <h2 className="text-lg font-bold text-gray-900 mt-1 line-clamp-2">{article.title}</h2>
+                        <span className="text-xs text-[#8b949e]">{article.source_name}</span>
+                        <h2 className="text-lg font-bold text-[#e6edf3] mt-1 line-clamp-2">{article.title}</h2>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                    <button onClick={onClose} className="text-[#8b949e] hover:text-[#e6edf3] flex-shrink-0">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {/* 메타 정보 */}
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap gap-4 text-sm text-[#8b949e]">
                         {article.author && (
                             <span>작성자: {article.author}</span>
                         )}
@@ -113,14 +113,14 @@ function ArticleDetailModal({
                         href={article.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                        className="inline-flex items-center gap-1 text-blue-400 hover:underline text-sm"
                     >
                         원문 보기 <ExternalLink className="w-3 h-3" />
                     </a>
 
                     {/* 썸네일 */}
                     {article.thumbnail_url && (
-                        <div className="rounded-lg overflow-hidden bg-gray-100">
+                        <div className="rounded-lg overflow-hidden bg-[#21262d]">
                             <img
                                 src={article.thumbnail_url}
                                 alt=""
@@ -134,17 +134,17 @@ function ArticleDetailModal({
 
                     {/* 요약 */}
                     {cleanSummary && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">요약</h4>
-                            <p className="text-sm text-gray-600">{cleanSummary}</p>
+                        <div className="bg-[#21262d] rounded-lg p-4">
+                            <h4 className="text-sm font-medium text-[#c9d1d9] mb-2">요약</h4>
+                            <p className="text-sm text-[#8b949e]">{cleanSummary}</p>
                         </div>
                     )}
 
                     {/* 본문 */}
                     {cleanContent && (
                         <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">본문 (원문)</h4>
-                            <div className="text-sm text-gray-600 whitespace-pre-wrap max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-lg">
+                            <h4 className="text-sm font-medium text-[#c9d1d9] mb-2">본문 (원문)</h4>
+                            <div className="text-sm text-[#8b949e] whitespace-pre-wrap max-h-96 overflow-y-auto bg-[#21262d] p-4 rounded-lg">
                                 {cleanContent.substring(0, 3000)}
                                 {cleanContent.length > 3000 && '...'}
                             </div>
@@ -152,21 +152,21 @@ function ArticleDetailModal({
                     )}
 
                     {/* 상태 */}
-                    <div className="pt-4 border-t border-gray-100">
+                    <div className="pt-4 border-t border-[#30363d]">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">처리 상태:</span>
+                            <span className="text-sm text-[#8b949e]">처리 상태:</span>
                             <StatusBadge status={article.status} />
                         </div>
                         {article.error_message && (
-                            <p className="text-sm text-red-600 mt-2">{article.error_message}</p>
+                            <p className="text-sm text-red-400 mt-2">{article.error_message}</p>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-[#30363d] bg-[#0d1117]">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="px-4 py-2 text-[#c9d1d9] hover:bg-[#21262d] rounded-lg transition-colors"
                     >
                         닫기
                     </button>
@@ -334,8 +334,8 @@ export default function RawArticlesPage() {
             />
 
             {/* 활성 수집처 안내 */}
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-4">
+                <p className="text-sm text-blue-300">
                     <strong>활성 수집처:</strong>{' '}
                     {sources.filter(s => s.enabled).map(s => s.name).join(', ') || '없음'}
                 </p>
@@ -343,44 +343,44 @@ export default function RawArticlesPage() {
 
             {/* 통계 */}
             <div className="grid grid-cols-5 gap-4">
-                <div className="bg-white rounded-lg p-4 border border-gray-100">
-                    <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    <p className="text-xs text-gray-500">전체</p>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <p className="text-2xl font-bold text-[#e6edf3]">{stats.total}</p>
+                    <p className="text-xs text-[#8b949e]">전체</p>
                 </div>
-                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
-                    <p className="text-2xl font-bold text-yellow-700">{stats.pending}</p>
-                    <p className="text-xs text-yellow-600">대기</p>
+                <div className="bg-yellow-900/20 rounded-lg p-4 border border-yellow-800/30">
+                    <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
+                    <p className="text-xs text-yellow-500">대기</p>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <p className="text-2xl font-bold text-blue-700">{stats.processing}</p>
-                    <p className="text-xs text-blue-600">처리중</p>
+                <div className="bg-blue-900/20 rounded-lg p-4 border border-blue-800/30">
+                    <p className="text-2xl font-bold text-blue-400">{stats.processing}</p>
+                    <p className="text-xs text-blue-500">처리중</p>
                 </div>
-                <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-                    <p className="text-2xl font-bold text-emerald-700">{stats.done}</p>
-                    <p className="text-xs text-emerald-600">완료</p>
+                <div className="bg-emerald-900/20 rounded-lg p-4 border border-emerald-800/30">
+                    <p className="text-2xl font-bold text-emerald-400">{stats.done}</p>
+                    <p className="text-xs text-emerald-500">완료</p>
                 </div>
-                <div className="bg-red-50 rounded-lg p-4 border border-red-100">
-                    <p className="text-2xl font-bold text-red-700">{stats.error}</p>
-                    <p className="text-xs text-red-600">오류</p>
+                <div className="bg-red-900/20 rounded-lg p-4 border border-red-800/30">
+                    <p className="text-2xl font-bold text-red-400">{stats.error}</p>
+                    <p className="text-xs text-red-500">오류</p>
                 </div>
             </div>
 
             {/* 필터 */}
-            <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100">
+            <div className="flex items-center gap-4 bg-[#161b22] p-4 rounded-xl border border-[#30363d]">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#484f58]" />
                     <input
                         type="text"
                         placeholder="기사 제목 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm"
+                        className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-sm text-[#e6edf3] placeholder:text-[#484f58]"
                     />
                 </div>
                 <select
                     value={filterSource}
                     onChange={(e) => setFilterSource(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3]"
                 >
                     <option value="all">모든 소스</option>
                     {uniqueSources.map(source => (
@@ -390,7 +390,7 @@ export default function RawArticlesPage() {
                 <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value as 'all' | RawArticle['status'])}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3]"
                 >
                     <option value="all">모든 상태</option>
                     <option value="pending">대기</option>
@@ -401,33 +401,33 @@ export default function RawArticlesPage() {
             </div>
 
             {/* 기사 목록 */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
+                    <thead className="bg-[#0d1117] border-b border-[#30363d]">
                         <tr>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">기사</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">소스</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">발행일</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">상태</th>
-                            <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">작업</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">기사</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">소스</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">발행일</th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">상태</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-[#8b949e] uppercase">작업</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#30363d]">
                         {filteredArticles.map((article) => (
-                            <tr key={article.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={article.id} className="hover:bg-[#21262d] transition-colors">
                                 <td className="px-4 py-3">
                                     <div className="max-w-lg">
-                                        <p className="font-medium text-gray-900 truncate">{article.title}</p>
+                                        <p className="font-medium text-[#e6edf3] truncate">{article.title}</p>
                                         {article.author && (
-                                            <p className="text-xs text-gray-400 mt-0.5">by {article.author}</p>
+                                            <p className="text-xs text-[#6e7681] mt-0.5">by {article.author}</p>
                                         )}
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className="text-sm text-gray-600">{article.source_name}</span>
+                                    <span className="text-sm text-[#8b949e]">{article.source_name}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-[#8b949e]">
                                         {article.published_at
                                             ? new Date(article.published_at).toLocaleDateString('ko-KR')
                                             : '-'}
@@ -440,7 +440,7 @@ export default function RawArticlesPage() {
                                     <div className="flex items-center justify-end gap-1">
                                         <button
                                             onClick={() => setSelectedArticle(article)}
-                                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-[#8b949e] hover:text-blue-400 hover:bg-blue-900/30 rounded-lg transition-colors"
                                             title="상세 보기"
                                         >
                                             <Eye className="w-4 h-4" />
@@ -449,7 +449,7 @@ export default function RawArticlesPage() {
                                             href={article.source_url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                            className="p-1.5 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg transition-colors"
                                             title="원문 보기"
                                         >
                                             <ExternalLink className="w-4 h-4" />
@@ -457,7 +457,7 @@ export default function RawArticlesPage() {
                                         {article.status === 'pending' && (
                                             <button
                                                 onClick={() => handleProcess(article.id)}
-                                                className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                                className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-900/30 rounded-lg transition-colors"
                                                 title="AI 가공"
                                             >
                                                 <Sparkles className="w-4 h-4" />
@@ -471,13 +471,13 @@ export default function RawArticlesPage() {
                 </table>
 
                 {filteredArticles.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        <Rss className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <div className="text-center py-12 text-[#8b949e]">
+                        <Rss className="w-12 h-12 mx-auto mb-3 text-[#484f58]" />
                         <p>수집된 기사가 없습니다</p>
                         <button
                             onClick={handleCollect}
                             disabled={collecting}
-                            className="mt-4 text-amber-600 hover:underline font-medium"
+                            className="mt-4 text-amber-400 hover:underline font-medium"
                         >
                             지금 수집하기
                         </button>

@@ -117,14 +117,14 @@ function AIKeySection({
 
     return (
         <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 border-b pb-2 flex items-center gap-2">
-                <Key className="w-4 h-4 text-purple-600" />
+            <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2 flex items-center gap-2">
+                <Key className="w-4 h-4 text-purple-400" />
                 AI 설정
             </h3>
             <div className="space-y-3">
                 {providers.map((p) => (
                     <div key={p.id}>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">
                             {p.name} API 키
                         </label>
                         <div className="flex gap-2">
@@ -135,7 +135,7 @@ function AIKeySection({
                                     setFormApiKeys({ ...formApiKeys, [p.id]: e.target.value });
                                     setTestResults(prev => ({ ...prev, [p.id]: null }));
                                 }}
-                                className={`flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-${p.color}-500 outline-none font-mono`}
+                                className={`flex-1 border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-${p.color}-500 outline-none font-mono`}
                                 placeholder={p.placeholder}
                                 autoComplete="off"
                             />
@@ -143,15 +143,15 @@ function AIKeySection({
                                 type="button"
                                 onClick={() => handleTest(p.id)}
                                 disabled={testing === p.id || !formApiKeys[p.id]}
-                                className="px-3 py-2 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1"
+                                className="px-3 py-2 text-xs font-medium border border-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#21262d] disabled:opacity-50 flex items-center gap-1"
                                 title="연결 테스트"
                             >
                                 {testing === p.id ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : testResults[p.id] === true ? (
-                                    <CheckCircle className="w-3 h-3 text-green-600" />
+                                    <CheckCircle className="w-3 h-3 text-green-400" />
                                 ) : testResults[p.id] === false ? (
-                                    <X className="w-3 h-3 text-red-600" />
+                                    <X className="w-3 h-3 text-red-400" />
                                 ) : (
                                     <Bot className="w-3 h-3" />
                                 )}
@@ -161,7 +161,7 @@ function AIKeySection({
                     </div>
                 ))}
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[#8b949e]">
                 키 입력 후 &quot;테스트&quot; 버튼으로 연결을 확인하세요.
             </p>
         </div>
@@ -440,25 +440,25 @@ export default function ReportersPage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <Users className="w-7 h-7 text-blue-600" />
+                    <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
+                        <Users className="w-7 h-7 text-blue-400" />
                         기자 등록 / 관리
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#8b949e] mt-2">
                         지역 기자단을 등록하고 관리합니다. 직위는 예우용이며 모든 기자는 동일한 권한을 갖습니다.
                     </p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={fetchReporters}
-                        className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                        className="flex items-center gap-2 px-4 py-2.5 border border-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#21262d] transition"
                     >
                         <RefreshCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                         새로고침
                     </button>
                     <button
                         onClick={openAddModal}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 shadow-sm transition"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-sm transition"
                     >
                         <UserPlus className="w-4 h-4" />
                         기자 추가
@@ -475,22 +475,22 @@ export default function ReportersPage() {
             </div>
 
             {/* Reporters Grid */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-h-[300px]">
-                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden min-h-[300px]">
+                <div className="p-5 border-b border-[#30363d] bg-[#0d1117]/50">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-semibold text-gray-900">기자단 목록</h3>
-                        <span className="text-sm text-gray-500">{filteredReporters.length}명 표시</span>
+                        <h3 className="font-semibold text-[#e6edf3]">기자단 목록</h3>
+                        <span className="text-sm text-[#8b949e]">{filteredReporters.length}명 표시</span>
                     </div>
 
                     {/* 필터 영역 */}
                     <div className="flex flex-wrap gap-4">
                         {/* 유형(직위) 필터 */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">유형:</span>
+                            <span className="text-sm text-[#c9d1d9]">유형:</span>
                             <select
                                 value={filterType}
                                 onChange={(e) => setFilterType(e.target.value)}
-                                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white"
+                                className="text-sm border border-[#30363d] rounded-lg px-3 py-1.5 bg-[#0d1117] text-[#e6edf3]"
                             >
                                 <option value="all">전체</option>
                                 {POSITIONS.map(p => (
@@ -501,11 +501,11 @@ export default function ReportersPage() {
 
                         {/* 지역 필터 */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-600">지역:</span>
+                            <span className="text-sm text-[#c9d1d9]">지역:</span>
                             <select
                                 value={filterRegion}
                                 onChange={(e) => setFilterRegion(e.target.value)}
-                                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white"
+                                className="text-sm border border-[#30363d] rounded-lg px-3 py-1.5 bg-[#0d1117] text-[#e6edf3]"
                             >
                                 <option value="all">전체</option>
                                 {REGIONS.map(r => (
@@ -519,10 +519,10 @@ export default function ReportersPage() {
                 <div className="p-6">
                     {isLoading ? (
                         <div className="flex justify-center py-10">
-                            <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
+                            <Loader2 className="w-8 h-8 animate-spin text-[#484f58]" />
                         </div>
                     ) : filteredReporters.length === 0 ? (
-                        <div className="text-center py-10 text-gray-400">
+                        <div className="text-center py-10 text-[#8b949e]">
                             조건에 맞는 기자가 없습니다.
                         </div>
                     ) : (
@@ -623,17 +623,17 @@ export default function ReportersPage() {
             {/* 삭제 확인 모달 */}
             {deleteModal.isOpen && deleteModal.reporter && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">기자 삭제</h3>
-                        <p className="text-gray-600 mb-6">
+                    <div className="bg-[#161b22] rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 border border-[#30363d]">
+                        <h3 className="text-lg font-bold text-[#e6edf3] mb-2">기자 삭제</h3>
+                        <p className="text-[#c9d1d9] mb-6">
                             <strong>&apos;{deleteModal.reporter.name}&apos;</strong> 기자를 삭제하시겠습니까?
                             <br />
-                            <span className="text-sm text-red-500">이 작업은 되돌릴 수 없습니다.</span>
+                            <span className="text-sm text-red-400">이 작업은 되돌릴 수 없습니다.</span>
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setDeleteModal({ isOpen: false, reporter: null })}
-                                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium"
+                                className="px-4 py-2 text-[#c9d1d9] bg-[#21262d] rounded-lg hover:bg-[#30363d] font-medium"
                             >
                                 취소
                             </button>
@@ -656,11 +656,11 @@ export default function ReportersPage() {
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#161b22] rounded-xl shadow-2xl p-8 max-w-lg w-full animate-fade-in-up max-h-[90vh] overflow-y-auto border border-[#30363d]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-                        <X className="w-5 h-5 text-gray-500" />
+                    <h3 className="text-xl font-bold text-[#e6edf3]">{title}</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-[#21262d] rounded">
+                        <X className="w-5 h-5 text-[#8b949e]" />
                     </button>
                 </div>
                 {children}
@@ -716,24 +716,24 @@ function ReporterForm({
         <div className="space-y-6">
             {/* 섹션 1: 기본 정보 */}
             <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">기본 정보</h3>
+                <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2">기본 정보</h3>
                 <div className="grid grid-cols-3 gap-3">
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">이름 *</label>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">이름 *</label>
                         <input
                             type="text"
                             value={formName}
                             onChange={(e) => setFormName(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="홍길동"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">유형 *</label>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">유형 *</label>
                         <select
                             value={formType}
                             onChange={(e) => setFormType(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                            className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3]"
                         >
                             {POSITIONS.map(p => (
                                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -741,11 +741,11 @@ function ReporterForm({
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">담당 지역</label>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">담당 지역</label>
                         <select
                             value={formRegion}
                             onChange={(e) => setFormRegion(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                            className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3]"
                         >
                             {REGIONS.map(r => (
                                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -757,34 +757,34 @@ function ReporterForm({
 
             {/* 섹션 2: 계정 정보 */}
             <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">계정 정보</h3>
+                <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2">계정 정보</h3>
                 <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                        아이디 <span className="text-gray-400">(로그인용)</span>
+                    <label className="block text-xs font-medium text-[#c9d1d9] mb-1">
+                        아이디 <span className="text-[#8b949e]">(로그인용)</span>
                     </label>
                     <div className="flex max-w-md">
                         <input
                             type="text"
                             value={formEmail.replace(/@koreanews(one)?\.com$/, '')}
                             onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace(/@koreanews(one)?\.com$/, '')}@koreanewsone.com` : '')}
-                            className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="flex-1 border border-[#30363d] rounded-l-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="userid"
                         />
-                        <span className="inline-flex items-center px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-500 text-sm">
+                        <span className="inline-flex items-center px-3 py-2 bg-[#21262d] border border-l-0 border-[#30363d] rounded-r-lg text-[#8b949e] text-sm">
                             @koreanewsone.com
                         </span>
                     </div>
                 </div>
                 {setFormPassword && (isAddMode || isEditMode) && (
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            비밀번호 <span className="text-gray-400">(선택)</span>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">
+                            비밀번호 <span className="text-[#8b949e]">(선택)</span>
                         </label>
                         <input
                             type="password"
                             value={formPassword}
                             onChange={(e) => setFormPassword(e.target.value)}
-                            className="max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="max-w-md border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder={isAddMode ? "미입력시 기본 비밀번호: a1234567!" : "변경시에만 입력"}
                         />
                     </div>
@@ -793,14 +793,14 @@ function ReporterForm({
 
             {/* 섹션 3: 연락처 */}
             <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">연락처</h3>
+                <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2">연락처</h3>
                 <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">전화번호</label>
+                    <label className="block text-xs font-medium text-[#c9d1d9] mb-1">전화번호</label>
                     <input
                         type="tel"
                         value={formPhone}
                         onChange={(e) => setFormPhone(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                         placeholder="010-0000-0000"
                     />
                 </div>
@@ -808,53 +808,53 @@ function ReporterForm({
 
             {/* 섹션 4: 추가 정보 (선택) */}
             <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 border-b pb-2">추가 정보 <span className="font-normal text-gray-400">(선택)</span></h3>
+                <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2">추가 정보 <span className="font-normal text-[#8b949e]">(선택)</span></h3>
                 <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">소개/약력</label>
+                    <label className="block text-xs font-medium text-[#c9d1d9] mb-1">소개/약력</label>
                     <textarea
                         value={formBio}
                         onChange={(e) => setFormBio(e.target.value)}
                         rows={2}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                         placeholder="간단한 소개 (선택사항)"
                     />
                 </div>
                 {setFormProfileImage && (
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            프로필 사진 URL <span className="text-gray-400">(이미지 주소)</span>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">
+                            프로필 사진 URL <span className="text-[#8b949e]">(이미지 주소)</span>
                         </label>
                         <div className="flex gap-2">
                             <input
                                 type="url"
                                 value={formProfileImage}
                                 onChange={(e) => setFormProfileImage(e.target.value)}
-                                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="flex-1 border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                                 placeholder="https://example.com/photo.jpg"
                             />
                             {formProfileImage && (
                                 <img
                                     src={formProfileImage}
                                     alt="프로필 미리보기"
-                                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                    className="w-10 h-10 rounded-full object-cover border border-[#30363d]"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                     }}
                                 />
                             )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-[#8b949e] mt-1">
                             프로필 사진의 URL을 입력하세요. Cloudinary 등에 업로드된 이미지 주소를 사용하세요.
                         </p>
                     </div>
                 )}
                 {showStatus && setFormStatus && (
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">상태</label>
+                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">상태</label>
                         <select
                             value={formStatus}
                             onChange={(e) => setFormStatus(e.target.value as "Active" | "Inactive")}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                            className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3]"
                         >
                             <option value="Active">활동 중</option>
                             <option value="Inactive">비활성</option>
@@ -872,7 +872,7 @@ function ReporterForm({
             )}
 
             {/* 버튼 */}
-            <div className="flex gap-3 pt-4 border-t">
+            <div className="flex gap-3 pt-4 border-t border-[#30363d]">
                 <button
                     onClick={onSubmit}
                     disabled={isSubmitting}
@@ -882,7 +882,7 @@ function ReporterForm({
                 </button>
                 <button
                     onClick={onCancel}
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 text-sm"
+                    className="flex-1 px-4 py-2.5 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] rounded-lg font-medium hover:bg-[#30363d] text-sm"
                 >
                     취소
                 </button>
@@ -895,17 +895,17 @@ type StatCardColor = 'blue' | 'purple' | 'green' | 'orange';
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: LucideIcon; color: StatCardColor }) {
     const colors: Record<StatCardColor, string> = {
-        blue: "bg-blue-50 border-blue-200",
-        purple: "bg-purple-50 border-purple-200",
-        green: "bg-green-50 border-green-200",
-        orange: "bg-orange-50 border-orange-200",
+        blue: "bg-blue-900/20 border-blue-800",
+        purple: "bg-purple-900/20 border-purple-800",
+        green: "bg-green-900/20 border-green-800",
+        orange: "bg-orange-900/20 border-orange-800",
     };
 
     const iconColors: Record<StatCardColor, string> = {
-        blue: "text-blue-600",
-        purple: "text-purple-600",
-        green: "text-green-600",
-        orange: "text-orange-600",
+        blue: "text-blue-400",
+        purple: "text-purple-400",
+        green: "text-green-400",
+        orange: "text-orange-400",
     };
 
     return (
@@ -913,8 +913,8 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: s
             <div className="flex items-center justify-between mb-2">
                 <Icon className={`w-6 h-6 ${iconColors[color]}`} />
             </div>
-            <p className="text-sm text-gray-600 mb-1">{label}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-sm text-[#8b949e] mb-1">{label}</p>
+            <p className="text-2xl font-bold text-[#e6edf3]">{value}</p>
         </div>
     );
 }
@@ -933,14 +933,14 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
 
     return (
         <div
-            className={`border-2 rounded-lg p-4 transition-all bg-white cursor-pointer ${isActive
-                ? 'border-gray-100 hover:border-blue-400 hover:shadow-md'
-                : 'border-gray-100 opacity-60'
+            className={`border-2 rounded-lg p-4 transition-all bg-[#161b22] cursor-pointer ${isActive
+                ? 'border-[#30363d] hover:border-blue-500 hover:shadow-md'
+                : 'border-[#21262d] opacity-60'
                 }`}
             onClick={onView}
         >
             <div className="flex items-start gap-3 mb-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl overflow-hidden ${isBot ? 'bg-purple-100' : 'bg-gray-100'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl overflow-hidden ${isBot ? 'bg-purple-900/30' : 'bg-[#21262d]'}`}>
                     {reporter.profile_image ? (
                         <img
                             src={reporter.profile_image}
@@ -953,23 +953,23 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">{reporter.name}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded ${isBot ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <p className="font-medium text-[#e6edf3]">{reporter.name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded ${isBot ? 'bg-purple-900/30 text-purple-300' : 'bg-blue-900/30 text-blue-300'}`}>
                             {positionLabel}
                         </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{reporter.region}</p>
+                    <p className="text-xs text-[#8b949e] mt-0.5">{reporter.region}</p>
                 </div>
                 {isActive ? (
                     <span className="w-2 h-2 rounded-full bg-green-500" title="활동 중" />
                 ) : (
-                    <span className="w-2 h-2 rounded-full bg-gray-300" title="비활성" />
+                    <span className="w-2 h-2 rounded-full bg-[#484f58]" title="비활성" />
                 )}
             </div>
 
             {/* 연락처 미리보기 */}
             {(reporter.phone || reporter.email) && (
-                <div className="text-xs text-gray-400 mb-3 flex gap-3">
+                <div className="text-xs text-[#8b949e] mb-3 flex gap-3">
                     {reporter.phone && (
                         <span className="flex items-center gap-1">
                             <Phone className="w-3 h-3" />
@@ -988,14 +988,14 @@ function ReporterCard({ reporter, positionLabel, onView, onEdit, onDelete }: Rep
             <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
                 <button
                     onClick={onEdit}
-                    className="flex-1 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center gap-1 transition"
+                    className="flex-1 py-1.5 text-xs border border-[#30363d] text-[#c9d1d9] rounded hover:bg-[#21262d] flex items-center justify-center gap-1 transition"
                 >
                     <Edit2 className="w-3 h-3" />
                     수정
                 </button>
                 <button
                     onClick={onDelete}
-                    className="flex-1 py-1.5 text-xs border border-gray-300 rounded hover:bg-red-50 hover:border-red-300 hover:text-red-600 flex items-center justify-center gap-1 transition"
+                    className="flex-1 py-1.5 text-xs border border-[#30363d] text-[#c9d1d9] rounded hover:bg-red-900/30 hover:border-red-800 hover:text-red-400 flex items-center justify-center gap-1 transition"
                 >
                     <Trash2 className="w-3 h-3" />
                     삭제
@@ -1018,28 +1018,28 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
     return (
         <div className="fixed inset-0 z-50" onClick={onClose}>
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/50" />
 
             {/* Panel */}
             <div
-                className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl animate-slide-in-right"
+                className="absolute right-0 top-0 h-full w-full max-w-md bg-[#161b22] shadow-2xl animate-slide-in-right border-l border-[#30363d]"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="h-full flex flex-col">
                     {/* Header */}
-                    <div className="p-6 border-b border-gray-200">
+                    <div className="p-6 border-b border-[#30363d]">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-4">
-                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${isBot ? 'bg-purple-100' : 'bg-gray-100'}`}>
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${isBot ? 'bg-purple-900/30' : 'bg-[#21262d]'}`}>
                                     {reporter.avatar_icon || (isBot ? '🤖' : '👤')}
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-gray-900">{reporter.name}</h2>
-                                    <p className="text-sm text-gray-500">{positionLabel} | {reporter.region}</p>
+                                    <h2 className="text-xl font-bold text-[#e6edf3]">{reporter.name}</h2>
+                                    <p className="text-sm text-[#8b949e]">{positionLabel} | {reporter.region}</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-                                <X className="w-5 h-5 text-gray-500" />
+                            <button onClick={onClose} className="p-2 hover:bg-[#21262d] rounded-lg">
+                                <X className="w-5 h-5 text-[#8b949e]" />
                             </button>
                         </div>
                     </div>
@@ -1048,7 +1048,7 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* 기본 정보 */}
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">기본 정보</h3>
+                            <h3 className="text-sm font-semibold text-[#8b949e] uppercase tracking-wider mb-3">기본 정보</h3>
                             <div className="space-y-3">
                                 <InfoRow icon={Briefcase} label="직위" value={positionLabel} />
                                 <InfoRow icon={Users} label="유형" value={isBot ? 'AI Bot' : '시민기자'} />
@@ -1058,7 +1058,7 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
 
                         {/* 연락처 */}
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">연락처</h3>
+                            <h3 className="text-sm font-semibold text-[#8b949e] uppercase tracking-wider mb-3">연락처</h3>
                             <div className="space-y-3">
                                 <InfoRow icon={Phone} label="전화" value={reporter.phone || '-'} />
                                 <InfoRow icon={Mail} label="이메일" value={reporter.email || '-'} />
@@ -1068,22 +1068,22 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
                         {/* 소개 */}
                         {reporter.bio && (
                             <div>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">소개</h3>
-                                <p className="text-gray-700 text-sm leading-relaxed">{reporter.bio}</p>
+                                <h3 className="text-sm font-semibold text-[#8b949e] uppercase tracking-wider mb-3">소개</h3>
+                                <p className="text-[#c9d1d9] text-sm leading-relaxed">{reporter.bio}</p>
                             </div>
                         )}
 
                         {/* 등록일 */}
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">등록 정보</h3>
-                            <p className="text-sm text-gray-600">
+                            <h3 className="text-sm font-semibold text-[#8b949e] uppercase tracking-wider mb-3">등록 정보</h3>
+                            <p className="text-sm text-[#c9d1d9]">
                                 등록일: {new Date(reporter.created_at).toLocaleDateString('ko-KR')}
                             </p>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 border-t border-gray-200">
+                    <div className="p-6 border-t border-[#30363d]">
                         <button
                             onClick={onEdit}
                             className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
@@ -1101,9 +1101,9 @@ function DetailPanel({ reporter, positionLabel, onClose, onEdit }: DetailPanelPr
 function InfoRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
     return (
         <div className="flex items-center gap-3">
-            <Icon className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-500 w-16">{label}</span>
-            <span className="text-sm text-gray-900">{value}</span>
+            <Icon className="w-4 h-4 text-[#8b949e]" />
+            <span className="text-sm text-[#8b949e] w-16">{label}</span>
+            <span className="text-sm text-[#e6edf3]">{value}</span>
         </div>
     );
 }

@@ -133,29 +133,29 @@ export default function GitStatusPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-[#0d1117]">
             <div className="max-w-5xl mx-auto px-4 py-6">
                 {/* Header */}
                 <header className="mb-6">
                     <Link
                         href="/admin"
-                        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 text-sm"
+                        className="inline-flex items-center gap-2 text-[#8b949e] hover:text-[#c9d1d9] mb-4 text-sm"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Dashboard
                     </Link>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <GitBranch className="w-6 h-6 text-gray-700" />
+                            <GitBranch className="w-6 h-6 text-[#c9d1d9]" />
                             <div>
-                                <h1 className="text-xl font-bold text-gray-900">Git 상태 관리</h1>
-                                <p className="text-sm text-gray-500">저장소 상태 및 커밋 이력</p>
+                                <h1 className="text-xl font-bold text-[#e6edf3]">Git 상태 관리</h1>
+                                <p className="text-sm text-[#8b949e]">저장소 상태 및 커밋 이력</p>
                             </div>
                         </div>
                         <button
                             onClick={handleRefresh}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-4 py-2 text-sm border border-[#30363d] rounded-lg text-[#c9d1d9] hover:bg-[#21262d] transition-colors disabled:opacity-50"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                             새로고침
@@ -164,7 +164,7 @@ export default function GitStatusPage() {
                 </header>
 
                 {/* Tab Navigation - Fixed at top */}
-                <div className="sticky top-0 z-10 bg-white border-b border-gray-200 mb-6">
+                <div className="sticky top-0 z-10 bg-[#0d1117] border-b border-[#30363d] mb-6">
                     <div className="flex">
                         {TABS.map(tab => (
                             <button
@@ -172,13 +172,13 @@ export default function GitStatusPage() {
                                 onClick={() => handleTabChange(tab.id)}
                                 className={`flex-1 px-4 py-3 text-sm font-semibold transition-all border-b-2 ${
                                     activeTab === tab.id
-                                        ? 'border-black text-black'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                        ? 'border-[#58a6ff] text-[#e6edf3]'
+                                        : 'border-transparent text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#161b22]'
                                 }`}
                             >
                                 {tab.label}
                                 {tab.id === 'commits' && commitsTotalCount > 0 && (
-                                    <span className="ml-2 text-xs text-gray-400">({commitsTotalCount})</span>
+                                    <span className="ml-2 text-xs text-[#8b949e]">({commitsTotalCount})</span>
                                 )}
                             </button>
                         ))}
@@ -187,19 +187,19 @@ export default function GitStatusPage() {
 
                 {/* Error State */}
                 {error && (
-                    <div className="mb-6 p-4 border-2 border-red-500 bg-red-50 rounded-lg">
-                        <div className="flex items-center gap-2 text-red-700">
+                    <div className="mb-6 p-4 border-2 border-red-500 bg-red-900/20 rounded-lg">
+                        <div className="flex items-center gap-2 text-red-400">
                             <AlertCircle className="w-5 h-5" />
                             <span className="font-semibold">Git 상태 확인 실패</span>
                         </div>
-                        <p className="text-sm text-red-600 mt-1">{error}</p>
+                        <p className="text-sm text-red-300 mt-1">{error}</p>
                     </div>
                 )}
 
                 {/* Loading State */}
                 {loading && (
                     <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                        <Loader2 className="w-8 h-8 animate-spin text-[#8b949e]" />
                     </div>
                 )}
 
@@ -249,35 +249,35 @@ function SummaryTab({ data }: { data: GitSummary }) {
 
             {/* Last Commit Detail */}
             {data.lastCommit && (
-                <div className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <div className="border border-[#30363d] bg-[#161b22] rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-[#c9d1d9] mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         마지막 커밋 정보
                     </h3>
                     <table className="w-full text-sm">
                         <tbody>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-2 text-gray-500 w-24">해시</td>
+                            <tr className="border-b border-[#21262d]">
+                                <td className="py-2 text-[#8b949e] w-24">해시</td>
                                 <td className="py-2">
                                     <Link
                                         href={`/admin/git-status/${data.lastCommit.hash}`}
-                                        className="font-mono text-blue-600 hover:text-blue-800 hover:underline"
+                                        className="font-mono text-[#58a6ff] hover:text-[#79c0ff] hover:underline"
                                     >
                                         {data.lastCommit.hash}
                                     </Link>
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-2 text-gray-500">작성자</td>
-                                <td className="py-2 text-gray-900">{data.lastCommit.author}</td>
+                            <tr className="border-b border-[#21262d]">
+                                <td className="py-2 text-[#8b949e]">작성자</td>
+                                <td className="py-2 text-[#e6edf3]">{data.lastCommit.author}</td>
                             </tr>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-2 text-gray-500">날짜</td>
-                                <td className="py-2 text-gray-900">{data.lastCommit.date}</td>
+                            <tr className="border-b border-[#21262d]">
+                                <td className="py-2 text-[#8b949e]">날짜</td>
+                                <td className="py-2 text-[#e6edf3]">{data.lastCommit.date}</td>
                             </tr>
                             <tr>
-                                <td className="py-2 text-gray-500">메시지</td>
-                                <td className="py-2 text-gray-900">{data.lastCommit.message}</td>
+                                <td className="py-2 text-[#8b949e]">메시지</td>
+                                <td className="py-2 text-[#e6edf3]">{data.lastCommit.message}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -289,9 +289,9 @@ function SummaryTab({ data }: { data: GitSummary }) {
 
 function StatBox({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className={`border rounded-lg p-4 ${highlight ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
-            <p className="text-xs text-gray-500 mb-1">{label}</p>
-            <p className={`text-lg font-bold ${highlight ? 'text-black' : 'text-gray-900'}`}>{value}</p>
+        <div className={`border rounded-lg p-4 ${highlight ? 'border-[#58a6ff] bg-[#161b22]' : 'border-[#30363d] bg-[#161b22]'}`}>
+            <p className="text-xs text-[#8b949e] mb-1">{label}</p>
+            <p className={`text-lg font-bold ${highlight ? 'text-[#58a6ff]' : 'text-[#e6edf3]'}`}>{value}</p>
         </div>
     );
 }
@@ -312,7 +312,7 @@ function CommitsTab({
 }) {
     if (data.length === 0) {
         return (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-20 text-[#8b949e]">
                 <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>커밋 이력이 없습니다</p>
             </div>
@@ -332,49 +332,49 @@ function CommitsTab({
         <div>
             {/* Pagination Info */}
             <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-500">
-                    총 <strong className="text-gray-900">{totalCount}</strong>개 커밋 중{' '}
-                    <strong className="text-gray-900">{(page - 1) * 30 + 1}-{Math.min(page * 30, totalCount)}</strong>번째
+                <p className="text-sm text-[#8b949e]">
+                    총 <strong className="text-[#e6edf3]">{totalCount}</strong>개 커밋 중{' '}
+                    <strong className="text-[#e6edf3]">{(page - 1) * 30 + 1}-{Math.min(page * 30, totalCount)}</strong>번째
                 </p>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">페이지 {page} / {totalPages}</span>
+                    <span className="text-sm text-[#8b949e]">페이지 {page} / {totalPages}</span>
                 </div>
             </div>
 
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="border border-[#30363d] rounded-lg overflow-hidden">
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto" style={{ maxHeight: '60vh' }}>
                     <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                        <thead className="sticky top-0 bg-[#161b22] border-b border-[#30363d]">
                             <tr>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">날짜</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">작성자</th>
-                                <th className="px-4 py-3 text-left font-semibold text-gray-700">커밋 메시지</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-700">파일수</th>
-                                <th className="px-4 py-3 text-center font-semibold text-gray-700">상태</th>
+                                <th className="px-4 py-3 text-left font-semibold text-[#c9d1d9]">날짜</th>
+                                <th className="px-4 py-3 text-left font-semibold text-[#c9d1d9]">작성자</th>
+                                <th className="px-4 py-3 text-left font-semibold text-[#c9d1d9]">커밋 메시지</th>
+                                <th className="px-4 py-3 text-center font-semibold text-[#c9d1d9]">파일수</th>
+                                <th className="px-4 py-3 text-center font-semibold text-[#c9d1d9]">상태</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#21262d]">
                             {data.map((commit, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{commit.date}</td>
-                                    <td className="px-4 py-3 text-gray-900">{commit.author}</td>
-                                    <td className="px-4 py-3 text-gray-900 max-w-md">
+                                <tr key={idx} className="hover:bg-[#161b22]">
+                                    <td className="px-4 py-3 text-[#8b949e] whitespace-nowrap">{commit.date}</td>
+                                    <td className="px-4 py-3 text-[#e6edf3]">{commit.author}</td>
+                                    <td className="px-4 py-3 text-[#e6edf3] max-w-md">
                                         <Link
                                             href={`/admin/git-status/${commit.hash}`}
-                                            className="hover:text-blue-600 hover:underline block"
+                                            className="hover:text-[#58a6ff] hover:underline block"
                                         >
-                                            <span className="font-mono text-xs text-gray-400 mr-2">{commit.hash}</span>
+                                            <span className="font-mono text-xs text-[#8b949e] mr-2">{commit.hash}</span>
                                             <span className="truncate">{commit.message}</span>
                                         </Link>
                                     </td>
-                                    <td className="px-4 py-3 text-center text-gray-600">{commit.filesChanged}개</td>
+                                    <td className="px-4 py-3 text-center text-[#8b949e]">{commit.filesChanged}개</td>
                                     <td className="px-4 py-3 text-center">
                                         <span className={`text-xs font-medium ${
-                                            commit.status === 'success' ? 'text-green-700' :
-                                            commit.status === 'merge' ? 'text-blue-700' :
-                                            commit.status === 'revert' ? 'text-orange-700' :
-                                            'text-gray-500'
+                                            commit.status === 'success' ? 'text-green-400' :
+                                            commit.status === 'merge' ? 'text-[#58a6ff]' :
+                                            commit.status === 'revert' ? 'text-orange-400' :
+                                            'text-[#8b949e]'
                                         }`}>
                                             {getStatusIcon(commit.status)}
                                         </span>
@@ -386,26 +386,26 @@ function CommitsTab({
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="md:hidden divide-y divide-gray-100" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div className="md:hidden divide-y divide-[#21262d]" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                     {data.map((commit, idx) => (
                         <Link
                             key={idx}
                             href={`/admin/git-status/${commit.hash}`}
-                            className="block p-4 hover:bg-gray-50"
+                            className="block p-4 hover:bg-[#161b22]"
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-gray-500">{commit.date}</span>
+                                <span className="text-xs text-[#8b949e]">{commit.date}</span>
                                 <span className={`text-xs font-medium ${
-                                    commit.status === 'success' ? 'text-green-700' :
-                                    commit.status === 'merge' ? 'text-blue-700' :
-                                    commit.status === 'revert' ? 'text-orange-700' :
-                                    'text-gray-500'
+                                    commit.status === 'success' ? 'text-green-400' :
+                                    commit.status === 'merge' ? 'text-[#58a6ff]' :
+                                    commit.status === 'revert' ? 'text-orange-400' :
+                                    'text-[#8b949e]'
                                 }`}>
                                     {getStatusIcon(commit.status)}
                                 </span>
                             </div>
-                            <p className="text-sm font-medium text-gray-900 mb-1">{commit.message}</p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <p className="text-sm font-medium text-[#e6edf3] mb-1">{commit.message}</p>
+                            <div className="flex items-center gap-4 text-xs text-[#8b949e]">
                                 <span>{commit.author}</span>
                                 <span className="font-mono">{commit.hash}</span>
                                 <span>{commit.filesChanged}개</span>
@@ -421,14 +421,14 @@ function CommitsTab({
                     <button
                         onClick={() => onPageChange(1)}
                         disabled={page === 1}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-2 text-sm border border-[#30363d] rounded-lg text-[#c9d1d9] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#21262d]"
                     >
                         처음
                     </button>
                     <button
                         onClick={() => onPageChange(page - 1)}
                         disabled={page === 1}
-                        className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="p-2 border border-[#30363d] rounded-lg text-[#c9d1d9] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#21262d]"
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -452,8 +452,8 @@ function CommitsTab({
                                     onClick={() => onPageChange(pageNum)}
                                     className={`w-10 h-10 text-sm rounded-lg transition-colors ${
                                         page === pageNum
-                                            ? 'bg-black text-white'
-                                            : 'border border-gray-300 hover:bg-gray-50'
+                                            ? 'bg-[#58a6ff] text-white'
+                                            : 'border border-[#30363d] text-[#c9d1d9] hover:bg-[#21262d]'
                                     }`}
                                 >
                                     {pageNum}
@@ -465,14 +465,14 @@ function CommitsTab({
                     <button
                         onClick={() => onPageChange(page + 1)}
                         disabled={page === totalPages}
-                        className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="p-2 border border-[#30363d] rounded-lg text-[#c9d1d9] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#21262d]"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => onPageChange(totalPages)}
                         disabled={page === totalPages}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        className="px-3 py-2 text-sm border border-[#30363d] rounded-lg text-[#c9d1d9] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#21262d]"
                     >
                         끝
                     </button>
@@ -486,7 +486,7 @@ function CommitsTab({
 function StatusTab({ data }: { data: GitFileStatus[] }) {
     if (data.length === 0) {
         return (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-20 text-[#8b949e]">
                 <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>작업 트리가 깨끗합니다 (변경 없음)</p>
             </div>
@@ -494,30 +494,30 @@ function StatusTab({ data }: { data: GitFileStatus[] }) {
     }
 
     const getStatusStyle = (status: string) => {
-        if (status.includes('untracked')) return 'bg-green-100 text-green-800';
-        if (status.includes('modified')) return 'bg-yellow-100 text-yellow-800';
-        if (status.includes('deleted')) return 'bg-red-100 text-red-800';
-        if (status.includes('added') || status.includes('staged')) return 'bg-blue-100 text-blue-800';
-        if (status.includes('conflict')) return 'bg-red-200 text-red-900';
-        return 'bg-gray-100 text-gray-800';
+        if (status.includes('untracked')) return 'bg-green-900/30 text-green-400';
+        if (status.includes('modified')) return 'bg-yellow-900/30 text-yellow-400';
+        if (status.includes('deleted')) return 'bg-red-900/30 text-red-400';
+        if (status.includes('added') || status.includes('staged')) return 'bg-blue-900/30 text-[#58a6ff]';
+        if (status.includes('conflict')) return 'bg-red-900/50 text-red-300';
+        return 'bg-[#21262d] text-[#8b949e]';
     };
 
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-[#30363d] rounded-lg overflow-hidden">
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto" style={{ maxHeight: '70vh' }}>
                 <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                    <thead className="sticky top-0 bg-[#161b22] border-b border-[#30363d]">
                         <tr>
-                            <th className="px-4 py-3 text-left font-semibold text-gray-700">파일명</th>
-                            <th className="px-4 py-3 text-left font-semibold text-gray-700">상태</th>
-                            <th className="px-4 py-3 text-center font-semibold text-gray-700">변경 라인</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#c9d1d9]">파일명</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#c9d1d9]">상태</th>
+                            <th className="px-4 py-3 text-center font-semibold text-[#c9d1d9]">변경 라인</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-[#21262d]">
                         {data.map((file, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-mono text-sm text-gray-900 max-w-md truncate" title={file.filename}>
+                            <tr key={idx} className="hover:bg-[#161b22]">
+                                <td className="px-4 py-3 font-mono text-sm text-[#e6edf3] max-w-md truncate" title={file.filename}>
                                     {file.filename}
                                 </td>
                                 <td className="px-4 py-3">
@@ -526,9 +526,9 @@ function StatusTab({ data }: { data: GitFileStatus[] }) {
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                    <span className="text-green-600 font-medium">+{file.additions}</span>
+                                    <span className="text-green-400 font-medium">+{file.additions}</span>
                                     {file.deletions > 0 && (
-                                        <span className="text-red-600 font-medium ml-2">-{file.deletions}</span>
+                                        <span className="text-red-400 font-medium ml-2">-{file.deletions}</span>
                                     )}
                                 </td>
                             </tr>
@@ -538,10 +538,10 @@ function StatusTab({ data }: { data: GitFileStatus[] }) {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-100" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="md:hidden divide-y divide-[#21262d]" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                 {data.map((file, idx) => (
                     <div key={idx} className="p-4">
-                        <p className="font-mono text-sm text-gray-900 mb-2 truncate" title={file.filename}>
+                        <p className="font-mono text-sm text-[#e6edf3] mb-2 truncate" title={file.filename}>
                             {file.filename}
                         </p>
                         <div className="flex items-center justify-between">
@@ -549,9 +549,9 @@ function StatusTab({ data }: { data: GitFileStatus[] }) {
                                 {file.statusKo}
                             </span>
                             <div className="text-xs">
-                                <span className="text-green-600 font-medium">+{file.additions}</span>
+                                <span className="text-green-400 font-medium">+{file.additions}</span>
                                 {file.deletions > 0 && (
-                                    <span className="text-red-600 font-medium ml-2">-{file.deletions}</span>
+                                    <span className="text-red-400 font-medium ml-2">-{file.deletions}</span>
                                 )}
                             </div>
                         </div>

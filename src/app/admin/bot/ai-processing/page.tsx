@@ -334,9 +334,9 @@ export default function AIProcessingPage() {
                     <div className="flex items-center gap-3">
                         <Link
                             href="/admin/bot/run"
-                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 hover:bg-[#21262d] rounded-lg transition-colors"
                         >
-                            <ArrowLeft className="w-5 h-5 text-gray-400" />
+                            <ArrowLeft className="w-5 h-5 text-[#8b949e]" />
                         </Link>
                         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                             <Cpu className="w-7 h-7 text-blue-400" />
@@ -346,7 +346,7 @@ export default function AIProcessingPage() {
                             무료 - 로컬 Ollama
                         </span>
                     </div>
-                    <p className="text-sm text-gray-400 mt-2 ml-12">
+                    <p className="text-sm text-[#8b949e] mt-2 ml-12">
                         모델: qwen3:14b | 2단계: 변환 + 검증
                     </p>
                 </div>
@@ -354,7 +354,7 @@ export default function AIProcessingPage() {
                 {/* Ollama Status */}
                 <div className="flex items-center gap-2">
                     {ollamaStatus === 'checking' && (
-                        <span className="flex items-center gap-2 text-gray-400">
+                        <span className="flex items-center gap-2 text-[#8b949e]">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Ollama 확인중...
                         </span>
@@ -373,10 +373,10 @@ export default function AIProcessingPage() {
                     )}
                     <button
                         onClick={checkOllama}
-                        className="p-1.5 hover:bg-gray-700 rounded-lg"
+                        className="p-1.5 hover:bg-[#21262d] rounded-lg"
                         title="Ollama 상태 새로고침"
                     >
-                        <RefreshCw className="w-4 h-4 text-gray-400" />
+                        <RefreshCw className="w-4 h-4 text-[#8b949e]" />
                     </button>
                 </div>
             </header>
@@ -384,15 +384,15 @@ export default function AIProcessingPage() {
             {/* Automation Panel */}
             <div className={`rounded-xl border p-4 ${
                 automation.enabled
-                    ? 'bg-green-900/30 border-green-500'
-                    : 'bg-gray-800/50 border-gray-600'
+                    ? 'bg-green-900/30 border-green-800'
+                    : 'bg-[#161b22] border-[#30363d]'
             }`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Power className={`w-6 h-6 ${automation.enabled ? 'text-green-400' : 'text-gray-500'}`} />
+                        <Power className={`w-6 h-6 ${automation.enabled ? 'text-green-400' : 'text-[#8b949e]'}`} />
                         <div>
-                            <h3 className="font-bold text-white">자동 실행</h3>
-                            <p className="text-sm text-gray-400">
+                            <h3 className="font-bold text-[#e6edf3]">자동 실행</h3>
+                            <p className="text-sm text-[#8b949e]">
                                 {automation.enabled
                                     ? `${automation.intervalMinutes}분마다 자동 처리 (페이지 열려있어야 함)`
                                     : '대기중인 기사가 있으면 자동으로 AI 처리'
@@ -404,12 +404,12 @@ export default function AIProcessingPage() {
                     <div className="flex items-center gap-4">
                         {/* Interval Selector */}
                         <div className="flex items-center gap-2">
-                            <Settings className="w-4 h-4 text-gray-400" />
+                            <Settings className="w-4 h-4 text-[#8b949e]" />
                             <select
                                 value={automation.intervalMinutes}
                                 onChange={(e) => updateInterval(Number(e.target.value))}
                                 disabled={autoProcessing}
-                                className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white"
+                                className="bg-[#21262d] border border-[#30363d] rounded-lg px-3 py-1.5 text-sm text-[#e6edf3]"
                             >
                                 <option value={5}>5분</option>
                                 <option value={10}>10분</option>
@@ -451,9 +451,9 @@ export default function AIProcessingPage() {
 
                 {/* Last/Next Run Info */}
                 {automation.enabled && (
-                    <div className="mt-3 pt-3 border-t border-green-700/50 flex items-center gap-6 text-sm">
+                    <div className="mt-3 pt-3 border-t border-green-800/50 flex items-center gap-6 text-sm">
                         {automation.lastRun && (
-                            <span className="text-gray-400">
+                            <span className="text-[#8b949e]">
                                 마지막 실행: {new Date(automation.lastRun).toLocaleTimeString('ko-KR')}
                             </span>
                         )}
@@ -468,40 +468,40 @@ export default function AIProcessingPage() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-5 gap-4">
-                <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-4">
-                    <div className="text-sm text-gray-400">전체</div>
-                    <div className="text-2xl font-bold text-white">{stats.total}</div>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <div className="text-sm text-[#8b949e]">전체</div>
+                    <div className="text-2xl font-bold text-[#e6edf3]">{stats.total}</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-4">
-                    <div className="text-sm text-gray-400">처리됨</div>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <div className="text-sm text-[#8b949e]">처리됨</div>
                     <div className="text-2xl font-bold text-blue-400">{stats.processed}</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-4">
-                    <div className="text-sm text-gray-400">발행됨</div>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <div className="text-sm text-[#8b949e]">발행됨</div>
                     <div className="text-2xl font-bold text-green-400">{stats.published}</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-4">
-                    <div className="text-sm text-gray-400">보류</div>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <div className="text-sm text-[#8b949e]">보류</div>
                     <div className="text-2xl font-bold text-yellow-400">{stats.held}</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-4">
-                    <div className="text-sm text-gray-400">실패</div>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4">
+                    <div className="text-sm text-[#8b949e]">실패</div>
                     <div className="text-2xl font-bold text-red-400">{stats.failed}</div>
                 </div>
             </div>
 
             {/* Progress Bar */}
             {isProcessing && (
-                <div className="bg-blue-900/30 rounded-xl border border-blue-500 p-4">
+                <div className="bg-blue-900/30 rounded-xl border border-blue-800 p-4">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-sm font-medium text-[#e6edf3]">
                             처리중: {stats.currentArticle?.substring(0, 50)}...
                         </span>
-                        <span className="text-sm text-gray-300">
+                        <span className="text-sm text-[#c9d1d9]">
                             {stats.processed} / {stats.total} ({progressPercent}%)
                         </span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-3">
+                    <div className="w-full bg-[#21262d] rounded-full h-3">
                         <div
                             className="bg-blue-500 h-3 rounded-full transition-all duration-300"
                             style={{ width: `${progressPercent}%` }}
@@ -517,7 +517,7 @@ export default function AIProcessingPage() {
                     disabled={isProcessing || articles.length === 0 || ollamaStatus === 'checking'}
                     className={`px-6 py-3 rounded-lg font-bold flex items-center gap-2 transition-all ${
                         isProcessing || articles.length === 0 || ollamaStatus === 'checking'
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            ? 'bg-[#21262d] text-[#6e7681] cursor-not-allowed'
                             : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg hover:shadow-xl'
                     }`}
                 >
@@ -536,7 +536,7 @@ export default function AIProcessingPage() {
                 <button
                     onClick={resetAndReload}
                     disabled={isProcessing}
-                    className="px-4 py-3 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                    className="px-4 py-3 rounded-lg border border-[#30363d] text-[#c9d1d9] hover:bg-[#21262d] flex items-center gap-2"
                 >
                     <RefreshCw className="w-4 h-4" />
                     기사 새로고침
@@ -544,26 +544,26 @@ export default function AIProcessingPage() {
             </div>
 
             {/* Articles List */}
-            <div className="bg-gray-800/50 rounded-xl border border-gray-600 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-600 bg-gray-700/50">
-                    <h3 className="font-medium text-white flex items-center gap-2">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#30363d] bg-[#21262d]">
+                    <h3 className="font-medium text-[#e6edf3] flex items-center gap-2">
                         <FileText className="w-4 h-4" />
                         대기중인 기사 ({articles.length})
                     </h3>
                 </div>
 
                 {loading ? (
-                    <div className="p-8 text-center text-gray-400">
+                    <div className="p-8 text-center text-[#8b949e]">
                         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                         기사 불러오는 중...
                     </div>
                 ) : articles.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400">
+                    <div className="p-8 text-center text-[#8b949e]">
                         <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
                         처리할 대기중인 기사가 없습니다
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-700 max-h-[500px] overflow-y-auto">
+                    <div className="divide-y divide-[#21262d] max-h-[500px] overflow-y-auto">
                         {articles.map((article, idx) => (
                             <div
                                 key={article.id}
@@ -574,7 +574,7 @@ export default function AIProcessingPage() {
                                 {/* Status Icon */}
                                 <div className="flex-shrink-0">
                                     {article.status === 'pending' && (
-                                        <Clock className="w-5 h-5 text-gray-500" />
+                                        <Clock className="w-5 h-5 text-[#6e7681]" />
                                     )}
                                     {article.status === 'processing' && (
                                         <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
@@ -588,13 +588,13 @@ export default function AIProcessingPage() {
                                 </div>
 
                                 {/* Index */}
-                                <span className="text-sm text-gray-500 w-8">
+                                <span className="text-sm text-[#6e7681] w-8">
                                     #{idx + 1}
                                 </span>
 
                                 {/* Title */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white truncate">
+                                    <p className="text-sm font-medium text-[#e6edf3] truncate">
                                         {article.title}
                                     </p>
                                     {article.error && (
@@ -605,7 +605,7 @@ export default function AIProcessingPage() {
                                 </div>
 
                                 {/* Region */}
-                                <span className="text-xs text-gray-300 bg-gray-700 px-2 py-1 rounded">
+                                <span className="text-xs text-[#c9d1d9] bg-[#21262d] px-2 py-1 rounded">
                                     {article.region || '미분류'}
                                 </span>
 
@@ -627,8 +627,8 @@ export default function AIProcessingPage() {
             </div>
 
             {/* Info Panel - Detailed */}
-            <div className="bg-gray-800/50 rounded-xl border border-gray-600 p-5">
-                <h4 className="font-bold text-white flex items-center gap-2 text-lg mb-4">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-5">
+                <h4 className="font-bold text-[#e6edf3] flex items-center gap-2 text-lg mb-4">
                     <AlertCircle className="w-5 h-5 text-blue-400" />
                     상세 안내
                 </h4>
@@ -638,18 +638,18 @@ export default function AIProcessingPage() {
                     <div className="space-y-4">
                         <div>
                             <h5 className="font-semibold text-blue-400 mb-2">AI 처리 등급</h5>
-                            <ul className="text-gray-300 space-y-1">
-                                <li><span className="text-green-400 font-bold">A등급</span>: 팩트체크 통과 → 자동 발행</li>
-                                <li><span className="text-blue-400 font-bold">B등급</span>: 경미한 이슈 → 자동 발행</li>
-                                <li><span className="text-yellow-400 font-bold">C등급</span>: 숫자/날짜 불일치 → 보류 (재시도)</li>
-                                <li><span className="text-red-400 font-bold">D등급</span>: 심각한 문제 → 보류 (수동 검토 필요)</li>
+                            <ul className="text-[#c9d1d9] space-y-1">
+                                <li><span className="text-green-400 font-bold">A등급</span>: 팩트체크 통과 - 자동 발행</li>
+                                <li><span className="text-blue-400 font-bold">B등급</span>: 경미한 이슈 - 자동 발행</li>
+                                <li><span className="text-yellow-400 font-bold">C등급</span>: 숫자/날짜 불일치 - 보류 (재시도)</li>
+                                <li><span className="text-red-400 font-bold">D등급</span>: 심각한 문제 - 보류 (수동 검토 필요)</li>
                             </ul>
                         </div>
 
                         <div>
                             <h5 className="font-semibold text-blue-400 mb-2">재시도 로직</h5>
-                            <ul className="text-gray-300 space-y-1">
-                                <li>- C/D 등급 기사는 최대 <span className="text-white font-bold">3회 재시도</span></li>
+                            <ul className="text-[#c9d1d9] space-y-1">
+                                <li>- C/D 등급 기사는 최대 <span className="text-[#e6edf3] font-bold">3회 재시도</span></li>
                                 <li>- 재시도마다 더 엄격한 프롬프트 적용</li>
                                 <li>- 3회 실패 시에만 최종 보류 처리</li>
                             </ul>
@@ -660,8 +660,8 @@ export default function AIProcessingPage() {
                     <div className="space-y-4">
                         <div>
                             <h5 className="font-semibold text-green-400 mb-2">자동 실행 모드</h5>
-                            <ul className="text-gray-300 space-y-1">
-                                <li>- <span className="text-white font-bold">자동 실행 ON</span> 클릭 → 자동화 시작</li>
+                            <ul className="text-[#c9d1d9] space-y-1">
+                                <li>- <span className="text-[#e6edf3] font-bold">자동 실행 ON</span> 클릭 - 자동화 시작</li>
                                 <li>- 설정된 간격(5~60분)마다 대기 기사 확인</li>
                                 <li>- 대기 기사 있으면 자동으로 AI 처리</li>
                                 <li>- <span className="text-yellow-400">주의: 이 페이지가 열려있어야 동작</span></li>
@@ -670,8 +670,8 @@ export default function AIProcessingPage() {
 
                         <div>
                             <h5 className="font-semibold text-blue-400 mb-2">처리 속도</h5>
-                            <ul className="text-gray-300 space-y-1">
-                                <li>- 기사당 약 <span className="text-white font-bold">40~100초</span> 소요</li>
+                            <ul className="text-[#c9d1d9] space-y-1">
+                                <li>- 기사당 약 <span className="text-[#e6edf3] font-bold">40~100초</span> 소요</li>
                                 <li>- 변환(20~50초) + 팩트체크(20~50초)</li>
                                 <li>- Ollama 모델: qwen3:14b (로컬)</li>
                                 <li>- <span className="text-green-400">무료!</span> API 비용 없음</li>

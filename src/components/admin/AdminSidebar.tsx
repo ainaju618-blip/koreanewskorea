@@ -31,7 +31,8 @@ import {
     Globe,
     Mail,
     GitBranch,
-    Cpu
+    Cpu,
+    Radio
 } from 'lucide-react';
 
 // --- 메뉴 아이템 타입 정의 ---
@@ -106,6 +107,7 @@ const MENU_ITEMS: MenuGroup[] = [
                     { label: "AI 기사 처리", href: "/admin/bot/ai-processing", icon: Cpu },
                     { label: "수집 로그", href: "/admin/bot/logs", icon: Activity },
                     { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
+                    { label: "24시간상시모니터링", href: "/admin/bot/realtime-monitor", icon: Radio },
                 ]
             },
             { label: "이메일 수집", icon: Mail, href: "/admin/email-extract" }

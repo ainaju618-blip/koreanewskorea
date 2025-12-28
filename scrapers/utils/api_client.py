@@ -40,10 +40,10 @@ MAX_RETRIES = 3
 RETRY_BASE_DELAY = 1  # 초 (Exponential Backoff 기준)
 
 
-def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
+def send_article_to_server(article_data: Dict[str, Any], max_retries: int = 3) -> Dict[str, Any]:
     """
-    Next.js API로 기사 전송
-    
+    Next.js API로 기사 전송 (재시도 로직 포함)
+
     Args:
         article_data: 기사 데이터 딕셔너리
             - title (필수): 기사 제목
@@ -54,7 +54,8 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
             - published_at: 발행일 (ISO 8601)
             - thumbnail_url: 썸네일 이미지 URL
             - ai_summary: AI 요약 (선택)
-    
+        max_retries: 최대 재시도 횟수 (기본 3회)
+
     Returns:
         Dict with keys:
             - success: bool
@@ -65,52 +66,79 @@ def send_article_to_server(article_data: Dict[str, Any]) -> Dict[str, Any]:
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {API_KEY}'
     }
-    
-    try:
-        resp = requests.post(
-            API_URL, 
-            json=article_data, 
-            headers=headers, 
-            timeout=REQUEST_TIMEOUT
-        )
-        
-        if resp.status_code == 201:
-            # 새로 생성됨
-            print(f'   [OK] 전송 완료: {safe_str(article_data.get("title", "제목없음")[:40])}')
-            return {'success': True, 'status': 'created', 'message': '기사 저장 완료'}
 
-        elif resp.status_code == 200:
-            # 이미 존재함 (중복)
-            print(f'   [SKIP] 이미 존재: {safe_str(article_data.get("title", "제목없음")[:40])}')
-            return {'success': True, 'status': 'exists', 'message': '이미 존재하는 기사'}
+    last_error = None
 
-        elif resp.status_code == 401:
-            # 인증 실패
-            print(f'   [AUTH] 인증 실패 - BOT_API_KEY 확인 필요')
-            return {'success': False, 'status': 'error', 'message': '인증 실패'}
+    for attempt in range(max_retries):
+        try:
+            resp = requests.post(
+                API_URL,
+                json=article_data,
+                headers=headers,
+                timeout=REQUEST_TIMEOUT
+            )
 
-        elif resp.status_code == 400:
-            # 필수 필드 누락
-            error_msg = resp.json().get('error', '필수 필드 누락')
-            print(f'   [FAIL] 요청 오류: {safe_str(error_msg)}')
-            return {'success': False, 'status': 'error', 'message': error_msg}
+            if resp.status_code == 201:
+                # 새로 생성됨
+                print(f'   [OK] 전송 완료: {safe_str(article_data.get("title", "제목없음")[:40])}')
+                return {'success': True, 'status': 'created', 'message': '기사 저장 완료'}
 
-        else:
-            # 기타 서버 오류
-            print(f'   [FAIL] 서버 오류 ({resp.status_code}): {safe_str(resp.text[:100])}')
-            return {'success': False, 'status': 'error', 'message': f'서버 오류: {resp.status_code}'}
+            elif resp.status_code == 200:
+                # 이미 존재함 (중복)
+                print(f'   [SKIP] 이미 존재: {safe_str(article_data.get("title", "제목없음")[:40])}')
+                return {'success': True, 'status': 'exists', 'message': '이미 존재하는 기사'}
 
-    except requests.exceptions.Timeout:
-        print(f'   [TIMEOUT] 요청 시간 초과')
-        return {'success': False, 'status': 'error', 'message': '요청 시간 초과'}
+            elif resp.status_code == 401:
+                # 인증 실패 - 재시도 의미 없음
+                print(f'   [AUTH] 인증 실패 - BOT_API_KEY 확인 필요')
+                return {'success': False, 'status': 'error', 'message': '인증 실패'}
 
-    except requests.exceptions.ConnectionError:
-        print(f'   [ERROR] 서버 연결 실패 - Next.js 서버 실행 여부 확인')
-        return {'success': False, 'status': 'error', 'message': '서버 연결 실패'}
+            elif resp.status_code == 400:
+                # 필수 필드 누락 - 재시도 의미 없음
+                try:
+                    error_msg = resp.json().get('error', '필수 필드 누락')
+                except:
+                    error_msg = resp.text[:100] if resp.text else '필수 필드 누락'
+                print(f'   [FAIL] 요청 오류: {safe_str(error_msg)}')
+                return {'success': False, 'status': 'error', 'message': error_msg}
 
-    except Exception as e:
-        print(f'   [ERROR] 예외 발생: {safe_str(str(e))}')
-        return {'success': False, 'status': 'error', 'message': str(e)}
+            elif resp.status_code >= 500:
+                # 서버 오류 - 재시도 가능
+                last_error = f'서버 오류: {resp.status_code}'
+                if attempt < max_retries - 1:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    print(f'   [RETRY] 서버 오류 ({resp.status_code}), {delay}초 후 재시도...')
+                    time.sleep(delay)
+                    continue
+            else:
+                # 기타 오류
+                print(f'   [FAIL] 서버 오류 ({resp.status_code}): {safe_str(resp.text[:100])}')
+                return {'success': False, 'status': 'error', 'message': f'서버 오류: {resp.status_code}'}
+
+        except requests.exceptions.Timeout:
+            last_error = '요청 시간 초과'
+            if attempt < max_retries - 1:
+                delay = RETRY_BASE_DELAY * (2 ** attempt)
+                print(f'   [RETRY] 타임아웃, {delay}초 후 재시도...')
+                time.sleep(delay)
+                continue
+
+        except requests.exceptions.ConnectionError:
+            last_error = '서버 연결 실패'
+            if attempt < max_retries - 1:
+                delay = RETRY_BASE_DELAY * (2 ** attempt)
+                print(f'   [RETRY] 연결 오류, {delay}초 후 재시도...')
+                time.sleep(delay)
+                continue
+
+        except Exception as e:
+            last_error = str(e)
+            print(f'   [ERROR] 예외 발생: {safe_str(str(e))}')
+            return {'success': False, 'status': 'error', 'message': str(e)}
+
+    # All retries exhausted
+    print(f'   [FAIL] 최대 재시도 횟수 초과: {safe_str(last_error or "알 수 없는 오류")}')
+    return {'success': False, 'status': 'error', 'message': last_error or '최대 재시도 횟수 초과'}
 
 
 def check_duplicates(urls: list) -> set:

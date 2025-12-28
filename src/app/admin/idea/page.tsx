@@ -34,13 +34,13 @@ function StatCard({
     href?: string;
 }) {
     const content = (
-        <div className={`bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow ${href ? 'cursor-pointer' : ''}`}>
+        <div className={`bg-[#161b22] rounded-xl p-6 border border-[#30363d] hover:border-[#484f58] transition-colors ${href ? 'cursor-pointer' : ''}`}>
             <div className="flex items-start justify-between">
                 <div>
-                    <p className="text-sm text-gray-500 mb-1">{title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{value}</p>
+                    <p className="text-sm text-[#8b949e] mb-1">{title}</p>
+                    <p className="text-3xl font-bold text-[#e6edf3]">{value}</p>
                     {trend && (
-                        <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1">
+                        <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                             <TrendingUp className="w-3 h-3" />
                             {trend}
                         </p>
@@ -79,13 +79,13 @@ function ActivityItem({
     const { color, icon: StatusIcon, label } = statusConfig[status];
 
     return (
-        <div className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+        <div className="flex items-start gap-3 p-3 hover:bg-[#21262d] rounded-lg transition-colors">
             <div className={`mt-0.5 ${color}`}>
                 <StatusIcon className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
-                <p className="text-xs text-gray-500">{source} · {time}</p>
+                <p className="text-sm font-medium text-[#e6edf3] truncate">{title}</p>
+                <p className="text-xs text-[#8b949e]">{source} · {time}</p>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded ${color} bg-opacity-10`}>
                 {label}
@@ -117,20 +117,20 @@ function SourceStatusCard({
     };
 
     return (
-        <div className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-100">
+        <div className="flex items-center gap-4 p-4 bg-[#161b22] rounded-lg border border-[#30363d]">
             <div className={`w-2 h-2 rounded-full ${statusColors[status]}`} />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{name}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${type === 'rss' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                    <span className="font-medium text-[#e6edf3]">{name}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${type === 'rss' ? 'bg-blue-900/50 text-blue-400' : 'bg-purple-900/50 text-purple-400'}`}>
                         {type.toUpperCase()}
                     </span>
                 </div>
-                <p className="text-xs text-gray-500">마지막 수집: {lastCollected}</p>
+                <p className="text-xs text-[#8b949e]">마지막 수집: {lastCollected}</p>
             </div>
             <div className="text-right">
-                <p className="text-lg font-bold text-gray-900">{articleCount}</p>
-                <p className="text-xs text-gray-500">기사</p>
+                <p className="text-lg font-bold text-[#e6edf3]">{articleCount}</p>
+                <p className="text-xs text-[#8b949e]">기사</p>
             </div>
         </div>
     );
@@ -217,53 +217,53 @@ export default function IdeaDashboardPage() {
             {/* 메인 컨텐츠 그리드 */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 빠른 시작 가이드 */}
-                <div className="lg:col-span-2 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-amber-500" />
+                <div className="lg:col-span-2 bg-gradient-to-br from-amber-900/30 to-orange-900/20 rounded-xl p-6 border border-amber-800/50">
+                    <h3 className="text-lg font-bold text-[#e6edf3] mb-4 flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-amber-400" />
                         시작 가이드
                     </h3>
 
                     <div className="space-y-4">
-                        <div className="flex items-start gap-4 p-4 bg-white/80 rounded-lg">
+                        <div className="flex items-start gap-4 p-4 bg-[#161b22]/80 rounded-lg border border-[#30363d]">
                             <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
                             <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">수집처 등록</h4>
-                                <p className="text-sm text-gray-600 mt-1">TechCrunch, OpenAI Blog 등 AI 뉴스 소스를 등록하세요.</p>
-                                <Link href="/admin/idea/sources" className="text-amber-600 text-sm font-medium inline-flex items-center gap-1 mt-2 hover:underline">
+                                <h4 className="font-medium text-[#e6edf3]">수집처 등록</h4>
+                                <p className="text-sm text-[#8b949e] mt-1">TechCrunch, OpenAI Blog 등 AI 뉴스 소스를 등록하세요.</p>
+                                <Link href="/admin/idea/sources" className="text-amber-400 text-sm font-medium inline-flex items-center gap-1 mt-2 hover:underline">
                                     수집처 관리로 이동 <ArrowRight className="w-3 h-3" />
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4 p-4 bg-white/80 rounded-lg">
+                        <div className="flex items-start gap-4 p-4 bg-[#161b22]/80 rounded-lg border border-[#30363d]">
                             <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
                             <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">RSS/스크래핑 설정</h4>
-                                <p className="text-sm text-gray-600 mt-1">각 수집처의 RSS URL 또는 스크래핑 셀렉터를 설정하세요.</p>
+                                <h4 className="font-medium text-[#e6edf3]">RSS/스크래핑 설정</h4>
+                                <p className="text-sm text-[#8b949e] mt-1">각 수집처의 RSS URL 또는 스크래핑 셀렉터를 설정하세요.</p>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4 p-4 bg-white/80 rounded-lg">
+                        <div className="flex items-start gap-4 p-4 bg-[#161b22]/80 rounded-lg border border-[#30363d]">
                             <div className="w-8 h-8 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
                             <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">수집 실행</h4>
-                                <p className="text-sm text-gray-600 mt-1">자동 또는 수동으로 뉴스를 수집하고 AI로 재구성하세요.</p>
+                                <h4 className="font-medium text-[#e6edf3]">수집 실행</h4>
+                                <p className="text-sm text-[#8b949e] mt-1">자동 또는 수동으로 뉴스를 수집하고 AI로 재구성하세요.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 p-4 bg-white/60 rounded-lg border border-amber-200">
-                        <p className="text-sm text-gray-700">
-                            <strong>💡 전략:</strong> &quot;참조용&quot;은 원문 링크 제공, &quot;재구성&quot;은 사실 추출 후 AI 재작성으로 저작권 안전하게 운영
+                    <div className="mt-6 p-4 bg-[#161b22]/60 rounded-lg border border-amber-800/30">
+                        <p className="text-sm text-[#c9d1d9]">
+                            <strong>Tip:</strong> &quot;참조용&quot;은 원문 링크 제공, &quot;재구성&quot;은 사실 추출 후 AI 재작성으로 저작권 안전하게 운영
                         </p>
                     </div>
                 </div>
 
                 {/* 수집처 상태 */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                <div className="bg-[#161b22] rounded-xl p-6 border border-[#30363d]">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-gray-900">수집처 상태</h3>
-                        <Link href="/admin/idea/sources" className="text-sm text-amber-600 hover:underline">
+                        <h3 className="font-bold text-[#e6edf3]">수집처 상태</h3>
+                        <Link href="/admin/idea/sources" className="text-sm text-amber-400 hover:underline">
                             전체 보기
                         </Link>
                     </div>
@@ -275,12 +275,12 @@ export default function IdeaDashboardPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-8 text-gray-500">
-                            <Globe className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <div className="text-center py-8 text-[#8b949e]">
+                            <Globe className="w-12 h-12 mx-auto mb-3 text-[#484f58]" />
                             <p className="text-sm">등록된 수집처가 없습니다</p>
                             <Link
                                 href="/admin/idea/sources"
-                                className="text-amber-600 text-sm font-medium hover:underline mt-2 inline-block"
+                                className="text-amber-400 text-sm font-medium hover:underline mt-2 inline-block"
                             >
                                 수집처 등록하기
                             </Link>
@@ -290,25 +290,25 @@ export default function IdeaDashboardPage() {
             </div>
 
             {/* 최근 활동 */}
-            <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-[#161b22] rounded-xl p-6 border border-[#30363d]">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-900">최근 활동</h3>
-                    <Link href="/admin/idea/raw" className="text-sm text-amber-600 hover:underline">
+                    <h3 className="font-bold text-[#e6edf3]">최근 활동</h3>
+                    <Link href="/admin/idea/raw" className="text-sm text-amber-400 hover:underline">
                         전체 보기
                     </Link>
                 </div>
 
                 {recentActivities.length > 0 ? (
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-[#30363d]">
                         {recentActivities.map((activity, index) => (
                             <ActivityItem key={index} {...activity} />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <div className="text-center py-8 text-[#8b949e]">
+                        <Clock className="w-12 h-12 mx-auto mb-3 text-[#484f58]" />
                         <p className="text-sm">아직 수집된 기사가 없습니다</p>
-                        <p className="text-xs text-gray-400 mt-1">수집처를 등록하고 수집을 시작하세요</p>
+                        <p className="text-xs text-[#6e7681] mt-1">수집처를 등록하고 수집을 시작하세요</p>
                     </div>
                 )}
             </div>

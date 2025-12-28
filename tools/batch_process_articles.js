@@ -89,7 +89,8 @@ async function main() {
         .select('id, title, content, region')
         .eq('status', 'draft')
         .not('content', 'is', null)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10000);
 
     if (error) {
         console.error('Failed to fetch articles:', error.message);

@@ -5,10 +5,14 @@ Universal Regional Scraper Configuration Registry
 
 from typing import Dict, Any
 
-# 공통 설정 (기본값)
+# Common settings (default values) - Updated Dec 2025
 DEFAULT_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
 }
 
 # 지역별 설정
@@ -109,7 +113,26 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 6. 무안군청
+    # 6. 나주시청
+    'naju': {
+        'name': '나주시',
+        'category': '전남',
+        'base_url': 'https://www.naju.go.kr',
+        'list_url': 'https://www.naju.go.kr/www/news/notice/notice',
+        'encoding': 'utf-8',
+        'selectors': {
+            'list_item': 'tbody tr',
+            'list_title': 'td.subject a, td.title a',
+            'list_date': 'td:nth-of-type(4)',
+            'list_link': 'td.subject a, td.title a',
+            'detail_title': 'h4.view_title, div.view_header h4',
+            'detail_content': 'div.view_content, div.board_content',
+            'detail_date': 'ul.view_info li:first-child',
+            'detail_image': 'div.view_content img',
+        }
+    },
+
+    # 7. 무안군청
     'muan': {
         'name': '무안군',
         'category': '전남',
@@ -128,7 +151,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 7. 함평군청
+    # 8. 함평군청
     'hampyeong': {
         'name': '함평군',
         'category': '전남',
@@ -151,7 +174,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
     # 🚀 Phase 5-A: 전남 16개 시군 추가 (2024-12-07)
     # ============================================================
 
-    # 8. 광양시청
+    # 9. 광양시청
     'gwangyang': {
         'name': '광양시',
         'category': '전남',
@@ -170,7 +193,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 9. 담양군청
+    # 10. 담양군청
     'damyang': {
         'name': '담양군',
         'category': '전남',
@@ -189,7 +212,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 10. 곡성군청
+    # 11. 곡성군청
     'gokseong': {
         'name': '곡성군',
         'category': '전남',
@@ -208,7 +231,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 11. 구례군청
+    # 12. 구례군청
     'gurye': {
         'name': '구례군',
         'category': '전남',
@@ -227,7 +250,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 12. 고흥군청
+    # 13. 고흥군청
     'goheung': {
         'name': '고흥군',
         'category': '전남',
@@ -246,7 +269,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 13. 보성군청
+    # 14. 보성군청
     'boseong': {
         'name': '보성군',
         'category': '전남',
@@ -265,7 +288,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 14. 화순군청
+    # 15. 화순군청
     'hwasun': {
         'name': '화순군',
         'category': '전남',
@@ -284,7 +307,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 15. 장흥군청
+    # 16. 장흥군청
     'jangheung': {
         'name': '장흥군',
         'category': '전남',
@@ -303,7 +326,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 16. 강진군청
+    # 17. 강진군청
     'gangjin': {
         'name': '강진군',
         'category': '전남',
@@ -322,7 +345,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 17. 해남군청
+    # 18. 해남군청
     'haenam': {
         'name': '해남군',
         'category': '전남',
@@ -341,7 +364,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 18. 영암군청
+    # 19. 영암군청
     'yeongam': {
         'name': '영암군',
         'category': '전남',
@@ -360,7 +383,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 19. 영광군청
+    # 20. 영광군청
     'yeonggwang': {
         'name': '영광군',
         'category': '전남',
@@ -379,7 +402,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 20. 장성군청
+    # 21. 장성군청
     'jangseong': {
         'name': '장성군',
         'category': '전남',
@@ -398,7 +421,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 21. 완도군청
+    # 22. 완도군청
     'wando': {
         'name': '완도군',
         'category': '전남',
@@ -417,7 +440,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 22. 진도군청
+    # 23. 진도군청
     'jindo': {
         'name': '진도군',
         'category': '전남',
@@ -436,7 +459,7 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
         }
     },
 
-    # 23. 신안군청
+    # 24. 신안군청
     'shinan': {
         'name': '신안군',
         'category': '전남',
@@ -452,6 +475,48 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
             'detail_content': 'div.view_content, div.board_content',
             'detail_date': 'ul.view_info li:first-child',
             'detail_image': 'div.view_content img',
+        }
+    },
+
+    # ============================================================
+    # Education Offices (25-26)
+    # ============================================================
+
+    # 25. 광주광역시교육청
+    'gwangju_edu': {
+        'name': '광주교육청',
+        'category': '교육',
+        'base_url': 'https://www.gen.go.kr',
+        'list_url': 'https://www.gen.go.kr/main/bbs/bbsList.do?bbsId=BBSMSTR_000000000021',
+        'encoding': 'utf-8',
+        'selectors': {
+            'list_item': 'tbody tr',
+            'list_title': 'td.title a, td.subject a',
+            'list_date': 'td:nth-of-type(4), td.date',
+            'list_link': 'td.title a, td.subject a',
+            'detail_title': 'h4.view_title, div.view_header h4, h3.bbsV_title',
+            'detail_content': 'div.view_content, div.board_content, div.bbsV_cont',
+            'detail_date': 'ul.view_info li:first-child, span.date',
+            'detail_image': 'div.view_content img, div.bbsV_cont img',
+        }
+    },
+
+    # 26. 전라남도교육청
+    'jeonnam_edu': {
+        'name': '전남교육청',
+        'category': '교육',
+        'base_url': 'https://www.jne.go.kr',
+        'list_url': 'https://www.jne.go.kr/main/bbs/bbsList.do?bbsId=BBSMSTR_000000000041',
+        'encoding': 'utf-8',
+        'selectors': {
+            'list_item': 'tbody tr',
+            'list_title': 'td.title a, td.subject a',
+            'list_date': 'td:nth-of-type(4), td.date',
+            'list_link': 'td.title a, td.subject a',
+            'detail_title': 'h4.view_title, div.view_header h4, h3.bbsV_title',
+            'detail_content': 'div.view_content, div.board_content, div.bbsV_cont',
+            'detail_date': 'ul.view_info li:first-child, span.date',
+            'detail_image': 'div.view_content img, div.bbsV_cont img',
         }
     },
 }

@@ -39,16 +39,16 @@ export function RegionCheckboxGroup({
 }: RegionCheckboxGroupProps) {
     const colors = {
         blue: {
-            selected: 'bg-blue-100 border-blue-300 text-blue-900',
-            dot: 'bg-blue-600',
-            title: 'text-blue-800',
-            checkbox: 'text-blue-600 focus:ring-blue-500'
+            selected: 'bg-blue-900/40 border-blue-500 text-blue-300',
+            dot: 'bg-blue-500',
+            title: 'text-blue-400',
+            checkbox: 'text-blue-500 focus:ring-blue-500 bg-[#0d1117] border-[#30363d]'
         },
         red: {
-            selected: 'bg-red-100 border-red-300 text-red-900',
-            dot: 'bg-red-600',
-            title: 'text-red-800',
-            checkbox: 'text-red-600 focus:ring-red-500'
+            selected: 'bg-red-900/40 border-red-500 text-red-300',
+            dot: 'bg-red-500',
+            title: 'text-red-400',
+            checkbox: 'text-red-500 focus:ring-red-500 bg-[#0d1117] border-[#30363d]'
         }
     };
 
@@ -65,7 +65,7 @@ export function RegionCheckboxGroup({
                 {title}
             </p>
             <div
-                className={`grid ${compact ? 'grid-cols-4' : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-5'} gap-1.5 bg-gray-50 p-2 rounded-lg border border-gray-100 ${maxHeight ? 'overflow-y-auto' : ''}`}
+                className={`grid ${compact ? 'grid-cols-4' : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-5'} gap-1.5 bg-[#0d1117] p-2 rounded-lg border border-[#30363d] ${maxHeight ? 'overflow-y-auto' : ''}`}
                 style={maxHeight ? { maxHeight } : undefined}
             >
                 {regions.map((region) => {
@@ -78,20 +78,20 @@ export function RegionCheckboxGroup({
                             key={region.id}
                             className={`flex items-center gap-2 cursor-pointer p-2 rounded border transition text-sm ${selected
                                 ? `${theme.selected} font-medium shadow-sm`
-                                : `bg-white border-transparent hover:bg-gray-100`
+                                : `bg-[#161b22] border-transparent hover:bg-[#21262d]`
                                 }`}
                         >
                             <input
                                 type="checkbox"
                                 checked={selected}
                                 onChange={() => onToggle(getValue(region))}
-                                className={`rounded border-gray-300 ${theme.checkbox}`}
+                                className={`rounded ${theme.checkbox}`}
                             />
-                            <span className="flex-1 text-sm whitespace-nowrap text-gray-900">
+                            <span className="flex-1 text-sm whitespace-nowrap text-[#e6edf3]">
                                 {region.label}
                             </span>
                             {info && info.count !== undefined && (
-                                <span className="text-xs text-gray-500 font-medium">
+                                <span className="text-xs text-[#8b949e] font-medium">
                                     ({info.count})
                                 </span>
                             )}
@@ -118,13 +118,13 @@ export function SelectionControls({
 }: SelectionControlsProps) {
     return (
         <div className="mt-2 flex items-center gap-4 text-xs">
-            <button onClick={onSelectAll} className="text-blue-600 hover:underline">
+            <button onClick={onSelectAll} className="text-blue-400 hover:underline">
                 전체 선택
             </button>
-            <button onClick={onClearAll} className="text-gray-500 hover:underline">
+            <button onClick={onClearAll} className="text-[#8b949e] hover:underline">
                 전체 해제
             </button>
-            <span className="text-gray-400">
+            <span className="text-[#8b949e]">
                 ({selectedCount}/{totalCount} 선택됨)
             </span>
         </div>

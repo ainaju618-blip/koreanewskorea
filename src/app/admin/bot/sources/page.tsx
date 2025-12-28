@@ -175,25 +175,25 @@ export default function SourcesPage() {
             {/* Header */}
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <Database className="w-7 h-7 text-blue-600" />
+                    <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
+                        <Database className="w-7 h-7 text-blue-500" />
                         소스 관리
                     </h1>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#8b949e] mt-2">
                         스크래퍼가 수집하는 RSS/웹사이트 소스를 관리합니다.
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={fetchSources}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        className="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded-lg text-[#c9d1d9] hover:bg-[#30363d] flex items-center gap-2"
                     >
                         <RefreshCw className="w-4 h-4" />
                         새로고침
                     </button>
                     <button
                         onClick={() => openModal()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium"
+                        className="px-4 py-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043] flex items-center gap-2 font-medium"
                     >
                         <Plus className="w-4 h-4" />
                         소스 추가
@@ -202,18 +202,18 @@ export default function SourcesPage() {
             </header>
 
             {/* Sources Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center p-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                     </div>
                 ) : sources.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
-                        <Database className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <div className="text-center py-12 text-[#8b949e]">
+                        <Database className="w-12 h-12 mx-auto mb-4 text-[#484f58]" />
                         <p>등록된 소스가 없습니다.</p>
                         <button
                             onClick={() => openModal()}
-                            className="mt-4 text-blue-600 hover:underline"
+                            className="mt-4 text-[#58a6ff] hover:underline"
                         >
                             첫 번째 소스 추가하기
                         </button>
@@ -221,23 +221,23 @@ export default function SourcesPage() {
                 ) : (
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200">
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">상태</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">소스명</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">유형</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">지역</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">수집 기사</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">마지막 수집</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">작업</th>
+                            <tr className="bg-[#21262d] border-b border-[#30363d]">
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">상태</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">소스명</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">유형</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">지역</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">수집 기사</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">마지막 수집</th>
+                                <th className="p-4 text-xs font-semibold text-[#8b949e] uppercase">작업</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-[#21262d]">
                             {sources.map((source) => (
-                                <tr key={source.id} className="hover:bg-gray-50">
+                                <tr key={source.id} className="hover:bg-[#21262d]">
                                     <td className="p-4">
                                         <button
                                             onClick={() => toggleActive(source)}
-                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${source.active ? 'bg-green-500' : 'bg-gray-300'
+                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${source.active ? 'bg-green-500' : 'bg-[#484f58]'
                                                 }`}
                                         >
                                             <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${source.active ? 'translate-x-5' : 'translate-x-1'
@@ -246,12 +246,12 @@ export default function SourcesPage() {
                                     </td>
                                     <td className="p-4">
                                         <div>
-                                            <p className="font-medium text-gray-900">{source.name}</p>
+                                            <p className="font-medium text-[#e6edf3]">{source.name}</p>
                                             <a
                                                 href={source.url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="text-xs text-blue-600 hover:underline flex items-center gap-1 truncate max-w-[200px]"
+                                                className="text-xs text-[#58a6ff] hover:underline flex items-center gap-1 truncate max-w-[200px]"
                                             >
                                                 <ExternalLink className="w-3 h-3" />
                                                 {source.url}
@@ -260,23 +260,23 @@ export default function SourcesPage() {
                                     </td>
                                     <td className="p-4">
                                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${source.type === 'rss'
-                                            ? 'bg-orange-100 text-orange-700'
-                                            : 'bg-purple-100 text-purple-700'
+                                            ? 'bg-orange-900/40 text-orange-400 border border-orange-800'
+                                            : 'bg-purple-900/40 text-purple-400 border border-purple-800'
                                             }`}>
                                             {source.type === 'rss' ? <Rss className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
                                             {source.type.toUpperCase()}
                                         </span>
                                     </td>
                                     <td className="p-4">
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-[#c9d1d9]">
                                             {regionOptions.find(r => r.value === source.region)?.label || '-'}
                                         </span>
                                     </td>
                                     <td className="p-4">
-                                        <span className="font-medium text-gray-900">{source.articles_count}</span>
-                                        <span className="text-gray-400 text-xs">건</span>
+                                        <span className="font-medium text-[#e6edf3]">{source.articles_count}</span>
+                                        <span className="text-[#8b949e] text-xs">건</span>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-500">
+                                    <td className="p-4 text-sm text-[#8b949e]">
                                         {source.last_fetched_at
                                             ? new Date(source.last_fetched_at).toLocaleString('ko-KR')
                                             : '없음'
@@ -286,13 +286,13 @@ export default function SourcesPage() {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => openModal(source)}
-                                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#1f6feb]/10 rounded"
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(source)}
-                                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                                className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-red-900/20 rounded"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -308,52 +308,52 @@ export default function SourcesPage() {
             {/* Modal */}
             {showModal && (
                 <>
-                    <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowModal(false)} />
-                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-[500px] max-h-[90vh] overflow-auto">
-                        <div className="p-6 border-b border-gray-100">
-                            <h2 className="text-lg font-bold text-gray-900">
+                    <div className="fixed inset-0 bg-black/70 z-40" onClick={() => setShowModal(false)} />
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#161b22] rounded-xl border border-[#30363d] shadow-2xl z-50 w-[500px] max-h-[90vh] overflow-auto">
+                        <div className="p-6 border-b border-[#30363d]">
+                            <h2 className="text-lg font-bold text-[#e6edf3]">
                                 {editingSource ? '소스 수정' : '신규 소스 추가'}
                             </h2>
                         </div>
                         <div className="p-6 space-y-4">
                             {/* 소스명 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">소스명 *</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">소스명 *</label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="예: 나주시청 보도자료"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                                 />
                             </div>
 
                             {/* 유형 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">유형</label>
                                 <div className="flex gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer text-[#c9d1d9]">
                                         <input
                                             type="radio"
                                             name="type"
                                             value="web"
                                             checked={formData.type === 'web'}
                                             onChange={() => setFormData({ ...formData, type: 'web' })}
-                                            className="text-blue-600"
+                                            className="text-[#1f6feb]"
                                         />
-                                        <Globe className="w-4 h-4 text-purple-600" />
+                                        <Globe className="w-4 h-4 text-purple-400" />
                                         Web Scraping
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer text-[#c9d1d9]">
                                         <input
                                             type="radio"
                                             name="type"
                                             value="rss"
                                             checked={formData.type === 'rss'}
                                             onChange={() => setFormData({ ...formData, type: 'rss' })}
-                                            className="text-blue-600"
+                                            className="text-[#1f6feb]"
                                         />
-                                        <Rss className="w-4 h-4 text-orange-600" />
+                                        <Rss className="w-4 h-4 text-orange-400" />
                                         RSS Feed
                                     </label>
                                 </div>
@@ -361,23 +361,23 @@ export default function SourcesPage() {
 
                             {/* URL */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">URL *</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">URL *</label>
                                 <input
                                     type="url"
                                     value={formData.url}
                                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                                     placeholder="https://example.com/rss"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                                 />
                             </div>
 
                             {/* 지역 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">지역 태그</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">지역 태그</label>
                                 <select
                                     value={formData.region}
                                     onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                                 >
                                     {regionOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -387,11 +387,11 @@ export default function SourcesPage() {
 
                             {/* 카테고리 */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                                <label className="block text-sm font-medium text-[#c9d1d9] mb-1">카테고리</label>
                                 <select
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg text-[#e6edf3] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                                 >
                                     {categoryOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -406,22 +406,22 @@ export default function SourcesPage() {
                                     id="active"
                                     checked={formData.active}
                                     onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                                    className="w-4 h-4 text-blue-600 rounded"
+                                    className="w-4 h-4 text-[#1f6feb] rounded bg-[#0d1117] border-[#30363d]"
                                 />
-                                <label htmlFor="active" className="text-sm text-gray-700">활성화 (수집 대상에 포함)</label>
+                                <label htmlFor="active" className="text-sm text-[#c9d1d9]">활성화 (수집 대상에 포함)</label>
                             </div>
                         </div>
-                        <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+                        <div className="p-6 border-t border-[#30363d] flex justify-end gap-3">
                             <button
                                 onClick={() => setShowModal(false)}
-                                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-4 py-2 text-[#c9d1d9] border border-[#30363d] rounded-lg hover:bg-[#21262d]"
                             >
                                 취소
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                                className="px-4 py-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043] flex items-center gap-2 disabled:opacity-50"
                             >
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                 {saving ? '저장 중...' : '저장'}

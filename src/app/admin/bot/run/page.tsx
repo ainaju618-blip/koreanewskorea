@@ -246,11 +246,11 @@ export default function BotRunPage() {
         <div className="space-y-6">
             {/* Header */}
             <header>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Play className="w-7 h-7 text-blue-600" />
+                <h1 className="text-2xl font-bold text-[#e6edf3] flex items-center gap-3">
+                    <Play className="w-7 h-7 text-blue-500" />
                     스크래퍼 관리
                 </h1>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-[#8b949e] mt-2">
                     왼쪽: 뉴스 수집 실행 | 오른쪽: DB 정리 (중복 방지용)
                 </p>
             </header>

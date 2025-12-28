@@ -51,8 +51,8 @@ function startMonitorProcess(): { success: boolean; pid?: number; error?: string
             };
         }
 
-        // Path to light_monitor.py
-        const scriptPath = path.join(process.cwd(), 'scrapers', 'utils', 'light_monitor.py');
+        // Path to playwright_monitor.py (stealth browser-based monitoring)
+        const scriptPath = path.join(process.cwd(), 'scrapers', 'utils', 'playwright_monitor.py');
 
         console.log('[Monitor] Starting Python process:', scriptPath);
         console.log('[Monitor] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...');
@@ -403,9 +403,9 @@ export async function POST(request: NextRequest) {
                     details: { triggered_by: startedBy || 'admin', trigger_type: 'immediate', max_cycles: MAX_CYCLES },
                 });
 
-                const scriptPath = path.join(process.cwd(), 'scrapers', 'utils', 'light_monitor.py');
+                const scriptPath = path.join(process.cwd(), 'scrapers', 'utils', 'playwright_monitor.py');
 
-                console.log(`[Monitor] Starting immediate check with ${MAX_CYCLES} cycles`);
+                console.log(`[Monitor] Starting immediate check with ${MAX_CYCLES} cycles (Playwright stealth)`);
 
                 try {
                     // Run Python with --max-cycles flag (background, non-blocking)

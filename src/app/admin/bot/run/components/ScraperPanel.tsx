@@ -656,28 +656,28 @@ export function ScraperPanel() {
         <div className="space-y-4">
             {/* Status Panel (Running) */}
             {isRunning && (
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="bg-blue-50 border-b border-blue-100 p-4 flex items-center gap-3">
+                <div className="bg-[#161b22] border border-[#30363d] rounded-xl shadow-sm overflow-hidden">
+                    <div className="bg-blue-900/30 border-b border-blue-800 p-4 flex items-center gap-3">
                         <div className="bg-blue-600 p-2 rounded-full">
                             <Activity className="w-5 h-5 text-white animate-spin" />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <h3 className="font-bold text-blue-900">봇이 열심히 일하고 있습니다!</h3>
+                            <h3 className="font-bold text-blue-300">봇이 열심히 일하고 있습니다!</h3>
                             <div className="max-h-[4.5rem] overflow-y-auto">
-                                <p className="text-sm text-blue-700 font-mono whitespace-pre-wrap">{statusMessage}</p>
+                                <p className="text-sm text-blue-400 font-mono whitespace-pre-wrap">{statusMessage}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
                             <button
                                 onClick={handleStop}
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 transition-colors"
                             >
                                 <StopCircle className="w-4 h-4" />
                                 중지
                             </button>
                             <button
                                 onClick={handleReset}
-                                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-2 transition-colors"
                                 title="서버 크래시 등으로 상태가 멈춘 경우 강제 리셋"
                             >
                                 <RotateCcw className="w-4 h-4" />
@@ -688,12 +688,12 @@ export function ScraperPanel() {
 
                     {/* 진행률 바 */}
                     {progress.total > 0 && (
-                        <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
-                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <div className="px-6 py-3 bg-[#0d1117] border-b border-[#30363d]">
+                            <div className="flex justify-between text-xs text-[#8b949e] mb-1">
                                 <span>진행률</span>
                                 <span>{progress.completed} / {progress.total} 완료</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-[#21262d] rounded-full h-2">
                                 <div
                                     className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                                     style={{ width: `${(progress.completed / progress.total) * 100}%` }}
@@ -711,23 +711,23 @@ export function ScraperPanel() {
 
                                 if (job.status === 'running') {
                                     statusIcon = <Loader2 className="w-4 h-4 animate-spin" />;
-                                    statusColor = 'text-blue-600 bg-blue-50 border-blue-200';
+                                    statusColor = 'text-blue-400 bg-blue-900/30 border-blue-700';
                                     statusText = job.log_message || '스크랩 진행 중...';
                                 } else if (job.status === 'success') {
                                     statusIcon = <CheckCircle className="w-4 h-4" />;
-                                    statusColor = 'text-green-600 bg-green-50 border-green-200';
+                                    statusColor = 'text-green-400 bg-green-900/30 border-green-700';
                                     statusText = job.log_message || '완료';
                                 } else if (['failed', 'error'].includes(job.status)) {
                                     statusIcon = <XCircle className="w-4 h-4" />;
-                                    statusColor = 'text-red-600 bg-red-50 border-red-200';
+                                    statusColor = 'text-red-400 bg-red-900/30 border-red-700';
                                     statusText = job.log_message || '실패';
                                 } else if (job.status === 'stopped') {
                                     statusIcon = <StopCircle className="w-4 h-4" />;
-                                    statusColor = 'text-orange-600 bg-orange-50 border-orange-200';
+                                    statusColor = 'text-orange-400 bg-orange-900/30 border-orange-700';
                                     statusText = '중지됨';
                                 } else {
                                     statusIcon = <Clock className="w-4 h-4" />;
-                                    statusColor = 'text-gray-500 bg-gray-50 border-gray-200';
+                                    statusColor = 'text-[#8b949e] bg-[#21262d] border-[#30363d]';
                                     statusText = job.log_message || '대기 중...';
                                 }
 
@@ -745,7 +745,7 @@ export function ScraperPanel() {
                                                         e.stopPropagation();
                                                         handleStopSingle(job.id, job.region);
                                                     }}
-                                                    className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded flex items-center gap-1 transition-colors"
+                                                    className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-1 transition-colors"
                                                     title={`${regionLabel} 중지`}
                                                 >
                                                     <StopCircle className="w-3 h-3" />
@@ -763,11 +763,11 @@ export function ScraperPanel() {
 
             {/* GitHub Actions Result Panel */}
             {!isRunning && ghActionsResult && (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                    <div className={`p-4 ${ghActionsResult.status === 'success' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200' : 'bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200'}`}>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-lg overflow-hidden">
+                    <div className={`p-4 ${ghActionsResult.status === 'success' ? 'bg-green-900/30 border-b border-green-700' : 'bg-red-900/30 border-b border-red-700'}`}>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${ghActionsResult.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${ghActionsResult.status === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
                                     {ghActionsResult.status === 'success' ? (
                                         <CheckCircle className="w-7 h-7 text-white" />
                                     ) : (
@@ -775,10 +775,10 @@ export function ScraperPanel() {
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className={`text-lg font-bold ${ghActionsResult.status === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                                    <h3 className={`text-lg font-bold ${ghActionsResult.status === 'success' ? 'text-green-300' : 'text-red-300'}`}>
                                         GitHub Actions {ghActionsResult.status === 'success' ? '완료!' : '완료 (일부 실패)'}
                                     </h3>
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm text-[#8b949e]">
                                         {ghActionsResult.startTime?.toLocaleTimeString('ko-KR')} ~ {ghActionsResult.endTime?.toLocaleTimeString('ko-KR')}
                                     </p>
                                 </div>
@@ -788,14 +788,14 @@ export function ScraperPanel() {
                                     href={ghActionsResult.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition"
+                                    className="flex items-center gap-2 px-4 py-2 bg-[#21262d] text-[#e6edf3] border border-[#30363d] rounded-lg text-sm font-medium hover:bg-[#30363d] transition"
                                 >
                                     <Github className="w-4 h-4" />
                                     GitHub에서 보기
                                 </a>
                                 <button
                                     onClick={() => setGhActionsResult(null)}
-                                    className="p-2 text-gray-400 hover:text-gray-600 transition"
+                                    className="p-2 text-[#8b949e] hover:text-[#e6edf3] transition"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -805,40 +805,40 @@ export function ScraperPanel() {
 
                     <div className="p-6">
                         <div className="grid grid-cols-4 gap-6">
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
+                            <div className="text-center p-4 bg-[#0d1117] border border-[#30363d] rounded-xl">
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                    <Clock className="w-5 h-5 text-purple-500" />
-                                    <span className="text-xs font-medium text-gray-500 uppercase">실행 시간</span>
+                                    <Clock className="w-5 h-5 text-purple-400" />
+                                    <span className="text-xs font-medium text-[#8b949e] uppercase">실행 시간</span>
                                 </div>
-                                <p className="text-3xl font-bold text-purple-600">{ghActionsResult.duration}</p>
+                                <p className="text-3xl font-bold text-purple-400">{ghActionsResult.duration}</p>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
+                            <div className="text-center p-4 bg-[#0d1117] border border-[#30363d] rounded-xl">
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                    <Activity className="w-5 h-5 text-blue-500" />
-                                    <span className="text-xs font-medium text-gray-500 uppercase">전체 지역</span>
+                                    <Activity className="w-5 h-5 text-blue-400" />
+                                    <span className="text-xs font-medium text-[#8b949e] uppercase">전체 지역</span>
                                 </div>
-                                <p className="text-3xl font-bold text-blue-600">{ghActionsResult.total}개</p>
+                                <p className="text-3xl font-bold text-blue-400">{ghActionsResult.total}개</p>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
+                            <div className="text-center p-4 bg-[#0d1117] border border-[#30363d] rounded-xl">
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                    <CheckCircle className="w-5 h-5 text-green-500" />
-                                    <span className="text-xs font-medium text-gray-500 uppercase">성공</span>
+                                    <CheckCircle className="w-5 h-5 text-green-400" />
+                                    <span className="text-xs font-medium text-[#8b949e] uppercase">성공</span>
                                 </div>
-                                <p className="text-3xl font-bold text-green-600">{ghActionsResult.completed}개</p>
+                                <p className="text-3xl font-bold text-green-400">{ghActionsResult.completed}개</p>
                             </div>
-                            <div className="text-center p-4 bg-gray-50 rounded-xl">
+                            <div className="text-center p-4 bg-[#0d1117] border border-[#30363d] rounded-xl">
                                 <div className="flex items-center justify-center gap-2 mb-2">
-                                    <XCircle className="w-5 h-5 text-red-500" />
-                                    <span className="text-xs font-medium text-gray-500 uppercase">실패</span>
+                                    <XCircle className="w-5 h-5 text-red-400" />
+                                    <span className="text-xs font-medium text-[#8b949e] uppercase">실패</span>
                                 </div>
-                                <p className={`text-3xl font-bold ${ghActionsResult.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>{ghActionsResult.failed}개</p>
+                                <p className={`text-3xl font-bold ${ghActionsResult.failed > 0 ? 'text-red-400' : 'text-[#8b949e]'}`}>{ghActionsResult.failed}개</p>
                             </div>
                         </div>
 
                         {ghActionsResult.status === 'success' && ghActionsResult.failed === 0 && (
-                            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                                <CheckCircle className="w-5 h-5 text-green-600" />
-                                <span className="text-sm text-green-700 font-medium">
+                            <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-lg flex items-center gap-2">
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                                <span className="text-sm text-green-300 font-medium">
                                     모든 지역 수집이 성공적으로 완료되었습니다!
                                 </span>
                             </div>
@@ -851,16 +851,16 @@ export function ScraperPanel() {
             {!isRunning && !ghActionsResult && summary && (
                 <div className="space-y-4">
                     {/* Summary Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                        <div className={`p-4 ${summary.failed === 0 ? 'bg-green-50 border-b border-green-100' : 'bg-red-50 border-b border-red-100'}`}>
+                    <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-lg overflow-hidden">
+                        <div className={`p-4 ${summary.failed === 0 ? 'bg-green-900/30 border-b border-green-700' : 'bg-red-900/30 border-b border-red-700'}`}>
                             <div className="flex items-center justify-between">
-                                <h3 className={`font-bold flex items-center gap-2 ${summary.failed === 0 ? 'text-green-800' : 'text-red-800'}`}>
+                                <h3 className={`font-bold flex items-center gap-2 ${summary.failed === 0 ? 'text-green-300' : 'text-red-300'}`}>
                                     {summary.failed === 0 ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
                                     {summary.failed === 0 ? "수집 작업 완료!" : "수집 작업 완료 (일부 실패)"}
                                 </h3>
                                 <button
                                     onClick={() => setShowDetailedResults(!showDetailedResults)}
-                                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-[#21262d] border border-[#30363d] rounded-lg text-sm font-medium text-[#e6edf3] hover:bg-[#30363d] transition"
                                 >
                                     <FileText className="w-4 h-4" />
                                     상세 로그
@@ -874,21 +874,21 @@ export function ScraperPanel() {
                         </div>
                         <div className="p-4 grid grid-cols-4 gap-4 text-center">
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">신규 수집</p>
-                                <p className="text-2xl font-bold text-green-600">{summary.totalArticles}건</p>
+                                <p className="text-xs text-[#8b949e] mb-1">신규 수집</p>
+                                <p className="text-2xl font-bold text-green-400">{summary.totalArticles}건</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">중복 제외</p>
-                                <p className="text-2xl font-bold text-yellow-600">{summary.totalSkipped}건</p>
+                                <p className="text-xs text-[#8b949e] mb-1">중복 제외</p>
+                                <p className="text-2xl font-bold text-yellow-400">{summary.totalSkipped}건</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">성공 지역</p>
-                                <p className="text-2xl font-bold text-blue-600">{summary.success} / {summary.total}</p>
+                                <p className="text-xs text-[#8b949e] mb-1">성공 지역</p>
+                                <p className="text-2xl font-bold text-blue-400">{summary.success} / {summary.total}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 mb-1">실패 지역</p>
-                                <p className={`text-2xl font-bold ${summary.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>{summary.failed}</p>
-                                {summary.failed > 0 && <p className="text-xs text-red-500 mt-1 truncate">{summary.failedRegions}</p>}
+                                <p className="text-xs text-[#8b949e] mb-1">실패 지역</p>
+                                <p className={`text-2xl font-bold ${summary.failed > 0 ? 'text-red-400' : 'text-[#8b949e]'}`}>{summary.failed}</p>
+                                {summary.failed > 0 && <p className="text-xs text-red-400 mt-1 truncate">{summary.failedRegions}</p>}
                             </div>
                         </div>
                     </div>
@@ -904,11 +904,11 @@ export function ScraperPanel() {
             )}
 
             {/* Control Panel */}
-            <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-opacity ${isRunning ? 'opacity-50 pointer-events-none' : ''}`}>
-                <div className="p-4 border-b border-gray-100 bg-blue-50/50">
+            <div className={`bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden transition-opacity ${isRunning ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="p-4 border-b border-[#30363d] bg-blue-900/20">
                     <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                            <Filter className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-[#e6edf3] flex items-center gap-2">
+                            <Filter className="w-5 h-5 text-blue-500" />
                             수집 조건 설정
                         </h3>
                         <button
@@ -919,7 +919,7 @@ export function ScraperPanel() {
                                     'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no'
                                 );
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-[#21262d] text-[#e6edf3] border border-[#30363d] rounded-lg text-sm font-medium hover:bg-[#30363d] transition"
                             title="Open real-time job monitor in popup window"
                         >
                             <Monitor className="w-4 h-4" />
@@ -931,7 +931,7 @@ export function ScraperPanel() {
                 <div className="p-4 space-y-4">
                     {/* Date Range */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-2 flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
                             수집 기간
                         </label>
@@ -943,9 +943,9 @@ export function ScraperPanel() {
                                     setStartDate(e.target.value);
                                     setActivePreset(null);
                                 }}
-                                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                                className="border border-[#30363d] bg-[#0d1117] text-[#e6edf3] rounded-lg px-3 py-1.5 text-sm"
                             />
-                            <span className="text-gray-400">~</span>
+                            <span className="text-[#8b949e]">~</span>
                             <input
                                 type="date"
                                 value={endDate}
@@ -953,7 +953,7 @@ export function ScraperPanel() {
                                     setEndDate(e.target.value);
                                     setActivePreset(null);
                                 }}
-                                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+                                className="border border-[#30363d] bg-[#0d1117] text-[#e6edf3] rounded-lg px-3 py-1.5 text-sm"
                             />
                         </div>
                         <div className="flex gap-1.5 flex-wrap mt-2">
@@ -963,22 +963,22 @@ export function ScraperPanel() {
                                     onClick={() => setDatePreset(preset.days)}
                                     className={`text-xs px-2 py-1 rounded border transition ${activePreset === preset.days
                                         ? 'bg-blue-600 text-white border-blue-600 font-bold'
-                                        : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                        : 'border-[#30363d] bg-[#21262d] text-blue-400 hover:bg-[#30363d]'
                                         }`}
                                 >
                                     {preset.label}
                                 </button>
                             ))}
                         </div>
-                        <p className="text-xs text-blue-600 mt-2 font-medium">
-                            📅 {startDate} ~ {endDate}
+                        <p className="text-xs text-blue-400 mt-2 font-medium">
+                            {startDate} ~ {endDate}
                             ({Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}일간)
                         </p>
                     </div>
 
                     {/* Region Select */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-medium text-[#c9d1d9] mb-2 flex items-center gap-2">
                             <Filter className="w-4 h-4" />
                             수집 대상 ({selectedRegions.length}개 선택)
                         </label>
@@ -1020,7 +1020,7 @@ export function ScraperPanel() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-3 border-t border-gray-100">
+                    <div className="flex gap-3 pt-3 border-t border-[#30363d]">
                         <button
                             onClick={handleRun}
                             disabled={isRunning || selectedRegions.length === 0}
@@ -1043,7 +1043,7 @@ export function ScraperPanel() {
                             href="https://github.com/korea-news/koreanewsone/actions/workflows/daily_scrape.yml"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-700 text-white rounded-lg font-bold hover:bg-gray-800 shadow-sm transition"
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-[#21262d] text-[#e6edf3] border border-[#30363d] rounded-lg font-bold hover:bg-[#30363d] shadow-sm transition"
                             title="GitHub Actions 페이지에서 직접 확인"
                         >
                             <Github className="w-5 h-5" />

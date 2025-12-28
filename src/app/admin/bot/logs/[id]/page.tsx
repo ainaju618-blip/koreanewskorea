@@ -122,13 +122,13 @@ export default function LogDetailPage() {
 
     const getStatusConfig = (status: string) => {
         const configs: Record<string, any> = {
-            success: { bg: "bg-green-100", text: "text-green-800", border: "border-green-300", icon: CheckCircle, label: "성공", iconColor: "text-green-600" },
-            warning: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", icon: AlertTriangle, label: "경고", iconColor: "text-orange-600" },
-            failed: { bg: "bg-red-100", text: "text-red-800", border: "border-red-300", icon: XCircle, label: "실패", iconColor: "text-red-600" },
-            failure: { bg: "bg-red-100", text: "text-red-800", border: "border-red-300", icon: XCircle, label: "실패", iconColor: "text-red-600" },
-            error: { bg: "bg-red-100", text: "text-red-800", border: "border-red-300", icon: XCircle, label: "에러", iconColor: "text-red-600" },
-            running: { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-300", icon: Activity, label: "실행중", iconColor: "text-blue-600" },
-            stopped: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", icon: StopCircle, label: "중지됨", iconColor: "text-orange-600" },
+            success: { bg: "bg-green-900/30", text: "text-green-400", border: "border-green-800", icon: CheckCircle, label: "성공", iconColor: "text-green-400" },
+            warning: { bg: "bg-orange-900/30", text: "text-orange-400", border: "border-orange-800", icon: AlertTriangle, label: "경고", iconColor: "text-orange-400" },
+            failed: { bg: "bg-red-900/30", text: "text-red-400", border: "border-red-800", icon: XCircle, label: "실패", iconColor: "text-red-400" },
+            failure: { bg: "bg-red-900/30", text: "text-red-400", border: "border-red-800", icon: XCircle, label: "실패", iconColor: "text-red-400" },
+            error: { bg: "bg-red-900/30", text: "text-red-400", border: "border-red-800", icon: XCircle, label: "에러", iconColor: "text-red-400" },
+            running: { bg: "bg-blue-900/30", text: "text-blue-400", border: "border-blue-800", icon: Activity, label: "실행중", iconColor: "text-blue-400" },
+            stopped: { bg: "bg-orange-900/30", text: "text-orange-400", border: "border-orange-800", icon: StopCircle, label: "중지됨", iconColor: "text-orange-400" },
         };
         return configs[status] || configs['warning'];
     };
@@ -136,7 +136,7 @@ export default function LogDetailPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+                <RefreshCw className="w-8 h-8 text-[#8b949e] animate-spin" />
             </div>
         );
     }
@@ -144,14 +144,14 @@ export default function LogDetailPage() {
     if (error || !log) {
         return (
             <div className="space-y-6">
-                <Link href="/admin/bot/logs" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+                <Link href="/admin/bot/logs" className="inline-flex items-center gap-2 text-[#8b949e] hover:text-[#e6edf3]">
                     <ArrowLeft className="w-4 h-4" />
                     목록으로 돌아가기
                 </Link>
-                <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+                <div className="bg-red-900/30 border border-red-800 rounded-xl p-8 text-center">
                     <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                    <h2 className="text-lg font-bold text-red-800">{error || '로그를 찾을 수 없습니다'}</h2>
-                    <p className="text-sm text-red-600 mt-2">요청하신 로그 ID: {params.id}</p>
+                    <h2 className="text-lg font-bold text-red-400">{error || '로그를 찾을 수 없습니다'}</h2>
+                    <p className="text-sm text-red-500 mt-2">요청하신 로그 ID: {params.id}</p>
                 </div>
             </div>
         );
@@ -163,7 +163,7 @@ export default function LogDetailPage() {
     return (
         <div className="space-y-6 max-w-5xl">
             {/* Back Button */}
-            <Link href="/admin/bot/logs" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition">
+            <Link href="/admin/bot/logs" className="inline-flex items-center gap-2 text-[#8b949e] hover:text-[#e6edf3] transition">
                 <ArrowLeft className="w-4 h-4" />
                 목록으로 돌아가기
             </Link>
@@ -172,11 +172,11 @@ export default function LogDetailPage() {
             <div className={`rounded-xl border-2 ${statusConfig.border} ${statusConfig.bg} p-6`}>
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full bg-white shadow-sm`}>
+                        <div className={`p-3 rounded-full bg-[#161b22] shadow-sm`}>
                             <StatusIcon className={`w-8 h-8 ${statusConfig.iconColor} ${log.status === 'running' ? 'animate-spin' : ''}`} />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
+                            <h1 className="text-2xl font-bold text-[#e6edf3]">
                                 {log.region.toUpperCase()} 스크래퍼
                             </h1>
                             <p className={`text-lg font-semibold mt-1 ${statusConfig.text}`}>
@@ -185,8 +185,8 @@ export default function LogDetailPage() {
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500">Log ID</p>
-                        <p className="text-2xl font-mono font-bold text-gray-700">#{log.id}</p>
+                        <p className="text-sm text-[#8b949e]">Log ID</p>
+                        <p className="text-2xl font-mono font-bold text-[#c9d1d9]">#{log.id}</p>
                     </div>
                 </div>
             </div>
@@ -219,29 +219,29 @@ export default function LogDetailPage() {
 
             {/* Metadata */}
             {log.metadata && Object.keys(log.metadata).length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
-                        <Server className="w-5 h-5 text-gray-500" />
-                        <h2 className="font-bold text-gray-800">메타데이터</h2>
+                <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-[#21262d] bg-[#21262d] flex items-center gap-2">
+                        <Server className="w-5 h-5 text-[#8b949e]" />
+                        <h2 className="font-bold text-[#e6edf3]">메타데이터</h2>
                     </div>
                     <div className="p-5">
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {log.metadata.startDate && (
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase">수집 시작일</p>
-                                    <p className="font-mono text-sm text-gray-800">{log.metadata.startDate}</p>
+                                    <p className="text-xs text-[#8b949e] uppercase">수집 시작일</p>
+                                    <p className="font-mono text-sm text-[#c9d1d9]">{log.metadata.startDate}</p>
                                 </div>
                             )}
                             {log.metadata.endDate && (
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase">수집 종료일</p>
-                                    <p className="font-mono text-sm text-gray-800">{log.metadata.endDate}</p>
+                                    <p className="text-xs text-[#8b949e] uppercase">수집 종료일</p>
+                                    <p className="font-mono text-sm text-[#c9d1d9]">{log.metadata.endDate}</p>
                                 </div>
                             )}
                             {log.metadata.started_at && (
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase">실행 타임스탬프</p>
-                                    <p className="font-mono text-sm text-gray-800">{log.metadata.started_at}</p>
+                                    <p className="text-xs text-[#8b949e] uppercase">실행 타임스탬프</p>
+                                    <p className="font-mono text-sm text-[#c9d1d9]">{log.metadata.started_at}</p>
                                 </div>
                             )}
                         </div>
@@ -250,27 +250,27 @@ export default function LogDetailPage() {
             )}
 
             {/* Log Message */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div className="bg-[#161b22] rounded-xl border border-[#30363d] shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#21262d] bg-[#21262d] flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-gray-500" />
-                        <h2 className="font-bold text-gray-800">실행 로그</h2>
+                        <FileText className="w-5 h-5 text-[#8b949e]" />
+                        <h2 className="font-bold text-[#e6edf3]">실행 로그</h2>
                         {log.status === 'running' && (
-                            <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full animate-pulse">
+                            <span className="ml-2 px-2 py-0.5 bg-blue-900/50 text-blue-400 text-xs rounded-full animate-pulse">
                                 실시간 갱신 중
                             </span>
                         )}
                     </div>
                     <button
                         onClick={copyToClipboard}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#30363d] rounded-lg transition"
                     >
-                        {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                        {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                         {copied ? '복사됨!' : '복사'}
                     </button>
                 </div>
                 <div className="p-5">
-                    <pre className="bg-gray-900 text-gray-100 rounded-lg p-5 font-mono text-sm whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto shadow-inner leading-relaxed">
+                    <pre className="bg-[#0d1117] text-[#c9d1d9] rounded-lg p-5 font-mono text-sm whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto shadow-inner leading-relaxed border border-[#21262d]">
                         {log.log_message || '로그 메시지가 없습니다.'}
                     </pre>
                 </div>
@@ -278,13 +278,13 @@ export default function LogDetailPage() {
 
             {/* Error Detail (if failed) */}
             {(log.status === 'failed' || log.status === 'failure' || log.status === 'error') && log.metadata?.error && (
-                <div className="bg-red-50 rounded-xl border border-red-200 overflow-hidden">
-                    <div className="px-5 py-4 border-b border-red-100 bg-red-100 flex items-center gap-2">
-                        <XCircle className="w-5 h-5 text-red-600" />
-                        <h2 className="font-bold text-red-800">에러 상세</h2>
+                <div className="bg-red-900/20 rounded-xl border border-red-800 overflow-hidden">
+                    <div className="px-5 py-4 border-b border-red-900/50 bg-red-900/30 flex items-center gap-2">
+                        <XCircle className="w-5 h-5 text-red-400" />
+                        <h2 className="font-bold text-red-400">에러 상세</h2>
                     </div>
                     <div className="p-5">
-                        <pre className="bg-red-900 text-red-100 rounded-lg p-5 font-mono text-sm whitespace-pre-wrap overflow-x-auto max-h-[300px] overflow-y-auto">
+                        <pre className="bg-red-950 text-red-200 rounded-lg p-5 font-mono text-sm whitespace-pre-wrap overflow-x-auto max-h-[300px] overflow-y-auto border border-red-900">
                             {log.metadata.error}
                         </pre>
                     </div>
@@ -295,7 +295,7 @@ export default function LogDetailPage() {
             <div className="flex gap-3 pt-4">
                 <button
                     onClick={() => router.push('/admin/bot/logs')}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+                    className="px-4 py-2 bg-[#21262d] text-[#c9d1d9] rounded-lg font-medium hover:bg-[#30363d] transition border border-[#30363d]"
                 >
                     목록으로
                 </button>
@@ -323,12 +323,12 @@ export default function LogDetailPage() {
 
 function InfoCard({ icon: Icon, label, value, highlight }: { icon: any; label: string; value: string; highlight?: boolean }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-[#161b22] rounded-xl border border-[#30363d] p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-                <Icon className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-500 uppercase tracking-wide">{label}</span>
+                <Icon className="w-4 h-4 text-[#6e7681]" />
+                <span className="text-xs text-[#8b949e] uppercase tracking-wide">{label}</span>
             </div>
-            <p className={`text-sm font-semibold ${highlight ? 'text-blue-600 animate-pulse' : 'text-gray-900'}`}>
+            <p className={`text-sm font-semibold ${highlight ? 'text-blue-400 animate-pulse' : 'text-[#e6edf3]'}`}>
                 {value}
             </p>
         </div>

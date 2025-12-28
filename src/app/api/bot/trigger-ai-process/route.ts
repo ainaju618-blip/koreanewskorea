@@ -117,12 +117,12 @@ export async function POST(request: Request) {
         // Build query for articles needing AI processing
         // OR conditions:
         // 1. status='pending' (new articles from scraper)
-        // 2. status='draft' AND ai_processed IS NULL (never processed)
+        // 2. status='draft' AND ai_processed IS NULL OR FALSE (never processed or failed)
         // NOTE: Removed condition "ai_processed=true" which caused infinite loop bug
         let query = supabaseAdmin
             .from('posts')
             .select('id, title, region, status, ai_processed, ai_validation_grade')
-            .or('status.eq.pending,and(status.eq.draft,ai_processed.is.null)')
+            .or('status.eq.pending,and(status.eq.draft,ai_processed.is.null),and(status.eq.draft,ai_processed.eq.false)')
             .order('created_at', { ascending: true })
             .limit(limit);
 

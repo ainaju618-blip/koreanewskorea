@@ -136,11 +136,11 @@ export default function VerificationDashboard() {
 
     const getGradeBgColor = (grade: string) => {
         switch (grade) {
-            case 'A': return 'bg-green-100 text-green-800';
-            case 'B': return 'bg-yellow-100 text-yellow-800';
-            case 'C': return 'bg-orange-100 text-orange-800';
-            case 'D': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'A': return 'bg-green-900/50 text-green-400';
+            case 'B': return 'bg-yellow-900/50 text-yellow-400';
+            case 'C': return 'bg-orange-900/50 text-orange-400';
+            case 'D': return 'bg-red-900/50 text-red-400';
+            default: return 'bg-[#21262d] text-[#8b949e]';
         }
     };
 
@@ -153,10 +153,10 @@ export default function VerificationDashboard() {
         return (
             <div className="p-6">
                 <div className="animate-pulse">
-                    <div className="h-8 bg-gray-700 rounded w-1/4 mb-6"></div>
+                    <div className="h-8 bg-[#21262d] rounded w-1/4 mb-6"></div>
                     <div className="grid grid-cols-4 gap-4 mb-6">
                         {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="h-24 bg-gray-700 rounded"></div>
+                            <div key={i} className="h-24 bg-[#21262d] rounded"></div>
                         ))}
                     </div>
                 </div>
@@ -165,7 +165,7 @@ export default function VerificationDashboard() {
     }
 
     return (
-        <div className="p-6 bg-gray-900 min-h-screen text-white">
+        <div className="p-6 bg-[#0d1117] min-h-screen text-[#e6edf3]">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">AI 검증 대시보드</h1>
                 <button
@@ -177,35 +177,35 @@ export default function VerificationDashboard() {
             </div>
 
             {error && (
-                <div className="mb-4 p-4 bg-red-900/50 border border-red-500 rounded text-red-200">
+                <div className="mb-4 p-4 bg-red-900/50 border border-red-800 rounded text-red-400">
                     {error}
                 </div>
             )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="text-gray-400 text-sm">총 검증</div>
-                    <div className="text-3xl font-bold">{totalVerifications}</div>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <div className="text-[#8b949e] text-sm">총 검증</div>
+                    <div className="text-3xl font-bold text-[#e6edf3]">{totalVerifications}</div>
                 </div>
-                <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="text-gray-400 text-sm">A등급 통과율</div>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <div className="text-[#8b949e] text-sm">A등급 통과율</div>
                     <div className="text-3xl font-bold text-green-400">{passRate}%</div>
                 </div>
-                <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="text-gray-400 text-sm">A등급</div>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <div className="text-[#8b949e] text-sm">A등급</div>
                     <div className="text-3xl font-bold text-green-400">{gradeACount}</div>
                 </div>
-                <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="text-gray-400 text-sm">모델</div>
+                <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                    <div className="text-[#8b949e] text-sm">모델</div>
                     <div className="text-xl font-bold text-blue-400">solar:10.7b</div>
                 </div>
             </div>
 
             {/* Grade Distribution */}
             {gradeSummary.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">등급별 분포</h2>
+                <div className="bg-[#161b22] rounded-lg p-4 mb-6 border border-[#30363d]">
+                    <h2 className="text-lg font-semibold mb-4 text-[#e6edf3]">등급별 분포</h2>
                     <div className="grid grid-cols-4 gap-4">
                         {['A', 'B', 'C', 'D'].map(grade => {
                             const data = gradeSummary.find(s => s.grade === grade);
@@ -214,8 +214,8 @@ export default function VerificationDashboard() {
                                     <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl font-bold ${getGradeColor(grade)}`}>
                                         {grade}
                                     </div>
-                                    <div className="mt-2 text-2xl font-bold">{data?.count || 0}</div>
-                                    <div className="text-gray-400 text-sm">
+                                    <div className="mt-2 text-2xl font-bold text-[#e6edf3]">{data?.count || 0}</div>
+                                    <div className="text-[#8b949e] text-sm">
                                         평균 {data?.avg_round?.toFixed(1) || 0}회
                                     </div>
                                 </div>
@@ -227,25 +227,25 @@ export default function VerificationDashboard() {
 
             {/* Daily Pass Rate */}
             {dailyStats.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">일별 통과율 (최근 7일)</h2>
+                <div className="bg-[#161b22] rounded-lg p-4 mb-6 border border-[#30363d]">
+                    <h2 className="text-lg font-semibold mb-4 text-[#e6edf3]">일별 통과율 (최근 7일)</h2>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b border-gray-700">
-                                    <th className="text-left py-2 px-3">날짜</th>
-                                    <th className="text-right py-2 px-3">통과율</th>
-                                    <th className="text-right py-2 px-3">총</th>
-                                    <th className="text-right py-2 px-3">A</th>
-                                    <th className="text-right py-2 px-3">B</th>
-                                    <th className="text-right py-2 px-3">C</th>
-                                    <th className="text-right py-2 px-3">D</th>
+                                <tr className="border-b border-[#30363d]">
+                                    <th className="text-left py-2 px-3 text-[#8b949e]">날짜</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">통과율</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">총</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">A</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">B</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">C</th>
+                                    <th className="text-right py-2 px-3 text-[#8b949e]">D</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {dailyStats.map((stat, i) => (
-                                    <tr key={i} className="border-b border-gray-700/50">
-                                        <td className="py-2 px-3">
+                                    <tr key={i} className="border-b border-[#21262d]">
+                                        <td className="py-2 px-3 text-[#c9d1d9]">
                                             {new Date(stat.day).toLocaleDateString('ko-KR')}
                                         </td>
                                         <td className="text-right py-2 px-3">
@@ -253,7 +253,7 @@ export default function VerificationDashboard() {
                                                 {stat.pass_rate?.toFixed(1)}%
                                             </span>
                                         </td>
-                                        <td className="text-right py-2 px-3">{stat.total}</td>
+                                        <td className="text-right py-2 px-3 text-[#c9d1d9]">{stat.total}</td>
                                         <td className="text-right py-2 px-3 text-green-400">{stat.a_count}</td>
                                         <td className="text-right py-2 px-3 text-yellow-400">{stat.b_count}</td>
                                         <td className="text-right py-2 px-3 text-orange-400">{stat.c_count}</td>
@@ -267,25 +267,25 @@ export default function VerificationDashboard() {
             )}
 
             {/* Recent Verification Logs */}
-            <div className="bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4">최근 검증 로그 (최근 100건)</h2>
+            <div className="bg-[#161b22] rounded-lg p-4 border border-[#30363d]">
+                <h2 className="text-lg font-semibold mb-4 text-[#e6edf3]">최근 검증 로그 (최근 100건)</h2>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-gray-700">
-                                <th className="text-left py-2 px-2">시간</th>
-                                <th className="text-left py-2 px-2">제목</th>
-                                <th className="text-center py-2 px-2">회차</th>
-                                <th className="text-center py-2 px-2">등급</th>
-                                <th className="text-right py-2 px-2">길이비</th>
-                                <th className="text-right py-2 px-2">처리시간</th>
-                                <th className="text-left py-2 px-2">요약</th>
+                            <tr className="border-b border-[#30363d]">
+                                <th className="text-left py-2 px-2 text-[#8b949e]">시간</th>
+                                <th className="text-left py-2 px-2 text-[#8b949e]">제목</th>
+                                <th className="text-center py-2 px-2 text-[#8b949e]">회차</th>
+                                <th className="text-center py-2 px-2 text-[#8b949e]">등급</th>
+                                <th className="text-right py-2 px-2 text-[#8b949e]">길이비</th>
+                                <th className="text-right py-2 px-2 text-[#8b949e]">처리시간</th>
+                                <th className="text-left py-2 px-2 text-[#8b949e]">요약</th>
                             </tr>
                         </thead>
                         <tbody>
                             {logs.map((log) => (
-                                <tr key={log.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
-                                    <td className="py-2 px-2 text-gray-400 whitespace-nowrap">
+                                <tr key={log.id} className="border-b border-[#21262d] hover:bg-[#21262d]">
+                                    <td className="py-2 px-2 text-[#6e7681] whitespace-nowrap">
                                         {new Date(log.created_at).toLocaleString('ko-KR', {
                                             month: '2-digit',
                                             day: '2-digit',
@@ -293,10 +293,10 @@ export default function VerificationDashboard() {
                                             minute: '2-digit'
                                         })}
                                     </td>
-                                    <td className="py-2 px-2 max-w-[200px] truncate" title={log.title}>
+                                    <td className="py-2 px-2 max-w-[200px] truncate text-[#c9d1d9]" title={log.title}>
                                         {log.title || log.article_id.slice(0, 8)}
                                     </td>
-                                    <td className="text-center py-2 px-2">{log.round}/5</td>
+                                    <td className="text-center py-2 px-2 text-[#c9d1d9]">{log.round}/5</td>
                                     <td className="text-center py-2 px-2">
                                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${getGradeBgColor(log.grade)}`}>
                                             {log.grade}
@@ -307,10 +307,10 @@ export default function VerificationDashboard() {
                                             {(log.length_ratio * 100).toFixed(0)}%
                                         </span>
                                     </td>
-                                    <td className="text-right py-2 px-2 text-gray-400">
+                                    <td className="text-right py-2 px-2 text-[#6e7681]">
                                         {(log.processing_time_ms / 1000).toFixed(1)}s
                                     </td>
-                                    <td className="py-2 px-2 max-w-[300px] truncate text-gray-400" title={log.summary}>
+                                    <td className="py-2 px-2 max-w-[300px] truncate text-[#6e7681]" title={log.summary}>
                                         {log.summary}
                                     </td>
                                 </tr>
@@ -319,7 +319,7 @@ export default function VerificationDashboard() {
                     </table>
                 </div>
                 {logs.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-[#8b949e]">
                         검증 로그가 없습니다. AI 처리를 실행하면 여기에 표시됩니다.
                     </div>
                 )}
