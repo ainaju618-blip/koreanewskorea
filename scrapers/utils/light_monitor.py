@@ -101,6 +101,13 @@ except ImportError:
 
 import httpx
 
+# Supabase client for database operations
+try:
+    from supabase import create_client
+except ImportError:
+    print("[WARN] supabase-py not installed, some features may not work")
+    create_client = None
+
 # ============================================================
 # LATEST USER-AGENTS (December 2025)
 # ============================================================
@@ -1139,12 +1146,14 @@ def run_daemon(
     supabase_url: str = None,
     supabase_key: str = None,
     auto_trigger: bool = True,
-    trigger_ai: bool = True
+    trigger_ai: bool = True,
+    max_cycles: int = 0
 ):
     """
     Run monitoring daemon in continuous loop.
 
     Checks DB for is_running flag and executes monitoring cycles.
+    If max_cycles > 0, exits after that many cycles.
     """
     import json
 
@@ -1295,6 +1304,11 @@ def run_daemon(
             except Exception as log_error:
                 print(f"[DAEMON] Warning: Failed to log cycle: {log_error}")
 
+            # Check if max_cycles reached
+            if max_cycles > 0 and cycle_count >= max_cycles:
+                print(f"\n[DAEMON] Max cycles reached ({max_cycles}). Exiting...")
+                break
+
             # Wait for next cycle
             print(f"\n[DAEMON] Sleeping for {interval // 60} minutes...")
             time.sleep(interval)
@@ -1308,6 +1322,283 @@ def run_daemon(
 
 
 # ============================================================
+# Scheduler Mode - Time-based Automatic Monitoring
+# ============================================================
+
+def run_scheduler(
+    supabase_url: str = None,
+    supabase_key: str = None,
+    auto_trigger: bool = True,
+    trigger_ai: bool = True,
+    cycles_per_run: int = 3
+):
+    """
+    Run time-based scheduler that triggers monitoring at scheduled times.
+
+    This mode runs continuously and checks system time every minute.
+    When a scheduled time is reached, it runs 'cycles_per_run' monitoring cycles.
+
+    Schedule is read from DB (realtime_monitor.config.schedule).
+    Default schedule: ['09:00', '12:00', '15:00', '18:00']
+    """
+    import json
+
+    # Get Supabase credentials from environment
+    supabase_url = supabase_url or os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+    supabase_key = supabase_key or os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if not supabase_url or not supabase_key:
+        print("[SCHEDULER] ERROR: Supabase credentials not found")
+        print("[SCHEDULER] Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY")
+        return
+
+    # Import regional configs
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from configs.regional_configs import REGIONAL_CONFIGS as REGION_CONFIGS
+    except ImportError as e:
+        print(f"[SCHEDULER] ERROR: Cannot import REGION_CONFIGS: {e}")
+        return
+
+    # Default schedule (can be overridden by DB config)
+    default_schedule = ['09:00', '12:00', '15:00', '18:00']
+
+    print("=" * 60)
+    print("Light Monitor Scheduler v1.0")
+    print("=" * 60)
+    print(f"[SCHEDULER] Supabase URL: {supabase_url[:50]}...")
+    print(f"[SCHEDULER] Regions: {len(REGION_CONFIGS)}")
+    print(f"[SCHEDULER] Cycles per run: {cycles_per_run}")
+    print(f"[SCHEDULER] Auto-trigger: {auto_trigger}")
+    print(f"[SCHEDULER] Trigger AI: {trigger_ai}")
+    print(f"[SCHEDULER] Default schedule: {default_schedule}")
+    print("=" * 60)
+
+    # Track which scheduled times have been run today
+    last_run_date = None
+    completed_times_today = set()
+
+    while True:
+        try:
+            # Get current time
+            try:
+                from zoneinfo import ZoneInfo
+                kst = ZoneInfo('Asia/Seoul')
+                now = datetime.now(kst)
+            except ImportError:
+                now = datetime.now()
+
+            current_date = now.strftime('%Y-%m-%d')
+            current_time = now.strftime('%H:%M')
+
+            # Reset completed times if new day
+            if last_run_date != current_date:
+                completed_times_today = set()
+                last_run_date = current_date
+                print(f"\n[SCHEDULER] New day: {current_date}")
+
+            # Check DB for is_running flag and schedule config
+            response = httpx.get(
+                f"{supabase_url}/rest/v1/realtime_monitor?select=is_running,config&limit=1",
+                headers={
+                    'apikey': supabase_key,
+                    'Authorization': f'Bearer {supabase_key}'
+                }
+            )
+
+            if response.status_code != 200:
+                print(f"[SCHEDULER] DB check failed: {response.status_code}")
+                time.sleep(60)
+                continue
+
+            data = response.json()
+            if not data or not data[0].get('is_running', False):
+                # Scheduler is paused
+                time.sleep(60)
+                continue
+
+            # Get schedule from config or use default
+            config = data[0].get('config', {}) or {}
+            schedule = config.get('schedule', default_schedule)
+
+            # Check for force_check flag (manual trigger)
+            force_check = config.get('force_check', False)
+
+            if force_check:
+                print(f"\n[SCHEDULER] Force check requested at {current_time}!")
+                # Clear the flag
+                httpx.patch(
+                    f"{supabase_url}/rest/v1/realtime_monitor?is_running=eq.true",
+                    headers={
+                        'apikey': supabase_key,
+                        'Authorization': f'Bearer {supabase_key}',
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    json={'config': {**config, 'force_check': False}}
+                )
+
+                # Run monitoring cycles
+                _run_scheduled_cycles(
+                    supabase_url, supabase_key, REGION_CONFIGS,
+                    auto_trigger, trigger_ai, cycles_per_run, 'manual'
+                )
+                continue
+
+            # Check if current time matches any scheduled time
+            if current_time in schedule and current_time not in completed_times_today:
+                print(f"\n[SCHEDULER] Scheduled time reached: {current_time}")
+
+                # Mark as completed for today
+                completed_times_today.add(current_time)
+
+                # Run monitoring cycles
+                _run_scheduled_cycles(
+                    supabase_url, supabase_key, REGION_CONFIGS,
+                    auto_trigger, trigger_ai, cycles_per_run, current_time
+                )
+
+            # Wait 1 minute before next check
+            time.sleep(60)
+
+        except KeyboardInterrupt:
+            print("\n[SCHEDULER] Interrupted by user. Exiting...")
+            break
+        except Exception as e:
+            print(f"[SCHEDULER] Error: {e}")
+            time.sleep(60)
+
+
+def _run_scheduled_cycles(
+    supabase_url: str,
+    supabase_key: str,
+    region_configs: dict,
+    auto_trigger: bool,
+    trigger_ai: bool,
+    cycles: int,
+    trigger_source: str
+):
+    """
+    Run scheduled monitoring cycles.
+    Called by the scheduler when a scheduled time is reached.
+    """
+    print(f"\n{'=' * 60}")
+    print(f"[SCHEDULER] Starting {cycles} monitoring cycles (trigger: {trigger_source})")
+    print(f"{'=' * 60}")
+
+    # Initialize monitor
+    monitor = get_monitor(use_advanced_stealth=True)
+
+    # Track last known article IDs per region
+    last_known_ids: Dict[str, str] = {}
+
+    # Load initial state from DB
+    try:
+        response = httpx.get(
+            f"{supabase_url}/rest/v1/scraper_state?select=region_code,last_article_id",
+            headers={
+                'apikey': supabase_key,
+                'Authorization': f'Bearer {supabase_key}'
+            }
+        )
+        if response.status_code == 200:
+            for row in response.json():
+                if row.get('last_article_id'):
+                    last_known_ids[row['region_code']] = row['last_article_id']
+    except Exception as e:
+        print(f"[SCHEDULER] Warning: Could not load state: {e}")
+
+    # Log start
+    try:
+        httpx.post(
+            f"{supabase_url}/rest/v1/monitor_activity_log",
+            headers={
+                'apikey': supabase_key,
+                'Authorization': f'Bearer {supabase_key}',
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            json={
+                'event_type': 'scheduler_start',
+                'message': f'Scheduled monitoring started ({cycles} cycles)',
+                'details': {
+                    'trigger': trigger_source,
+                    'cycles': cycles
+                }
+            }
+        )
+    except Exception:
+        pass
+
+    # Run cycles
+    total_new = 0
+    total_blocked = 0
+    total_errors = 0
+
+    for cycle_num in range(1, cycles + 1):
+        print(f"\n[SCHEDULER] Cycle {cycle_num}/{cycles} at {datetime.now().strftime('%H:%M:%S')}")
+
+        results = monitor.check_all_regions(
+            configs=region_configs,
+            last_known_ids=last_known_ids,
+            auto_trigger=auto_trigger,
+            trigger_ai=trigger_ai
+        )
+
+        # Update last known IDs
+        for region_code, result in results.items():
+            if result.has_new and result.new_article_ids:
+                last_known_ids[region_code] = result.new_article_ids[0]
+
+        # Count results
+        cycle_new = sum(1 for r in results.values() if r.has_new)
+        cycle_blocked = sum(1 for r in results.values() if r.blocked)
+        cycle_errors = sum(1 for r in results.values() if r.error and not r.blocked)
+
+        total_new += cycle_new
+        total_blocked += cycle_blocked
+        total_errors += cycle_errors
+
+        print(f"[SCHEDULER] Cycle {cycle_num} done: {cycle_new} new, {cycle_blocked} blocked, {cycle_errors} errors")
+
+        # Small delay between cycles
+        if cycle_num < cycles:
+            time.sleep(30)
+
+    # Log completion
+    print(f"\n{'=' * 60}")
+    print(f"[SCHEDULER] {cycles} cycles complete!")
+    print(f"  Total new: {total_new} regions")
+    print(f"  Total blocked: {total_blocked} regions")
+    print(f"  Total errors: {total_errors} regions")
+    print(f"{'=' * 60}")
+
+    try:
+        httpx.post(
+            f"{supabase_url}/rest/v1/monitor_activity_log",
+            headers={
+                'apikey': supabase_key,
+                'Authorization': f'Bearer {supabase_key}',
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            json={
+                'event_type': 'scheduler_complete',
+                'message': f'Scheduled monitoring complete: {total_new} new articles found',
+                'details': {
+                    'trigger': trigger_source,
+                    'cycles': cycles,
+                    'total_new': total_new,
+                    'total_blocked': total_blocked,
+                    'total_errors': total_errors
+                }
+            }
+        )
+    except Exception:
+        pass
+
+
+# ============================================================
 # CLI Entry Point
 # ============================================================
 if __name__ == '__main__':
@@ -1315,17 +1606,110 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Light Monitor v2.1')
     parser.add_argument('--daemon', action='store_true', help='Run in daemon mode (continuous loop)')
+    parser.add_argument('--scheduler', action='store_true', help='Run in scheduler mode (time-based auto-start)')
+    parser.add_argument('--once', action='store_true', help='Run single monitoring cycle and exit')
+    parser.add_argument('--max-cycles', type=int, default=0, help='Maximum cycles before exit (0=unlimited)')
+    parser.add_argument('--cycles-per-run', type=int, default=3, help='Cycles per scheduled run (default: 3)')
     parser.add_argument('--no-trigger', action='store_true', help='Disable auto-trigger for scrapers')
     parser.add_argument('--no-ai', action='store_true', help='Disable AI processing trigger')
     parser.add_argument('--test', action='store_true', help='Run self-test')
 
     args = parser.parse_args()
 
-    if args.daemon:
-        # Run daemon mode
-        run_daemon(
+    if args.once:
+        # Run single cycle and exit
+        print("=" * 60)
+        print("Light Monitor v2.1 - Single Cycle Mode")
+        print("=" * 60)
+
+        # Import regional configs
+        try:
+            from configs.regional_configs import REGIONAL_CONFIGS as REGION_CONFIGS
+        except ImportError as e:
+            print(f"[ONCE] ERROR: Cannot import REGION_CONFIGS: {e}")
+            sys.exit(1)
+
+        # Initialize
+        supabase_url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+        supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+
+        if not supabase_url or not supabase_key:
+            print("[ERROR] Supabase credentials not found")
+            sys.exit(1)
+
+        print(f"[ONCE] Supabase URL: {supabase_url[:30]}...")
+        print(f"[ONCE] Regions: {len(REGION_CONFIGS)}")
+        print(f"[ONCE] Auto-trigger: {not args.no_trigger}")
+        print(f"[ONCE] Trigger AI: {not args.no_ai}")
+        print("=" * 60)
+
+        # Create monitor and Supabase client
+        monitor = get_monitor()
+        supabase = create_client(supabase_url, supabase_key)
+
+        # Load last known IDs
+        last_known_ids = {}
+        try:
+            response = supabase.table('scraper_state').select('region_code, last_article_id').execute()
+            if response.data:
+                for row in response.data:
+                    if row.get('last_article_id'):
+                        last_known_ids[row['region_code']] = row['last_article_id']
+            print(f"[ONCE] Loaded {len(last_known_ids)} last known IDs from DB")
+        except Exception as e:
+            print(f"[ONCE] Could not load state: {e}")
+
+        # Run single cycle
+        print(f"\n[ONCE] Starting cycle at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        results = monitor.check_all_regions(
+            configs=REGION_CONFIGS,
+            last_known_ids=last_known_ids,
             auto_trigger=not args.no_trigger,
             trigger_ai=not args.no_ai
+        )
+
+        # Summary
+        new_count = sum(1 for r in results.values() if r.has_new)
+        blocked_count = sum(1 for r in results.values() if r.blocked)
+        error_count = sum(1 for r in results.values() if r.error)
+
+        print(f"\n[ONCE] Cycle complete:")
+        print(f"  - New articles: {new_count} regions")
+        print(f"  - Blocked: {blocked_count} regions")
+        print(f"  - Errors: {error_count} regions")
+
+        # Log to DB
+        try:
+            supabase.table('monitor_activity_log').insert({
+                'event_type': 'cycle',
+                'message': f'Single cycle: {new_count} new, {blocked_count} blocked',
+                'details': {
+                    'mode': 'once',
+                    'new_regions': new_count,
+                    'blocked_regions': blocked_count,
+                    'error_regions': error_count
+                }
+            }).execute()
+        except Exception as e:
+            print(f"[ONCE] Failed to log: {e}")
+
+        print("\n[ONCE] Done.")
+        sys.exit(0)
+
+    elif args.scheduler:
+        # Run scheduler mode (time-based auto-start)
+        run_scheduler(
+            auto_trigger=not args.no_trigger,
+            trigger_ai=not args.no_ai,
+            cycles_per_run=args.cycles_per_run
+        )
+    elif args.daemon or args.max_cycles > 0:
+        # Run daemon mode (with optional max_cycles limit)
+        run_daemon(
+            auto_trigger=not args.no_trigger,
+            trigger_ai=not args.no_ai,
+            max_cycles=args.max_cycles
         )
     elif args.test or len(sys.argv) == 1:
         # Self-test mode
@@ -1361,6 +1745,14 @@ if __name__ == '__main__':
         print("  - trigger_ai_process(region, article_ids) -> API call to AI bot")
         print("  - check_all_regions(..., auto_trigger=True) -> auto-trigger mode")
 
-        print("\n[INFO] Daemon mode:")
-        print("  python light_monitor.py --daemon")
-        print("  python light_monitor.py --daemon --no-trigger --no-ai")
+        print("\n[INFO] Execution modes:")
+        print("  python light_monitor.py --scheduler           # Time-based auto-start (recommended)")
+        print("  python light_monitor.py --max-cycles 3        # Run 3 cycles then exit")
+        print("  python light_monitor.py --daemon              # Continuous loop (legacy)")
+        print("  python light_monitor.py --once                # Single cycle")
+        print("\n[INFO] Scheduler mode options:")
+        print("  --cycles-per-run 3    # Cycles per scheduled time (default: 3)")
+        print("  --no-trigger          # Disable scraper auto-trigger")
+        print("  --no-ai               # Disable AI processing trigger")
+        print("\n[INFO] Default schedule: 09:00, 12:00, 15:00, 18:00")
+        print("  (Can be customized via DB: realtime_monitor.config.schedule)")

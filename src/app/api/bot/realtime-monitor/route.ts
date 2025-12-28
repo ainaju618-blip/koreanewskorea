@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, exec } from 'child_process';
 import path from 'path';
+import os from 'os';
+
+const isWindows = os.platform() === 'win32';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,6 +13,9 @@ const supabase = createClient(
 
 // Track the running Python process
 let monitorProcess: ChildProcess | null = null;
+
+// Track the immediate check process (separate from scheduler)
+let immediateCheckProcess: ChildProcess | null = null;
 
 // Check if running locally (not on Vercel)
 const isLocalEnv = !process.env.VERCEL && !process.env.VERCEL_ENV;
@@ -51,9 +57,9 @@ function startMonitorProcess(): { success: boolean; pid?: number; error?: string
         console.log('[Monitor] Starting Python process:', scriptPath);
         console.log('[Monitor] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...');
 
-        // Spawn Python process in background
-        // Explicitly pass Supabase credentials for detached process
-        monitorProcess = spawn('python', [scriptPath, '--daemon'], {
+        // Spawn Python process in scheduler mode
+        // Scheduler runs continuously, checks time, triggers at scheduled times
+        monitorProcess = spawn('python', [scriptPath, '--scheduler'], {
             detached: true,
             stdio: ['ignore', 'pipe', 'pipe'],
             cwd: process.cwd(),
@@ -96,6 +102,7 @@ function startMonitorProcess(): { success: boolean; pid?: number; error?: string
 
 /**
  * Stop the running Python monitor process
+ * Windows-compatible: uses taskkill on Windows, SIGTERM on Unix
  */
 function stopMonitorProcess(): { success: boolean; error?: string } {
     if (!monitorProcess) {
@@ -103,8 +110,20 @@ function stopMonitorProcess(): { success: boolean; error?: string } {
     }
 
     try {
-        // Send SIGTERM to gracefully stop
-        monitorProcess.kill('SIGTERM');
+        const pid = monitorProcess.pid;
+
+        if (isWindows && pid) {
+            // Windows: use taskkill to terminate process tree
+            exec(`taskkill /pid ${pid} /t /f`, (err) => {
+                if (err) {
+                    console.error('[Monitor] taskkill error:', err.message);
+                }
+            });
+        } else {
+            // Unix: send SIGTERM to gracefully stop
+            monitorProcess.kill('SIGTERM');
+        }
+
         monitorProcess = null;
         console.log('[Monitor] Process stopped');
         return { success: true };
@@ -176,12 +195,16 @@ export async function GET(request: NextRequest) {
             errors: todayStats?.filter(e => e.event_type === 'error').length || 0,
         };
 
+        // Check if immediate check is running
+        const isImmediateCheckRunning = immediateCheckProcess && !immediateCheckProcess.killed;
+
         return NextResponse.json({
             status: status || { is_running: false },
             regions: regionStats || [],
             blockedRegions: blockEvents?.map(e => e.region_code) || [],
             todaySummary,
             activity: activity || [],
+            immediateCheckRunning: isImmediateCheckRunning,
         });
 
     } catch (error: unknown) {
@@ -286,35 +309,157 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, status: data });
 
         } else if (action === 'check_now') {
-            // Trigger immediate check by logging a special event
-            // The Python daemon will detect this and run immediately
-            await supabase.from('monitor_activity_log').insert({
-                event_type: 'trigger',
-                message: '즉시 점검 요청됨 (수동)',
-                details: { triggered_by: startedBy || 'admin', trigger_type: 'manual' },
-            });
+            // Toggle immediate check - if running, stop it; if not, start it
+            const isImmediateCheckRunning = immediateCheckProcess && !immediateCheckProcess.killed;
 
-            // Also set a flag in realtime_monitor to trigger immediate check
-            const { data: currentStatus } = await supabase
-                .from('realtime_monitor')
-                .select('id, config')
-                .single();
+            if (isImmediateCheckRunning) {
+                // STOP the immediate check
+                try {
+                    const pid = immediateCheckProcess!.pid;
 
-            if (currentStatus) {
-                await supabase
-                    .from('realtime_monitor')
-                    .update({
-                        config: {
-                            ...(currentStatus.config || {}),
-                            force_check: true,
-                            force_check_at: new Date().toISOString(),
-                        },
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('id', currentStatus.id);
+                    if (isWindows && pid) {
+                        // Windows: use taskkill to terminate process tree
+                        exec(`taskkill /pid ${pid} /t /f`, (err) => {
+                            if (err) {
+                                console.error('[Monitor] taskkill error:', err.message);
+                            }
+                        });
+                    } else {
+                        // Unix: send SIGTERM
+                        immediateCheckProcess!.kill('SIGTERM');
+                    }
+
+                    immediateCheckProcess = null;
+                    console.log('[Monitor] Immediate check stopped by user');
+
+                    await supabase.from('monitor_activity_log').insert({
+                        event_type: 'trigger',
+                        message: '즉시 점검 중지됨 (수동)',
+                        details: { stopped_by: startedBy || 'admin' },
+                    });
+
+                    return NextResponse.json({
+                        success: true,
+                        message: 'Immediate check stopped',
+                        immediateCheckRunning: false
+                    });
+                } catch (err) {
+                    const error = err instanceof Error ? err.message : 'Unknown error';
+                    return NextResponse.json({ success: false, error });
+                }
             }
 
-            return NextResponse.json({ success: true, message: 'Immediate check triggered' });
+            // START immediate check
+            // Check if monitoring scheduler is running
+            const isSchedulerRunning = monitorProcess && !monitorProcess.killed;
+
+            if (isSchedulerRunning) {
+                // Scheduler running - set force_check flag in DB
+                // The scheduler checks this flag every minute and triggers immediately
+                await supabase.from('monitor_activity_log').insert({
+                    event_type: 'trigger',
+                    message: '즉시 점검 요청됨 (수동)',
+                    details: { triggered_by: startedBy || 'admin', trigger_type: 'manual' },
+                });
+
+                const { data: currentStatus } = await supabase
+                    .from('realtime_monitor')
+                    .select('id, config')
+                    .single();
+
+                if (currentStatus) {
+                    await supabase
+                        .from('realtime_monitor')
+                        .update({
+                            config: {
+                                ...(currentStatus.config || {}),
+                                force_check: true,
+                                force_check_at: new Date().toISOString(),
+                            },
+                            updated_at: new Date().toISOString(),
+                        })
+                        .eq('id', currentStatus.id);
+                }
+
+                return NextResponse.json({
+                    success: true,
+                    message: 'Immediate check triggered (scheduler mode)',
+                    immediateCheckRunning: false // Scheduler handles it, not separate process
+                });
+            } else {
+                // Scheduler NOT running - run immediate check with 3 cycles (background)
+                const MAX_CYCLES = 3;
+
+                if (!isLocalEnv) {
+                    return NextResponse.json({
+                        success: false,
+                        error: 'Immediate check only available in local environment'
+                    });
+                }
+
+                await supabase.from('monitor_activity_log').insert({
+                    event_type: 'trigger',
+                    message: `즉시 점검 시작 (${MAX_CYCLES}회)`,
+                    details: { triggered_by: startedBy || 'admin', trigger_type: 'immediate', max_cycles: MAX_CYCLES },
+                });
+
+                const scriptPath = path.join(process.cwd(), 'scrapers', 'utils', 'light_monitor.py');
+
+                console.log(`[Monitor] Starting immediate check with ${MAX_CYCLES} cycles`);
+
+                try {
+                    // Run Python with --max-cycles flag (background, non-blocking)
+                    immediateCheckProcess = spawn('python', [scriptPath, '--max-cycles', MAX_CYCLES.toString()], {
+                        cwd: process.cwd(),
+                        stdio: ['ignore', 'pipe', 'pipe'],
+                        env: {
+                            ...process.env,
+                            PYTHONUNBUFFERED: '1',
+                            NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+                            SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+                        }
+                    });
+
+                    // Log output
+                    immediateCheckProcess.stdout?.on('data', (data) => {
+                        console.log(`[Monitor-Check] ${data.toString().trim()}`);
+                    });
+                    immediateCheckProcess.stderr?.on('data', (data) => {
+                        console.error(`[Monitor-Check-Err] ${data.toString().trim()}`);
+                    });
+
+                    // Handle process exit
+                    immediateCheckProcess.on('exit', async (code) => {
+                        console.log(`[Monitor] Immediate check exited with code ${code}`);
+                        immediateCheckProcess = null;
+
+                        // Log completion
+                        try {
+                            await supabase.from('monitor_activity_log').insert({
+                                event_type: 'trigger',
+                                message: code === 0 ? `즉시 점검 완료 (${MAX_CYCLES}회)` : `즉시 점검 종료 (code: ${code})`,
+                                details: { exit_code: code },
+                            });
+                        } catch (e) {
+                            console.error('[Monitor] Failed to log completion:', e);
+                        }
+                    });
+
+                    return NextResponse.json({
+                        success: true,
+                        message: `Immediate check started (${MAX_CYCLES} cycles)`,
+                        immediateCheckRunning: true,
+                        pid: immediateCheckProcess.pid
+                    });
+                } catch (err) {
+                    const error = err instanceof Error ? err.message : 'Unknown error';
+                    immediateCheckProcess = null;
+                    return NextResponse.json({
+                        success: false,
+                        error
+                    });
+                }
+            }
 
         } else {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
