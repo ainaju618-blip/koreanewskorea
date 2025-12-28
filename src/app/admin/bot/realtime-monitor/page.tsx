@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     Radio,
@@ -272,7 +274,9 @@ export default function RealtimeMonitorPage() {
 
     const formatTimeAgo = (dateStr: string | null) => {
         if (!dateStr) return "-";
-        const diff = Date.now() - new Date(dateStr).getTime();
+        // Supabase stores UTC time - ensure proper parsing by adding Z if missing
+        const utcTimeStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+        const diff = Date.now() - new Date(utcTimeStr).getTime();
         const minutes = Math.floor(diff / 60000);
         const hours = Math.floor(minutes / 60);
 
@@ -524,7 +528,7 @@ export default function RealtimeMonitorPage() {
                                 <div className="text-right">
                                     <div className="text-xs opacity-70">진행 중</div>
                                     <div className="text-lg font-mono font-medium">
-                                        {lastActivity ? new Date(lastActivity.created_at).toLocaleTimeString("ko-KR", {
+                                        {lastActivity ? new Date(lastActivity.created_at.endsWith('Z') ? lastActivity.created_at : lastActivity.created_at + 'Z').toLocaleTimeString("ko-KR", {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                             second: "2-digit",
@@ -562,7 +566,7 @@ export default function RealtimeMonitorPage() {
                                 <div className="text-right">
                                     <div className="text-xs opacity-70">마지막 활동</div>
                                     <div className="text-lg font-mono font-medium">
-                                        {lastActivity ? new Date(lastActivity.created_at).toLocaleTimeString("ko-KR", {
+                                        {lastActivity ? new Date(lastActivity.created_at.endsWith('Z') ? lastActivity.created_at : lastActivity.created_at + 'Z').toLocaleTimeString("ko-KR", {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                             second: "2-digit",
@@ -776,7 +780,9 @@ export default function RealtimeMonitorPage() {
                                     bgColor: "bg-gray-700",
                                     icon: null,
                                 };
-                                const time = new Date(log.created_at);
+                                // Supabase stores UTC time - ensure proper parsing by adding Z if missing
+                                const utcTimeStr = log.created_at.endsWith('Z') ? log.created_at : log.created_at + 'Z';
+                                const time = new Date(utcTimeStr);
                                 const timeStr = time.toLocaleTimeString("ko-KR", {
                                     hour: "2-digit",
                                     minute: "2-digit",
@@ -887,7 +893,9 @@ export default function RealtimeMonitorPage() {
                         {status?.is_running ? (
                             <div className="space-y-3">
                                 {(() => {
-                                    const lastCheckTime = status?.last_check_at ? new Date(status.last_check_at) : null;
+                                    // Supabase stores UTC time - ensure proper parsing by adding Z if missing
+                                    const lastCheckTimeStr = status?.last_check_at;
+                                    const lastCheckTime = lastCheckTimeStr ? new Date(lastCheckTimeStr.endsWith('Z') ? lastCheckTimeStr : lastCheckTimeStr + 'Z') : null;
                                     const interval = status?.config?.default_interval || 60;
 
                                     if (lastCheckTime) {
