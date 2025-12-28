@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot } from 'lucide-react';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
-import RegionalSubMenu from './RegionalSubMenu';
 
 // Dynamic import for NewsTicker (reduces initial bundle, loads after header)
 const NewsTicker = dynamic(() => import('./NewsTicker'), {
@@ -43,7 +42,6 @@ export default function Header() {
     const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [currentDate, setCurrentDate] = useState('');
-    const [hoveredRegion, setHoveredRegion] = useState<{ code: string; name: string } | null>(null);
     const megaMenuRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
 
@@ -241,67 +239,8 @@ export default function Header() {
                                         )}
                                     </Link>
 
-                                    {/* MEGA MENU DROPDOWN - Regional Sub Menu (Dynamic Keywords) */}
-                                    {(category.slug === 'jeonnam' || category.slug === 'region') && hasChildren(category) && (
-                                        <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 overflow-hidden
-                                            opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
-                                        `}>
-                                            {/* Header */}
-                                            <div className="bg-gradient-to-r from-secondary to-secondary-light px-6 py-4 flex items-center gap-3">
-                                                <div className="p-2 bg-white/10 rounded-lg">
-                                                    <MapPin className="w-5 h-5 text-white" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-serif font-bold text-white text-lg">{category.name}</h3>
-                                                    <p className="text-white/60 text-xs">{category.children?.length || 0} regions</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Region Items Grid with Hover Sub-menus */}
-                                            <div className="p-5 grid grid-cols-4 gap-2 relative">
-                                                {category.children!.map((child, idx) => (
-                                                    <div
-                                                        key={child.id}
-                                                        className="relative"
-                                                        onMouseEnter={() => setHoveredRegion({ code: child.slug, name: child.name })}
-                                                        onMouseLeave={() => setHoveredRegion(null)}
-                                                    >
-                                                        <Link
-                                                            href={`/category/jeonnam-region/${child.slug}`}
-                                                            className={`group/item relative flex items-center justify-center gap-2 px-3 py-3 text-sm text-slate-600 hover:text-primary bg-slate-50/50 hover:bg-primary/5 rounded-xl transition-all duration-200 border border-transparent hover:border-primary/20
-                                                                ${hoveredRegion?.code === child.slug ? 'bg-primary/5 text-primary border-primary/20' : ''}
-                                                            `}
-                                                            style={{ animationDelay: `${idx * 30}ms` }}
-                                                        >
-                                                            <span className="font-medium">{child.name}</span>
-                                                            <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all" />
-                                                        </Link>
-
-                                                        {/* Keyword-based Sub Menu for each region */}
-                                                        {hoveredRegion?.code === child.slug && (
-                                                            <RegionalSubMenu
-                                                                regionCode={child.slug}
-                                                                regionName={child.name}
-                                                                isVisible={true}
-                                                                onClose={() => setHoveredRegion(null)}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Footer */}
-                                            <div className="border-t border-slate-100 px-6 py-3 bg-slate-50/50">
-                                                <Link href="/category/jeonnam-region" className="text-xs text-slate-500 hover:text-primary flex items-center justify-center gap-1.5 font-semibold transition-colors group/all">
-                                                    <Newspaper className="w-3.5 h-3.5" />
-                                                    View All Regional News
-                                                    <ChevronRight className="w-3 h-3 group-hover/all:translate-x-0.5 transition-transform" />
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* MEGA MENU DROPDOWN - Regular Categories */}
+                                    {/* MEGA MENU DROPDOWN - Modern Design with Animation */}
+                                    {/* region(jeonnam-region) menu dropdown disabled */}
                                     {hasChildren(category) && category.slug !== 'jeonnam' && category.slug !== 'region' && (
                                         <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
                                             opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
