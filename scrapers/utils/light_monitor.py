@@ -74,6 +74,7 @@ except ImportError:
 
 # Try to import advanced stealth module
 try:
+    # Try relative import first (when imported as package)
     from .advanced_stealth import (
         AdvancedStealth,
         get_stealth_client,
@@ -83,9 +84,20 @@ try:
     )
     HAS_ADVANCED_STEALTH = True
 except ImportError:
-    HAS_ADVANCED_STEALTH = False
-    HAS_CURL_CFFI = False
-    print("[WARN] Advanced stealth module not available, using basic mode")
+    try:
+        # Fallback to absolute import (when run directly as script)
+        from advanced_stealth import (
+            AdvancedStealth,
+            get_stealth_client,
+            BLOCK_INDICATORS,
+            TIMING_PROFILES,
+            HAS_CURL_CFFI,
+        )
+        HAS_ADVANCED_STEALTH = True
+    except ImportError:
+        HAS_ADVANCED_STEALTH = False
+        HAS_CURL_CFFI = False
+        print("[WARN] Advanced stealth module not available, using basic mode")
 
 import httpx
 
