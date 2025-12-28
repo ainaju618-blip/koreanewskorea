@@ -474,16 +474,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
 
 
-                {/* Summary Box - displayed from ai_summary field (not embedded in content) */}
-                {news.ai_summary && (
-                    <div className="article-summary bg-gradient-to-br from-sky-50 to-sky-100 border-l-4 border-sky-600 px-5 py-4 mb-6 rounded-r-lg text-[1.05em] leading-relaxed text-sky-900">
-                        {news.ai_summary}
-                    </div>
-                )}
-
                 {/* 썸네일 이미지 - SEO 최적화 */}
                 {news.thumbnail_url && (
-                    <figure className="mb-10 text-center">
+                    <figure className="mb-6 text-center">
                         <img
                             src={news.thumbnail_url}
                             alt={`${news.title} - ${news.category} 뉴스 | 코리아NEWS`}
@@ -494,6 +487,13 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                             {news.title} 관련 이미지 ⓒ 코리아NEWS
                         </figcaption>
                     </figure>
+                )}
+
+                {/* Summary Box - displayed from ai_summary field (below image) */}
+                {news.ai_summary && (
+                    <div className="article-summary bg-gradient-to-br from-sky-50 to-sky-100 border-l-4 border-sky-600 px-5 py-4 mb-10 rounded-r-lg text-[1.05em] leading-relaxed text-sky-900">
+                        {news.ai_summary}
+                    </div>
                 )}
 
                 {/* 본문 */}
