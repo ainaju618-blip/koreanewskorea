@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
         const sort = searchParams.get('sort') || 'published_at';
         const sortField = sort === 'created_at' ? 'created_at' : 'published_at';
         const category = searchParams.get('category'); // ★ 카테고리 필터
+        const region = searchParams.get('region'); // ★ 지역 필터
 
         // Calculate Range
         const start = (page - 1) * limit;
@@ -52,6 +53,11 @@ export async function GET(req: NextRequest) {
         // ★ 카테고리 필터 (관리자 GNB 메뉴용)
         if (category) {
             query = query.eq('category', category);
+        }
+
+        // ★ 지역 필터 (시군별 보도자료 페이지용)
+        if (region) {
+            query = query.eq('region', region);
         }
 
         const { data, error, count } = await query;

@@ -58,39 +58,17 @@ export default function RegionPage() {
     const page = parseInt(searchParams.get('page') || '1');
     const postsPerPage = 20;
 
-    // 해당 지역 기사 불러오기
+    // 해당 지역 기사 불러오기 (서버 사이드 region 필터링)
     useEffect(() => {
         const fetchPosts = async () => {
             setIsLoading(true);
             try {
-                // 직접 지역 필터링하여 API 요청
-                // 참고: API가 region을 지원하도록 수정될 때까지 아래 로직 사용
-                // 여기서는 limit=50으로 넉넉히 가져와서 클라이이언트 필터링을 유지하거나,
-                // API 업데이트를 가정하고 server side params를 사용.
-                // *현재상황*: API는 page/limit/status만 받음. Region param은 아직 없음.
-                // 1) 전체 region 글을 가져와서(limit 크게)
-                // 2) 클라이언트에서 필터링
-                // 3) 그 결과를 페이징
-                // -> 데이터 양이 많아지면 문제되지만, 지금은 임시로 이렇게 구현하고 API 업데이트 예정.
-
-                // 임시: 100개 가져와서 클라이언트 필터링
-                const res = await fetch(`/api/posts?limit=100&status=published`);
+                // API에서 직접 region 필터링 (서버 사이드 페이징)
+                const res = await fetch(`/api/posts?region=${regionCode}&page=${page}&limit=${postsPerPage}&status=published`);
                 if (res.ok) {
                     const result = await res.json();
-                    const allPosts = result.posts || [];
-
-                    // 해당 지역 기사만 필터링
-                    const filteredPosts = allPosts.filter((post: Post) =>
-                        post.region === regionCode ||
-                        post.title?.includes(region?.name || '') ||
-                        post.content?.includes(region?.name || '')
-                    );
-
-                    setTotalCount(filteredPosts.length);
-
-                    // 클라이언트 사이드 페이징 (API 업데이트 전까지 유지)
-                    const startIdx = (page - 1) * postsPerPage;
-                    setPosts(filteredPosts.slice(startIdx, startIdx + postsPerPage));
+                    setPosts(result.posts || []);
+                    setTotalCount(result.count || 0);
                 }
             } catch (err) {
                 console.error('기사 로드 실패:', err);
@@ -102,7 +80,7 @@ export default function RegionPage() {
         if (region) {
             fetchPosts();
         }
-    }, [regionCode, region, page]);
+    }, [regionCode, region, page, postsPerPage]);
 
     // 지역 코드가 잘못된 경우
     if (!region) {
