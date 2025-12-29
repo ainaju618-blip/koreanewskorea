@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Rss,
     Search,
@@ -255,25 +255,27 @@ export default function RawArticlesPage() {
         }
     };
 
-    // 고유 소스 목록
-    const uniqueSources = Array.from(new Set(articles.map(a => a.source_code)));
+    // 고유 소스 목록 - memoized
+    const uniqueSources = useMemo(() => Array.from(new Set(articles.map(a => a.source_code))), [articles]);
 
-    // 필터링
-    const filteredArticles = articles.filter(article => {
-        const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || article.status === filterStatus;
-        const matchesSource = filterSource === 'all' || article.source_code === filterSource;
-        return matchesSearch && matchesStatus && matchesSource;
-    });
+    // 필터링 - memoized to prevent recalculation
+    const filteredArticles = useMemo(() => {
+        return articles.filter(article => {
+            const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStatus = filterStatus === 'all' || article.status === filterStatus;
+            const matchesSource = filterSource === 'all' || article.source_code === filterSource;
+            return matchesSearch && matchesStatus && matchesSource;
+        });
+    }, [articles, searchQuery, filterStatus, filterSource]);
 
-    // 통계
-    const stats = {
+    // 통계 - memoized
+    const stats = useMemo(() => ({
         total: articles.length,
         pending: articles.filter(a => a.status === 'pending').length,
         processing: articles.filter(a => a.status === 'processing').length,
         done: articles.filter(a => a.status === 'done').length,
         error: articles.filter(a => a.status === 'error').length
-    };
+    }), [articles]);
 
     // AI 가공 시작
     const handleProcess = (id: string) => {

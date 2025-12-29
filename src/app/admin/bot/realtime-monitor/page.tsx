@@ -18,7 +18,8 @@ import {
     Trash2,
     ChevronDown,
     ChevronUp,
-    Cpu
+    Cpu,
+    ListTodo
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/ConfirmModal";
@@ -129,6 +130,19 @@ export default function RealtimeMonitorPage() {
     const liveFeedRef = useRef<HTMLDivElement>(null);
     const prevActivityLength = useRef(0);
 
+    // Pending articles state
+    const [pendingCount, setPendingCount] = useState<{ count: number; unprocessed: number; retry: number } | null>(null);
+    const [processingPending, setProcessingPending] = useState(false);
+    const [aiProcessingActive, setAiProcessingActive] = useState(false);
+    const [aiProcessingStats, setAiProcessingStats] = useState<{
+        total: number;
+        processed: number;
+        published: number;
+        held: number;
+        failed: number;
+        startedAt: string | null;
+    } | null>(null);
+
     // Update current time every second
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -171,12 +185,134 @@ export default function RealtimeMonitorPage() {
         fetchData();
 
         if (autoRefresh) {
-            // 3 seconds when running, 10 seconds when stopped
-            const intervalMs = status?.is_running ? 3000 : 10000;
+            // Optimized: 5 seconds when running (was 3s), 15 seconds when stopped (was 10s)
+            const intervalMs = status?.is_running ? 5000 : 15000;
             const interval = setInterval(fetchData, intervalMs);
             return () => clearInterval(interval);
         }
     }, [fetchData, autoRefresh, status?.is_running]);
+
+    // Fetch pending count
+    const fetchPendingCount = useCallback(async () => {
+        try {
+            const res = await fetch("/api/bot/pending-count");
+            const data = await res.json();
+            if (!data.error) {
+                setPendingCount(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch pending count:", err);
+        }
+    }, []);
+
+    // Fetch pending count on mount and every 30 seconds
+    useEffect(() => {
+        fetchPendingCount();
+        const interval = setInterval(fetchPendingCount, 30000);
+        return () => clearInterval(interval);
+    }, [fetchPendingCount]);
+
+    // Fetch AI processing status
+    const fetchAiProcessingStatus = useCallback(async () => {
+        try {
+            const res = await fetch("/api/bot/run-ai-processing");
+            const data = await res.json();
+            setAiProcessingActive(data.isActive);
+            if (data.isActive && data.stats) {
+                setAiProcessingStats(data.stats);
+            }
+        } catch (err) {
+            console.error("Failed to fetch AI processing status:", err);
+        }
+    }, []);
+
+    // Poll AI processing status when active
+    useEffect(() => {
+        if (aiProcessingActive) {
+            // Optimized: 3s -> 5s polling interval
+            const interval = setInterval(() => {
+                fetchAiProcessingStatus();
+                fetchPendingCount();
+            }, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [aiProcessingActive, fetchAiProcessingStatus, fetchPendingCount]);
+
+    // Check AI processing status on mount
+    useEffect(() => {
+        fetchAiProcessingStatus();
+    }, [fetchAiProcessingStatus]);
+
+    // Handle process pending articles (toggle)
+    const handleProcessPending = async () => {
+        // If already processing, stop it
+        if (aiProcessingActive) {
+            const confirmed = await confirm({
+                title: "AI 처리 중지",
+                message: `현재 ${aiProcessingStats?.processed || 0}/${aiProcessingStats?.total || 0}개 처리 중입니다.\n\n처리를 중지하시겠습니까?`,
+                type: "warning",
+                confirmText: "중지",
+                cancelText: "계속 처리",
+            });
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch("/api/bot/run-ai-processing", {
+                    method: "DELETE",
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showSuccess("AI 처리 중지 요청됨. 현재 기사 처리 후 중지됩니다.");
+                }
+            } catch (err) {
+                showError("중지 실패: " + (err instanceof Error ? err.message : "Unknown error"));
+            }
+            return;
+        }
+
+        // Start processing
+        const confirmed = await confirm({
+            title: "남은작업 정리",
+            message: `AI 미처리 기사 ${pendingCount?.count || 0}개를 처리하시겠습니까?\n\n- 미처리: ${pendingCount?.unprocessed || 0}개\n- 재시도 필요(C/D등급): ${pendingCount?.retry || 0}개\n\n처리 시간이 오래 걸릴 수 있습니다.`,
+            type: "info",
+            confirmText: "처리 시작",
+            cancelText: "취소",
+        });
+        if (!confirmed) return;
+
+        setProcessingPending(true);
+
+        try {
+            const res = await fetch("/api/bot/run-ai-processing", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            const data = await res.json();
+
+            // Check for "already processing" response
+            if (res.status === 409) {
+                setAiProcessingActive(true);
+                setAiProcessingStats(data.stats);
+                showSuccess(`이미 처리 중입니다. (${data.stats?.processed || 0}/${data.stats?.total || 0})`);
+                return;
+            }
+
+            if (data.error) throw new Error(data.error);
+
+            // Processing started in background
+            setAiProcessingActive(true);
+            setAiProcessingStats(data.stats);
+            showSuccess(`AI 처리 시작! ${data.total}개 기사 처리 중...`);
+
+            // Polling will automatically update the UI
+        } catch (err) {
+            showError("AI 처리 실패: " + (err instanceof Error ? err.message : "Unknown error"));
+            setAiProcessingActive(false);
+        } finally {
+            setProcessingPending(false);
+        }
+    };
 
     const handleToggle = async () => {
         if (!status) return;
@@ -407,6 +543,44 @@ export default function RealtimeMonitorPage() {
                             )}
                             {immediateCheckRunning ? "점검 중지" : "즉시 점검"}
                         </button>
+                        {/* Process Pending Articles Button (Toggle) */}
+                        <button
+                            onClick={handleProcessPending}
+                            disabled={processingPending || (!aiProcessingActive && (!pendingCount || pendingCount.count === 0))}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                                aiProcessingActive
+                                    ? "bg-red-500 hover:bg-red-600 text-white"
+                                    : "bg-purple-500 hover:bg-purple-600 text-white"
+                            }`}
+                            title={aiProcessingActive
+                                ? `AI 처리 중지 (${aiProcessingStats?.processed || 0}/${aiProcessingStats?.total || 0})`
+                                : `AI 미처리 기사 ${pendingCount?.count || 0}개 처리`}
+                        >
+                            {aiProcessingActive ? (
+                                <>
+                                    <XCircle className="w-5 h-5" />
+                                    <span>중지</span>
+                                    <span className="bg-white/20 px-2 py-0.5 rounded text-sm">
+                                        {aiProcessingStats?.processed || 0}/{aiProcessingStats?.total || 0}
+                                    </span>
+                                </>
+                            ) : processingPending ? (
+                                <>
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                    <span>시작 중...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ListTodo className="w-5 h-5" />
+                                    <span>남은작업</span>
+                                    {pendingCount && pendingCount.count > 0 && (
+                                        <span className="bg-white/20 px-2 py-0.5 rounded text-sm">
+                                            {pendingCount.count}
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                        </button>
                         {/* Start/Stop Button */}
                         <button
                             onClick={handleToggle}
@@ -633,43 +807,77 @@ export default function RealtimeMonitorPage() {
                 </div>
             )}
 
-            {/* Today Summary */}
+            {/* Total Collected Articles - Always show if regions exist */}
+            {regions.length > 0 && (
+                <div className="bg-gradient-to-r from-emerald-900/50 to-green-900/50 border border-emerald-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-600/30 rounded-lg">
+                                <TrendingUp className="w-6 h-6 text-emerald-400" />
+                            </div>
+                            <div>
+                                <div className="text-emerald-400 text-sm font-medium">전체 수집 기사</div>
+                                <div className="text-3xl font-bold text-white">
+                                    {regions.reduce((sum, r) => sum + (r.total_articles || 0), 0).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="text-right text-sm text-gray-400">
+                            <div>{regions.length}개 지역 합계</div>
+                            <div className="text-xs text-gray-500">scraper_state 기준</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Today's Activity Summary */}
             {todaySummary && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-blue-400 mb-1">
-                            <Eye className="w-4 h-4" />
-                            <span className="text-sm">점검</span>
-                        </div>
-                        <div className="text-2xl font-bold text-white">{todaySummary.checks}</div>
+                <div>
+                    <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        오늘의 활동 통계 (00:00 ~ 현재)
                     </div>
-                    <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-green-400 mb-1">
-                            <Zap className="w-4 h-4" />
-                            <span className="text-sm">새 기사</span>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-blue-400 mb-1">
+                                <Eye className="w-4 h-4" />
+                                <span className="text-sm">오늘 점검</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white">{todaySummary.checks}</div>
+                            <div className="text-xs text-gray-500 mt-1">점검 이벤트 수</div>
                         </div>
-                        <div className="text-2xl font-bold text-white">{todaySummary.newArticles}</div>
-                    </div>
-                    <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-purple-400 mb-1">
-                            <Activity className="w-4 h-4" />
-                            <span className="text-sm">수집</span>
+                        <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-green-400 mb-1">
+                                <Zap className="w-4 h-4" />
+                                <span className="text-sm">오늘 감지</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white">{todaySummary.newArticles}</div>
+                            <div className="text-xs text-gray-500 mt-1">새 기사 발견 횟수</div>
                         </div>
-                        <div className="text-2xl font-bold text-white">{todaySummary.scrapes}</div>
-                    </div>
-                    <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-red-400 mb-1">
-                            <XCircle className="w-4 h-4" />
-                            <span className="text-sm">차단</span>
+                        <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-purple-400 mb-1">
+                                <Activity className="w-4 h-4" />
+                                <span className="text-sm">오늘 추출</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white">{todaySummary.scrapes}</div>
+                            <div className="text-xs text-gray-500 mt-1">기사 추출 완료 수</div>
                         </div>
-                        <div className="text-2xl font-bold text-white">{todaySummary.blocks}</div>
-                    </div>
-                    <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-orange-400 mb-1">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span className="text-sm">오류</span>
+                        <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-red-400 mb-1">
+                                <XCircle className="w-4 h-4" />
+                                <span className="text-sm">오늘 차단</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white">{todaySummary.blocks}</div>
+                            <div className="text-xs text-gray-500 mt-1">접근 차단 횟수</div>
                         </div>
-                        <div className="text-2xl font-bold text-white">{todaySummary.errors}</div>
+                        <div className="bg-[#161b22] border border-gray-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-orange-400 mb-1">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span className="text-sm">오늘 오류</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white">{todaySummary.errors}</div>
+                            <div className="text-xs text-gray-500 mt-1">오류 발생 횟수</div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -677,7 +885,10 @@ export default function RealtimeMonitorPage() {
             {/* Region Status */}
             <div className="bg-[#161b22] border border-gray-700 rounded-lg">
                 <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                    <h2 className="font-semibold text-white">지역별 상태</h2>
+                    <div>
+                        <h2 className="font-semibold text-white">지역별 상태</h2>
+                        <p className="text-xs text-gray-500">scraper_state 테이블 기준 (실제 posts 테이블과 다를 수 있음)</p>
+                    </div>
                     <span className="text-sm text-gray-400">{regions.length}개 지역</span>
                 </div>
                 <div className="overflow-x-auto">
@@ -687,7 +898,10 @@ export default function RealtimeMonitorPage() {
                                 <th className="px-4 py-2 text-left font-medium text-gray-300">지역</th>
                                 <th className="px-4 py-2 text-left font-medium text-gray-300">마지막 점검</th>
                                 <th className="px-4 py-2 text-left font-medium text-gray-300">마지막 기사</th>
-                                <th className="px-4 py-2 text-right font-medium text-gray-300">수집 기사</th>
+                                <th className="px-4 py-2 text-right font-medium text-gray-300">
+                                    <div>누적 기사</div>
+                                    <div className="text-xs text-gray-500 font-normal">(scraper 기준)</div>
+                                </th>
                                 <th className="px-4 py-2 text-center font-medium text-gray-300">상태</th>
                             </tr>
                         </thead>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
     Globe,
     Plus,
@@ -422,13 +422,15 @@ export default function AISourcesPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingSource, setEditingSource] = useState<AISource | null>(null);
 
-    // 필터링된 수집처
-    const filteredSources = sources.filter(source => {
-        const matchesSearch = source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            source.code.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = filterType === 'all' || source.collection_type === filterType;
-        return matchesSearch && matchesType;
-    });
+    // 필터링된 수집처 - memoized to prevent recalculation
+    const filteredSources = useMemo(() => {
+        return sources.filter(source => {
+            const matchesSearch = source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                source.code.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesType = filterType === 'all' || source.collection_type === filterType;
+            return matchesSearch && matchesType;
+        });
+    }, [sources, searchQuery, filterType]);
 
     // 수집처 토글
     const toggleSource = (id: string) => {

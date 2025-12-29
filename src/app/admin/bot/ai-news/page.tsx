@@ -42,7 +42,8 @@ export default function AiNewsPage() {
 
     useEffect(() => {
         loadData();
-        const interval = setInterval(loadData, 5000); // 5초마다 새로고침
+        // Optimized: 5s -> 10s (reduces API calls by 50%)
+        const interval = setInterval(loadData, 10000);
         return () => clearInterval(interval);
     }, []);
 

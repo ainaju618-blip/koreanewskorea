@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from 'next/dynamic';
 import { Search, FileEdit, Trash2, Save, Loader2, Plus, Copy, Check } from "lucide-react";
 import { useToast } from '@/components/ui/Toast';
@@ -250,20 +250,24 @@ export default function AdminDraftsPage() {
         setSelectedIds(newSet);
     };
 
-    // 필터링
-    const filteredDrafts = drafts.filter(draft => {
-        const matchesSearch = searchQuery === '' ||
-            draft.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            stripHtml(draft.content).toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
-    });
+    // Memoized filtering - prevents recalculation on unrelated state changes
+    const filteredDrafts = useMemo(() => {
+        return drafts.filter(draft => {
+            const matchesSearch = searchQuery === '' ||
+                draft.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                stripHtml(draft.content).toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        });
+    }, [drafts, searchQuery]);
 
-    // 페이지네이션
-    const totalPages = Math.ceil(filteredDrafts.length / ITEMS_PER_PAGE);
-    const paginatedDrafts = filteredDrafts.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    // Memoized pagination
+    const totalPages = useMemo(() => Math.ceil(filteredDrafts.length / ITEMS_PER_PAGE), [filteredDrafts.length]);
+    const paginatedDrafts = useMemo(() => {
+        return filteredDrafts.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredDrafts, currentPage]);
 
     return (
         <div className="space-y-6 relative">

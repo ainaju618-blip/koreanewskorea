@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, BarChart3, TrendingUp, Calendar, Filter, Loader2 } from "lucide-react";
 import { PageHeader, Pagination } from "@/components/admin/shared";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -172,20 +172,24 @@ export default function AIQualityDashboard() {
         loadData();
     }, [dateRange, regionFilter]);
 
-    // Filter articles by search
-    const filteredArticles = articles.filter(article => {
-        const matchesSearch = searchQuery === '' ||
-            article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            article.source.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
-    });
+    // Filter articles by search - memoized to prevent recalculation
+    const filteredArticles = useMemo(() => {
+        return articles.filter(article => {
+            const matchesSearch = searchQuery === '' ||
+                article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                article.source.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        });
+    }, [articles, searchQuery]);
 
-    // Pagination
-    const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
-    const paginatedArticles = filteredArticles.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    // Pagination - memoized
+    const totalPages = useMemo(() => Math.ceil(filteredArticles.length / ITEMS_PER_PAGE), [filteredArticles.length]);
+    const paginatedArticles = useMemo(() => {
+        return filteredArticles.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [filteredArticles, currentPage]);
 
     // Grade color helper
     const getGradeColor = (grade: string) => {

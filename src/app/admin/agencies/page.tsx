@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
     Building2, Phone, Mail, ExternalLink, Edit2, Save, X, Plus,
@@ -90,12 +90,14 @@ export default function AgenciesPage() {
         setEditForm({});
     };
 
-    // 필터링
-    const filteredAgencies = agencies.filter(agency => {
-        const matchesFilter = filter === '전체' || agency.category === filter;
-        const matchesSearch = agency.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
+    // 필터링 - memoized to prevent recalculation on unrelated state changes
+    const filteredAgencies = useMemo(() => {
+        return agencies.filter(agency => {
+            const matchesFilter = filter === '전체' || agency.category === filter;
+            const matchesSearch = agency.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesFilter && matchesSearch;
+        });
+    }, [agencies, filter, searchQuery]);
 
     if (loading) {
         return (

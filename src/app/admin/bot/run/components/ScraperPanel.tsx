@@ -317,7 +317,8 @@ export function ScraperPanel() {
             };
 
             checkJobs();
-            interval = setInterval(checkJobs, 2000);
+            // Optimized: 2s -> 5s (reduces API calls by 60%)
+            interval = setInterval(checkJobs, 5000);
         }
 
         return () => {

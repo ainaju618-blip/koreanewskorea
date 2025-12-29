@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     Building2,
     Plus,
@@ -284,23 +284,25 @@ export default function SourcesManagementPage() {
         }
     };
 
-    // 필터링된 목록
-    const filteredSources = sources.filter(source => {
-        const matchesSearch = searchQuery === '' ||
-            source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            source.code.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRegion = filterRegion === 'all' || source.region === filterRegion;
-        const matchesStatus = filterStatus === 'all' || source.scraper_status === filterStatus;
-        return matchesSearch && matchesRegion && matchesStatus;
-    });
+    // 필터링된 목록 - memoized to prevent recalculation
+    const filteredSources = useMemo(() => {
+        return sources.filter(source => {
+            const matchesSearch = searchQuery === '' ||
+                source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                source.code.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesRegion = filterRegion === 'all' || source.region === filterRegion;
+            const matchesStatus = filterStatus === 'all' || source.scraper_status === filterStatus;
+            return matchesSearch && matchesRegion && matchesStatus;
+        });
+    }, [sources, searchQuery, filterRegion, filterStatus]);
 
-    // 통계
-    const stats = {
+    // 통계 - memoized
+    const stats = useMemo(() => ({
         total: sources.length,
         completed: sources.filter(s => s.scraper_status === 'completed').length,
         developing: sources.filter(s => s.scraper_status === 'developing').length,
         planned: sources.filter(s => s.scraper_status === 'planned').length
-    };
+    }), [sources]);
 
     return (
         <div className="space-y-6">
