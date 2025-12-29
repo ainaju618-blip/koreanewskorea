@@ -36,10 +36,12 @@ export const localRegions: Region[] = [
     { id: "shinan", label: "신안군" },
 ];
 
-// 교육기관 목록 (2개)
+// 교육기관 목록 (4개)
 export const agencyRegions: Region[] = [
     { id: "gwangju_edu", label: "광주시교육청" },
     { id: "jeonnam_edu", label: "전남교육청" },
+    { id: "jeonnam_edu_org", label: "전남교육청 기관" },
+    { id: "jeonnam_edu_school", label: "전남교육청 학교" },
 ];
 
 // 전체 지역 목록
@@ -81,6 +83,8 @@ export const availableScraperIds: string[] = [
     "gwangju_edu",
     "jeonnam",
     "jeonnam_edu",
+    "jeonnam_edu_org",
+    "jeonnam_edu_school",
     "mokpo",
     "naju",
     "suncheon",

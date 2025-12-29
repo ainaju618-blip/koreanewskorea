@@ -74,9 +74,9 @@ async function getCategoryNews(slug: string, categoryName: string, page: number 
         else if (slug === 'kedu') {
             query = query.or(`source.eq.광주시교육청,source.eq.광주광역시교육청,source.eq.광주교육청`);
         }
-        // 전남교육청: source 필드로 필터링
+        // 전남교육청: source 필드로 필터링 (기관, 학교 포함)
         else if (slug === 'jedu') {
-            query = query.or(`source.eq.전남교육청,source.eq.전라남도교육청`);
+            query = query.or(`source.eq.전남교육청,source.eq.전라남도교육청,source.eq.전남교육청 기관,source.eq.전남교육청 학교`);
         }
         // 광주광역시: 교육청 관련 기사 모두 제외 (source + region)
         else if (slug === 'gwangju') {

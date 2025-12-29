@@ -5,6 +5,158 @@
 
 ---
 
+## [2025-12-30 PM] 세션 #42 - 전남교육청 기관/학교 스크래퍼 추가 by Claude
+
+### 주인님 의도
+1. 전남교육청 사이트(jnedu.kr)에서 기관(S1N2)과 학교(S1N3) 섹션 추가 스크래핑
+2. 각각 별도의 스크래퍼로 분리 구현
+3. 수집된 기사가 "전남교육청" 섹션에 표시되어야 함
+
+### 수행 작업
+
+1. **새 스크래퍼 2개 생성**
+   - `scrapers/jeonnam_edu/jeonnam_edu_org_scraper.py` (기관 S1N2)
+     - REGION_CODE = 'jeonnam_edu_org'
+     - source = '전남교육청 기관'
+   - `scrapers/jeonnam_edu/jeonnam_edu_school_scraper.py` (학교 S1N3)
+     - REGION_CODE = 'jeonnam_edu_school'
+     - source = '전남교육청 학교'
+
+2. **지역 설정 파일 업데이트**
+   - `src/constants/regions.ts` - EDUCATION_AGENCIES에 새 지역 추가
+   - `src/lib/bot-service.ts` - ALL_REGIONS + 특수 경로 매핑 추가
+   - `src/app/admin/bot/run/components/regionData.ts` - agencyRegions, availableScraperIds 추가
+
+3. **스크래핑 테스트 실행**
+   - 기관(org): 8건 수집 성공
+   - 학교(school): 8건 수집 성공
+   - 총 16건 DB 저장 완료
+
+4. **카테고리 페이지 필터 수정** (핵심 수정)
+   - `src/app/(site)/category/[slug]/page.tsx`
+   - `/category/jedu` 페이지에서 새 source 값들도 포함하도록 필터 확장
+   - 수정 전: `source.eq.전남교육청,source.eq.전라남도교육청`
+   - 수정 후: `source.eq.전남교육청,source.eq.전라남도교육청,source.eq.전남교육청 기관,source.eq.전남교육청 학교`
+
+### 수정된 파일
+- `scrapers/jeonnam_edu/jeonnam_edu_org_scraper.py` (신규)
+- `scrapers/jeonnam_edu/jeonnam_edu_school_scraper.py` (신규)
+- `src/constants/regions.ts`
+- `src/lib/bot-service.ts`
+- `src/app/admin/bot/run/components/regionData.ts`
+- `src/app/(site)/category/[slug]/page.tsx`
+
+### 결과
+- 전남교육청 기관/학교 기사가 `/category/jedu` (전남교육청) 섹션에 정상 표시됨
+- 기존 "교육" 카테고리가 아닌 "전남교육청" 섹션으로 라우팅 완료
+
+---
+
+## [2025-12-29 PM] 세션 #41 - koreanewshq 본사 사이트 기본 구조 구축 by Claude
+
+### 주인님 의도
+1. koreanewshq (본사 사이트) 구축 시작
+2. jeonnam 템플릿 기반으로 동일한 구조 적용
+3. /policy/ 섹션: KTV, 정책브리핑
+4. /tour/ 섹션: 한국관광공사 API 연동 (전국)
+5. 뉴스 범위: 대한민국 전체 (정부/부처 보도자료)
+
+### 수행 작업
+
+1. **globals.css 완전 재작성**
+   - Pretendard 웹폰트 로딩
+   - HQ 디자인 시스템 (CSS Variables)
+   - container-hq, hq-nav, hq-section-* 클래스
+   - policy-section, tour-section 전용 스타일
+   - Tailwind 3.x 문법으로 수정 (빌드 오류 해결)
+
+2. **레이아웃 컴포넌트 업데이트**
+   - Header.tsx: 상단바, 로고, 네비게이션 (POLICY/TOUR 색상 구분)
+   - Footer.tsx: HQ 스타일 푸터
+   - layout.tsx: 메타데이터 업데이트
+
+3. **메인 페이지 (/) 구축**
+   - Breaking News Bar
+   - 헤드라인 뉴스 섹션
+   - Policy 섹션 프리뷰 (KTV 카드, 정책 카드, KOGL 출처)
+   - Tour 섹션 프리뷰 (지역 필터, 관광지 그리드)
+   - 카테고리 섹션
+
+4. **서브 페이지 생성**
+   - /policy/page.tsx: KTV, 정책브리핑, 부처 보도자료
+   - /tour/page.tsx: 17개 시도 필터, 관광지/축제/맛집/숙소
+   - /news/page.tsx: 카테고리 탭, 뉴스 그리드
+   - /category/page.tsx: 4개 카테고리 (정치/경제/사회/문화)
+
+5. **빌드 테스트 성공**
+   - 모든 7개 페이지 정적 생성 완료
+   - /, /_not-found, /category, /news, /policy, /tour
+
+### 수정된 파일
+- `koreanewshq/src/app/globals.css` - HQ 디자인 시스템
+- `koreanewshq/src/app/layout.tsx` - 메타데이터 업데이트
+- `koreanewshq/src/app/page.tsx` - 메인 페이지
+- `koreanewshq/src/components/layout/Header.tsx` - HQ 헤더
+- `koreanewshq/src/components/layout/Footer.tsx` - HQ 푸터
+- `koreanewshq/src/app/policy/page.tsx` - 정책 페이지 (신규)
+- `koreanewshq/src/app/tour/page.tsx` - 관광 페이지 (신규)
+- `koreanewshq/src/app/news/page.tsx` - 뉴스 페이지 (신규)
+- `koreanewshq/src/app/category/page.tsx` - 카테고리 페이지 (신규)
+- `koreanewshq/HQ_PROJECT.md` - 진행 상황 업데이트
+
+### 다음 작업
+- TourAPI 연동 (한국관광공사)
+- Supabase 테이블 설정
+- Vercel 배포 (koreanewskoreas-projects)
+
+---
+
+## [2025-12-29 PM] 세션 #40 - CLAUDE.md v7.0 Control Tower 재설계 by Claude
+
+### 주인님 의도
+1. gwangju/jeonnam 작업 진행 상황 검토
+2. 권역별 통합 아키텍처로 최종 결정
+3. CLAUDE.md를 작업 현황 컨트롤 타워로 재설계
+4. **P0 최우선**: koreanewsone.com 절대 보호 규칙 수립
+
+### 수행 작업
+
+1. **gwangju/jeonnam 진행 상황 분석**
+   - gwangju/: Phase 1 약 80% 완료 (하드코딩 방식)
+   - jeonnam/: site-regions.ts 설정 시스템 (9개 권역 지원)
+   - 결론: jeonnam/ 아키텍처가 더 우수 → 통합 결정
+
+2. **CLAUDE.md v7.0 재설계**
+   - P0 PROTECTION 섹션 최상단 배치 (koreanewsone.com 보호)
+   - DASHBOARD 섹션으로 프로젝트 상태 한눈에 파악
+   - REGIONAL SITES PROJECT 섹션 추가
+     - Architecture Decision (FINAL): jeonnam/ 통합 방식
+     - Work Progress Tracker: Phase 1/2/3 체크리스트
+     - 9 Regional Sites Config: 권역별 설정 정보
+   - 기존 로컬홈페이지작업.md 내용 통합
+
+3. **핵심 결정 사항**
+   - `jeonnam/` = Master Template (모든 9개 권역용)
+   - `gwangju/` = Deprecated (jeonnam/으로 통합 후 삭제 예정)
+   - `src/` = PROTECTED (절대 수정 금지)
+
+### 주요 변경사항
+
+| 항목 | Before | After |
+|------|--------|-------|
+| P0 규칙 | 8개 일반 규칙 | **koreanewsone.com 보호가 최우선** |
+| 아키텍처 | gwangju/ vs jeonnam/ 병행 | **jeonnam/ 통합** |
+| 작업 추적 | 로컬홈페이지작업.md 별도 | **CLAUDE.md 내 통합** |
+| 버전 | v6.0 | **v7.0** |
+
+### 수정된 파일
+- `CLAUDE.md` - v7.0 Control Tower 전면 재설계
+
+### 배포
+- 대기 (커밋 전)
+
+---
+
 ## [2025-12-28 PM] 세션 #39 - Header.tsx 키워드 통합 + 추가 스크래핑 by Claude
 
 ### 주인님 의도

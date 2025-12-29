@@ -8,7 +8,7 @@ export const ALL_REGIONS = [
     "damyang", "gokseong", "gurye", "goheung", "boseong", "hwasun", "jangheung",
     "gangjin", "haenam", "yeongam", "muan", "hampyeong", "yeonggwang",
     "jangseong", "wando", "jindo", "shinan",
-    "gwangju_edu", "jeonnam_edu"
+    "gwangju_edu", "jeonnam_edu", "jeonnam_edu_org", "jeonnam_edu_school"
 ];
 
 /**
@@ -117,21 +117,39 @@ export async function executeScraper(
 
     const fs = require('fs');
 
+    // Special case mapping for scrapers in shared folders
+    const specialScraperPaths: Record<string, string> = {
+        'jeonnam_edu_org': 'jeonnam_edu/jeonnam_edu_org_scraper.py',
+        'jeonnam_edu_school': 'jeonnam_edu/jeonnam_edu_school_scraper.py',
+    };
+
+    // 0. 특수 경로 스크래퍼 체크
+    if (specialScraperPaths[region]) {
+        const specialPath = path.join(scrapersDir, specialScraperPaths[region]);
+        if (fs.existsSync(specialPath)) {
+            scraperFile = specialScraperPaths[region];
+            useRegionArg = false;
+            console.log(`[${region}] 특수 경로 스크래퍼 사용: ${scraperFile}`);
+        }
+    }
+
     // 1. 폴더 구조 스크래퍼 우선 체크 (gwangju/gwangju_scraper.py)
     const folderScraperPath = path.join(scrapersDir, region, `${region}_scraper.py`);
     // 2. 루트 스크래퍼 fallback (기존 호환성)
     const rootScraperPath = path.join(scrapersDir, `${region}_scraper.py`);
 
-    if (fs.existsSync(folderScraperPath)) {
-        scraperFile = `${region}/${region}_scraper.py`;
-        useRegionArg = false;
-        console.log(`[${region}] 폴더 스크래퍼 사용: ${scraperFile}`);
-    } else if (fs.existsSync(rootScraperPath)) {
-        scraperFile = `${region}_scraper.py`;
-        useRegionArg = false;
-        console.log(`[${region}] 루트 스크래퍼 사용: ${scraperFile}`);
-    } else {
-        console.log(`[${region}] 공용 스크래퍼 사용: ${scraperFile}`);
+    if (scraperFile === 'universal_scraper.py') {
+        if (fs.existsSync(folderScraperPath)) {
+            scraperFile = `${region}/${region}_scraper.py`;
+            useRegionArg = false;
+            console.log(`[${region}] 폴더 스크래퍼 사용: ${scraperFile}`);
+        } else if (fs.existsSync(rootScraperPath)) {
+            scraperFile = `${region}_scraper.py`;
+            useRegionArg = false;
+            console.log(`[${region}] 루트 스크래퍼 사용: ${scraperFile}`);
+        } else {
+            console.log(`[${region}] 공용 스크래퍼 사용: ${scraperFile}`);
+        }
     }
 
     // 날짜 차이 계산 (기존 --days 인자 호환성)

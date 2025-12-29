@@ -56,6 +56,8 @@ export const JEONNAM_PROVINCE: Region[] = [
 export const EDUCATION_AGENCIES: Region[] = [
     { code: 'gwangju_edu', name: '광주시교육청', type: 'agency' },
     { code: 'jeonnam_edu', name: '전라남도교육청', type: 'agency' },
+    { code: 'jeonnam_edu_org', name: '전남교육청 기관', type: 'agency' },
+    { code: 'jeonnam_edu_school', name: '전남교육청 학교', type: 'agency' },
 ];
 
 // 전남 시(city)만 필터링
