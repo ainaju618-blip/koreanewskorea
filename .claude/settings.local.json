@@ -392,7 +392,8 @@
       "Bash(python scrapers/jeonnam_edu/jeonnam_edu_org_scraper.py:*)",
       "Bash(python scrapers/jeonnam_edu/jeonnam_edu_school_scraper.py:*)",
       "Bash(start http://localhost:3002)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(npx next dev:*)"
     ]
   }
 }

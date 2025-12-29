@@ -116,5 +116,10 @@ logs/
 *.log
 _backup/
 
-# Deprecated folders
+# Deprecated/Development folders (not part of production build)
+# Production is src/ only
 gwangju/
+jeonnam/
+koreanewshq/
+koreanewskorea/
+dec30-admin/
