@@ -13,6 +13,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Add parent directory to path to allow imports from utils
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
 def run_audit(target_scrapers: List[str] = None, days: int = 1):
     """
     Audit scrapers by running them in dry-run mode (collect_articles).
@@ -134,8 +138,8 @@ def run_audit(target_scrapers: List[str] = None, days: int = 1):
             }
 
 
-    # Save report
-    with open(os.path.join(base_dir, 'audit_report.json'), 'w', encoding='utf-8') as f:
+    # Save report - all logs go to logs/ folder
+    with open(os.path.join(LOG_DIR, 'audit_report.json'), 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     
     # Generate Markdown Summary
@@ -168,10 +172,10 @@ def run_audit(target_scrapers: List[str] = None, days: int = 1):
                 md_report += f"  - 이미지: {thumb} ({article.get('thumbnail_url', 'N/A')})\n"
                 md_report += f"  - 링크: {article.get('original_link')}\n"
 
-    with open(os.path.join(base_dir, 'audit_report.md'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(LOG_DIR, 'audit_report.md'), 'w', encoding='utf-8') as f:
         f.write(md_report)
-    
-    print(f"\n📄 보고서 저장 완료: {os.path.join(base_dir, 'audit_report.md')}")
+
+    print(f"\n📄 보고서 저장 완료: {os.path.join(LOG_DIR, 'audit_report.md')}")
 
 if __name__ == "__main__":
     import argparse

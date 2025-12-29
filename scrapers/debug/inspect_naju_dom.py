@@ -9,6 +9,10 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
 from playwright.sync_api import sync_playwright
 
 URL = "https://www.naju.go.kr/www/administration/reporting/coverage?idx=592086&mode=view"
@@ -92,9 +96,10 @@ with sync_playwright() as p:
             first_class = best['fullClass'].split()[0]
             print(f"\n사용할 셀렉터: div.{first_class}")
     
-    # 저장
-    with open('debug/naju_dom_result.json', 'w', encoding='utf-8') as f:
+    # 저장 - all logs go to logs/ folder
+    output_file = os.path.join(LOG_DIR, 'naju_dom_result.json')
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print("\n결과가 debug/naju_dom_result.json에 저장되었습니다.")
+    print(f"\n결과가 {output_file}에 저장되었습니다.")
     
     browser.close()

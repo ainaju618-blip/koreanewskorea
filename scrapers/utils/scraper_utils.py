@@ -3,14 +3,27 @@ Scraper Stabilization Utility Module
 - Retry logic, dynamic wait, fallback selector chains
 """
 
+import os
 import time
 import logging
 from typing import Optional, List, Callable, Any
 from playwright.sync_api import Page, Locator, TimeoutError as PlaywrightTimeout
 
-# Logging setup
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Logging setup - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, 'scraper_utils.log')
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('ScraperUtils')
 
 # ============================================================
 # Configuration Constants

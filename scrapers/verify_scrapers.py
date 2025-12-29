@@ -12,6 +12,10 @@ import json
 from datetime import datetime
 from typing import List, Dict, Tuple
 
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
 # 검증 결과 저장
 RESULTS = {
     'timestamp': datetime.now().isoformat(),
@@ -302,13 +306,15 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Scraper Verification Tool')
     parser.add_argument('--dir', default='.', help='Directory containing scrapers')
-    parser.add_argument('--report', default='verification_report.md', help='Report output path')
+    # Default report path is in logs/ folder
+    default_report = os.path.join(LOG_DIR, 'verification_report.md')
+    parser.add_argument('--report', default=default_report, help='Report output path')
     args = parser.parse_args()
-    
+
     results = verify_all_scrapers(args.dir)
     generate_report(results, args.report)
-    
-    # JSON 결과도 저장
+
+    # JSON 결과도 저장 - all logs go to logs/ folder
     json_path = args.report.replace('.md', '.json')
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)

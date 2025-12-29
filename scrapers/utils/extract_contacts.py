@@ -16,8 +16,10 @@ from typing import Optional, Dict, List
 
 from playwright.sync_api import sync_playwright, Page
 
-# 출력 파일 경로
-OUTPUT_FILE = os.path.join(os.path.dirname(__file__), '..', 'extracted_contacts.json')
+# 출력 파일 경로 - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+OUTPUT_FILE = os.path.join(LOG_DIR, 'extracted_contacts.json')
 
 # 기관별 보도자료 URL 정의
 AGENCIES = [

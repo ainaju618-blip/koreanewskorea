@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """DB 기사 본문 품질 분석 - 결과 파일 저장"""
+import os
 import requests
 import re
 from collections import defaultdict
+
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
 
 PROBLEM_PATTERNS = [
     (r'개인정보처리방침', '개인정보처리방침'),
@@ -56,7 +61,8 @@ def main():
     results.sort(key=lambda x: -x[3])
     
     # 파일로 저장
-    with open('scrapers/debug/content_quality_report.txt', 'w', encoding='utf-8') as f:
+    report_path = os.path.join(LOG_DIR, 'content_quality_report.txt')
+    with open(report_path, 'w', encoding='utf-8') as f:
         f.write(f"총 {len(posts)}개 기사 분석\n\n")
         f.write(f"{'Source':<25} Total  Prob  Rate\n")
         f.write("-" * 50 + "\n")

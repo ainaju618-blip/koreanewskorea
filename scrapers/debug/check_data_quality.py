@@ -16,9 +16,11 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(project_root)
 load_dotenv()
 
-# 결과 파일 (프로젝트 루트의 .ai-collab 폴더)
+# 결과 파일 - all logs go to logs/ folder
 koreanews_root = os.path.dirname(project_root)  # scrapers의 상위 = koreanews
-output_file = os.path.join(koreanews_root, '.ai-collab', 'quality_report.md')
+LOG_DIR = os.path.join(koreanews_root, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+output_file = os.path.join(LOG_DIR, 'quality_report.md')
 
 # Supabase 연결 정보
 url = os.getenv('NEXT_PUBLIC_SUPABASE_URL')

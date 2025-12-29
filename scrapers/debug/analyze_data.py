@@ -1,11 +1,15 @@
 """
 수집된 데이터 분석 스크립트 - 결과 파일 저장
 """
+import os
 import urllib.request
 import json
 from collections import Counter
 
-OUTPUT_FILE = 'scrapers/debug/data_analysis_result.txt'
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+OUTPUT_FILE = os.path.join(LOG_DIR, 'data_analysis_result.txt')
 
 def main():
     url = 'http://localhost:3000/api/posts?limit=2000'

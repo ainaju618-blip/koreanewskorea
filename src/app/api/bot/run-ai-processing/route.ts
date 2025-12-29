@@ -1,20 +1,110 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { spawn } from 'child_process';
+import os from 'os';
+
+const isWindows = os.platform() === 'win32';
+
+// Global state for processing control (toggle)
+let isProcessingActive = false;
+let shouldStopProcessing = false;
+let processingStats = {
+    total: 0,
+    processed: 0,
+    published: 0,
+    held: 0,
+    failed: 0,
+    startedAt: null as string | null
+};
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Local Ollama configuration - Solar:10.7b (Upstage Korean Enterprise Model)
+// Local Ollama configuration - Linkbricks Korean 8B (Grade A verified, 105s)
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const PRIMARY_MODEL = 'solar:10.7b';      // Best quality Korean model (Upstage)
-const FALLBACK_MODEL = 'qwen2.5:14b';     // Fallback for expansion
+const PRIMARY_MODEL = 'benedict/linkbricks-llama3.1-korean:8b';  // Grade A verified, Korean-focused
+const FALLBACK_MODEL = 'solar:10.7b';     // Fallback (bilingual but reliable)
 
 // Ollama API settings - Korean model optimized parameters
 const NUM_CTX = 4096;             // Reduced from 8192 (Korean KV cache optimization)
 const NUM_PREDICT = 2048;         // Reduced from 4096
 const API_TIMEOUT_MS = 180000;    // 3 minutes (Korean models faster with optimized settings)
+
+// Start or restart Ollama service
+async function startOllama(): Promise<{ success: boolean; message: string }> {
+    console.log('[Ollama] Starting/restarting Ollama service...');
+
+    try {
+        // First, kill any existing Ollama process
+        if (isWindows) {
+            // Windows: taskkill
+            await new Promise<void>((resolve) => {
+                const kill = spawn('taskkill', ['/f', '/im', 'ollama.exe'], {
+                    shell: true,
+                    detached: true,
+                    stdio: 'ignore'
+                });
+                kill.on('close', () => resolve());
+                kill.on('error', () => resolve()); // Ignore errors if process doesn't exist
+                setTimeout(() => resolve(), 2000); // Timeout after 2 seconds
+            });
+        } else {
+            // Unix: pkill
+            await new Promise<void>((resolve) => {
+                const kill = spawn('pkill', ['-f', 'ollama'], {
+                    shell: true,
+                    detached: true,
+                    stdio: 'ignore'
+                });
+                kill.on('close', () => resolve());
+                kill.on('error', () => resolve());
+                setTimeout(() => resolve(), 2000);
+            });
+        }
+
+        // Wait a bit for process to fully terminate
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Start Ollama serve
+        console.log('[Ollama] Spawning ollama serve...');
+        const ollamaProcess = spawn('ollama', ['serve'], {
+            shell: true,
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: true
+        });
+
+        ollamaProcess.unref(); // Don't wait for this process
+
+        // Wait for Ollama to be ready (poll health endpoint)
+        const maxWaitTime = 30000; // 30 seconds max
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < maxWaitTime) {
+            try {
+                const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+                    signal: AbortSignal.timeout(3000)
+                });
+                if (healthCheck.ok) {
+                    console.log('[Ollama] Service is ready!');
+                    return { success: true, message: 'Ollama started successfully' };
+                }
+            } catch {
+                // Not ready yet, wait and retry
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        return { success: false, message: 'Ollama failed to start within 30 seconds' };
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error('[Ollama] Failed to start:', message);
+        return { success: false, message };
+    }
+}
 
 // Call local Ollama API with timeout and expert-recommended parameters
 async function callOllama(prompt: string, model: string = PRIMARY_MODEL): Promise<string> {
@@ -64,40 +154,103 @@ async function callOllama(prompt: string, model: string = PRIMARY_MODEL): Promis
     }
 }
 
+// Validate output: check for English ratio and length
+function validateOutput(original: string, output: string): { valid: boolean; reason?: string } {
+    // Check for English ratio (more than 10% English = invalid)
+    const englishChars = (output.match(/[a-zA-Z]/g) || []).length;
+    const koreanChars = (output.match(/[\uAC00-\uD7AF]/g) || []).length;
+    const englishRatio = englishChars / (koreanChars + englishChars + 1);
+
+    if (englishRatio > 0.1) {
+        return { valid: false, reason: `English ratio too high: ${(englishRatio * 100).toFixed(1)}%` };
+    }
+
+    // Check length (should be within 10% of original, not too short)
+    const lengthRatio = output.length / original.length;
+    if (lengthRatio < 0.5) {
+        return { valid: false, reason: `Output too short: ${(lengthRatio * 100).toFixed(1)}% of original` };
+    }
+
+    return { valid: true };
+}
+
 // Stage 1: Convert press release to news article (Korean prompt)
 // retryCount: 0 = first attempt, 1+ = retry with stricter rules
 async function convertToNews(pressRelease: string, retryCount: number = 0): Promise<{ content: string; subtitle: string }> {
-    // Different prompts for retries - progressively stricter
     const inputLength = pressRelease.length;
-    const baseRules = `1. 오타와 띄어쓰기 오류를 수정한다
-2. 불필요한 정보(담당자, 전화번호, HTML 태그, 저작권 문구 등)는 제거한다
-3. 원본의 사실(숫자, 날짜, 이름)은 반드시 그대로 유지한다
-4. 원본에 없는 내용은 절대 추가하지 않는다
-5. 반드시 첫 줄에 [부제목: 한 문장 요약]을 작성한다
-6. [중요] 원본 길이(${inputLength}자)와 비슷하게 작성한다. 요약하지 않는다!
-7. [중요] 모든 정보를 포함하여 완전한 기사로 작성한다`;
+    const minLength = Math.floor(inputLength * 0.9);
+    const maxLength = Math.floor(inputLength * 1.1);
 
-    const retryRules = retryCount > 0 ? `
-[중요 - 이전 시도에서 팩트체크 실패]
-- 숫자, 날짜, 이름을 원본과 100% 동일하게 작성하라
-- 원본에 없는 내용을 절대 추가하지 마라
-- 불확실한 내용은 생략하라
-- 원본 문장을 최대한 그대로 사용하라` : '';
+    // Ultra-strict Korean-only prompt (reinforced version)
+    const prompt = `[시스템 역할]
+너는 대한민국 지역 뉴스 전문 편집자다.
+보도자료를 뉴스 기사로 편집하는 것이 임무다.
 
-    const prompt = `너는 한국어 뉴스 기사 전문 편집자다. 다음 보도자료를 깔끔한 뉴스 기사로 다시 작성해줘.
+##################################################
+##  🚨🚨🚨 절대 위반 금지 규칙 (P0) 🚨🚨🚨  ##
+##################################################
 
-규칙:
-${baseRules}${retryRules}
+1. 언어: 오직 한국어만 사용
+   - 영어 단어 1개라도 사용 금지
+   - "the", "a", "is", "are" 등 영어 절대 불가
+   - 영어 약어도 한글로: CEO→대표, AI→인공지능, IT→정보기술
+   - 위반시: 출력 폐기 후 재생성
 
-출력 형식:
-[부제목: 기사 핵심을 요약한 한 문장]
+2. 길이: 원문 길이 유지 (${minLength}자 ~ ${maxLength}자)
+   - 요약 금지, 축소 금지, 생략 금지
+   - 원문의 모든 문단, 모든 정보 포함 필수
+   - 위반시: 출력 폐기 후 재생성
 
-본문 내용...
+3. 팩트: 원본 사실 100% 보존
+   - 숫자(금액, 날짜, 수량) 그대로 유지
+   - 이름(사람, 기관, 지역) 그대로 유지
+   - 새로운 정보 추가 절대 금지
 
-[보도자료]
+##################################################
+##  편집 규칙 (P1)  ##
+##################################################
+
+1. 첫 줄에 반드시 부제목 작성:
+   [부제목: 기사 핵심을 15자 이내로 요약]
+
+2. 오타, 띄어쓰기 오류 수정
+
+3. 삭제 대상 (불필요 정보):
+   - 담당자 이름, 전화번호, 이메일
+   - HTML 태그, 저작권 문구
+   - "문의:", "담당:" 등 연락처 정보
+
+4. 보존 대상 (필수 정보):
+   - 행사명, 일시, 장소, 참석자
+   - 예산, 지원금, 통계 수치
+   - 인용문, 발언 내용
+
+##################################################
+${retryCount > 0 ? `
+##  ⚠️ 재시도 ${retryCount}회차 - 이전 출력 실패 이유:  ##
+##################################################
+- 영어 포함 또는 길이 부족으로 검증 실패
+- 이번에는 반드시:
+  * 한국어만 사용 (영어 0개)
+  * 원문 길이(${inputLength}자) 유지
+  * 원문 문장을 최대한 그대로 사용
+##################################################
+` : ''}
+##  출력 형식  ##
+##################################################
+
+[부제목: (15자 이내 핵심 요약)]
+
+(본문 - 원문 길이와 동일하게 작성)
+
+##################################################
+##  입력 보도자료  ##
+##################################################
 ${pressRelease}
 
-[뉴스 기사]`;
+##################################################
+##  출력 뉴스 기사 (한국어만, ${minLength}~${maxLength}자)  ##
+##################################################`;
 
     const response = await callOllama(prompt);
 
@@ -106,7 +259,14 @@ ${pressRelease}
     const subtitle = subtitleMatch ? subtitleMatch[1].trim() : '';
 
     // Remove subtitle line from content
-    const content = response.replace(/\[부제목:\s*.+?\]\n*/g, '').trim();
+    let content = response.replace(/\[부제목:\s*.+?\]\n*/g, '').trim();
+
+    // Validate output
+    const validation = validateOutput(pressRelease, content);
+    if (!validation.valid) {
+        console.log(`[Ollama] Output validation failed: ${validation.reason}`);
+        throw new Error(`Output validation failed: ${validation.reason}`);
+    }
 
     return { content, subtitle };
 }
@@ -280,34 +440,87 @@ async function processArticle(article: { id: string; title: string; content: str
     };
 }
 
+// Background processing function (runs async, doesn't block response)
+async function runBackgroundProcessing(articles: { id: string; title: string; content: string }[]) {
+    let published = 0;
+    let held = 0;
+    let failed = 0;
+
+    try {
+        for (const article of articles) {
+            // Check if stop requested
+            if (shouldStopProcessing) {
+                console.log('[run-ai-processing] Stop requested, halting processing...');
+                break;
+            }
+
+            const result = await processArticle(article);
+
+            processingStats.processed++;
+            if (result.success) {
+                if (result.published) {
+                    published++;
+                    processingStats.published++;
+                } else {
+                    held++;
+                    processingStats.held++;
+                }
+            } else {
+                failed++;
+                processingStats.failed++;
+            }
+
+            // Small delay between articles to prevent overload
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        console.log(`[run-ai-processing] ${shouldStopProcessing ? 'Stopped' : 'Complete'}: published=${published}, held=${held}, failed=${failed}`);
+    } catch (error) {
+        console.error('[run-ai-processing] Background processing error:', error);
+    } finally {
+        isProcessingActive = false;
+        shouldStopProcessing = false;
+    }
+}
+
 // POST: Trigger AI processing on pending articles using local Ollama
+// Returns immediately, processing runs in background
 export async function POST() {
     console.log('[run-ai-processing] POST request received');
+
+    // If already processing, return current status
+    if (isProcessingActive) {
+        return NextResponse.json({
+            success: false,
+            error: 'Processing already in progress',
+            stats: processingStats
+        }, { status: 409 });
+    }
+
     console.log(`[run-ai-processing] Using Ollama at ${OLLAMA_BASE_URL} with primary model ${PRIMARY_MODEL}`);
 
     try {
-        // Check if Ollama is running
-        try {
-            const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
-            if (!healthCheck.ok) {
-                throw new Error('Ollama not responding');
-            }
-        } catch {
+        // Always restart Ollama before processing
+        console.log('[run-ai-processing] Restarting Ollama service...');
+        const ollamaResult = await startOllama();
+
+        if (!ollamaResult.success) {
             return NextResponse.json({
                 success: false,
-                error: 'Ollama is not running. Please start Ollama first.',
-                hint: 'Run "ollama serve" in terminal'
+                error: `Ollama 시작 실패: ${ollamaResult.message}`,
+                hint: 'Ollama가 설치되어 있는지 확인하세요. (ollama.com)'
             }, { status: 503 });
         }
 
-        // Step 1: Get pending articles (unprocessed + C/D grade for retry)
+        console.log('[run-ai-processing] Ollama is ready, fetching pending articles...');
+
+        // Step 1: Get ALL pending articles (unprocessed + C/D grade for retry)
         const { data: unprocessed, error: err1 } = await supabaseAdmin
             .from('posts')
             .select('id, title, content, region')
             .eq('status', 'draft')
             .or('ai_processed.is.null,ai_processed.eq.false')
-            .order('created_at', { ascending: true })
-            .limit(50);
+            .order('created_at', { ascending: true });
 
         if (err1) throw err1;
 
@@ -318,8 +531,7 @@ export async function POST() {
             .eq('status', 'draft')
             .eq('ai_processed', true)
             .in('ai_validation_grade', ['C', 'D'])
-            .order('created_at', { ascending: true })
-            .limit(50);
+            .order('created_at', { ascending: true });
 
         if (err2) throw err2;
 
@@ -335,49 +547,38 @@ export async function POST() {
             return NextResponse.json({
                 success: true,
                 message: 'No pending articles to process',
-                published: 0,
-                held: 0,
-                failed: 0
+                total: 0
             });
         }
 
-        console.log(`[run-ai-processing] Found ${articles.length} pending articles`);
+        console.log(`[run-ai-processing] Starting background processing for ${articles.length} articles`);
 
-        // Step 2: Process articles with local Ollama
-        let published = 0;
-        let held = 0;
-        let failed = 0;
+        // Initialize global stats
+        isProcessingActive = true;
+        shouldStopProcessing = false;
+        processingStats = {
+            total: articles.length,
+            processed: 0,
+            published: 0,
+            held: 0,
+            failed: 0,
+            startedAt: new Date().toISOString()
+        };
 
-        for (const article of articles) {
-            const result = await processArticle(article);
+        // Start background processing (don't await - returns immediately)
+        runBackgroundProcessing(articles);
 
-            if (result.success) {
-                if (result.published) {
-                    published++;
-                } else {
-                    held++;
-                }
-            } else {
-                failed++;
-            }
-
-            // Small delay between articles to prevent overload
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        console.log(`[run-ai-processing] Complete: published=${published}, held=${held}, failed=${failed}`);
-
+        // Return immediately with "started" response
         return NextResponse.json({
             success: true,
-            message: `Processed ${articles.length} articles with Ollama (primary: ${PRIMARY_MODEL}, fallback: ${FALLBACK_MODEL})`,
-            published,
-            held,
-            failed,
-            primaryModel: PRIMARY_MODEL,
-            fallbackModel: FALLBACK_MODEL
+            message: `Processing started for ${articles.length} articles`,
+            total: articles.length,
+            stats: processingStats
         });
 
     } catch (error: unknown) {
+        isProcessingActive = false;
+        shouldStopProcessing = false;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('[run-ai-processing] Error:', errorMessage);
         return NextResponse.json(
@@ -385,4 +586,30 @@ export async function POST() {
             { status: 500 }
         );
     }
+}
+
+// GET: Check processing status
+export async function GET() {
+    return NextResponse.json({
+        isActive: isProcessingActive,
+        stats: processingStats
+    });
+}
+
+// DELETE: Stop processing
+export async function DELETE() {
+    if (!isProcessingActive) {
+        return NextResponse.json({
+            success: false,
+            message: 'No active processing to stop'
+        });
+    }
+
+    shouldStopProcessing = true;
+    console.log('[run-ai-processing] Stop signal sent');
+
+    return NextResponse.json({
+        success: true,
+        message: 'Stop signal sent. Processing will halt after current article.'
+    });
 }

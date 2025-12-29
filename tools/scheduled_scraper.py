@@ -504,8 +504,10 @@ def process_ai_articles(supabase, job_logger=None) -> Dict[str, Any]:
             print(f"[경고] 로그 창 생성 실패: {e}")
             log_window = None
 
-    # Log file for saving
-    log_file_path = os.path.join(PROJECT_ROOT, 'tools', f'ai_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
+    # Log file for saving - all logs go to logs/ folder
+    logs_dir = os.path.join(PROJECT_ROOT, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    log_file_path = os.path.join(logs_dir, f'ai_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.txt')
     log_lines = []
 
     def log_both(msg, level="info"):
@@ -839,8 +841,10 @@ def main():
     final_status = 'unknown_error'
     error_message = None
 
-    # Log trigger to file
-    trigger_log_path = os.path.join(PROJECT_ROOT, 'tools', 'trigger_log.txt')
+    # Log trigger to file - all logs go to logs/ folder
+    logs_dir = os.path.join(PROJECT_ROOT, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    trigger_log_path = os.path.join(logs_dir, 'trigger_log.txt')
     try:
         with open(trigger_log_path, 'a', encoding='utf-8') as f:
             f.write(f"[{datetime.now()}] === SCHEDULED TASK TRIGGERED ===\n")
@@ -1129,7 +1133,10 @@ if __name__ == "__main__":
     # Redirect all output to log file for pythonw.exe execution
     import traceback
 
-    log_file_path = os.path.join(PROJECT_ROOT, 'tools', f'schedule_run_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+    # All logs go to logs/ folder
+    logs_dir = os.path.join(PROJECT_ROOT, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+    log_file_path = os.path.join(logs_dir, f'schedule_run_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 
     try:
         # Open log file with no buffering for immediate writes
@@ -1162,8 +1169,8 @@ if __name__ == "__main__":
         except:
             pass
 
-        # Also write to separate error file
-        error_file_path = os.path.join(PROJECT_ROOT, 'tools', f'schedule_error_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+        # Also write to separate error file - all logs go to logs/ folder
+        error_file_path = os.path.join(logs_dir, f'schedule_error_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
         try:
             with open(error_file_path, 'w', encoding='utf-8') as ef:
                 ef.write(error_msg)

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""전라남도교육청(전남교육통) 보도자료 스크래퍼 v1.0
-- 사이트: https://www.jnedu.kr/
-- 대상: 본청 기사목록 (sc_section_code=S1N1)
-- 최종수정: 2025-12-13
+"""Jeonnam Education Office (Head Office) Press Release Scraper v1.1
+- Site: https://www.jnedu.kr/
+- Target: Head Office (S1N1) only
+- Related scrapers: jeonnam_edu_org_scraper.py (S1N2), jeonnam_edu_school_scraper.py (S1N3)
+- Last Modified: 2025-12-30
 """
 
 import sys

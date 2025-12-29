@@ -17,8 +17,20 @@ import logging
 from typing import Optional, Dict
 from dotenv import load_dotenv
 
-# 로깅 설정
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+# 로깅 설정 - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, 'gemini_client.log')
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 
 # .env 로드
 load_dotenv()

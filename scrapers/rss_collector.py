@@ -13,6 +13,10 @@ import os
 import sys
 import time
 from bs4 import BeautifulSoup
+
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
 from dateutil import parser as date_parser
 from typing import List, Dict, Optional
 
@@ -297,8 +301,8 @@ class FullTextRSSCollector:
                 self.stats['failed'] += 1
 
     def _save_to_json(self):
-        """JSON 파일로 저장"""
-        output_file = "ai_news_fulltext.json"
+        """JSON 파일로 저장 - all logs go to logs/ folder"""
+        output_file = os.path.join(LOG_DIR, "ai_news_fulltext.json")
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(self.collected_news, f, ensure_ascii=False, indent=2)
         print(f"💾 JSON 저장 완료: {output_file}")

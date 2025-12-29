@@ -10,6 +10,10 @@ from playwright.sync_api import sync_playwright
 import time
 import json
 
+# Logs directory - all logs go to logs/ folder
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
 def analyze_boseong_page():
     url = "https://www.boseong.go.kr/www/open_administration/city_news/press_release?idx=1154628&mode=view"
     
@@ -108,8 +112,8 @@ def analyze_boseong_page():
         
         browser.close()
         
-        # 결과를 파일로 저장
-        output_file = os.path.join(os.path.dirname(__file__), 'boseong_analysis.json')
+        # 결과를 파일로 저장 - all logs go to logs/ folder
+        output_file = os.path.join(LOG_DIR, 'boseong_analysis.json')
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(analysis, f, indent=2, ensure_ascii=False)
         

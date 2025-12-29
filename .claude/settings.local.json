@@ -376,7 +376,23 @@
       "Bash(src/lib/keyword-service.ts )",
       "Bash(src/config/)",
       "Bash(git revert:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(powershell -Command \"Get-Process ollama -ErrorAction SilentlyContinue | Select-Object ProcessName, Id, CPU\")",
+      "Bash(dir /s /b *.tsx)",
+      "Bash(node scripts/find-english-articles.js:*)",
+      "Bash(python scrapers/sns/reels_generator.py:*)",
+      "Bash(explorer \"D:\\\\cbt\\\\koreanews\\\\scrapers\\\\sns\\\\output\")",
+      "Bash(python scrapers/sns/card_generator.py:*)",
+      "Bash(Get-ChildItem -Path \"d:/cbt\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npx supabase db execute:*)",
+      "Bash(type:*)",
+      "Bash(dir /b tools*.py)",
+      "Bash(schtasks /query /tn:*)",
+      "Bash(python scrapers/jeonnam_edu/jeonnam_edu_org_scraper.py:*)",
+      "Bash(python scrapers/jeonnam_edu/jeonnam_edu_school_scraper.py:*)",
+      "Bash(start http://localhost:3002)",
+      "Bash(git rm:*)"
     ]
   }
 }

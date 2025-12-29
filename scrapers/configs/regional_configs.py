@@ -17,22 +17,22 @@ DEFAULT_HEADERS = {
 
 # 지역별 설정
 REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
-    # 1. 광주광역시청
+    # 1. 광주광역시청 (Updated 2025-12-29: div-based layout, not table)
     'gwangju': {
         'name': '광주광역시',
         'category': '광주',
         'base_url': 'https://www.gwangju.go.kr',
-        'list_url': 'https://www.gwangju.go.kr/boardList.do?boardId=BD_0000000027&pageId=www789', 
+        'list_url': 'https://www.gwangju.go.kr/boardList.do?boardId=BD_0000000027&pageId=www789',
         'encoding': 'utf-8',
         'parser_type': 'json_ld',
         'selectors': {
-            'list_item': 'tbody tr', 
-            'list_title': 'td.title a',
-            'list_date': 'td:nth-of-type(5)',     
-            'list_link': 'td.title a',
+            'list_item': 'div.board_list_body div.body_row',  # Fixed: div layout not table
+            'list_title': 'div.subject a',
+            'list_date': 'div.date',
+            'list_link': 'div.subject a',
             'detail_title': 'div.board_view_head h6',
-            'detail_content': 'div.board_view_body', 
-            'detail_date': 'div.board_view_info span:first-child', 
+            'detail_content': 'div.board_view_body',
+            'detail_date': 'div.board_view_info span:first-child',
             'detail_image': 'div.view_image img',
         },
         'date_format': '%Y-%m-%d',
@@ -482,23 +482,24 @@ REGIONAL_CONFIGS: Dict[str, Dict[str, Any]] = {
     # Education Offices (25-26)
     # ============================================================
 
-    # 25. 광주광역시교육청
+    # 25. 광주광역시교육청 (Updated 2025-12-29: URL changed to xboard system)
     'gwangju_edu': {
         'name': '광주교육청',
         'category': '교육',
         'base_url': 'https://www.gen.go.kr',
-        'list_url': 'https://www.gen.go.kr/main/bbs/bbsList.do?bbsId=BBSMSTR_000000000021',
+        'list_url': 'https://www.gen.go.kr/xboard/board.php?tbnum=7',  # Fixed: xboard system
         'encoding': 'utf-8',
         'selectors': {
             'list_item': 'tbody tr',
-            'list_title': 'td.title a, td.subject a',
-            'list_date': 'td:nth-of-type(4), td.date',
-            'list_link': 'td.title a, td.subject a',
-            'detail_title': 'h4.view_title, div.view_header h4, h3.bbsV_title',
-            'detail_content': 'div.view_content, div.board_content, div.bbsV_cont',
-            'detail_date': 'ul.view_info li:first-child, span.date',
+            'list_title': 'td:nth-of-type(2) a',  # Title in 2nd column
+            'list_date': 'td:nth-of-type(4)',      # Date in 4th column (YYYY/MM/DD)
+            'list_link': 'td:nth-of-type(2) a',
+            'detail_title': 'h4.view_title, div.view_header h4, h3.bbsV_title, .board_view h3',
+            'detail_content': 'div.view_content, div.board_content, div.bbsV_cont, .board_view_content',
+            'detail_date': 'ul.view_info li:first-child, span.date, .board_info',
             'detail_image': 'div.view_content img, div.bbsV_cont img',
-        }
+        },
+        'date_format': '%Y/%m/%d',
     },
 
     # 26. 전라남도교육청
