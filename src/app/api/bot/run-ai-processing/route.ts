@@ -1,9 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { spawn } from 'child_process';
-import os from 'os';
-
-const isWindows = os.platform() === 'win32';
 
 // Global state for processing control (toggle)
 let isProcessingActive = false;
@@ -32,78 +28,58 @@ const NUM_CTX = 4096;             // Reduced from 8192 (Korean KV cache optimiza
 const NUM_PREDICT = 2048;         // Reduced from 4096
 const API_TIMEOUT_MS = 180000;    // 3 minutes (Korean models faster with optimized settings)
 
-// Start or restart Ollama service
-async function startOllama(): Promise<{ success: boolean; message: string }> {
-    console.log('[Ollama] Starting/restarting Ollama service...');
+// Start Ollama via API endpoint with retry logic
+async function ensureOllamaRunning(maxRetries: number = 3): Promise<{ success: boolean; message: string }> {
+    console.log('[Ollama] Ensuring Ollama is running...');
 
+    // First check if already running
     try {
-        // First, kill any existing Ollama process
-        if (isWindows) {
-            // Windows: taskkill
-            await new Promise<void>((resolve) => {
-                const kill = spawn('taskkill', ['/f', '/im', 'ollama.exe'], {
-                    shell: true,
-                    detached: true,
-                    stdio: 'ignore'
-                });
-                kill.on('close', () => resolve());
-                kill.on('error', () => resolve()); // Ignore errors if process doesn't exist
-                setTimeout(() => resolve(), 2000); // Timeout after 2 seconds
-            });
-        } else {
-            // Unix: pkill
-            await new Promise<void>((resolve) => {
-                const kill = spawn('pkill', ['-f', 'ollama'], {
-                    shell: true,
-                    detached: true,
-                    stdio: 'ignore'
-                });
-                kill.on('close', () => resolve());
-                kill.on('error', () => resolve());
-                setTimeout(() => resolve(), 2000);
-            });
-        }
-
-        // Wait a bit for process to fully terminate
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Start Ollama serve
-        console.log('[Ollama] Spawning ollama serve...');
-        const ollamaProcess = spawn('ollama', ['serve'], {
-            shell: true,
-            detached: true,
-            stdio: 'ignore',
-            windowsHide: true
+        const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+            signal: AbortSignal.timeout(3000)
         });
+        if (healthCheck.ok) {
+            console.log('[Ollama] Already running and healthy');
+            return { success: true, message: 'Ollama already running' };
+        }
+    } catch {
+        console.log('[Ollama] Not running, attempting to start...');
+    }
 
-        ollamaProcess.unref(); // Don't wait for this process
+    // Try to start via API endpoint
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[Ollama] Start attempt ${attempt}/${maxRetries}...`);
 
-        // Wait for Ollama to be ready (poll health endpoint)
-        const maxWaitTime = 30000; // 30 seconds max
-        const startTime = Date.now();
+            // Call the start-ollama API endpoint
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+            const response = await fetch(`${baseUrl}/api/bot/start-ollama`, {
+                method: 'POST',
+                signal: AbortSignal.timeout(20000) // 20s timeout
+            });
 
-        while (Date.now() - startTime < maxWaitTime) {
-            try {
-                const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
-                    signal: AbortSignal.timeout(3000)
-                });
-                if (healthCheck.ok) {
-                    console.log('[Ollama] Service is ready!');
-                    return { success: true, message: 'Ollama started successfully' };
-                }
-            } catch {
-                // Not ready yet, wait and retry
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('[Ollama] Started successfully via API');
+                return { success: true, message: 'Ollama started' };
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            console.log(`[Ollama] Start attempt ${attempt} failed: ${result.message}`);
+
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            console.log(`[Ollama] Start attempt ${attempt} error: ${message}`);
         }
 
-        return { success: false, message: 'Ollama failed to start within 30 seconds' };
-
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[Ollama] Failed to start:', message);
-        return { success: false, message };
+        // Wait before retry (increasing delay)
+        if (attempt < maxRetries) {
+            const delay = attempt * 2000; // 2s, 4s, 6s
+            console.log(`[Ollama] Waiting ${delay / 1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
+
+    return { success: false, message: `Failed to start Ollama after ${maxRetries} attempts` };
 }
 
 // Call local Ollama API with timeout and expert-recommended parameters
@@ -485,8 +461,21 @@ async function runBackgroundProcessing(articles: { id: string; title: string; co
 
 // POST: Trigger AI processing on pending articles using local Ollama
 // Returns immediately, processing runs in background
-export async function POST() {
+export async function POST(req: NextRequest) {
     console.log('[run-ai-processing] POST request received');
+
+    // Parse request body to get limit parameter
+    let limit = 10; // Default limit
+    try {
+        const body = await req.json();
+        if (body.limit && typeof body.limit === 'number' && body.limit > 0) {
+            limit = Math.min(body.limit, 100); // Cap at 100 max
+        }
+        console.log(`[run-ai-processing] Limit: ${limit} articles`);
+    } catch {
+        // No body or invalid JSON, use default limit
+        console.log('[run-ai-processing] No limit specified, using default: 10');
+    }
 
     // If already processing, return current status
     if (isProcessingActive) {
@@ -500,9 +489,9 @@ export async function POST() {
     console.log(`[run-ai-processing] Using Ollama at ${OLLAMA_BASE_URL} with primary model ${PRIMARY_MODEL}`);
 
     try {
-        // Always restart Ollama before processing
-        console.log('[run-ai-processing] Restarting Ollama service...');
-        const ollamaResult = await startOllama();
+        // Ensure Ollama is running (with retry logic)
+        console.log('[run-ai-processing] Ensuring Ollama is running...');
+        const ollamaResult = await ensureOllamaRunning(3);
 
         if (!ollamaResult.success) {
             return NextResponse.json({
@@ -514,34 +503,46 @@ export async function POST() {
 
         console.log('[run-ai-processing] Ollama is ready, fetching pending articles...');
 
-        // Step 1: Get ALL pending articles (unprocessed + C/D grade for retry)
+        // Step 1: Get pending articles with limit applied
+        // Split limit between unprocessed and failed articles (prioritize unprocessed)
+        const unprocessedLimit = Math.ceil(limit * 0.7); // 70% for unprocessed
+        const failedLimit = Math.floor(limit * 0.3);      // 30% for retry
+
         const { data: unprocessed, error: err1 } = await supabaseAdmin
             .from('posts')
             .select('id, title, content, region')
             .eq('status', 'draft')
             .or('ai_processed.is.null,ai_processed.eq.false')
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: true })
+            .limit(unprocessedLimit);
 
         if (err1) throw err1;
 
-        // Get C/D grade articles for retry
-        const { data: failedArticles, error: err2 } = await supabaseAdmin
-            .from('posts')
-            .select('id, title, content, region')
-            .eq('status', 'draft')
-            .eq('ai_processed', true)
-            .in('ai_validation_grade', ['C', 'D'])
-            .order('created_at', { ascending: true });
+        // Get C/D grade articles for retry (only if we have room)
+        let failedArticles: typeof unprocessed = [];
+        if (failedLimit > 0) {
+            const { data: failed, error: err2 } = await supabaseAdmin
+                .from('posts')
+                .select('id, title, content, region')
+                .eq('status', 'draft')
+                .eq('ai_processed', true)
+                .in('ai_validation_grade', ['C', 'D'])
+                .order('created_at', { ascending: true })
+                .limit(failedLimit);
 
-        if (err2) throw err2;
+            if (err2) throw err2;
+            failedArticles = failed || [];
+        }
 
-        // Combine and dedupe
-        const allArticles = [...(unprocessed || []), ...(failedArticles || [])];
-        const articles = allArticles.filter((article, index, self) =>
-            index === self.findIndex(a => a.id === article.id)
-        );
+        // Combine and dedupe, then apply final limit
+        const allArticles = [...(unprocessed || []), ...failedArticles];
+        const articles = allArticles
+            .filter((article, index, self) =>
+                index === self.findIndex(a => a.id === article.id)
+            )
+            .slice(0, limit); // Final safety limit
 
-        console.log(`[run-ai-processing] Found ${unprocessed?.length || 0} unprocessed + ${failedArticles?.length || 0} C/D grade articles`);
+        console.log(`[run-ai-processing] Found ${unprocessed?.length || 0} unprocessed + ${failedArticles?.length || 0} C/D grade articles (limit: ${limit})`);
 
         if (!articles || articles.length === 0) {
             return NextResponse.json({
