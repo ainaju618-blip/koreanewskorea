@@ -57,22 +57,6 @@ interface JobResult {
   error?: string;
 }
 
-interface ScraperResult {
-  region: string;
-  regionName: string;
-  status: 'success' | 'failed' | 'stopped';
-  articlesCount: number;
-  error?: string;
-}
-
-interface AiResult {
-  total: number;
-  published: number;
-  held: number;
-  failed: number;
-  elapsed: string;
-}
-
 export default function Dec30Page() {
   const { showSuccess, showError } = useToast();
   const { confirm } = useConfirm();
@@ -102,11 +86,6 @@ export default function Dec30Page() {
   const lastRunningLogRef = useRef<Map<number, string>>(new Map()); // Track last log message per job
   const pollingStartRef = useRef<number>(0); // Track polling start time for timeout
   const POLLING_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes max polling time
-
-  // Result State
-  const [scraperResults, setScraperResults] = useState<ScraperResult[]>([]);
-  const [aiResult, setAiResult] = useState<AiResult | null>(null);
-  const [showResults, setShowResults] = useState(false);
 
   // Date Presets
   const datePresets = [
@@ -200,6 +179,39 @@ export default function Dec30Page() {
     }
   };
 
+  // Stop Ollama
+  const [isStoppingOllama, setIsStoppingOllama] = useState(false);
+
+  const stopOllama = async () => {
+    setIsStoppingOllama(true);
+    addLog(`[시스템] Ollama 중지 중...`, 'info');
+
+    try {
+      const res = await fetch('/api/bot/stop-ollama', { method: 'POST' });
+      const data = await res.json();
+
+      if (data.success) {
+        addLog(`[시스템] Ollama 중지 완료`, 'success');
+        showSuccess('Ollama가 중지되었습니다.');
+        setOllamaStatus('offline');
+        setIsStoppingOllama(false);
+        // No need to recheck - API already verified it's stopped
+      } else {
+        addLog(`[시스템] Ollama 중지 실패: ${data.message}`, 'error');
+        showError(`Ollama 중지 실패: ${data.message}`);
+        setIsStoppingOllama(false);
+        // Recheck status since stop failed
+        checkOllama(true);
+      }
+    } catch (error: unknown) {
+      const err = error as Error;
+      addLog(`[시스템] Ollama 중지 오류: ${err.message}`, 'error');
+      showError(`Ollama 중지 오류: ${err.message}`);
+      setIsStoppingOllama(false);
+      checkOllama(true);
+    }
+  };
+
   // Load pending count
   const loadPendingCount = useCallback(async (silent = true) => {
     try {
@@ -234,15 +246,19 @@ export default function Dec30Page() {
           const newHeld = stats.held - lastHeld;
           const newFailed = stats.failed - lastFailed;
 
+          // Get article title from lastArticle if available
+          const articleTitle = stats.lastArticle?.title || '';
+          const titleSuffix = articleTitle ? `: ${articleTitle}` : '';
+
           if (newProcessed > 0) {
             if (newPublished > 0) {
-              addLog(`[AI] ✓ ${stats.processed}/${targetCount} 발행됨`, 'success');
+              addLog(`[AI] ✓ ${stats.processed}/${targetCount} 발행됨${titleSuffix}`, 'success');
             }
             if (newHeld > 0) {
-              addLog(`[AI] △ ${stats.processed}/${targetCount} 보류됨`, 'warning');
+              addLog(`[AI] △ ${stats.processed}/${targetCount} 보류됨${titleSuffix}`, 'warning');
             }
             if (newFailed > 0) {
-              addLog(`[AI] ✗ ${stats.processed}/${targetCount} 실패`, 'error');
+              addLog(`[AI] ✗ ${stats.processed}/${targetCount} 실패${titleSuffix}`, 'error');
             }
           }
 
@@ -259,16 +275,6 @@ export default function Dec30Page() {
             setIsAiRunning(false);
             showSuccess(`AI 처리 완료: ${stats.published}건 발행`);
             loadPendingCount();
-
-            // Save AI result for display
-            setAiResult({
-              total: stats.processed || 0,
-              published: stats.published || 0,
-              held: stats.held || 0,
-              failed: stats.failed || 0,
-              elapsed
-            });
-            setShowResults(true);
             return;
           }
         }
@@ -291,14 +297,24 @@ export default function Dec30Page() {
       const data = await res.json();
 
       if (data.logs && data.logs.length > 0) {
-        const runningJobs = data.logs.filter((log: JobResult) => log.status === 'running');
-        if (runningJobs.length > 0) {
-          const jobIds = runningJobs.map((j: JobResult) => j.id);
+        // Filter out jobs that are actually complete (log shows [OK] but status still 'running')
+        const actuallyRunningJobs = data.logs.filter((log: JobResult) => {
+          if (log.status !== 'running') return false;
+          const msg = log.log_message || '';
+          // Exclude jobs whose log shows completion
+          if (msg.includes('[OK]') || msg.includes('완료:') || msg.includes('[완료]')) {
+            return false;
+          }
+          return true;
+        });
+
+        if (actuallyRunningJobs.length > 0) {
+          const jobIds = actuallyRunningJobs.map((j: JobResult) => j.id);
           setActiveJobIds(jobIds);
-          setCurrentJobs(runningJobs);
+          setCurrentJobs(actuallyRunningJobs);
           setIsScraperRunning(true);
           setScraperProgress({ total: jobIds.length, completed: 0 });
-          addLog(`[시스템] 실행 중인 스크래퍼 ${runningJobs.length}개 발견 - 모니터링 재개`, 'warning');
+          addLog(`[시스템] 실행 중인 스크래퍼 ${actuallyRunningJobs.length}개 발견 - 모니터링 재개`, 'warning');
         }
       }
 
@@ -331,10 +347,11 @@ export default function Dec30Page() {
     };
     init();
 
+    // Check Ollama every 10 seconds (auto-detect if started externally)
     const interval = setInterval(() => {
       checkOllama(true);
       loadPendingCount(true);
-    }, 30000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [checkOllama, loadPendingCount, addLog, restoreRunningJobs]);
 
@@ -390,8 +407,25 @@ export default function Dec30Page() {
             return;
           }
 
-          const completed = jobs.filter((job: JobResult) =>
-            ['success', 'failed', 'failure', 'warning', 'error', 'stopped'].includes(job.status)
+          // Detect completion from both status AND log_message pattern
+          // Some jobs may show "[OK]" in log but status still 'running' due to DB lag
+          const isJobCompleted = (job: JobResult) => {
+            if (['success', 'failed', 'failure', 'warning', 'error', 'stopped'].includes(job.status)) {
+              return true;
+            }
+            // Detect completion from log message patterns (DB status not yet updated)
+            const msg = job.log_message || '';
+            if (msg.includes('[OK]') || msg.includes('완료:') || msg.includes('[완료]')) {
+              return true;
+            }
+            return false;
+          };
+
+          const completed = jobs.filter(isJobCompleted);
+
+          // Filter out "fake running" jobs (log shows complete but status is running)
+          const actuallyRunning = jobs.filter(job =>
+            job.status === 'running' && !isJobCompleted(job)
           );
 
           setScraperProgress({
@@ -399,67 +433,63 @@ export default function Dec30Page() {
             completed: completed.length
           });
 
-          setCurrentJobs(jobs);
+          // Only show actually running jobs in the UI
+          setCurrentJobs(actuallyRunning.length > 0 ? jobs : []);
 
           // Log running jobs with changed messages
           for (const job of jobs) {
             const regionName = getRegionName(job.region);
 
-            if (job.status === 'running') {
-              // Check if log message changed
+            if (job.status === 'running' && !isJobCompleted(job)) {
+              // Check if log message changed (only for truly running jobs)
               const lastMsg = lastRunningLogRef.current.get(job.id);
               const currentMsg = job.log_message || '';
               if (lastMsg !== currentMsg && currentMsg) {
                 addLog(`[스크래퍼] ${regionName}: ${currentMsg}`, 'info');
                 lastRunningLogRef.current.set(job.id, currentMsg);
               }
-            } else {
-              // Log completed/failed jobs only once
-              const logKey = `${job.id}-${job.status}`;
+            } else if (isJobCompleted(job)) {
+              // Log completed jobs only once
+              const logKey = `${job.id}-completed`;
               if (!loggedJobsRef.current.has(logKey)) {
                 loggedJobsRef.current.add(logKey);
-                if (job.status === 'success') {
-                  const count = job.articles_count || job.new_articles || 0;
+                const count = job.articles_count || job.new_articles || 0;
+                const msg = job.log_message || '';
+                if (job.status === 'success' || msg.includes('[OK]')) {
                   addLog(`[스크래퍼] ${regionName}: 완료 - ${count}건 수집`, 'success');
                 } else if (job.status === 'stopped') {
                   addLog(`[스크래퍼] ${regionName}: 중지됨`, 'warning');
-                } else {
-                  addLog(`[스크래퍼] ${regionName}: 실패 - ${job.error || job.log_message || ''}`, 'error');
+                } else if (['failed', 'failure', 'error'].includes(job.status)) {
+                  addLog(`[스크래퍼] ${regionName}: 실패 - ${job.error || msg || ''}`, 'error');
                 }
               }
             }
           }
 
-          const running = jobs.find((job: JobResult) => job.status === 'running');
-          if (running) {
-            setStatusMessage(`[${getRegionName(running.region)}] ${running.log_message || '진행중...'}`);
-          } else if (completed.length >= jobs.length && jobs.length === activeJobIds.length) {
-            // All tracked jobs are found and all are completed
+          // Check if all jobs are done
+          if (actuallyRunning.length > 0) {
+            const runningJob = actuallyRunning[0];
+            setStatusMessage(`[${getRegionName(runningJob.region)}] ${runningJob.log_message || '진행중...'}`);
+          } else if (completed.length > 0) {
+            // No running jobs and at least one completed = done
             setIsScraperRunning(false);
             setActiveJobIds([]);
+            setScraperProgress({ total: 0, completed: 0 }); // Reset progress display
             // Clear refs for next run
             loggedJobsRef.current.clear();
             lastRunningLogRef.current.clear();
             pollingStartRef.current = 0; // Reset timeout tracker
 
-            const success = completed.filter((j: JobResult) => j.status === 'success').length;
+            // Count success including jobs where log says [OK] but status not yet updated
+            const success = completed.filter((j: JobResult) =>
+              j.status === 'success' || (j.log_message || '').includes('[OK]')
+            ).length;
             const totalArticles = completed.reduce((sum: number, j: JobResult) => sum + (j.articles_count || j.new_articles || 0), 0);
             addLog(`[스크래퍼] ========================================`, 'info');
             addLog(`[스크래퍼] 완료: ${success}/${completed.length} 성공, ${totalArticles}건 수집`, 'success');
             addLog(`[스크래퍼] ========================================`, 'info');
             setStatusMessage('완료');
             loadPendingCount();
-
-            // Save results for display
-            const results: ScraperResult[] = completed.map((job: JobResult) => ({
-              region: job.region,
-              regionName: getRegionName(job.region),
-              status: job.status === 'success' ? 'success' : job.status === 'stopped' ? 'stopped' : 'failed',
-              articlesCount: job.articles_count || job.new_articles || 0,
-              error: job.error || job.log_message
-            }));
-            setScraperResults(results);
-            setShowResults(true);
             showSuccess(`스크래핑 완료: ${success}/${completed.length} 성공, ${totalArticles}건 수집`);
           }
 
@@ -568,45 +598,153 @@ export default function Dec30Page() {
     }
   };
 
-  // Reset stuck jobs
+  // Reset stuck jobs (enhanced with kill-all)
   const handleReset = async () => {
     const confirmed = await confirm({
-      title: '상태 강제 리셋',
-      message: 'DB에서 실행 중(running) 상태인 모든 로그를 강제로 초기화합니다.',
+      title: '강제 리셋',
+      message: '모든 실행 중인 프로세스(스크래퍼, Ollama)를 강제 종료하고 상태를 초기화합니다.',
       type: 'warning',
-      confirmText: '리셋',
+      confirmText: '강제 리셋',
       cancelText: '취소'
     });
     if (!confirmed) return;
 
-    try {
-      const res = await fetch('/api/bot/reset', { method: 'POST' });
-      const data = await res.json();
+    addLog(`[시스템] 강제 리셋 시작...`, 'warning');
 
+    try {
+      // 1. Kill all background processes (Python scrapers, Ollama)
+      try {
+        const killRes = await fetch('/api/bot/kill-all', { method: 'POST' });
+        const killData = await killRes.json();
+        if (killData.success) {
+          addLog(`[시스템] 프로세스 종료: ${killData.details?.join(', ') || 'OK'}`, 'info');
+        }
+      } catch {
+        addLog(`[시스템] 프로세스 종료 실패 (무시)`, 'warning');
+      }
+
+      // 2. Reset DB status
+      await fetch('/api/bot/reset', { method: 'POST' });
+
+      // 3. Reset all UI states
+      setIsScraperRunning(false);
+      setIsAiRunning(false);
+      setActiveJobIds([]);
+      setCurrentJobs([]);
+      setScraperProgress({ total: 0, completed: 0 });
+      setStatusMessage('');
+      loggedJobsRef.current.clear();
+      lastRunningLogRef.current.clear();
+
+      // 4. Re-check Ollama status
+      const ollamaLive = await checkOllamaLive();
+      setOllamaStatus(ollamaLive ? 'online' : 'offline');
+
+      // 5. Refresh pending count
+      await loadPendingCount(true);
+
+      addLog(`[시스템] 강제 리셋 완료`, 'success');
+      showSuccess('모든 상태가 초기화되었습니다');
+
+    } catch (error: unknown) {
+      const err = error as Error;
+      addLog(`[시스템] 리셋 오류: ${err.message}`, 'error');
+      showError('리셋 중 오류 발생');
+    }
+  };
+
+  // Stop AI Processing
+  const stopAiProcessing = async () => {
+    addLog(`[AI] 중지 요청...`, 'warning');
+    try {
+      const res = await fetch('/api/bot/run-ai-processing', { method: 'DELETE' });
+      const data = await res.json();
       if (data.success) {
-        setIsScraperRunning(false);
-        setActiveJobIds([]);
-        setCurrentJobs([]);
-        setScraperProgress({ total: 0, completed: 0 });
-        addLog(`[스크래퍼] 상태 리셋됨`, 'warning');
-        setStatusMessage('리셋됨');
+        addLog(`[AI] 중지 신호 전송됨 - 현재 기사 처리 후 중지됩니다`, 'warning');
+        showSuccess('AI 처리 중지 요청됨');
+      } else {
+        addLog(`[AI] 중지 실패: ${data.message}`, 'error');
       }
     } catch (error: unknown) {
       const err = error as Error;
-      addLog(`[스크래퍼] 리셋 오류: ${err.message}`, 'error');
+      addLog(`[AI] 중지 오류: ${err.message}`, 'error');
     }
+  };
+
+  // Helper: Real-time Ollama API check (NOT using React state)
+  const checkOllamaLive = async (): Promise<boolean> => {
+    try {
+      const res = await fetch('http://localhost:11434/api/tags', {
+        signal: AbortSignal.timeout(2000)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper: Wait for Ollama to be ready with polling
+  const waitForOllama = async (maxWaitMs: number = 45000): Promise<boolean> => {
+    const start = Date.now();
+    let attempts = 0;
+    while (Date.now() - start < maxWaitMs) {
+      attempts++;
+      if (await checkOllamaLive()) {
+        return true;
+      }
+      addLog(`[AI] Ollama 준비 대기중... (${Math.round((Date.now() - start) / 1000)}s)`, 'info');
+      await new Promise(r => setTimeout(r, 1500)); // 1.5s interval
+    }
+    return false;
   };
 
   // Run AI Processing
   const runAiProcessing = async () => {
-    if (ollamaStatus !== 'online') {
-      showError('Ollama가 실행되지 않았습니다.');
-      return;
-    }
-
     setIsAiRunning(true);
     addLog(`[AI] ========================================`, 'info');
     addLog(`[AI] AI 가공 시작 (${aiLimit}건)`, 'info');
+
+    // Real-time Ollama check (NOT using stale React state)
+    const isOllamaReady = await checkOllamaLive();
+
+    if (!isOllamaReady) {
+      addLog(`[AI] Ollama 오프라인 - 자동 시작 중...`, 'warning');
+
+      try {
+        // Start Ollama
+        const startRes = await fetch('/api/bot/start-ollama', { method: 'POST' });
+        const startData = await startRes.json();
+
+        if (!startData.success) {
+          addLog(`[AI] Ollama 시작 실패: ${startData.message}`, 'error');
+          setIsAiRunning(false);
+          return;
+        }
+
+        addLog(`[AI] Ollama 시작됨 - 준비 대기중 (최대 45초)...`, 'info');
+
+        // Wait for Ollama to be ready (45 seconds for Windows)
+        const ready = await waitForOllama(45000);
+
+        if (ready) {
+          setOllamaStatus('online');
+          addLog(`[AI] Ollama 준비 완료`, 'success');
+        } else {
+          addLog(`[AI] Ollama 준비 타임아웃 (45초) - 수동으로 시작해주세요`, 'error');
+          setIsAiRunning(false);
+          return;
+        }
+      } catch (error: unknown) {
+        const err = error as Error;
+        addLog(`[AI] Ollama 시작 오류: ${err.message}`, 'error');
+        setIsAiRunning(false);
+        return;
+      }
+    } else {
+      // Ollama is already online, update state to reflect reality
+      setOllamaStatus('online');
+    }
+
     addLog(`[AI] ========================================`, 'info');
 
     try {
@@ -625,6 +763,7 @@ export default function Dec30Page() {
       } else {
         addLog(`[AI] 실패: ${data.error || data.message}`, 'error');
         setIsAiRunning(false);
+        checkOllama(false);
       }
     } catch (error: unknown) {
       const err = error as Error;
@@ -840,6 +979,21 @@ export default function Dec30Page() {
                 {ollamaStatus === 'checking' ? '확인중...' :
                  ollamaStatus === 'online' ? '실행중' : '중지됨'}
               </span>
+              {ollamaStatus === 'online' && (
+                <button
+                  onClick={stopOllama}
+                  disabled={isStoppingOllama || isAiRunning}
+                  className="px-2 py-1 bg-red-600 hover:bg-red-700 disabled:bg-[#21262d] disabled:text-[#484f58] text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+                  title="Ollama 중지"
+                >
+                  {isStoppingOllama ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <StopCircle className="w-3 h-3" />
+                  )}
+                  중지
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#8b949e]">대기중:</span>
@@ -858,11 +1012,11 @@ export default function Dec30Page() {
           </div>
 
           {ollamaStatus === 'offline' && (
-            <div className="bg-red-900/20 border border-red-700/50 rounded p-3 mb-4">
+            <div className="bg-yellow-900/20 border border-yellow-700/50 rounded p-3 mb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-red-400 text-sm">Ollama가 실행되지 않았습니다.</p>
-                  <code className="text-xs text-[#8b949e]">ollama serve</code>
+                  <p className="text-yellow-400 text-sm">Ollama 오프라인 (AI 실행시 자동 시작됨)</p>
+                  <p className="text-xs text-[#8b949e]">수동 시작: <code>ollama serve</code></p>
                 </div>
                 <button
                   onClick={startOllama}
@@ -877,7 +1031,7 @@ export default function Dec30Page() {
                   ) : (
                     <>
                       <Power className="w-4 h-4" />
-                      Ollama 실행
+                      수동 시작
                     </>
                   )}
                 </button>
@@ -906,118 +1060,27 @@ export default function Dec30Page() {
             </label>
           </div>
 
-          {/* Run Button */}
-          <button
-            onClick={runAiProcessing}
-            disabled={isAiRunning || ollamaStatus !== 'online' || pendingCount === 0}
-            className="w-full py-2 px-4 bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#21262d] disabled:text-[#484f58] text-white font-medium rounded transition-colors flex items-center justify-center gap-2"
-          >
-            {isAiRunning ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                처리 중...
-              </>
-            ) : (
-              <>
-                <Power className="w-5 h-5" />
-                AI 가공 실행 ({aiLimit}개)
-              </>
-            )}
-          </button>
+          {/* Run / Stop Button */}
+          {isAiRunning ? (
+            <button
+              onClick={stopAiProcessing}
+              className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded transition-colors flex items-center justify-center gap-2"
+            >
+              <StopCircle className="w-5 h-5" />
+              AI 가공 중지
+            </button>
+          ) : (
+            <button
+              onClick={runAiProcessing}
+              disabled={pendingCount === 0}
+              className="w-full py-2 px-4 bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#21262d] disabled:text-[#484f58] text-white font-medium rounded transition-colors flex items-center justify-center gap-2"
+            >
+              <Power className="w-5 h-5" />
+              AI 가공 실행 ({aiLimit}개)
+            </button>
+          )}
         </div>
       </div>
-
-      {/* Results Panel */}
-      {showResults && (scraperResults.length > 0 || aiResult) && (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d] bg-[#21262d]">
-            <h3 className="font-medium text-[#e6edf3] flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              실행 결과
-            </h3>
-            <button
-              onClick={() => { setShowResults(false); setScraperResults([]); setAiResult(null); }}
-              className="text-xs text-[#8b949e] hover:text-[#c9d1d9]"
-            >
-              닫기
-            </button>
-          </div>
-
-          <div className="p-4 space-y-4">
-            {/* Scraper Results */}
-            {scraperResults.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-[#c9d1d9] mb-2">스크래퍼 결과</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-[#8b949e] border-b border-[#30363d]">
-                        <th className="pb-2 pr-4">지역</th>
-                        <th className="pb-2 pr-4">상태</th>
-                        <th className="pb-2 pr-4">수집</th>
-                        <th className="pb-2">비고</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scraperResults.map((result, idx) => (
-                        <tr key={idx} className="border-b border-[#21262d]">
-                          <td className="py-2 pr-4 text-[#c9d1d9]">{result.regionName}</td>
-                          <td className="py-2 pr-4">
-                            {result.status === 'success' && <span className="text-green-400">성공</span>}
-                            {result.status === 'failed' && <span className="text-red-400">실패</span>}
-                            {result.status === 'stopped' && <span className="text-yellow-400">중지</span>}
-                          </td>
-                          <td className="py-2 pr-4 text-[#58a6ff]">{result.articlesCount}건</td>
-                          <td className="py-2 text-[#8b949e] text-xs truncate max-w-[200px]">{result.error || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t border-[#30363d] font-medium">
-                        <td className="pt-2 text-[#c9d1d9]">합계</td>
-                        <td className="pt-2">
-                          <span className="text-green-400">{scraperResults.filter(r => r.status === 'success').length}</span>
-                          <span className="text-[#8b949e]"> / {scraperResults.length}</span>
-                        </td>
-                        <td className="pt-2 text-[#58a6ff]">
-                          {scraperResults.reduce((sum, r) => sum + r.articlesCount, 0)}건
-                        </td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* AI Results */}
-            {aiResult && (
-              <div>
-                <h4 className="text-sm font-medium text-[#c9d1d9] mb-2">AI 가공 결과</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded p-3 text-center">
-                    <p className="text-2xl font-bold text-[#58a6ff]">{aiResult.total}</p>
-                    <p className="text-xs text-[#8b949e]">처리</p>
-                  </div>
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded p-3 text-center">
-                    <p className="text-2xl font-bold text-green-400">{aiResult.published}</p>
-                    <p className="text-xs text-[#8b949e]">발행</p>
-                  </div>
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded p-3 text-center">
-                    <p className="text-2xl font-bold text-yellow-400">{aiResult.held}</p>
-                    <p className="text-xs text-[#8b949e]">보류</p>
-                  </div>
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded p-3 text-center">
-                    <p className="text-2xl font-bold text-red-400">{aiResult.failed}</p>
-                    <p className="text-xs text-[#8b949e]">실패</p>
-                  </div>
-                </div>
-                <p className="text-xs text-[#8b949e] mt-2">소요시간: {aiResult.elapsed}초</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Log Viewer */}
       <div className="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden">
@@ -1026,9 +1089,19 @@ export default function Dec30Page() {
             <Clock className="w-4 h-4" />
             실행 로그
           </h3>
-          <button onClick={clearLogs} className="text-xs text-[#8b949e] hover:text-[#c9d1d9]">
-            지우기
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReset}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded transition-colors flex items-center gap-1"
+              title="모든 프로세스 강제 종료 및 상태 초기화"
+            >
+              <RotateCcw className="w-3 h-3" />
+              강제 리셋
+            </button>
+            <button onClick={clearLogs} className="text-xs text-[#8b949e] hover:text-[#c9d1d9]">
+              로그 지우기
+            </button>
+          </div>
         </div>
 
         <div className="h-[400px] overflow-y-auto p-4 font-mono text-xs space-y-0.5 bg-[#0d1117]">
