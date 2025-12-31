@@ -368,6 +368,8 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                         continue
                     
                     title = safe_get_text(link_elem).strip()
+                    # Remove "새로운글" (new article badge) from title
+                    title = re.sub(r'\s*새로운글\s*', '', title).strip()
                     href = safe_get_attr(link_elem, 'href')
                     
                     if not title or not href:
