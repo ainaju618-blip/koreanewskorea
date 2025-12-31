@@ -7,6 +7,7 @@
 
 // Position labels (Korean)
 export const POSITION_LABELS: Record<string, string> = {
+    chief_director: '총괄본부장',
     editor_in_chief: '주필',
     branch_manager: '지사장',
     editor_chief: '편집국장',
@@ -23,6 +24,7 @@ export const POSITION_LABELS: Record<string, string> = {
     foreign_correspondent: '해외특파원',
 };
 
+
 // Specialty title mappings
 export const SPECIALTY_TITLES: Record<string, string> = {
     city: '시정전문기자',
@@ -38,11 +40,6 @@ export const SPECIALTY_TITLES: Record<string, string> = {
     maritime: '해양전문기자',
 };
 
-// Regions that indicate education specialty
-const EDUCATION_REGIONS = ['광주교육청', '전남교육청', '광주시교육청', '전라남도교육청'];
-
-// Regions that indicate city administration specialty
-const CITY_REGIONS = ['광주광역시', '목포시', '여수시', '순천시', '나주시', '광양시'];
 
 interface ReporterInfo {
     name: string;
@@ -53,60 +50,33 @@ interface ReporterInfo {
 }
 
 /**
- * Get the display title for a reporter based on specialty and position
+ * Get the display title for a reporter based on position
  *
  * Priority:
- * 1. Explicit specialty field
- * 2. Auto-detect from region/department
- * 3. Default position label
+ * 1. Position label (직위) - ALWAYS use position first
+ * 2. Explicit specialty field (only if position not in POSITION_LABELS)
+ * 3. Default "기자"
  *
  * @param reporter Reporter information
- * @returns Display title (e.g., "교육전문기자", "시정전문기자", "기자")
+ * @returns Display title (e.g., "총괄본부장", "주필", "지사장", "기자")
  */
 export function getSpecialtyTitle(reporter: ReporterInfo): string {
-    // 1. Check explicit specialty field
+    // 1. ALWAYS use position label first (if valid position exists)
+    // Handle comma-separated positions (take first one for display)
+    if (reporter.position) {
+        const firstPosition = reporter.position.split(',')[0].trim();
+        if (POSITION_LABELS[firstPosition]) {
+            return POSITION_LABELS[firstPosition];
+        }
+    }
+
+    // 2. Check explicit specialty field (fallback for reporters without standard position)
     if (reporter.specialty && SPECIALTY_TITLES[reporter.specialty]) {
         return SPECIALTY_TITLES[reporter.specialty];
     }
 
-    // 2. Auto-detect from region
-    if (reporter.region) {
-        // Education specialty
-        if (EDUCATION_REGIONS.some(r => reporter.region?.includes(r))) {
-            return SPECIALTY_TITLES.education;
-        }
-
-        // City administration specialty
-        if (CITY_REGIONS.some(r => reporter.region?.includes(r))) {
-            return SPECIALTY_TITLES.city;
-        }
-    }
-
-    // 3. Auto-detect from department
-    if (reporter.department) {
-        const dept = reporter.department.toLowerCase();
-        if (dept.includes('교육') || dept.includes('education')) {
-            return SPECIALTY_TITLES.education;
-        }
-        if (dept.includes('경제') || dept.includes('economy')) {
-            return SPECIALTY_TITLES.economy;
-        }
-        if (dept.includes('문화') || dept.includes('culture')) {
-            return SPECIALTY_TITLES.culture;
-        }
-        if (dept.includes('환경') || dept.includes('environment')) {
-            return SPECIALTY_TITLES.environment;
-        }
-        if (dept.includes('정치') || dept.includes('politics')) {
-            return SPECIALTY_TITLES.politics;
-        }
-        if (dept.includes('체육') || dept.includes('sports')) {
-            return SPECIALTY_TITLES.sports;
-        }
-    }
-
-    // 4. Default: use position label or "기자"
-    return POSITION_LABELS[reporter.position] || '기자';
+    // 3. Default: "기자"
+    return '기자';
 }
 
 /**

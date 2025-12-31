@@ -245,14 +245,23 @@ cd jeonnam && npm run dev    # Port 3002
 | 9 | **All logs → `logs/` folder** | REJECT |
 
 ```
-Korean Rule:
-  User-facing UI  →  Korean (저장, 취소, 실행)
-  Code/Comments   →  English only
+Korean/English Rule:
+  ✅ 한글 사용:
+     - 사용자 UI 텍스트 (버튼, 라벨, 메시지)
+     - 로그 기록 (session_log.md 등)
+     - 문서 작성 (계획서, 작업 기록 등)
+     - 에러 문서 (info/errors/)
+
+  ❌ 영어만 사용:
+     - 코드 (.tsx, .ts, .js)
+     - 코드 주석 (// comment)
+     - 변수명, 함수명
+     - Git 커밋 메시지
 
 Log Rule:
   All log files   →  logs/ folder (project root)
   Log format      →  YYYY-MM-DD HH:MM:SS [ModuleName] Level: Message
-  Required info   →  Date, Time, Module name (who is logging)
+  Log language    →  한글로 작성
 ```
 
 > **Full Rules:** [.claude/rules/golden-rules.md](.claude/rules/golden-rules.md)

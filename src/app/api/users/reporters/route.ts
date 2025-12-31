@@ -45,19 +45,43 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // 유효성 검사 - position(직위)은 필수
+        // Validation - name is required
         if (!body.name) {
             return NextResponse.json({ message: '이름은 필수입니다.' }, { status: 400 });
         }
 
-        // position 값 확인 (직위: editor_in_chief, branch_manager, reporter 등)
+        // Auto-generate temporary email if not provided
+        // This ensures Auth user and profile are created for auto-assign
+        // Admin can update the email later
+        let email = body.email;
+        let isTemporaryEmail = false;
+
+        if (!email) {
+            const timestamp = Date.now();
+            const randomStr = Math.random().toString(36).substring(2, 6);
+            email = `temp_${timestamp}_${randomStr}@koreanewsone.com`;
+            isTemporaryEmail = true;
+        }
+
+        // position (editor_in_chief, branch_manager, reporter, etc.)
         const position = body.position || body.type || 'reporter';
 
         let userId: string | null = null;
-        const DEFAULT_PASSWORD = process.env.DEFAULT_REPORTER_PASSWORD || 'temp123!';
+        const DEFAULT_PASSWORD = process.env.DEFAULT_REPORTER_PASSWORD || 'a1234567!';
 
-        // 이메일이 있으면 Supabase Auth 계정 생성 (로그인 가능)
-        if (body.email) {
+        // Create Supabase Auth account (required for profile creation)
+        {
+            // 1. Check for duplicate email in reporters table
+            const { data: existingReporter } = await supabaseAdmin
+                .from('reporters')
+                .select('id')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (existingReporter) {
+                return NextResponse.json({ message: '이미 등록된 이메일입니다.' }, { status: 400 });
+            }
+
             // 비밀번호가 없으면 기본 비밀번호 사용
             const password = body.password || DEFAULT_PASSWORD;
 
@@ -66,9 +90,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ message: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 });
             }
 
-            // Supabase Auth 사용자 생성
+            // Supabase Auth user creation
             const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-                email: body.email,
+                email: email,
                 password: password,
                 email_confirm: true, // 이메일 인증 자동 완료
                 user_metadata: {
@@ -98,8 +122,9 @@ export async function POST(req: NextRequest) {
                 position: position, // 실제 직위값 (editor_in_chief, reporter 등)
                 region: body.region || '전체',
                 phone: body.phone || null,
-                email: body.email || null,
+                email: email, // Temp emails start with 'temp_' - admin can update later
                 bio: body.bio || null,
+                profile_image: body.profile_image || null,  // 프로필 사진 URL
                 avatar_icon: '👤',
                 status: 'Active',
                 user_id: userId,

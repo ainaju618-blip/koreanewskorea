@@ -321,7 +321,16 @@ export async function executeScraper(
                     finalMessage = '수집된 기사 없음';
                 }
             } else {
-                finalMessage = `프로세스 에러 (Code ${code})`;
+                // Include first error line from stderr if available
+                const stderrLines = stderrData.trim().split('\n').filter(l => l.trim());
+                const firstError = stderrLines.find(l =>
+                    l.includes('Error') || l.includes('error') ||
+                    l.includes('Exception') || l.includes('Traceback')
+                ) || stderrLines[stderrLines.length - 1] || '';
+                const shortError = firstError.slice(0, 100).trim();
+                finalMessage = shortError
+                    ? `에러: ${shortError}`
+                    : `프로세스 에러 (Code ${code})`;
             }
 
             const fullLog = stdoutData + (stderrData ? `\n[STDERR]\n${stderrData}` : '');

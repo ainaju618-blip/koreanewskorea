@@ -393,7 +393,15 @@
       "Bash(python scrapers/jeonnam_edu/jeonnam_edu_school_scraper.py:*)",
       "Bash(start http://localhost:3002)",
       "Bash(git rm:*)",
-      "Bash(npx next dev:*)"
+      "Bash(npx next dev:*)",
+      "Bash(python dec30-admin/scripts/ai_only_processor.py:*)",
+      "Bash(set NEXT_PUBLIC_SUPABASE_URL=https://xdcxfaoucvzfrryhczmy.supabase.co:*)",
+      "Bash(set SUPABASE_SERVICE_ROLE_KEY:*)",
+      "Bash(powershell -Command \"$env:NEXT_PUBLIC_SUPABASE_URL=''https://xdcxfaoucvzfrryhczmy.supabase.co''; $env:SUPABASE_SERVICE_ROLE_KEY=''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkY3hmYW91Y3Z6ZnJyeWhjem15Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDg2MDkyMCwiZXhwIjoyMDgwNDM2OTIwfQ.ALK_bfbSmeSUxSjWLLk1kfTCMbqgUuyBb4yUXxzYRps''; cd d:/cbt/koreanews; python dec30-admin/scripts/ai_only_processor.py --limit 1\")",
+      "Bash(copy:*)",
+      "Bash(cmd /c copy \"d:\\\\cbt\\\\koreanews\\\\scripts\\\\batch_processor.py\" \"d:\\\\cbt\\\\koreanews\\\\scripts\\\\batch_processor_dec30.py\")",
+      "Bash(pushd:*)",
+      "Bash(popd)"
     ]
   }
 }

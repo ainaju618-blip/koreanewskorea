@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { spawn } from 'child_process';
+import os from 'os';
+
+const isWindows = os.platform() === 'win32';
 
 // Global state for processing control (toggle)
 let isProcessingActive = false;
@@ -28,7 +32,7 @@ const NUM_CTX = 4096;             // Reduced from 8192 (Korean KV cache optimiza
 const NUM_PREDICT = 2048;         // Reduced from 4096
 const API_TIMEOUT_MS = 180000;    // 3 minutes (Korean models faster with optimized settings)
 
-// Start Ollama via API endpoint with retry logic
+// Start Ollama directly (no API endpoint dependency - fixes port mismatch issue)
 async function ensureOllamaRunning(maxRetries: number = 3): Promise<{ success: boolean; message: string }> {
     console.log('[Ollama] Ensuring Ollama is running...');
 
@@ -42,29 +46,56 @@ async function ensureOllamaRunning(maxRetries: number = 3): Promise<{ success: b
             return { success: true, message: 'Ollama already running' };
         }
     } catch {
-        console.log('[Ollama] Not running, attempting to start...');
+        console.log('[Ollama] Not running, attempting to start directly...');
     }
 
-    // Try to start via API endpoint
+    // Try to start Ollama directly (not via API - fixes port mismatch when dev server uses different port)
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`[Ollama] Start attempt ${attempt}/${maxRetries}...`);
+            console.log(`[Ollama] Direct start attempt ${attempt}/${maxRetries}...`);
 
-            // Call the start-ollama API endpoint
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-            const response = await fetch(`${baseUrl}/api/bot/start-ollama`, {
-                method: 'POST',
-                signal: AbortSignal.timeout(20000) // 20s timeout
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log('[Ollama] Started successfully via API');
-                return { success: true, message: 'Ollama started' };
+            // Spawn Ollama serve directly
+            if (isWindows) {
+                const ollamaProcess = spawn('powershell', [
+                    '-WindowStyle', 'Hidden',
+                    '-Command', 'Start-Process -FilePath ollama -ArgumentList serve -WindowStyle Hidden'
+                ], {
+                    detached: true,
+                    stdio: 'ignore',
+                    windowsHide: true
+                });
+                ollamaProcess.unref();
+            } else {
+                const ollamaProcess = spawn('ollama', ['serve'], {
+                    shell: true,
+                    detached: true,
+                    stdio: 'ignore'
+                });
+                ollamaProcess.unref();
             }
 
-            console.log(`[Ollama] Start attempt ${attempt} failed: ${result.message}`);
+            // Wait for Ollama to be ready (poll health endpoint)
+            const maxWaitTime = 15000; // 15 seconds
+            const startTime = Date.now();
+            let lastError = '';
+
+            while (Date.now() - startTime < maxWaitTime) {
+                try {
+                    const healthCheck = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+                        signal: AbortSignal.timeout(2000)
+                    });
+                    if (healthCheck.ok) {
+                        console.log('[Ollama] Started successfully (direct spawn)');
+                        return { success: true, message: 'Ollama started' };
+                    }
+                    lastError = `HTTP ${healthCheck.status}`;
+                } catch (e) {
+                    lastError = e instanceof Error ? e.message : 'Connection refused';
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            console.log(`[Ollama] Start attempt ${attempt} timeout after ${maxWaitTime/1000}s: ${lastError}`);
 
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -73,7 +104,7 @@ async function ensureOllamaRunning(maxRetries: number = 3): Promise<{ success: b
 
         // Wait before retry (increasing delay)
         if (attempt < maxRetries) {
-            const delay = attempt * 2000; // 2s, 4s, 6s
+            const delay = attempt * 2000; // 2s, 4s
             console.log(`[Ollama] Waiting ${delay / 1000}s before retry...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
