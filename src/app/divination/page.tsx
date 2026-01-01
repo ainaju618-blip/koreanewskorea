@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   MAJOR_CATEGORIES,
   YAO_NAMES,
@@ -122,30 +123,24 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
   if (step === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 flex items-center justify-center px-4">
+        {/* Background with mist effect */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(168,85,247,0.1)_0%,transparent_50%)]" />
         </div>
 
         <div className="relative text-center max-w-md">
-          {/* Progress Circle */}
-          <div className="relative w-40 h-40 mx-auto mb-8">
-            <svg className="absolute inset-0 w-full h-full -rotate-90">
-              <circle cx="80" cy="80" r="72" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
-              <circle
-                cx="80" cy="80" r="72"
-                fill="none"
-                stroke="#F59E0B"
-                strokeWidth="6"
-                strokeDasharray={`${2 * Math.PI * 72}`}
-                strokeDashoffset={`${2 * Math.PI * 72 * (1 - loadingProgress / 100)}`}
-                strokeLinecap="round"
-                className="transition-all duration-300"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-5xl animate-pulse">&#9775;</span>
-            </div>
+          {/* Hexagram Card Image */}
+          <div className="relative w-64 h-80 mx-auto mb-6">
+            <Image
+              src="/images/divination/hexagram-card.png"
+              alt="Hexagram Card"
+              fill
+              className="object-contain animate-pulse"
+              priority
+            />
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 via-transparent to-transparent rounded-2xl" />
           </div>
 
           <h2 className="text-xl font-bold text-white mb-2">Casting the Oracle...</h2>
@@ -202,14 +197,25 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
           {/* Main Result Card */}
           <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-4">
-            {/* Hexagram Header */}
+            {/* Hexagram Header with Card Image */}
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-3 mb-2">
-                <span className="text-4xl">{result.hexagram.symbol}</span>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">{result.hexagram.name_full}</h2>
-                  <p className="text-amber-400">{result.hexagram.name_hanja} - {result.yao.name}</p>
+              {/* Hexagram Card Image */}
+              <div className="relative w-32 h-40 mx-auto mb-4">
+                <Image
+                  src="/images/divination/hexagram-card.png"
+                  alt="Hexagram Card"
+                  fill
+                  className="object-contain"
+                />
+                {/* Hexagram number overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-amber-400 drop-shadow-lg">{result.hexagram.symbol}</span>
                 </div>
+              </div>
+
+              <div className="mb-2">
+                <h2 className="text-2xl font-bold text-white">{result.hexagram.name_full}</h2>
+                <p className="text-amber-400">{result.hexagram.name_hanja} - {result.yao.name}</p>
               </div>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 rounded-full text-sm text-amber-300">
                 <span>Hexagram #{result.hexagram.number}</span>
@@ -297,27 +303,47 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
   // Input Screen (Default)
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900">
       {/* Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(168,85,247,0.1)_0%,transparent_50%)]" />
       </div>
 
-      <div className="relative max-w-lg mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="text-purple-200 hover:text-white transition-colors">
-            &larr; Home
-          </Link>
-          <h1 className="text-white font-bold flex items-center gap-2">
-            <span>&#9775;</span> I Ching Divination
+      {/* Hero Image */}
+      <div className="relative w-full h-56 sm:h-72 overflow-hidden">
+        <Image
+          src="/images/divination/divination-bg.png"
+          alt="I Ching Divination Table"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900" />
+
+        {/* Title overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg flex items-center gap-3">
+            <span className="text-4xl sm:text-5xl">&#9775;</span>
+            <span>I Ching Divination</span>
           </h1>
-          <div className="w-16" />
+          <p className="text-purple-200 text-sm mt-2 drop-shadow-md">
+            Ancient wisdom for modern life
+          </p>
         </div>
 
-        {/* Title */}
-        <div className="text-center mb-8">
+        {/* Back button */}
+        <Link
+          href="/"
+          className="absolute top-4 left-4 text-white/80 hover:text-white transition-colors bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm"
+        >
+          &larr; Home
+        </Link>
+      </div>
+
+      <div className="relative max-w-lg mx-auto px-4 py-6">
+        {/* Subtitle */}
+        <div className="text-center mb-6">
           <p className="text-purple-200 text-sm">
             Select a category and ask your question
           </p>
