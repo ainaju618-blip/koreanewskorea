@@ -1,7 +1,30 @@
 /**
  * I Ching Divination Static Data
- * 64 Hexagrams + Categories (No backend required)
+ * 64 Hexagrams + 384 Yao + Categories (Complete Data)
  */
+
+import yao384Data from '@/data/yao-384.json';
+
+// 384 Yao Data Type (Complete with text_hanja and fortune_score)
+export interface YaoData {
+  hex: number;
+  yao: number;
+  name: string;
+  text_hanja: string;     // Chinese original text (e.g., "潛龍勿用")
+  text_kr: string;        // Korean translation
+  interpretation: string;
+  fortune_score: number;  // Numeric score (0-100)
+  fortune_category: string;
+  keywords: string[];
+}
+
+// Get specific yao data
+export function getYaoData(hexagramNumber: number, yaoPosition: number): YaoData | null {
+  const yao = (yao384Data as YaoData[]).find(
+    (y) => y.hex === hexagramNumber && y.yao === yaoPosition
+  );
+  return yao || null;
+}
 
 // 9 Major Categories
 export const MAJOR_CATEGORIES = [
@@ -157,46 +180,82 @@ export const CATEGORY_INTERPRETATIONS: Record<number, Record<string, string>> = 
   },
 };
 
-// Generate divination result
+// Fortune score mapping
+const FORTUNE_SCORE_MAP: Record<string, number> = {
+  '대길': 95,
+  '길': 75,
+  '평': 55,
+  '소흉': 35,
+  '흉': 25,
+  '대흉': 15,
+};
+
+// Generate divination result with REAL 384 yao data
 export function generateDivination(categoryId: number, yaoPosition: number, isYang: boolean) {
   // Random hexagram (1-64)
   const hexagramNumber = Math.floor(Math.random() * 64) + 1;
   const hexagram = HEXAGRAMS[hexagramNumber];
 
-  // Calculate fortune score based on hexagram + yao + randomness
-  const baseScore = hexagram.fortune_base;
-  const yaoModifier = (yaoPosition === 5 ? 10 : yaoPosition === 3 ? -5 : 0);
-  const yangModifier = isYang ? 5 : -2;
-  const randomModifier = Math.floor(Math.random() * 20) - 10;
+  // Get REAL yao data from 384 yao database
+  const realYaoData = getYaoData(hexagramNumber, yaoPosition);
 
-  let fortuneScore = baseScore + yaoModifier + yangModifier + randomModifier;
-  fortuneScore = Math.max(20, Math.min(100, fortuneScore)); // Clamp 20-100
+  // Use real yao data if available, fallback to old method
+  let fortuneScore: number;
+  let fortuneCategory: string;
+  let yaoText: string;
+  let yaoInterpretation: string;
+  let keywords: string[];
 
-  // Get category interpretation
-  const category = CATEGORY_INTERPRETATIONS[categoryId] || CATEGORY_INTERPRETATIONS[9];
-  let interpretation = '';
-  if (fortuneScore >= 70) {
-    interpretation = category.positive;
-  } else if (fortuneScore >= 45) {
-    interpretation = category.neutral;
+  let textHanja: string;
+
+  if (realYaoData) {
+    // Use REAL 384 yao data with complete fields
+    fortuneCategory = realYaoData.fortune_category;
+    fortuneScore = realYaoData.fortune_score;  // Use actual numeric score
+
+    // Add some variance
+    const randomModifier = Math.floor(Math.random() * 10) - 5;
+    fortuneScore = Math.max(20, Math.min(100, fortuneScore + randomModifier));
+
+    textHanja = realYaoData.text_hanja;  // Real Chinese text
+    yaoText = realYaoData.text_kr;
+    yaoInterpretation = realYaoData.interpretation;
+    keywords = realYaoData.keywords;
   } else {
-    interpretation = category.negative;
+    // Fallback to old method
+    const baseScore = hexagram.fortune_base;
+    const yaoModifier = (yaoPosition === 5 ? 10 : yaoPosition === 3 ? -5 : 0);
+    const yangModifier = isYang ? 5 : -2;
+    const randomModifier = Math.floor(Math.random() * 20) - 10;
+
+    fortuneScore = baseScore + yaoModifier + yangModifier + randomModifier;
+    fortuneScore = Math.max(20, Math.min(100, fortuneScore));
+
+    if (fortuneScore >= 90) fortuneCategory = '대길';
+    else if (fortuneScore >= 70) fortuneCategory = '길';
+    else if (fortuneScore >= 50) fortuneCategory = '평';
+    else if (fortuneScore >= 30) fortuneCategory = '소흉';
+    else fortuneCategory = '흉';
+
+    textHanja = '';  // No Chinese text in fallback
+    yaoText = hexagram.gua_ci;
+    yaoInterpretation = hexagram.gua_ci;
+    keywords = getKeywords(fortuneScore, categoryId);
   }
 
-  // Fortune category
-  let fortuneCategory = '';
-  if (fortuneScore >= 90) fortuneCategory = '대길';
-  else if (fortuneScore >= 70) fortuneCategory = '길';
-  else if (fortuneScore >= 50) fortuneCategory = '평';
-  else if (fortuneScore >= 30) fortuneCategory = '소흉';
-  else fortuneCategory = '흉';
+  // Get category-specific interpretation
+  const category = CATEGORY_INTERPRETATIONS[categoryId] || CATEGORY_INTERPRETATIONS[9];
+  let categoryInterpretation = '';
+  if (fortuneScore >= 70) {
+    categoryInterpretation = category.positive;
+  } else if (fortuneScore >= 45) {
+    categoryInterpretation = category.neutral;
+  } else {
+    categoryInterpretation = category.negative;
+  }
 
   // Yao name
-  const yaoName = isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1];
-  const yaoDesc = YAO_DESCRIPTIONS[yaoPosition - 1];
-
-  // Keywords based on fortune
-  const keywords = getKeywords(fortuneScore, categoryId);
+  const yaoName = realYaoData?.name || (isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1]);
 
   return {
     hexagram: {
@@ -209,10 +268,10 @@ export function generateDivination(categoryId: number, yaoPosition: number, isYa
     yao: {
       position: yaoPosition,
       name: yaoName,
-      text_hanja: hexagram.gua_ci.substring(0, 20),
-      text_kr: hexagram.gua_ci,
+      text_hanja: textHanja,  // Real Chinese text (e.g., "潛龍勿用")
+      text_kr: yaoText,
     },
-    interpretation: `${hexagram.gua_ci} ${interpretation}`,
+    interpretation: `${yaoInterpretation} ${categoryInterpretation}`,
     fortune_score: fortuneScore,
     fortune_category: fortuneCategory,
     keywords,
@@ -302,7 +361,7 @@ const DAILY_HEADLINES = [
   '차분하게 계획을 세우기 좋은 날입니다',
 ];
 
-// Generate today's fortune (consistent for the entire day)
+// Generate today's fortune with REAL 384 yao data (consistent for the entire day)
 export function generateTodayFortune(date: Date = new Date()) {
   const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   const seed = hashString(dateStr);
@@ -316,40 +375,61 @@ export function generateTodayFortune(date: Date = new Date()) {
   const yaoPosition = Math.floor(random() * 6) + 1;
   const isYang = random() > 0.5;
 
-  // Calculate fortune score
-  const baseScore = hexagram.fortune_base;
-  const yaoModifier = (yaoPosition === 5 ? 10 : yaoPosition === 3 ? -5 : 0);
-  const yangModifier = isYang ? 5 : -2;
-  const randomModifier = Math.floor(random() * 20) - 10;
+  // Get REAL yao data from 384 yao database
+  const realYaoData = getYaoData(hexagramNumber, yaoPosition);
 
-  let fortuneScore = baseScore + yaoModifier + yangModifier + randomModifier;
-  fortuneScore = Math.max(20, Math.min(100, fortuneScore));
+  let fortuneScore: number;
+  let fortuneCategory: string;
+  let yaoText: string;
+  let textHanja: string;
+  let yaoInterpretation: string;
+  let keywords: string[];
+  let yaoName: string;
 
-  // Fortune category
-  let fortuneCategory = '';
-  if (fortuneScore >= 90) fortuneCategory = '대길';
-  else if (fortuneScore >= 70) fortuneCategory = '길';
-  else if (fortuneScore >= 50) fortuneCategory = '평';
-  else if (fortuneScore >= 30) fortuneCategory = '소흉';
-  else fortuneCategory = '흉';
+  if (realYaoData) {
+    // Use REAL 384 yao data with complete fields
+    fortuneCategory = realYaoData.fortune_category;
+    fortuneScore = realYaoData.fortune_score;  // Use actual numeric score
+    textHanja = realYaoData.text_hanja;        // Real Chinese text
+    yaoText = realYaoData.text_kr;
+    yaoInterpretation = realYaoData.interpretation;
+    keywords = realYaoData.keywords;
+    yaoName = realYaoData.name;
+  } else {
+    // Fallback to old method
+    const baseScore = hexagram.fortune_base;
+    const yaoModifier = (yaoPosition === 5 ? 10 : yaoPosition === 3 ? -5 : 0);
+    const yangModifier = isYang ? 5 : -2;
+    const randomModifier = Math.floor(random() * 20) - 10;
 
-  // Yao name
-  const yaoName = isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1];
+    fortuneScore = baseScore + yaoModifier + yangModifier + randomModifier;
+    fortuneScore = Math.max(20, Math.min(100, fortuneScore));
+
+    if (fortuneScore >= 90) fortuneCategory = '대길';
+    else if (fortuneScore >= 70) fortuneCategory = '길';
+    else if (fortuneScore >= 50) fortuneCategory = '평';
+    else if (fortuneScore >= 30) fortuneCategory = '소흉';
+    else fortuneCategory = '흉';
+
+    textHanja = '';  // No Chinese text in fallback
+    yaoText = hexagram.gua_ci;
+    yaoInterpretation = hexagram.gua_ci;
+    yaoName = isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1];
+
+    const allKeywords = ['희망', '성장', '조화', '인내', '지혜', '용기', '평화', '행운', '소통', '발전'];
+    keywords = [];
+    const keywordCount = 3 + Math.floor(random() * 2);
+    for (let i = 0; i < keywordCount; i++) {
+      const idx = Math.floor(random() * allKeywords.length);
+      if (!keywords.includes(allKeywords[idx])) {
+        keywords.push(allKeywords[idx]);
+      }
+    }
+  }
 
   // Daily headline
   const headlineIndex = Math.floor(random() * DAILY_HEADLINES.length);
   const dailyHeadline = DAILY_HEADLINES[headlineIndex];
-
-  // Keywords
-  const allKeywords = ['희망', '성장', '조화', '인내', '지혜', '용기', '평화', '행운', '소통', '발전'];
-  const keywords: string[] = [];
-  const keywordCount = 3 + Math.floor(random() * 2);
-  for (let i = 0; i < keywordCount; i++) {
-    const idx = Math.floor(random() * allKeywords.length);
-    if (!keywords.includes(allKeywords[idx])) {
-      keywords.push(allKeywords[idx]);
-    }
-  }
 
   return {
     hexagram_number: hexagram.number,
@@ -359,14 +439,14 @@ export function generateTodayFortune(date: Date = new Date()) {
     hexagram_symbol: hexagram.symbol,
     yao_position: yaoPosition,
     yao_name: yaoName,
-    text_hanja: hexagram.gua_ci.substring(0, 30),
-    text_kr: hexagram.gua_ci,
-    interpretation: hexagram.gua_ci,
+    text_hanja: textHanja,  // Real Chinese text (e.g., "潛龍勿用")
+    text_kr: yaoText,
+    interpretation: yaoInterpretation,
     fortune_score: fortuneScore,
     fortune_category: fortuneCategory,
     keywords,
     daily_headline: dailyHeadline,
-    daily_body: `${hexagram.name_full}(${hexagram.name_hanja}) 괘가 나왔습니다. ${hexagram.gua_ci.split('.')[0]}.`,
+    daily_body: `${hexagram.name_full}(${hexagram.name_hanja}) 괘의 ${yaoName}. ${yaoInterpretation}`,
     lunar_date: getLunarDate(date),
     date: dateStr,
   };

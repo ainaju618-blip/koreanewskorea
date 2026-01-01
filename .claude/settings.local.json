@@ -428,7 +428,12 @@
       "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_do0e5odo0e5odo0e.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\divination-table.png\")",
       "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_jbxyohjbxyohjbxy.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\hexagram-card.png\")",
       "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_1s768e1s768e1s76.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\trigrams-yinyang.png\")",
-      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_hh5hkkhh5hkkhh5h.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\golden-frame.png\")"
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_hh5hkkhh5hkkhh5h.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\golden-frame.png\")",
+      "Bash(powershell -Command \"cd d:/cbt/koreanews/yu-1/backend; $env:PYTHONIOENCODING=''utf-8''; python -c \"\"\nimport sys\nsys.stdout.reconfigure\\(encoding=''utf-8''\\)\nfrom app.data.yao_complete import YAO_DATA\nprint\\(''=== 384 YAO DATA ===''\\)\nprint\\(f''Total: {len\\(YAO_DATA\\)} entries''\\)\nprint\\(\\)\nsample = YAO_DATA.get\\(\\(1,1\\)\\)\nprint\\(''Example: Hexagram 1, Yao 1''\\)\nprint\\(f''  Name: {sample[chr\\(34\\)+chr\\(34\\)]}''.replace\\(chr\\(34\\)+chr\\(34\\),''name''\\)\\)\n\"\"\")",
+      "Bash(powershell -Command \"Get-Content ''d:\\\\cbt\\\\koreanews\\\\yu-1\\\\backend\\\\yao_export.json'' -Encoding UTF8 | Measure-Object -Line\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Reporter assignment system v2 - multi-region & fair distribution\n\n- Add reporter_regions junction table support for multi-region reporters\n- Replace random selection with fair distribution \\(least articles in 30 days\\)\n- Add region alias support for education agencies \\(광주교육청 ↔ 광주시교육청\\)\n- Add approved_by tracking for audit purposes\n- Add getAssignmentStats\\(\\) for admin dashboard\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(ls -la \"d:\\\\cbt\\\\koreanews\\\\src\\\\app\"\" | grep -E \"sitemap)",
+      "Bash(rss \")"
     ]
   }
 }

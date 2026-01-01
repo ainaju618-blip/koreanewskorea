@@ -67,12 +67,8 @@ export const metadata: Metadata = {
   },
 
   // Search Engine Verification
-  // NOTE: Replace these with actual verification codes from:
-  // - Google Search Console: https://search.google.com/search-console
-  // - Naver Search Advisor: https://searchadvisor.naver.com
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '',
-    // Naver verification uses meta tag name="naver-site-verification"
+    google: 'vEKVAG-M2htffG-I2SPMBIZfDYAuemCTZPseGjrUJo4',
     other: {
       'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_VERIFICATION || '',
     },
