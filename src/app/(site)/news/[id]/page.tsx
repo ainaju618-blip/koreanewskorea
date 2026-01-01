@@ -6,6 +6,7 @@ import ShareButton from '@/components/news/ShareButton';
 import { getSpecialtyTitle, formatByline } from '@/lib/reporter-utils';
 import { getRegionByCode } from '@/constants/regions';
 import type { Metadata } from 'next';
+import { BreadcrumbSchema } from '@/components/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -321,13 +322,21 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         }),
     };
 
+    // Breadcrumb items for this article
+    const breadcrumbItems = [
+        ...(news.category ? [{ name: news.category, url: `/category/${news.category.toLowerCase()}` }] : []),
+        { name: news.title.length > 50 ? news.title.substring(0, 50) + '...' : news.title, url: `/news/${id}` },
+    ];
+
     return (
         <div className="min-h-screen bg-white">
-            {/* SEO: 구조화 데이터 */}
+            {/* SEO: NewsArticle Schema */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
+            {/* SEO: Breadcrumb Schema for navigation */}
+            <BreadcrumbSchema items={breadcrumbItems} />
             {/* 상단 네비게이션 */}
             <div className="bg-slate-50 border-b border-slate-200">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">

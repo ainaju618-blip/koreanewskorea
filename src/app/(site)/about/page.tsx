@@ -5,6 +5,7 @@ import {
     Target, Newspaper, GraduationCap, Map, Users, TrendingUp,
     CheckCircle2, BookOpen, Globe
 } from 'lucide-react';
+import { FAQSchema, defaultFAQItems } from '@/components/seo';
 
 export const metadata: Metadata = {
     title: '회사 소개',
@@ -54,10 +55,13 @@ export default function AboutPage() {
 
     return (
         <div className="min-h-screen bg-white">
+            {/* SEO: Organization Schema */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
+            {/* SEO: FAQ Schema for AI search optimization */}
+            <FAQSchema items={defaultFAQItems} />
 
             {/* 헤더 */}
             <div className="bg-slate-900 text-white py-16">

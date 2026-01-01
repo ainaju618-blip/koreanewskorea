@@ -66,10 +66,16 @@ export const metadata: Metadata = {
     canonical: siteUrl,
   },
 
-  // 기타 메타
+  // Search Engine Verification
+  // NOTE: Replace these with actual verification codes from:
+  // - Google Search Console: https://search.google.com/search-console
+  // - Naver Search Advisor: https://searchadvisor.naver.com
   verification: {
-    // google: 'Google Search Console 인증 코드',
-    // naver: '네이버 서치어드바이저 인증 코드',
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '',
+    // Naver verification uses meta tag name="naver-site-verification"
+    other: {
+      'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_VERIFICATION || '',
+    },
   },
 
   // PWA 관련 메타

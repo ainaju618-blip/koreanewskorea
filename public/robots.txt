@@ -1,0 +1,88 @@
+# Korea NEWS robots.txt
+# Updated: 2026-01-02
+# Purpose: Google News, Naver News, AI Search Optimization
+
+# Default crawler settings
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /reporter/
+Disallow: /api/
+Disallow: /idea/
+Disallow: /blogadmin/
+Disallow: /popup/
+Disallow: /yu-1/admin
+Disallow: /*?preview=
+Disallow: /*?draft=
+Disallow: /*?edit=
+Crawl-delay: 1
+
+# Google Bot (explicit allow for news)
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /reporter/
+Disallow: /api/
+Disallow: /idea/
+Disallow: /blogadmin/
+
+# Google News Bot
+User-agent: Googlebot-News
+Allow: /
+
+# Naver Bot
+User-agent: Yeti
+Allow: /
+Disallow: /admin/
+Disallow: /reporter/
+Disallow: /api/
+
+# Daum Bot
+User-agent: Daumoa
+Allow: /
+Disallow: /admin/
+Disallow: /reporter/
+Disallow: /api/
+
+# =========================================
+# AI Crawlers (Allow for AI search exposure)
+# =========================================
+
+# OpenAI - ChatGPT
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic - Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Google AI (Gemini, AI Overview)
+User-agent: Google-Extended
+Allow: /
+
+# Microsoft Bing AI (Copilot)
+User-agent: bingbot
+Allow: /
+
+# ByteDance AI
+User-agent: Bytespider
+Allow: /
+
+# =========================================
+# Sitemaps
+# =========================================
+Sitemap: https://www.koreanewsone.com/sitemap.xml
+Sitemap: https://www.koreanewsone.com/news-sitemap.xml
