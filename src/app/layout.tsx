@@ -8,7 +8,7 @@ import Providers from "@/components/Providers";
 // - 제목: 조선일보명조 (신문사 권위감)
 
 // 사이트 기본 URL
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreanewsone.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
 
 export const metadata: Metadata = {
   // 기본 메타데이터

@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreanewsone.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
 
     // 최근 50개 기사
     const { data: posts } = await supabaseAdmin

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreanewsone.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
 
     // 1. 정적 페이지
     const staticPages: MetadataRoute.Sitemap = [
