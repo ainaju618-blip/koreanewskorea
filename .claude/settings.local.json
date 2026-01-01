@@ -422,7 +422,13 @@
       "Bash(./venv/Scripts/python.exe:*)",
       "Bash(taskkill //F //PID 102088)",
       "Bash(powershell -Command \"Start-Sleep -Seconds 3; Invoke-RestMethod -Uri ''http://localhost:8000/api/divination/today'' | ConvertTo-Json -Depth 3 | Select-String -Pattern ''hexagram''\")",
-      "Bash(powershell -Command \"Get-Process -Name python -ErrorAction SilentlyContinue | Where-Object { $_CommandLine -like ''*uvicorn*'' } | Stop-Process -Force; Start-Sleep -Seconds 1; netstat -ano | Select-String '':8000''\")"
+      "Bash(powershell -Command \"Get-Process -Name python -ErrorAction SilentlyContinue | Where-Object { $_CommandLine -like ''*uvicorn*'' } | Stop-Process -Force; Start-Sleep -Seconds 1; netstat -ano | Select-String '':8000''\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_qwpmj2qwpmj2qwpm.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\hexagram-mandala.png\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_p2kpbpp2kpbpp2kp.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\sage-yinyang.png\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_do0e5odo0e5odo0e.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\divination-table.png\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_jbxyohjbxyohjbxy.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\hexagram-card.png\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_1s768e1s768e1s76.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\trigrams-yinyang.png\")",
+      "Bash(copy \"d:\\\\cbt\\\\koreanews\\\\yu-1\\\\data\\\\image\\\\Gemini_Generated_Image_hh5hkkhh5hkkhh5h.png\" \"d:\\\\cbt\\\\koreanews\\\\public\\\\images\\\\divination\\\\golden-frame.png\")"
     ]
   }
 }

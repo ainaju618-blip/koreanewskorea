@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
   MAJOR_CATEGORIES,
-  YAO_NAMES,
-  YAO_DESCRIPTIONS,
   generateDivination,
+  generateTodayFortune,
+  getLunarDate,
+  type TodayFortuneData,
 } from '@/lib/divination-data';
+import HexagramDisplay from '@/components/divination/HexagramDisplay';
 
-type DivinationStep = 'input' | 'loading' | 'result';
+type DivinationStep = 'home' | 'input' | 'loading' | 'result';
 
 interface DivinationResult {
   hexagram: {
@@ -34,121 +36,137 @@ interface DivinationResult {
   caution?: string;
 }
 
+// 효 위치를 효 이름으로 변환
+const getYaoDisplayName = (position: number): string => {
+  const names = ['초효', '2효', '3효', '4효', '5효', '상효'];
+  return names[position - 1] || '초효';
+};
+
 export default function DivinationPage() {
-  const [step, setStep] = useState<DivinationStep>('input');
+  const [step, setStep] = useState<DivinationStep>('home');
+  const [isLoaded, setIsLoaded] = useState(false);
   const [majorCategory, setMajorCategory] = useState(1);
-  const [yaoPosition, setYaoPosition] = useState(1);
-  const [isYang, setIsYang] = useState(true);
   const [question, setQuestion] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [result, setResult] = useState<DivinationResult | null>(null);
+  const [todayFortune, setTodayFortune] = useState<TodayFortuneData | null>(null);
+  const [lunarDate, setLunarDate] = useState('');
+  const [showFortune, setShowFortune] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const yaoName = isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1];
-  const yaoDesc = YAO_DESCRIPTIONS[yaoPosition - 1];
-  const majorInfo = MAJOR_CATEGORIES.find((m) => m.id === majorCategory);
+  // Generate today's fortune on mount
+  useEffect(() => {
+    setIsLoaded(true);
+    const fortune = generateTodayFortune();
+    setTodayFortune(fortune);
+    setLunarDate(getLunarDate(new Date()));
 
-  const handleRandomYao = () => {
-    setYaoPosition(Math.floor(Math.random() * 6) + 1);
-    setIsYang(Math.random() > 0.5);
-  };
+    // 영상 자동재생 보장
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // 자동재생 실패 시 무시
+      });
+    }
+  }, []);
 
-  const handleSubmit = useCallback(async () => {
+  const handleQuestionSubmit = async () => {
     if (!question.trim()) {
-      alert('Please enter your question');
       return;
     }
 
     setStep('loading');
     setLoadingProgress(0);
 
-    // Simulate divination process
+    // Simulate divination process with spinning animation
     const steps = [10, 30, 50, 70, 90, 100];
     for (const progress of steps) {
       await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 200));
       setLoadingProgress(progress);
     }
 
-    // Generate result
+    // Generate result - random yao
+    const yaoPosition = Math.floor(Math.random() * 6) + 1;
+    const isYang = Math.random() > 0.5;
     const divinationResult = generateDivination(majorCategory, yaoPosition, isYang);
     setResult(divinationResult);
     setStep('result');
-  }, [majorCategory, yaoPosition, isYang, question]);
+  };
 
   const handleReset = () => {
-    setStep('input');
+    setStep('home');
     setResult(null);
     setQuestion('');
     setLoadingProgress(0);
+    setShowFortune(true);
   };
 
   const handleShare = () => {
     if (!result) return;
-    const shareText = `I Ching Divination Result
+    const shareText = `주역점 결과
 
 ${result.hexagram.name_full} (${result.hexagram.name_hanja})
 ${result.yao.name}
 
 "${result.interpretation}"
 
-Fortune: ${result.fortune_category} (${result.fortune_score} points)
+운세: ${result.fortune_category} (${result.fortune_score}점)
 
-#IChing #Divination #Fortune`;
+#주역 #점괘 #운세`;
 
     if (navigator.share) {
       navigator.share({
-        title: 'I Ching Divination Result',
+        title: '주역점 결과',
         text: shareText,
         url: window.location.href,
       });
     } else {
       navigator.clipboard.writeText(shareText);
-      alert('Result copied to clipboard!');
     }
   };
 
   const getFortuneEmoji = (score: number) => {
-    if (score >= 90) return '&#127881;';
-    if (score >= 70) return '&#128522;';
-    if (score >= 50) return '&#129300;';
-    if (score >= 30) return '&#128528;';
-    return '&#127783;';
-  };
-
-  const getFortuneStars = (score: number) => {
-    const stars = Math.round(score / 20);
-    return { filled: stars, empty: 5 - stars };
+    if (score >= 90) return '🎉';
+    if (score >= 70) return '😊';
+    if (score >= 50) return '🤔';
+    if (score >= 30) return '😐';
+    return '🌧️';
   };
 
   // Loading Screen
   if (step === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 flex items-center justify-center px-4">
-        {/* Background with mist effect */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(168,85,247,0.1)_0%,transparent_50%)]" />
+      <div className="min-h-screen bg-black flex items-center justify-center px-4 relative overflow-hidden">
+        {/* Background decoration - sage image */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <Image
+            src="/images/divination/sage-yinyang.png"
+            alt=""
+            width={600}
+            height={600}
+            className="object-contain"
+            priority
+          />
         </div>
 
-        <div className="relative text-center max-w-md">
-          {/* Hexagram Card Image */}
-          <div className="relative w-64 h-80 mx-auto mb-6">
-            <Image
-              src="/images/divination/hexagram-card.png"
-              alt="Hexagram Card"
-              fill
-              className="object-contain animate-pulse"
-              priority
-            />
-            {/* Glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 via-transparent to-transparent rounded-2xl" />
+        <div className="relative text-center max-w-md z-10">
+          {/* 점괘 로딩 애니메이션 */}
+          <div className="relative w-32 h-32 mx-auto mb-8">
+            {/* 외곽 원 효과 */}
+            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full animate-ping" />
+            <div className="absolute inset-4 border-4 border-pink-500/50 rounded-full animate-pulse" />
+            {/* 음양 이모지 - 빠른 회전 애니메이션 */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-6xl animate-spin drop-shadow-[0_0_10px_rgba(124,58,237,0.8)]" style={{ animationDuration: '0.8s' }}>☯️</span>
+            </div>
           </div>
 
-          <h2 className="text-xl font-bold text-white mb-2">Casting the Oracle...</h2>
-          <p className="text-purple-200 text-sm mb-4">
-            {loadingProgress < 30 && 'Preparing 49 yarrow stalks...'}
-            {loadingProgress >= 30 && loadingProgress < 60 && 'Dividing the stalks...'}
-            {loadingProgress >= 60 && loadingProgress < 90 && 'Reading the hexagram...'}
-            {loadingProgress >= 90 && 'Interpreting the oracle...'}
+          <h2 className="text-xl font-bold text-white mb-2">점괘를 뽑는 중...</h2>
+          <p className="text-purple-200 text-sm mb-6">
+            {loadingProgress < 30 && '49개의 시초를 준비하는 중...'}
+            {loadingProgress >= 30 && loadingProgress < 60 && '시초를 나누는 중...'}
+            {loadingProgress >= 60 && loadingProgress < 90 && '괘상을 읽는 중...'}
+            {loadingProgress >= 90 && '점괘를 해석하는 중...'}
           </p>
 
           {/* Progress Bar */}
@@ -168,72 +186,78 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
   // Result Screen
   if (step === 'result' && result) {
-    const stars = getFortuneStars(result.fortune_score);
-
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 px-4 py-8">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(168,85,247,0.1)_0%,transparent_50%)]" />
+      <div className="min-h-screen bg-black px-4 py-8 relative overflow-hidden">
+        {/* Background decoration - hexagram mandala */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+          <Image
+            src="/images/divination/hexagram-mandala.png"
+            alt=""
+            width={800}
+            height={800}
+            className="object-contain"
+          />
         </div>
 
-        <div className="relative max-w-lg mx-auto">
+        <div className="relative max-w-lg mx-auto z-10">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <Link href="/" className="text-purple-200 hover:text-white transition-colors">
-              &larr; Home
-            </Link>
-            <h1 className="text-white font-bold">Divination Result</h1>
+            <button
+              onClick={handleReset}
+              className="text-purple-200 hover:text-white transition-colors"
+            >
+              ← 뒤로
+            </button>
+            <h1 className="text-white font-bold">점괘 결과</h1>
             <div className="w-16" />
           </div>
 
           {/* Question */}
           {question && (
-            <div className="text-center mb-6">
-              <p className="text-sm text-purple-300">Your Question</p>
-              <p className="text-white font-medium">&ldquo;{question}&rdquo;</p>
+            <div className="bg-white/5 rounded-xl p-3 mb-4">
+              <p className="text-sm text-gray-300">&ldquo;{question}&rdquo;</p>
             </div>
           )}
 
-          {/* Main Result Card */}
-          <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl p-6 mb-4">
-            {/* Hexagram Header with Card Image */}
-            <div className="text-center mb-6">
-              {/* Hexagram Card Image */}
-              <div className="relative w-32 h-40 mx-auto mb-4">
-                <Image
-                  src="/images/divination/hexagram-card.png"
-                  alt="Hexagram Card"
-                  fill
-                  className="object-contain"
+          {/* Main Result Card - yu-1 스타일 */}
+          <div className="bg-black/40 border border-amber-500/30 rounded-2xl p-5 mb-4">
+            {/* 괘 + 정보 (가로 배치) */}
+            <div className="flex items-stretch gap-3 mb-4">
+              {/* 괘 영역 */}
+              <div className="relative rounded-xl p-4 pt-6 border border-amber-500/30 flex flex-col items-center justify-center">
+                <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">득괘</span>
+                <HexagramDisplay
+                  hexagramNumber={result.hexagram.number}
+                  highlightYao={result.yao.position}
+                  size="lg"
+                  showLabels={false}
                 />
-                {/* Hexagram number overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-amber-400 drop-shadow-lg">{result.hexagram.symbol}</span>
-                </div>
               </div>
 
-              <div className="mb-2">
-                <h2 className="text-2xl font-bold text-white">{result.hexagram.name_full}</h2>
-                <p className="text-amber-400">{result.hexagram.name_hanja} - {result.yao.name}</p>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 rounded-full text-sm text-amber-300">
-                <span>Hexagram #{result.hexagram.number}</span>
-                <span>-</span>
-                <span>Line {result.yao.position}</span>
+              {/* 정보 영역 */}
+              <div className="flex-1 rounded-xl p-4 border border-blue-500/30 flex flex-col justify-center">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2 flex-wrap">
+                  {result.hexagram.name_full}
+                  <span className="text-amber-400">({result.hexagram.name_hanja})</span>
+                  <span className="text-sm text-amber-300 font-normal">✨ {getYaoDisplayName(result.yao.position)}</span>
+                </h2>
+                <p className="text-sm text-gray-400 mt-2">{result.yao.text_kr}</p>
               </div>
             </div>
 
-            {/* Oracle Text */}
-            <div className="bg-white/5 rounded-xl p-4 mb-4 text-center">
-              <p className="text-gray-200 leading-relaxed">{result.interpretation}</p>
+            {/* 해석 영역 */}
+            <div className="rounded-xl p-5 border border-green-500/30 mb-4">
+              <span className="text-xs text-green-300/80 font-medium">해석</span>
+              <p className="text-sm text-gray-300 leading-relaxed mt-2">
+                {result.interpretation}
+              </p>
             </div>
 
             {/* Caution */}
             {result.caution && (
               <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-4">
                 <p className="text-orange-300 text-sm flex items-start gap-2">
-                  <span>&#9888;</span>
+                  <span>⚠️</span>
                   <span>{result.caution}</span>
                 </p>
               </div>
@@ -241,31 +265,27 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
             {/* Fortune Score */}
             <div className="bg-white/5 rounded-xl p-4 text-center mb-4">
-              <p className="text-xs text-gray-500 mb-1">Fortune Score</p>
+              <p className="text-xs text-gray-500 mb-1">운세 점수</p>
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-2xl" dangerouslySetInnerHTML={{ __html: getFortuneEmoji(result.fortune_score) }} />
+                <span className="text-2xl">{getFortuneEmoji(result.fortune_score)}</span>
                 <div className="text-lg text-yellow-400">
-                  {'★'.repeat(stars.filled)}{'☆'.repeat(stars.empty)}
+                  {'★'.repeat(Math.round(result.fortune_score / 20))}
+                  {'☆'.repeat(5 - Math.round(result.fortune_score / 20))}
                 </div>
               </div>
-              <p className="text-amber-400 font-bold">{result.fortune_score} points - {result.fortune_category}</p>
+              <p className="text-amber-400 font-bold">{result.fortune_score}점 - {result.fortune_category}</p>
             </div>
 
-            {/* Category */}
-            <div className="text-center text-sm text-gray-400 mb-4">
-              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full">
-                {result.matched_category}
-              </span>
-            </div>
-
-            {/* Keywords */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {result.keywords.map((keyword, i) => (
-                <span key={i} className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
-                  #{keyword}
-                </span>
-              ))}
-            </div>
+            {/* 키워드 영역 */}
+            {result.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {result.keywords.map((keyword, idx) => (
+                  <span key={idx} className="text-xs px-3 py-1.5 bg-white/10 text-gray-300 rounded-full border border-white/20">
+                    #{keyword}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -274,246 +294,236 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
               onClick={handleShare}
               className="py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 transition"
             >
-              Share
+              공유
             </button>
             <button
-              onClick={handleReset}
+              onClick={() => { setStep('home'); setQuestion(''); setShowFortune(true); }}
               className="py-3 bg-amber-500/20 border border-amber-500/30 rounded-xl text-sm font-medium text-amber-300 hover:bg-amber-500/30 transition"
             >
-              Again
+              다시
             </button>
             <Link
               href="/"
               className="py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 transition text-center"
             >
-              Home
+              홈
             </Link>
           </div>
 
-          {/* Disclaimer */}
-          <p className="text-xs text-center text-gray-500">
-            This service is for entertainment and reference purposes only.
-            <br />
-            For important decisions, please consult with professionals.
-          </p>
+          {/* 면책 조항 */}
+          <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
+            <p className="text-xs text-gray-500 text-center leading-relaxed">
+              ⚠️ <span className="text-gray-400">면책 고지</span><br />
+              본 서비스의 모든 점괘 결과는 <span className="text-amber-400/80">오락 및 참고 목적</span>으로만 제공됩니다.<br />
+              중요한 결정은 전문가와 상담하세요.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Input Screen (Default)
+  // Home Screen with Video Background - yu-1 스타일
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900">
-      {/* Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.05)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(168,85,247,0.1)_0%,transparent_50%)]" />
+    <div className="min-h-screen bg-black">
+      {/* 별 배경 */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-black" />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            radial-gradient(2px 2px at 10% 10%, white, transparent),
+            radial-gradient(2px 2px at 20% 20%, white, transparent),
+            radial-gradient(1px 1px at 30% 30%, white, transparent),
+            radial-gradient(2px 2px at 40% 70%, white, transparent),
+            radial-gradient(1px 1px at 50% 50%, white, transparent),
+            radial-gradient(2px 2px at 60% 80%, white, transparent),
+            radial-gradient(1px 1px at 70% 40%, white, transparent),
+            radial-gradient(2px 2px at 80% 60%, white, transparent),
+            radial-gradient(1px 1px at 90% 90%, white, transparent)
+          `,
+          opacity: 0.3,
+        }} />
+        {/* Decorative trigrams image */}
+        <div className="absolute bottom-0 right-0 opacity-[0.08]">
+          <Image
+            src="/images/divination/trigrams-yinyang.png"
+            alt=""
+            width={400}
+            height={400}
+            className="object-contain"
+          />
+        </div>
       </div>
 
-      {/* Hero Image */}
-      <div className="relative w-full h-56 sm:h-72 overflow-hidden">
-        <Image
-          src="/images/divination/divination-bg.png"
-          alt="I Ching Divination Table"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900" />
-
-        {/* Title overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg flex items-center gap-3">
-            <span className="text-4xl sm:text-5xl">&#9775;</span>
-            <span>I Ching Divination</span>
-          </h1>
-          <p className="text-purple-200 text-sm mt-2 drop-shadow-md">
-            Ancient wisdom for modern life
-          </p>
-        </div>
-
-        {/* Back button */}
+      {/* Back button */}
+      <div className="relative z-20 px-4 py-4">
         <Link
           href="/"
-          className="absolute top-4 left-4 text-white/80 hover:text-white transition-colors bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm"
+          className="inline-block text-white/80 hover:text-white transition-colors bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm"
         >
-          &larr; Home
+          ← 홈
         </Link>
       </div>
 
-      <div className="relative max-w-lg mx-auto px-4 py-6">
-        {/* Subtitle */}
-        <div className="text-center mb-6">
-          <p className="text-purple-200 text-sm">
-            Select a category and ask your question
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {/* Question Input */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
-            <label className="block text-sm font-medium text-purple-200 mb-2">
-              Your Question
-            </label>
-            <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value.slice(0, 100))}
-              placeholder="e.g., Should I change jobs this year?"
-              className="w-full px-4 py-3 bg-white/5 rounded-xl border border-white/10 focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 outline-none resize-none transition text-white placeholder-gray-500"
-              rows={3}
+      <main className="relative z-10 max-w-lg mx-auto px-4 pb-8">
+        <section className="space-y-4">
+          {/* 영상 배경 - 독립 영역 */}
+          <div className="relative overflow-hidden rounded-3xl aspect-video">
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              src="/videos/Ancient_Chinese_Coins_Cosmic_Animation.mp4"
             />
-            <div className="flex justify-between mt-2 text-xs">
-              <span className="text-gray-500">Be specific for better results</span>
-              <span className="text-gray-500">{question.length}/100</span>
+            {/* 하단 그라데이션 */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black to-transparent" />
+
+            {/* 자막 */}
+            <div className={`absolute inset-x-0 bottom-2 flex justify-center transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+              <p className="font-serif text-sm text-white/90 tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                3천년 역사 · 우주의 신비로 <span className="font-bold text-white">하늘의 뜻</span>을 구하다
+              </p>
             </div>
           </div>
 
-          {/* Category Selection */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
-            <label className="block text-sm font-medium text-purple-200 mb-3">
-              Select Category
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {MAJOR_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setMajorCategory(cat.id)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    majorCategory === cat.id
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                      : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <span className="mr-1">{cat.emoji}</span>
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Yao Selection */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-sm font-medium text-purple-200">
-                Select Line (Yao)
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsYang(true)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-                    isYang
-                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                      : 'bg-white/5 text-gray-400 border border-white/10'
-                  }`}
-                >
-                  Yang
-                </button>
-                <button
-                  onClick={() => setIsYang(false)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-                    !isYang
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'bg-white/5 text-gray-400 border border-white/10'
-                  }`}
-                >
-                  Yin
-                </button>
+          {/* 오늘의 운세 카드 */}
+          {showFortune && todayFortune && (
+            <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-amber-300">🎯 오늘의 운세</span>
+                <span className="text-xs bg-amber-500/30 text-amber-200 px-2 py-1 rounded-full border border-amber-400/30">
+                  {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  <span className="text-amber-300/70 ml-1">(음 {lunarDate})</span>
+                </span>
               </div>
-            </div>
 
-            {/* Yao Display */}
-            <div className="bg-white/5 rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <span className="text-2xl font-bold text-amber-400">{yaoName}</span>
-                  <span className="text-sm text-gray-500 ml-2">(Line {yaoPosition})</span>
+              <div className="space-y-3">
+                {/* 영역 1+2: 괘 + 정보 (가로 배치) */}
+                <div className="flex items-stretch gap-3">
+                  {/* 괘 영역 */}
+                  <div className="relative rounded-xl p-4 pt-6 border border-amber-500/30 flex flex-col items-center justify-center">
+                    <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">득괘</span>
+                    <HexagramDisplay
+                      hexagramNumber={todayFortune.hexagram_number}
+                      highlightYao={todayFortune.yao_position}
+                      size="lg"
+                      showLabels={false}
+                    />
+                  </div>
+
+                  {/* 정보 영역 */}
+                  <div className="flex-1 rounded-xl p-4 border border-blue-500/30 flex flex-col justify-center">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2 flex-wrap">
+                      {todayFortune.hexagram_name}
+                      <span className="text-amber-400">({todayFortune.hexagram_hanja})</span>
+                      <span className="text-sm text-amber-300 font-normal">✨ {getYaoDisplayName(todayFortune.yao_position)}</span>
+                    </h2>
+                    <p className="text-lg text-gray-300 mt-3">{todayFortune.text_kr}</p>
+                  </div>
                 </div>
-                <button
-                  onClick={handleRandomYao}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 transition"
-                >
-                  Random
-                </button>
+
+                {/* 해석 영역 */}
+                <div className="rounded-xl p-5 border border-green-500/30">
+                  <span className="text-xs text-green-300/80 font-medium">해석</span>
+                  {todayFortune.daily_headline && (
+                    <h3 className="text-lg font-bold text-amber-300 text-center mb-3 mt-2">
+                      {todayFortune.daily_headline}
+                    </h3>
+                  )}
+                  <p className="text-sm text-gray-300 text-center leading-relaxed">
+                    {todayFortune.interpretation}
+                  </p>
+                </div>
+
+                {/* 키워드 영역 */}
+                {todayFortune.keywords.length > 0 && (
+                  <div className="rounded-xl p-4 border border-purple-500/30">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {todayFortune.keywords.map((keyword, idx) => (
+                        <span key={idx} className="text-xs px-3 py-1.5 bg-white/10 text-gray-300 rounded-full border border-white/20">
+                          #{keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-white text-sm">{yaoDesc.meaning}</p>
-              <p className="text-gray-500 text-xs mt-1">{yaoDesc.hint}</p>
+            </div>
+          )}
+
+          {/* 질문 입력 */}
+          <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">💬</span>
+              <span className="text-white font-medium">질문 입력</span>
             </div>
 
-            {/* Yao Buttons */}
-            <div className="flex justify-between mb-2">
-              {[1, 2, 3, 4, 5, 6].map((pos) => (
-                <button
-                  key={pos}
-                  onClick={() => setYaoPosition(pos)}
-                  className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
-                    yaoPosition === pos
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 scale-110'
-                      : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
-                  }`}
-                >
-                  {pos}
-                </button>
-              ))}
+            <div className="relative">
+              <textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value.slice(0, 100))}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="w-full h-24 bg-black/30 border border-white/10 rounded-xl p-4 text-white resize-none focus:outline-none focus:border-amber-500/50 transition-colors"
+              />
+              {!isFocused && !question && (
+                <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">
+                  <p>예: 이번 달 취업 면접이 잘 될까요?</p>
+                  <p className="mt-1">💡 구체적으로 질문할수록 정확해요.</p>
+                </div>
+              )}
             </div>
 
-            {/* Hexagram Visualization */}
-            <div className="flex justify-center mt-4">
-              <div className="flex flex-col-reverse gap-1">
-                {[1, 2, 3, 4, 5, 6].map((pos) => (
-                  <div
-                    key={pos}
-                    className={`h-3 rounded transition-all ${
-                      yaoPosition === pos ? 'bg-amber-500 w-20' : 'bg-white/10 w-16'
+            {/* 분야 선택 */}
+            <div className="mt-4 mb-4">
+              <p className="text-xs text-gray-400 mb-2">분야 선택</p>
+              <div className="flex flex-wrap gap-2">
+                {MAJOR_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setMajorCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      majorCategory === cat.id
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                     }`}
-                    style={{
-                      boxShadow: yaoPosition === pos ? '0 0 10px rgba(245, 158, 11, 0.5)' : 'none',
-                    }}
-                  />
+                  >
+                    {cat.emoji} {cat.name}
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* Summary */}
-          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-            <h3 className="text-sm font-medium text-purple-200 mb-2">Summary</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-white">
-                {majorInfo?.emoji} {majorInfo?.name}
-              </span>
-              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-white">
-                {isYang ? 'Yang' : 'Yin'} - Line {yaoPosition}
-              </span>
-              {question && (
-                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-400 truncate max-w-[200px]">
-                  &ldquo;{question.slice(0, 20)}...&rdquo;
-                </span>
-              )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">{question.length}/100</span>
+              <button
+                onClick={handleQuestionSubmit}
+                disabled={!question.trim()}
+                className={`px-6 py-2 font-bold rounded-xl border transition-all duration-300 ${
+                  question.trim()
+                    ? 'bg-black/30 text-amber-300 border-white/10 hover:bg-black/50 hover:border-amber-500/30'
+                    : 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
+                }`}
+              >
+                🔮 응답받기
+              </button>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={!question.trim()}
-            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${
-              !question.trim()
-                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/30 text-amber-300'
-            }`}
-          >
-            <span>&#128302;</span>
-            <span>Cast the Oracle</span>
-          </button>
-        </div>
-
-        {/* Footer */}
-        <p className="text-xs text-center text-gray-500 mt-6">
-          Based on traditional I Ching (Book of Changes) divination method.
-          <br />
-          3000 years of ancient wisdom in digital form.
-        </p>
-      </div>
+          {/* 면책 조항 */}
+          <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
+            <p className="text-xs text-gray-500 text-center leading-relaxed">
+              ⚠️ <span className="text-gray-400">면책 고지</span><br />
+              본 서비스의 모든 점괘 결과는 <span className="text-amber-400/80">오락 및 참고 목적</span>으로만 제공됩니다.<br />
+              <span className="font-medium text-gray-400">코리아NEWS</span>는 점괘 결과에 따른 어떠한 결정이나 행동에 대해<br />
+              <span className="text-red-400/80">법적 책임을 지지 않습니다.</span> 중요한 결정은 전문가와 상담하세요.
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

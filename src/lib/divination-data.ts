@@ -239,3 +239,156 @@ function getKeywords(score: number, categoryId: number): string[] {
   if (score >= 45) return keywords[1];
   return keywords[2];
 }
+
+// ========================================
+// Today's Fortune (Date-seeded generation)
+// ========================================
+
+// Simple seeded random number generator
+function seededRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
+// Hash string to number (for date string)
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+// Lunar date approximation (simplified - for display only)
+export function getLunarDate(date: Date): string {
+  // Simplified lunar date calculation
+  // In production, use a proper lunar calendar library
+  const lunarData: Record<string, string> = {
+    '2026-1-1': '11월 12일',
+    '2026-1-2': '11월 13일',
+    '2026-1-3': '11월 14일',
+    '2026-1-4': '11월 15일',
+    '2026-1-5': '11월 16일',
+  };
+
+  const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+
+  if (lunarData[key]) {
+    return lunarData[key];
+  }
+
+  // Fallback: approximate lunar date (roughly 29 days behind solar)
+  const lunarMonth = ((date.getMonth() + 11) % 12) + 1;
+  const lunarDay = ((date.getDate() + 18) % 30) + 1;
+  return `${lunarMonth}월 ${lunarDay}일`;
+}
+
+// Today's fortune headlines
+const DAILY_HEADLINES = [
+  '오늘은 새로운 시작의 기운이 있습니다',
+  '조용히 내면을 살피는 것이 좋은 날입니다',
+  '적극적으로 움직이면 좋은 결과가 있습니다',
+  '인연과 만남에 좋은 기운이 흐릅니다',
+  '재물운이 상승하는 길일입니다',
+  '건강에 유의하며 무리하지 마세요',
+  '창의적인 아이디어가 떠오르는 날입니다',
+  '협력과 조화가 중요한 하루입니다',
+  '변화를 받아들이면 발전이 있습니다',
+  '차분하게 계획을 세우기 좋은 날입니다',
+];
+
+// Generate today's fortune (consistent for the entire day)
+export function generateTodayFortune(date: Date = new Date()) {
+  const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const seed = hashString(dateStr);
+  const random = seededRandom(seed);
+
+  // Generate hexagram (1-64) based on date seed
+  const hexagramNumber = Math.floor(random() * 64) + 1;
+  const hexagram = HEXAGRAMS[hexagramNumber];
+
+  // Generate yao position (1-6)
+  const yaoPosition = Math.floor(random() * 6) + 1;
+  const isYang = random() > 0.5;
+
+  // Calculate fortune score
+  const baseScore = hexagram.fortune_base;
+  const yaoModifier = (yaoPosition === 5 ? 10 : yaoPosition === 3 ? -5 : 0);
+  const yangModifier = isYang ? 5 : -2;
+  const randomModifier = Math.floor(random() * 20) - 10;
+
+  let fortuneScore = baseScore + yaoModifier + yangModifier + randomModifier;
+  fortuneScore = Math.max(20, Math.min(100, fortuneScore));
+
+  // Fortune category
+  let fortuneCategory = '';
+  if (fortuneScore >= 90) fortuneCategory = '대길';
+  else if (fortuneScore >= 70) fortuneCategory = '길';
+  else if (fortuneScore >= 50) fortuneCategory = '평';
+  else if (fortuneScore >= 30) fortuneCategory = '소흉';
+  else fortuneCategory = '흉';
+
+  // Yao name
+  const yaoName = isYang ? YAO_NAMES.yang[yaoPosition - 1] : YAO_NAMES.yin[yaoPosition - 1];
+
+  // Daily headline
+  const headlineIndex = Math.floor(random() * DAILY_HEADLINES.length);
+  const dailyHeadline = DAILY_HEADLINES[headlineIndex];
+
+  // Keywords
+  const allKeywords = ['희망', '성장', '조화', '인내', '지혜', '용기', '평화', '행운', '소통', '발전'];
+  const keywords: string[] = [];
+  const keywordCount = 3 + Math.floor(random() * 2);
+  for (let i = 0; i < keywordCount; i++) {
+    const idx = Math.floor(random() * allKeywords.length);
+    if (!keywords.includes(allKeywords[idx])) {
+      keywords.push(allKeywords[idx]);
+    }
+  }
+
+  return {
+    hexagram_number: hexagram.number,
+    hexagram_name: hexagram.name_ko,
+    hexagram_hanja: hexagram.name_hanja,
+    hexagram_full: hexagram.name_full,
+    hexagram_symbol: hexagram.symbol,
+    yao_position: yaoPosition,
+    yao_name: yaoName,
+    text_hanja: hexagram.gua_ci.substring(0, 30),
+    text_kr: hexagram.gua_ci,
+    interpretation: hexagram.gua_ci,
+    fortune_score: fortuneScore,
+    fortune_category: fortuneCategory,
+    keywords,
+    daily_headline: dailyHeadline,
+    daily_body: `${hexagram.name_full}(${hexagram.name_hanja}) 괘가 나왔습니다. ${hexagram.gua_ci.split('.')[0]}.`,
+    lunar_date: getLunarDate(date),
+    date: dateStr,
+  };
+}
+
+// Export type for today's fortune
+export interface TodayFortuneData {
+  hexagram_number: number;
+  hexagram_name: string;
+  hexagram_hanja: string;
+  hexagram_full: string;
+  hexagram_symbol: string;
+  yao_position: number;
+  yao_name: string;
+  text_hanja: string;
+  text_kr: string;
+  interpretation: string;
+  fortune_score: number;
+  fortune_category: string;
+  keywords: string[];
+  daily_headline: string;
+  daily_body: string;
+  lunar_date: string;
+  date: string;
+}
