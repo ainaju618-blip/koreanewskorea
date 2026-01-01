@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@yu-1/*": [
+        "./yu-1/src/*"
       ]
     }
   },
@@ -48,6 +51,9 @@
     "jeonnam",
     "gwangju",
     "koreanewshq",
-    "yu-1"
+    "yu-1/backend",
+    "yu-1/frontend",
+    "yu-1/_archive",
+    "yu-1/_backup"
   ]
 }
