@@ -22,7 +22,14 @@ import hashlib
 
 # Load environment variables (MUST be before cloudinary config)
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
+# Force reload .env to ensure fresh values
+env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+load_dotenv(env_path, override=True)  # override=True forces reload
+
+# Debug: Check .env file exists
+if not os.path.exists(env_path):
+    print(f"[WARN] .env file not found at: {env_path}")
 
 # ============================================================
 # Cloudinary 설정
@@ -35,12 +42,20 @@ try:
     import cloudinary
     import cloudinary.uploader
     
-    # Cloudinary 자격증명 (환경변수 또는 하드코딩)
-    # TODO: 올바른 자격증명으로 교체 필요
+    # Cloudinary credentials from environment
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dkz9qbznb')
     CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '')
     CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
-    
+
+    # Debug: Log credential status
+    print(f"[DEBUG] CLOUDINARY_API_KEY loaded: {bool(CLOUDINARY_API_KEY)} ({len(CLOUDINARY_API_KEY)} chars)")
+    print(f"[DEBUG] CLOUDINARY_API_SECRET loaded: {bool(CLOUDINARY_API_SECRET)} ({len(CLOUDINARY_API_SECRET)} chars)")
+
+    if not CLOUDINARY_API_KEY or not CLOUDINARY_API_SECRET:
+        print("[WARN] Cloudinary credentials missing! Check .env file:")
+        print("  CLOUDINARY_API_KEY=your_key_here")
+        print("  CLOUDINARY_API_SECRET=your_secret_here")
+
     if CLOUDINARY_ENABLED and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         cloudinary.config(
             cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -83,10 +98,14 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
     """
     if not image_url:
         return None
-    
-    # ★ Cloudinary 미설정 시 즉시 에러
+
+    # ★ Cloudinary 미설정 시 원본 URL 반환 (fallback)
     if not CLOUDINARY_CONFIGURED:
-        raise RuntimeError("[ERROR] Cloudinary가 설정되지 않았습니다. API 키를 확인하세요.")
+        print("[WARN] Cloudinary 미설정, 원본 URL 사용")
+        # Convert relative URL to absolute if needed
+        if not image_url.startswith(('http://', 'https://')) and base_url:
+            image_url = urljoin(base_url, image_url)
+        return image_url
     
     # 상대경로 → 절대경로 변환
     if not image_url.startswith(('http://', 'https://')):
@@ -143,83 +162,153 @@ def download_and_upload_image(image_url: str, base_url: str = None, folder: str 
             
             return cloudinary_url
         except Exception as e:
-            # ★ Cloudinary 업로드 실패 시 에러 발생 (fallback 없음)
-            error_msg = f"[ERROR] Cloudinary 업로드 실패: {str(e)[:100]}"
+            # ★ Cloudinary 업로드 실패 시 원본 URL 반환 (fallback)
+            error_msg = f"[WARN] Cloudinary 업로드 실패, 원본 URL 사용: {str(e)[:50]}"
             print(error_msg)
-            raise RuntimeError(error_msg)
-        
+            return image_url  # Return original URL as fallback
+
     except requests.exceptions.RequestException as e:
-        error_msg = f"[ERROR] 이미지 다운로드 실패: {str(e)[:100]}"
+        error_msg = f"[WARN] 이미지 다운로드 실패, 원본 URL 사용: {str(e)[:50]}"
         print(error_msg)
-        raise RuntimeError(error_msg)
-    except RuntimeError:
-        raise  # 이미 RuntimeError면 그대로 전파
+        return image_url  # Return original URL as fallback
     except Exception as e:
-        error_msg = f"[ERROR] 이미지 처리 오류: {str(e)[:100]}"
+        error_msg = f"[WARN] 이미지 처리 오류, 원본 URL 사용: {str(e)[:50]}"
         print(error_msg)
-        raise RuntimeError(error_msg)
+        return image_url  # Return original URL as fallback
 
 
 def upload_local_image(local_path: str, folder: str = "news", resize: bool = True) -> Optional[str]:
     """
     로컬 이미지 파일을 Cloudinary에 업로드
-    
+    Cloudinary 실패시 Supabase Storage에 업로드 (fallback)
+
     Args:
         local_path: 로컬 이미지 파일 경로
         folder: Cloudinary 폴더 이름
         resize: 리사이즈 여부 (기본 800x600)
-        
-    Returns:
-        Cloudinary 이미지 URL 또는 None (실패 시)
-    """
-    if not CLOUDINARY_CONFIGURED:
-        print(f"[WARN] Cloudinary 미설정")
-        return None
 
+    Returns:
+        Cloudinary 이미지 URL 또는 Supabase Storage URL
+    """
     if not os.path.exists(local_path):
         print(f"[ERROR] 파일이 존재하지 않음: {local_path}")
         return None
-    
+
+    # Generate file hash for unique filename
+    file_hash = hashlib.md5(local_path.encode()).hexdigest()[:6]
+    date_prefix = __import__('datetime').datetime.now().strftime('%Y%m%d')
+
     try:
         # 1. 이미지 로드
         img = Image.open(local_path)
-        
+
         # RGBA → RGB 변환
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
-        
+
         # 2. 리사이즈 (선택)
         if resize:
             img = resize_image(img, TARGET_WIDTH, TARGET_HEIGHT)
-        
-        # 3. 임시 파일에 저장
-        file_hash = hashlib.md5(local_path.encode()).hexdigest()
-        temp_path = os.path.join(tempfile.gettempdir(), f"{file_hash}.jpg")
-        img.save(temp_path, 'JPEG', quality=85, optimize=True)
-        
-        # 4. Cloudinary 업로드 (WebP 변환 + 품질 최적화)
-        public_id = f"{folder}/{file_hash}"
 
-        result = cloudinary.uploader.upload(
-            temp_path,
-            public_id=public_id,
-            overwrite=False,
-            resource_type="image",
-            transformation=[
-                {"width": 800, "crop": "limit", "quality": 80}
-            ],
-            format="webp"
-        )
-        
-        # 5. 임시 파일 삭제
-        os.remove(temp_path)
-        
-        cloudinary_url = result.get('secure_url')
-        print(f"[OK] Cloudinary 업로드: {cloudinary_url[:60]}...")
-        return cloudinary_url
+        # 3. 임시 파일에 저장
+        temp_path = os.path.join(tempfile.gettempdir(), f"{folder}_{date_prefix}_{file_hash}.jpg")
+        img.save(temp_path, 'JPEG', quality=85, optimize=True)
+
+        # 4. Cloudinary 업로드 시도 (설정된 경우만)
+        if CLOUDINARY_CONFIGURED:
+            try:
+                public_id = f"{folder}/{date_prefix}_{file_hash}"
+                result = cloudinary.uploader.upload(
+                    temp_path,
+                    public_id=public_id,
+                    overwrite=False,
+                    resource_type="image",
+                    transformation=[
+                        {"width": 800, "crop": "limit", "quality": 80}
+                    ],
+                    format="webp"
+                )
+
+                cloudinary_url = result.get('secure_url')
+                print(f"[OK] Cloudinary 업로드: {cloudinary_url[:60]}...")
+
+                # 임시 파일 삭제
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+
+                return cloudinary_url
+            except Exception as e:
+                print(f"[WARN] Cloudinary 업로드 실패, Supabase Storage로 전환: {str(e)[:50]}")
+
+        # 5. Fallback: Supabase Storage에 업로드
+        try:
+            supabase_url = upload_to_supabase_storage(temp_path, folder, f"{folder}_{date_prefix}_{file_hash}.jpg")
+            if supabase_url:
+                # 임시 파일 삭제
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                return supabase_url
+        except Exception as e:
+            print(f"[WARN] Supabase Storage 업로드 실패: {str(e)[:50]}")
+
+        # 임시 파일 삭제
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        return None
 
     except Exception as e:
-        print(f"[ERROR] Cloudinary 업로드 오류: {str(e)[:50]}")
+        print(f"[ERROR] 이미지 처리 오류: {str(e)[:50]}")
+        return None
+
+
+def upload_to_supabase_storage(file_path: str, folder: str, filename: str) -> Optional[str]:
+    """
+    Supabase Storage에 이미지 업로드 (Cloudinary 실패시 fallback)
+
+    Args:
+        file_path: 로컬 파일 경로
+        folder: 저장 폴더 이름
+        filename: 저장할 파일명
+
+    Returns:
+        Supabase Storage public URL 또는 None
+    """
+    supabase_url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+    supabase_key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if not supabase_url or not supabase_key:
+        print("[WARN] Supabase 환경변수 미설정")
+        return None
+
+    try:
+        # Read file content
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+
+        # Upload to Supabase Storage (news-images bucket)
+        storage_path = f"{folder}/{filename}"
+        upload_url = f"{supabase_url}/storage/v1/object/news-images/{storage_path}"
+
+        headers = {
+            'Authorization': f'Bearer {supabase_key}',
+            'Content-Type': 'image/jpeg',
+            'x-upsert': 'true'  # Overwrite if exists
+        }
+
+        response = requests.post(upload_url, data=file_content, headers=headers, timeout=30)
+
+        if response.status_code in [200, 201]:
+            # Return public URL
+            public_url = f"{supabase_url}/storage/v1/object/public/news-images/{storage_path}"
+            print(f"[OK] Supabase Storage 업로드: {public_url[:60]}...")
+            return public_url
+        else:
+            print(f"[WARN] Supabase Storage 응답: {response.status_code} - {response.text[:100]}")
+            return None
+
+    except Exception as e:
+        print(f"[ERROR] Supabase Storage 업로드 오류: {str(e)[:50]}")
         return None
 
 

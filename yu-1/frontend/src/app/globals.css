@@ -1,0 +1,674 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #F59E0B;
+  --primary-dark: #d97706;
+  --accent: #8B5CF6;
+  --accent-dark: #7c3aed;
+  --success: #10B981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --bg-light: #fffbeb;
+  --bg-dark: #1a0a2e;
+  --foreground: #171717;
+  --foreground-dark: #f5f5f5;
+}
+
+@theme inline {
+  --color-background: var(--bg-light);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-noto-serif-kr);
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: linear-gradient(135deg, #fef3c7 0%, #ede9fe 50%, #fce7f3 100%);
+  min-height: 100vh;
+  color: var(--foreground);
+}
+
+/* 괘 심볼 폰트 */
+.gua-font {
+  font-family: 'Noto Serif KR', 'Nanum Myeongjo', serif;
+  font-weight: 700;
+}
+
+/* 커스텀 스크롤바 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* 애니메이션 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* 그라데이션 텍스트 */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 카드 스타일 */
+.card-fortune {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+.card-result {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 다크 테마 배경 with stars */
+.bg-dark-stars {
+  background: #000 !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-dark-stars::before,
+.bg-dark-stars::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 큰 별 (4초 주기 - 느린 반짝임) */
+.bg-dark-stars::before {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 160px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 200px 120px, #eee, transparent),
+    radial-gradient(1px 1px at 250px 60px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 300px 150px, #fff, transparent),
+    radial-gradient(1px 1px at 350px 90px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 400px 40px, #eee, transparent);
+  background-size: 450px 200px;
+  animation: twinkle1 4s ease-in-out infinite;
+}
+
+/* 작은 별 (3초 주기 - 빠른 반짝임) */
+.bg-dark-stars::after {
+  background-image:
+    radial-gradient(1px 1px at 50px 120px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1px 1px at 80px 200px, #fff, transparent),
+    radial-gradient(1px 1px at 150px 180px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 200px 250px, #eee, transparent),
+    radial-gradient(1px 1px at 280px 160px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 320px 220px, #fff, transparent),
+    radial-gradient(1px 1px at 380px 140px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 420px 280px, #eee, transparent);
+  background-size: 500px 350px;
+  animation: twinkle2 3s ease-in-out infinite reverse;
+}
+
+/* 핵심 애니메이션 */
+@keyframes twinkle1 {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes twinkle2 {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.2;
+  }
+  30% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+}
+
+/* 모든 페이지에 강제 적용 */
+html.dark-mode,
+body.dark-mode {
+  background: #000 !important;
+  color: #ffffff !important;
+}
+
+/* 카드/버튼 유틸리티 클래스 */
+.card-glass {
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.btn-amber {
+  background: rgba(251, 191, 36, 0.2) !important;
+  border: 1px solid rgba(251, 191, 36, 0.4) !important;
+}
+
+/* 버튼 스타일 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* 괘 패턴 배경 */
+.bg-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f59e0b' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* 태극 심볼 */
+.taeguk {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #e63946 50%, #1d3557 50%);
+  position: relative;
+}
+
+.taeguk::before,
+.taeguk::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.taeguk::before {
+  top: 0;
+  left: 20px;
+  background: #e63946;
+}
+
+.taeguk::after {
+  bottom: 0;
+  left: 20px;
+  background: #1d3557;
+}
+
+/* 효 슬라이더 */
+.yao-slider {
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--accent), var(--primary));
+  outline: none;
+}
+
+.yao-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--primary);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.yao-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--primary);
+  cursor: pointer;
+}
+
+/* 신뢰도 바 */
+.confidence-bar {
+  background: linear-gradient(to right,
+    #ef4444 0%,
+    #f59e0b 25%,
+    #eab308 50%,
+    #22c55e 75%,
+    #10b981 100%
+  );
+}
+
+/* 다크모드 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-light: #0f0a1e;
+    --foreground: #f5f5f5;
+  }
+
+  body {
+    background: linear-gradient(135deg, #1a0a2e 0%, #0f0520 50%, #1a0633 100%);
+    color: var(--foreground-dark);
+  }
+
+  .card-fortune {
+    background: rgba(30, 20, 50, 0.9);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* 반응형 */
+@media (max-width: 640px) {
+  .text-gradient {
+    font-size: 1.5rem;
+  }
+}
+
+/* ========================================
+   8면체 주사위 3D 애니메이션
+   ======================================== */
+
+/* 주사위 컨테이너 */
+.octahedron-container {
+  transform-style: preserve-3d;
+  animation: octahedron-idle 8s ease-in-out infinite;
+}
+
+/* 대기 상태 애니메이션 */
+@keyframes octahedron-idle {
+  0%, 100% {
+    transform: rotateX(15deg) rotateY(0deg);
+  }
+  25% {
+    transform: rotateX(20deg) rotateY(90deg);
+  }
+  50% {
+    transform: rotateX(15deg) rotateY(180deg);
+  }
+  75% {
+    transform: rotateX(20deg) rotateY(270deg);
+  }
+}
+
+/* 주사위 흔들기 애니메이션 */
+@keyframes dice-shake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10% {
+    transform: translate(-5px, -5px) rotate(-5deg);
+  }
+  20% {
+    transform: translate(5px, -5px) rotate(5deg);
+  }
+  30% {
+    transform: translate(-5px, 5px) rotate(-5deg);
+  }
+  40% {
+    transform: translate(5px, 5px) rotate(5deg);
+  }
+  50% {
+    transform: translate(-5px, -5px) rotate(-5deg);
+  }
+  60% {
+    transform: translate(5px, -5px) rotate(5deg);
+  }
+  70% {
+    transform: translate(-5px, 5px) rotate(-5deg);
+  }
+  80% {
+    transform: translate(5px, 5px) rotate(5deg);
+  }
+  90% {
+    transform: translate(-5px, -5px) rotate(-5deg);
+  }
+}
+
+.animate-dice-shake {
+  animation: dice-shake 0.5s ease-in-out infinite;
+}
+
+/* 8면체 각 면 */
+.octahedron-face {
+  backface-visibility: visible;
+  transform-style: preserve-3d;
+}
+
+/* 빛나는 테두리 효과 */
+@keyframes glow-border {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.3),
+                0 0 20px rgba(251, 191, 36, 0.2),
+                0 0 30px rgba(251, 191, 36, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5),
+                0 0 40px rgba(251, 191, 36, 0.3),
+                0 0 60px rgba(251, 191, 36, 0.2);
+  }
+}
+
+.animate-glow-border {
+  animation: glow-border 2s ease-in-out infinite;
+}
+
+/* 효(爻) 나타나기 애니메이션 */
+@keyframes yao-reveal {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.8);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(5px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-yao-reveal {
+  animation: yao-reveal 0.5s ease-out forwards;
+}
+
+/* 괘 심볼 빛나기 */
+@keyframes trigram-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
+                 0 0 40px rgba(251, 191, 36, 0.6);
+    filter: brightness(1.2);
+  }
+}
+
+.animate-trigram-glow {
+  animation: trigram-glow 1.5s ease-in-out infinite;
+}
+
+/* 원형 파동 효과 */
+@keyframes ripple {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 1s ease-out infinite;
+}
+
+/* 그라데이션 방사형 배경 */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
+}
+
+/* 주사위 결과 하이라이트 */
+@keyframes result-highlight {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+  }
+}
+
+.animate-result-highlight {
+  animation: result-highlight 0.8s ease-out forwards;
+}
+
+/* 3D 원근감 */
+.perspective-800 {
+  perspective: 800px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* ========================================
+   점괘 결과 탁 나타나기 애니메이션
+   ======================================== */
+
+/* 전체 결과 페이지 나타나기 */
+@keyframes reveal-result {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-reveal-result {
+  animation: reveal-result 0.3s ease-out forwards;
+}
+
+/* 탁 터지듯 나타나기 */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* 한 번만 튕기기 */
+@keyframes bounce-once {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-once {
+  animation: bounce-once 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* 아래에서 페이드인 */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* 점괘 회전 애니메이션 (시계2 + 반시계2) */
+@keyframes spin-divination {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(720deg); }
+  50% { transform: rotate(720deg); }
+  75% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-spin-divination {
+  animation: spin-divination 1.5s ease-in-out infinite;
+}
+
+/* 음양 아이콘 빛나는 효과 */
+.drop-shadow-glow-purple {
+  filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.6))
+          drop-shadow(0 0 30px rgba(251, 191, 36, 0.4));
+}
+
+/* ========================================
+   떠다니는 텍스트 (Floating) 애니메이션
+   ======================================== */
+
+@keyframes floating {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(3px, -4px);
+  }
+  50% {
+    transform: translate(-2px, 2px);
+  }
+  75% {
+    transform: translate(-4px, -2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.animate-floating {
+  animation: floating 6s ease-in-out infinite;
+}

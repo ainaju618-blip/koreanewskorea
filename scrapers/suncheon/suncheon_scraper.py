@@ -420,7 +420,13 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         start_date: Collection start date (YYYY-MM-DD)
         end_date: Collection end date (YYYY-MM-DD)
     """
-    print(f"[{REGION_NAME}] Press release collection started (last {days} days)")
+    # Date range setup
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    print(f"[{REGION_NAME}] 수집 시작 (기간: {start_date} ~ {end_date}, 최대 {max_articles}개)")
 
     # Ensure dev server is running before starting
     if not ensure_server_running():
@@ -428,11 +434,6 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         return []
 
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 v3.0 시작', 'info')
-
-    if not end_date:
-        end_date = datetime.now().strftime('%Y-%m-%d')
-    if not start_date:
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     collected_count = 0
     error_collector = ErrorCollector(REGION_CODE, REGION_NAME)

@@ -211,7 +211,16 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
 def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     """Main article collection function"""
-    print(f"[{REGION_NAME}] Press release collection started (last {days} days, max {max_articles} articles)")
+    # Date range setup
+    if not start_date:
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    else:
+        cutoff_date = start_date
+
+    if not end_date:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+
+    print(f"[{REGION_NAME}] 수집 시작 (기간: {cutoff_date} ~ {end_date}, 최대 {max_articles}개)")
 
     # Ensure dev server is running before starting
     if not ensure_server_running():
@@ -220,13 +229,6 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
     log_to_server(REGION_CODE, '실행중', f'{REGION_NAME} 스크래퍼 시작', 'info')
 
     collected_links = []
-    if not start_date:
-        cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-    else:
-        cutoff_date = start_date
-
-    if not end_date:
-        end_date = datetime.now().strftime('%Y-%m-%d')
 
     # ============================================
     # Phase 1: Collect links

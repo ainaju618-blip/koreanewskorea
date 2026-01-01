@@ -83,6 +83,41 @@
 | `details` | jsonb | 상세 정보 |
 | `created_at` | timestamptz | 수행 시각 |
 
+### tour_spots (관광 정보)
+> **데이터 출처:** 한국관광공사 TourAPI (api.visitkorea.or.kr)
+> **레코드 수:** 3,634개 (2025-12-29 기준)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | integer | PK, 자동증가 |
+| `content_id` | text | TourAPI 콘텐츠 ID |
+| `title` | text | 관광지/시설 이름 |
+| `content_type` | text | 콘텐츠 유형 코드 |
+| `content_type_name` | text | 콘텐츠 유형 한글명 |
+| `region_key` | text | 지역 코드 (mokpo, yeongam 등) |
+| `region_name` | text | 지역 한글명 (목포시, 영암군 등) |
+| `address` | text | 주소 |
+| `image_url` | text | 대표 이미지 URL |
+| `thumbnail_url` | text | 썸네일 이미지 URL |
+| `map_x` | float | 경도 (X좌표) |
+| `map_y` | float | 위도 (Y좌표) |
+| `created_at` | timestamptz | 생성일 |
+
+**content_type 코드표:**
+| 코드 | 한글명 | 설명 |
+|------|--------|------|
+| `12` | 관광지 | 자연/문화 관광지 |
+| `15` | 축제공연행사 | 축제, 공연, 행사 |
+| `28` | 레포츠 | 스포츠, 레저 시설 |
+| `32` | 숙박 | 호텔, 펜션, 민박 등 |
+| `39` | 음식점 | 맛집, 식당 |
+
+**사용 컴포넌트:**
+- `TourSpots.tsx` - 관광명소 (content_type='12')
+- `TourFood.tsx` - 맛집 (content_type='39')
+- `TourEvents.tsx` - 축제/행사 (content_type='15')
+- `TourAccommodation.tsx` - 숙박 (content_type='32')
+
 ---
 
 ## 3. [ERROR] 제약 조건 오류
@@ -343,4 +378,4 @@ Password: (대시보드에서 확인)
 
 ---
 
-*최종 업데이트: 2025-12-15*
+*최종 업데이트: 2025-12-30*

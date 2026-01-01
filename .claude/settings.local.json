@@ -401,7 +401,28 @@
       "Bash(copy:*)",
       "Bash(cmd /c copy \"d:\\\\cbt\\\\koreanews\\\\scripts\\\\batch_processor.py\" \"d:\\\\cbt\\\\koreanews\\\\scripts\\\\batch_processor_dec30.py\")",
       "Bash(pushd:*)",
-      "Bash(popd)"
+      "Bash(popd)",
+      "Bash(taskkill /F /PID 86924)",
+      "Bash(taskkill /F /PID 60852)",
+      "Bash(cmd /c \"taskkill /F /PID 60852\")",
+      "Bash(dir /s /b \"d:\\\\cbt\\\\koreanews\\\\jeonnam\\\\src\\\\app\")",
+      "Bash(tasklist /FI \"IMAGENAME eq ollama.exe\")",
+      "Bash(node scripts/check_regions.js:*)",
+      "Bash(node scripts/fix_author_assignment.js:*)",
+      "Bash(node scripts/check_jindo_reporters.js:*)",
+      "Bash(node scripts/check_all_reporter_profiles.js:*)",
+      "Bash(node scripts/create_missing_profiles.js:*)",
+      "Bash(node scripts/fix_jindo_v3.js:*)",
+      "Bash(node scripts/final_verification.js:*)",
+      "Bash(node scripts/fix_unknown_region.js:*)",
+      "Bash(node scripts/check_naju_titles.js:*)",
+      "Bash(node scripts/fix_naju_titles.js:*)",
+      "Bash(python -m venv:*)",
+      "Bash(./venv/Scripts/pip.exe install:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(taskkill //F //PID 102088)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 3; Invoke-RestMethod -Uri ''http://localhost:8000/api/divination/today'' | ConvertTo-Json -Depth 3 | Select-String -Pattern ''hexagram''\")",
+      "Bash(powershell -Command \"Get-Process -Name python -ErrorAction SilentlyContinue | Where-Object { $_CommandLine -like ''*uvicorn*'' } | Stop-Process -Force; Start-Sleep -Seconds 1; netstat -ano | Select-String '':8000''\")"
     ]
   }
 }

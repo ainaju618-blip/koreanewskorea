@@ -47,6 +47,33 @@ const nextConfig: NextConfig = {
   // Note: @supabase/supabase-js removed due to Next.js 15 compatibility issues
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // Disable worker for more stable builds
+    webpackBuildWorker: false,
+  },
+
+  // Development cache settings for better hot reload stability
+  onDemandEntries: {
+    // Keep pages in memory for shorter time (faster garbage collection)
+    maxInactiveAge: 15 * 1000, // 15 seconds
+    // Fewer buffered pages
+    pagesBufferLength: 2,
+  },
+
+  // Webpack configuration for cache management
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      // Disable filesystem cache in development for stability
+      config.cache = {
+        type: 'memory',
+      };
+      // Use deterministic module IDs for better debugging
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'named',
+        chunkIds: 'named',
+      };
+    }
+    return config;
   },
 };
 

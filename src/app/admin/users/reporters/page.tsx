@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/Toast';
 
 // 직위 데이터
 const POSITIONS = [
+    { value: 'chief_director', label: '총괄본부장' },
     { value: 'editor_in_chief', label: '주필' },
     { value: 'branch_manager', label: '지사장' },
     { value: 'editor_chief', label: '편집국장' },
@@ -195,7 +196,7 @@ export default function ReportersPage() {
 
     // Add/Edit Reporter Form State
     const [formName, setFormName] = useState("");
-    const [formType, setFormType] = useState("editor_chief");  // 직위 값 사용 (기본: 편집국장)
+    const [formPositions, setFormPositions] = useState<string[]>(["reporter"]);  // 복수 직위 (기본: 기자)
     const [formRegion, setFormRegion] = useState("전체");
     const [formPhone, setFormPhone] = useState("");
     const [formEmail, setFormEmail] = useState("");
@@ -207,7 +208,7 @@ export default function ReportersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 필터 상태
-    const [filterType, setFilterType] = useState<string>("all");  // 직위 필터
+    const [filterPosition, setFilterPosition] = useState<string>("all");  // 직위 필터
     const [filterRegion, setFilterRegion] = useState<string>("all");
 
     // 삭제 확인 모달
@@ -237,7 +238,7 @@ export default function ReportersPage() {
     // 모달 초기화
     const resetForm = () => {
         setFormName("");
-        setFormType("editor_chief");  // 기본 직위 (편집국장)
+        setFormPositions(["reporter"]);  // 기본 직위 (기자)
         setFormRegion("전체");
         setFormPhone("");
         setFormEmail("");
@@ -259,7 +260,9 @@ export default function ReportersPage() {
     const openEditModal = (reporter: Reporter) => {
         setSelectedReporter(reporter);
         setFormName(reporter.name);
-        setFormType(reporter.type || reporter.position || "reporter");  // 직위 값 사용
+        // position이 쉼표 구분 문자열이면 배열로 파싱
+        const positionStr = reporter.position || "reporter";
+        setFormPositions(positionStr.includes(',') ? positionStr.split(',').map(p => p.trim()) : [positionStr]);
         setFormRegion(reporter.region || "전체");
         setFormPhone(reporter.phone || "");
         setFormEmail(reporter.email || "");
@@ -302,7 +305,7 @@ export default function ReportersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: formName,
-                    position: formType,  // 직위값 (API에서 type='Human' 고정 처리)
+                    position: formPositions.join(', '),  // 복수 직위를 쉼표 구분 문자열로 저장
                     region: formRegion,
                     phone: formPhone || null,
                     email: formEmail || null,
@@ -320,7 +323,7 @@ export default function ReportersPage() {
                 if (formEmail) {
                     const msg = formPassword
                         ? "기자 계정이 생성되었습니다. 이메일과 비밀번호로 로그인할 수 있습니다."
-                        : "기자 계정이 생성되었습니다. 초기 비밀번호: a1234567!";
+                        : "기자 계정이 생성되었습니다. 초기 비밀번호는 관리자에게 문의하세요.";
                     showSuccess(msg);
                 }
             } else {
@@ -355,7 +358,7 @@ export default function ReportersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: formName,
-                    position: formType,  // 직위값 (API에서 type='Human' 고정 처리)
+                    position: formPositions.join(', '),  // 복수 직위를 쉼표 구분 문자열로 저장
                     region: formRegion,
                     phone: formPhone || null,
                     email: formEmail || null,
@@ -409,30 +412,41 @@ export default function ReportersPage() {
         }
     };
 
+    // 직위 문자열에 특정 직위가 포함되어 있는지 확인
+    const hasPosition = (positionStr: string, targetPosition: string) => {
+        const positions = positionStr.split(',').map(p => p.trim());
+        return positions.includes(targetPosition);
+    };
+
     // 필터링된 기자 목록
     const filteredReporters = reporters.filter(r => {
-        if (filterType !== "all" && r.type !== filterType && r.position !== filterType) return false;
+        if (filterPosition !== "all" && !hasPosition(r.position || '', filterPosition)) return false;
         if (filterRegion !== "all" && r.region !== filterRegion) return false;
         return true;
     });
 
-    // 통계 - 직위(position) 기준
+    // 통계 - 직위(position) 기준 (복수 직위 지원)
+    const executivePositions = ['editor_in_chief', 'branch_manager', 'editor_chief', 'news_chief'];
+    const reporterPositions = ['senior_reporter', 'reporter', 'intern_reporter', 'citizen_reporter', 'seoul_correspondent', 'foreign_correspondent'];
+
     const stats = {
         totalReporters: reporters.length,
         // 간부급: 주필, 지사장, 편집국장, 취재부장
         executives: reporters.filter(r =>
-            ['editor_in_chief', 'branch_manager', 'editor_chief', 'news_chief'].includes(r.position)
+            executivePositions.some(pos => hasPosition(r.position || '', pos))
         ).length,
         // 기자급: 수석기자, 기자, 수습기자, 시민기자, 특파원
         reporters_count: reporters.filter(r =>
-            ['senior_reporter', 'reporter', 'intern_reporter', 'citizen_reporter', 'seoul_correspondent', 'foreign_correspondent'].includes(r.position)
+            reporterPositions.some(pos => hasPosition(r.position || '', pos))
         ).length,
         activeReporters: reporters.filter(r => r.status === 'Active').length,
     };
 
-    // 직위 라벨 가져오기
+    // 직위 라벨 가져오기 (복수 직위 지원)
     const getPositionLabel = (value: string) => {
-        return POSITIONS.find(p => p.value === value)?.label || value;
+        if (!value) return '';
+        const positions = value.split(',').map(p => p.trim());
+        return positions.map(pos => POSITIONS.find(p => p.value === pos)?.label || pos).join(', ');
     };
 
     return (
@@ -484,12 +498,12 @@ export default function ReportersPage() {
 
                     {/* 필터 영역 */}
                     <div className="flex flex-wrap gap-4">
-                        {/* 유형(직위) 필터 */}
+                        {/* 직위 필터 */}
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-[#c9d1d9]">유형:</span>
+                            <span className="text-sm text-[#c9d1d9]">직위:</span>
                             <select
-                                value={filterType}
-                                onChange={(e) => setFilterType(e.target.value)}
+                                value={filterPosition}
+                                onChange={(e) => setFilterPosition(e.target.value)}
                                 className="text-sm border border-[#30363d] rounded-lg px-3 py-1.5 bg-[#0d1117] text-[#e6edf3]"
                             >
                                 <option value="all">전체</option>
@@ -548,8 +562,8 @@ export default function ReportersPage() {
                     <ReporterForm
                         formName={formName}
                         setFormName={setFormName}
-                        formType={formType}
-                        setFormType={setFormType}
+                        formPositions={formPositions}
+                        setFormPositions={setFormPositions}
                         formRegion={formRegion}
                         setFormRegion={setFormRegion}
                         formPhone={formPhone}
@@ -579,8 +593,8 @@ export default function ReportersPage() {
                     <ReporterForm
                         formName={formName}
                         setFormName={setFormName}
-                        formType={formType}
-                        setFormType={setFormType}
+                        formPositions={formPositions}
+                        setFormPositions={setFormPositions}
                         formRegion={formRegion}
                         setFormRegion={setFormRegion}
                         formPhone={formPhone}
@@ -656,7 +670,7 @@ export default function ReportersPage() {
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-[#161b22] rounded-xl shadow-2xl p-8 max-w-lg w-full animate-fade-in-up max-h-[90vh] overflow-y-auto border border-[#30363d]" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#161b22] rounded-xl shadow-2xl p-8 max-w-[612px] w-full animate-fade-in-up max-h-[90vh] overflow-y-auto border border-[#30363d]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-[#e6edf3]">{title}</h3>
                     <button onClick={onClose} className="p-1 hover:bg-[#21262d] rounded">
@@ -672,8 +686,8 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 interface ReporterFormProps {
     formName: string;
     setFormName: (v: string) => void;
-    formType: string;  // 직위 값
-    setFormType: (v: string) => void;
+    formPositions: string[];  // 복수 직위 배열
+    setFormPositions: (v: string[]) => void;
     formRegion: string;
     setFormRegion: (v: string) => void;
     formPhone: string;
@@ -701,7 +715,7 @@ interface ReporterFormProps {
 
 function ReporterForm({
     formName, setFormName,
-    formType, setFormType,
+    formPositions, setFormPositions,
     formRegion, setFormRegion,
     formPhone, setFormPhone,
     formEmail, setFormEmail,
@@ -712,12 +726,24 @@ function ReporterForm({
     formApiKeys, setFormApiKeys,
     isSubmitting, onSubmit, onCancel, submitLabel, showStatus, isAddMode, isEditMode
 }: ReporterFormProps) {
+    // 직위 체크박스 토글
+    const togglePosition = (posValue: string) => {
+        if (formPositions.includes(posValue)) {
+            // 최소 1개는 유지
+            if (formPositions.length > 1) {
+                setFormPositions(formPositions.filter(p => p !== posValue));
+            }
+        } else {
+            setFormPositions([...formPositions, posValue]);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* 섹션 1: 기본 정보 */}
             <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-[#e6edf3] border-b border-[#30363d] pb-2">기본 정보</h3>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-medium text-[#c9d1d9] mb-1">이름 *</label>
                         <input
@@ -727,18 +753,6 @@ function ReporterForm({
                             className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="홍길동"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-[#c9d1d9] mb-1">유형 *</label>
-                        <select
-                            value={formType}
-                            onChange={(e) => setFormType(e.target.value)}
-                            className="w-full border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3]"
-                        >
-                            {POSITIONS.map(p => (
-                                <option key={p.value} value={p.value}>{p.label}</option>
-                            ))}
-                        </select>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-[#c9d1d9] mb-1">담당 지역</label>
@@ -751,6 +765,44 @@ function ReporterForm({
                                 <option key={r.value} value={r.value}>{r.label}</option>
                             ))}
                         </select>
+                    </div>
+                </div>
+
+                {/* 직위 선택 (복수 선택 가능) */}
+                <div>
+                    <label className="block text-xs font-medium text-[#c9d1d9] mb-2">
+                        직위 * <span className="text-[#8b949e]">(복수 선택 가능)</span>
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                        {POSITIONS.map(p => (
+                            <label
+                                key={p.value}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-sm ${
+                                    formPositions.includes(p.value)
+                                        ? 'border-blue-500 bg-blue-900/20 text-blue-300'
+                                        : 'border-[#30363d] bg-[#0d1117] text-[#c9d1d9] hover:border-[#484f58]'
+                                }`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={formPositions.includes(p.value)}
+                                    onChange={() => togglePosition(p.value)}
+                                    className="sr-only"
+                                />
+                                <span className={`w-3 h-3 rounded border flex items-center justify-center ${
+                                    formPositions.includes(p.value)
+                                        ? 'border-blue-500 bg-blue-500'
+                                        : 'border-[#484f58]'
+                                }`}>
+                                    {formPositions.includes(p.value) && (
+                                        <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 12 12">
+                                            <path d="M10.28 2.28a.75.75 0 0 1 0 1.06l-5.5 5.5a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 0 1 1.06-1.06L4.25 7.19l4.97-4.97a.75.75 0 0 1 1.06 0Z" />
+                                        </svg>
+                                    )}
+                                </span>
+                                {p.label}
+                            </label>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -785,7 +837,7 @@ function ReporterForm({
                             value={formPassword}
                             onChange={(e) => setFormPassword(e.target.value)}
                             className="max-w-md border border-[#30363d] rounded-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder={isAddMode ? "미입력시 기본 비밀번호: a1234567!" : "변경시에만 입력"}
+                            placeholder={isAddMode ? "미입력시 기본 비밀번호 적용" : "변경시에만 입력"}
                         />
                     </div>
                 )}

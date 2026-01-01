@@ -215,15 +215,7 @@ def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str
 
 def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = None, end_date: str = None) -> List[Dict]:
     """Main article collection function"""
-    print(f"[{REGION_NAME}] Press release collection started (last {days} days, max {max_articles})")
-
-    if not ensure_server_running():
-        print("[ERROR] Dev server could not be started. Aborting.")
-        return []
-
-    log_to_server(REGION_CODE, 'running', f'{REGION_NAME} scraper started', 'info')
-
-    collected_links = []
+    # Date range setup
     if not start_date:
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     else:
@@ -234,6 +226,16 @@ def collect_articles(days: int = 7, max_articles: int = 30, start_date: str = No
 
     if not end_date:
         end_date = datetime.now().strftime('%Y-%m-%d')
+
+    print(f"[{REGION_NAME}] 수집 시작 (기간: {cutoff_date} ~ {end_date}, 최대 {max_articles}개)")
+
+    if not ensure_server_running():
+        print("[ERROR] Dev server could not be started. Aborting.")
+        return []
+
+    log_to_server(REGION_CODE, 'running', f'{REGION_NAME} scraper started', 'info')
+
+    collected_links = []
 
     # ============================================
     # Phase 1: Collect links

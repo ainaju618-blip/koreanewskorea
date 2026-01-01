@@ -1,14 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/bot/cron",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/admin/pagespeed-check",
-      "schedule": "0 0 * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",

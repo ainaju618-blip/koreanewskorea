@@ -155,12 +155,31 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     try {
         const { id } = await params;
 
+        // 먼저 기자 정보 조회 (user_id 확인용)
+        const { data: reporter } = await supabaseAdmin
+            .from('reporters')
+            .select('user_id')
+            .eq('id', id)
+            .single();
+
+        // reporters 테이블에서 삭제
         const { error } = await supabaseAdmin
             .from('reporters')
             .delete()
             .eq('id', id);
 
         if (error) throw error;
+
+        // Supabase Auth 계정도 함께 삭제 (user_id가 있는 경우)
+        if (reporter?.user_id) {
+            const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
+                reporter.user_id
+            );
+            if (authError) {
+                console.error('Auth user deletion failed:', authError);
+                // Auth 삭제 실패해도 reporter는 이미 삭제됨 - 로그만 남김
+            }
+        }
 
         return NextResponse.json({ message: '기자가 삭제되었습니다.' });
     } catch (error: unknown) {

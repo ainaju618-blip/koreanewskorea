@@ -104,68 +104,6 @@ async function getRelatedNews(category: string, currentId: string) {
     }
 }
 
-// Reporter select fields for SEO/E-E-A-T
-const REPORTER_SELECT_FIELDS = 'id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id';
-
-// Get a random reporter for articles without assigned author
-// Prioritizes reporters matching the article region, falls back to "전체" region
-async function getRandomReporter(articleRegion?: string) {
-    try {
-        // Convert English region code to Korean name for DB query
-        // posts.region is English (naju), reporters.region is Korean (나주시)
-        let koreanRegionName: string | null = null;
-        if (articleRegion) {
-            const regionInfo = getRegionByCode(articleRegion);
-            koreanRegionName = regionInfo?.name || null;
-        }
-
-        // First try to find reporter matching article region
-        if (koreanRegionName) {
-            const { data: regionReporters } = await supabaseAdmin
-                .from('reporters')
-                .select(REPORTER_SELECT_FIELDS)
-                .eq('status', 'Active')
-                .eq('type', 'Human')
-                .eq('region', koreanRegionName);
-
-            if (regionReporters && regionReporters.length > 0) {
-                const randomIndex = Math.floor(Math.random() * regionReporters.length);
-                return regionReporters[randomIndex];
-            }
-        }
-
-        // Fallback to reporters with "전체" region
-        const { data: allRegionReporters } = await supabaseAdmin
-            .from('reporters')
-            .select(REPORTER_SELECT_FIELDS)
-            .eq('status', 'Active')
-            .eq('type', 'Human')
-            .eq('region', '전체');
-
-        if (allRegionReporters && allRegionReporters.length > 0) {
-            const randomIndex = Math.floor(Math.random() * allRegionReporters.length);
-            return allRegionReporters[randomIndex];
-        }
-
-        // Final fallback: any active human reporter
-        const { data: anyReporters } = await supabaseAdmin
-            .from('reporters')
-            .select(REPORTER_SELECT_FIELDS)
-            .eq('status', 'Active')
-            .eq('type', 'Human')
-            .limit(10);
-
-        if (anyReporters && anyReporters.length > 0) {
-            const randomIndex = Math.floor(Math.random() * anyReporters.length);
-            return anyReporters[randomIndex];
-        }
-
-        return null;
-    } catch {
-        return null;
-    }
-}
-
 // View count increment function (Phase 3)
 async function incrementViewCount(id: string) {
     try {
@@ -289,7 +227,8 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     }
 
     // 1. Fetch Reporter Info
-    // Priority: author_id -> author_name -> random
+    // Priority: author_id -> author_name -> null (NO random selection!)
+    // Random assignment should ONLY happen at approval time, not on page load
     let reporter = null;
 
     // Try 1: Match by author_id (references profiles.id -> reporters.user_id)
@@ -313,10 +252,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         reporter = data;
     }
 
-    // Try 3: Random reporter based on article region
-    if (!reporter) {
-        reporter = await getRandomReporter(news.region);
-    }
+    // NO random selection here!
+    // If no reporter found, article will display "코리아NEWS 취재팀"
+    // To fix articles without author, use bulk-assign-authors API
 
     const relatedNews = await getRelatedNews(news.category, news.id);
 

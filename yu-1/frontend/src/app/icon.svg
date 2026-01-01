@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Yin-Yang Symbol - transparent background, circle only -->
+
+  <!-- White half of yin-yang -->
+  <path d="M50 0 A50 50 0 0 1 50 100 A25 25 0 0 1 50 50 A25 25 0 0 0 50 0" fill="#ffffff"/>
+
+  <!-- Dark half of yin-yang -->
+  <path d="M50 0 A50 50 0 0 0 50 100 A25 25 0 0 0 50 50 A25 25 0 0 1 50 0" fill="#1a1a2e"/>
+
+  <!-- Small white dot -->
+  <circle cx="50" cy="75" r="8" fill="#ffffff"/>
+
+  <!-- Small dark dot -->
+  <circle cx="50" cy="25" r="8" fill="#1a1a2e"/>
+</svg>

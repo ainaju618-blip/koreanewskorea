@@ -146,16 +146,21 @@ export default function HeroSlider({
                         }`}
                     >
                         {article.thumbnail_url ? (
-                            <Image
-                                src={article.thumbnail_url}
-                                alt={article.title}
-                                fill
-                                priority={idx === 0}
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 66vw"
-                                className={`object-cover transition-transform duration-[8000ms] ease-out ${
-                                    idx === currentIndex ? 'scale-110' : 'scale-100'
-                                }`}
-                            />
+                            <>
+                                {/* Mobile: contain (full image visible) / Desktop: cover (fills space) */}
+                                <Image
+                                    src={article.thumbnail_url}
+                                    alt={article.title}
+                                    fill
+                                    priority={idx === 0}
+                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 66vw"
+                                    className={`object-contain md:object-cover transition-transform duration-[8000ms] ease-out ${
+                                        idx === currentIndex ? 'scale-105 md:scale-110' : 'scale-100'
+                                    }`}
+                                />
+                                {/* Dark background for letterboxing on mobile */}
+                                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+                            </>
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
                         )}

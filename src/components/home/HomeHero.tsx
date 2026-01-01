@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import HeroSlider from './HeroSlider';
 import AdBanner from './AdBanner';
 import { createClient } from '@/lib/supabase-server';
@@ -96,32 +95,14 @@ async function getHeroData() {
         regionUsage[region] = index + 1;
     }
 
-    // 5. Fetch 2nd latest Gwangju article for sidebar
-    const { data: gwangjuArticles } = await supabase
-        .from('posts')
-        .select('id, title, thumbnail_url, category, published_at')
-        .eq('status', 'published')
-        .or('category.eq.광주,region.eq.gwangju')
-        .not('thumbnail_url', 'is', null)
-        .neq('thumbnail_url', '')
-        .like('thumbnail_url', 'http%')
-        .order('published_at', { ascending: false })
-        .limit(2);
-
-    // Get the 2nd article (index 1) for sidebar
-    const sidebarArticle = gwangjuArticles && gwangjuArticles.length > 1
-        ? gwangjuArticles[1]
-        : (gwangjuArticles && gwangjuArticles[0]) || null;
-
     return {
         sliderArticles,
-        sidebarArticle,
         settings: { interval: settings.interval }
     };
 }
 
 export default async function HomeHero() {
-    const { sliderArticles, sidebarArticle, settings } = await getHeroData();
+    const { sliderArticles, settings } = await getHeroData();
 
     return (
         <section className="container-kn mb-10">
@@ -140,37 +121,35 @@ export default async function HomeHero() {
                     <div className="flex-1 min-h-[140px]">
                         <AdBanner variant="polytechnic" />
                     </div>
-                    {/* Bottom: Gwangju Article Card */}
+                    {/* Bottom: Divination Button */}
                     <div className="flex-1 min-h-[140px]">
-                        {sidebarArticle ? (
-                            <Link
-                                href={`/news/${sidebarArticle.id}`}
-                                className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
-                            >
-                                <Image
-                                    src={sidebarArticle.thumbnail_url}
-                                    alt={sidebarArticle.title}
-                                    fill
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                    sizes="(max-width: 1024px) 100vw, 400px"
-                                />
-                                {/* Dark overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                                {/* Content */}
-                                <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <span className="inline-block px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded mb-2">
-                                        Gwangju
-                                    </span>
-                                    <h3 className="text-white text-sm font-bold leading-tight line-clamp-2 group-hover:text-blue-200 transition-colors">
-                                        {sidebarArticle.title}
-                                    </h3>
-                                </div>
-                            </Link>
-                        ) : (
-                            <div className="h-full bg-slate-100 rounded-xl flex items-center justify-center">
-                                <span className="text-slate-400 text-sm">No articles</span>
+                        <Link
+                            href="/divination"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
+                        >
+                            {/* Mystical background pattern */}
+                            <div className="absolute inset-0 opacity-20">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.2)_0%,transparent_50%)]" />
                             </div>
-                        )}
+                            {/* Content */}
+                            <div className="relative flex flex-col items-center justify-center w-full p-6 text-center">
+                                <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                                    &#9775;
+                                </span>
+                                <h3 className="text-white text-lg font-bold mb-1">
+                                    Today Fortune
+                                </h3>
+                                <p className="text-purple-200 text-xs mb-3">
+                                    I Ching Divination
+                                </p>
+                                <span className="inline-block px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 text-sm font-medium rounded-full group-hover:bg-amber-500/30 transition-colors">
+                                    View Fortune
+                                </span>
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>
