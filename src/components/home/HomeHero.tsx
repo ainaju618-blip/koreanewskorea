@@ -141,18 +141,12 @@ export default async function HomeHero() {
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                             {/* Content */}
                             <div className="relative flex flex-col items-center justify-center w-full p-6 text-center">
-                                <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                                    &#9775;
-                                </span>
-                                <h3 className="text-white text-lg font-bold mb-1 drop-shadow-lg">
-                                    Today Fortune
+                                <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">
+                                    오늘의 운세
                                 </h3>
-                                <p className="text-purple-200 text-xs mb-3 drop-shadow-md">
-                                    I Ching Divination
+                                <p className="text-purple-200 text-sm drop-shadow-md">
+                                    주역 점술
                                 </p>
-                                <span className="inline-block px-4 py-1.5 bg-amber-500/30 border border-amber-400/50 text-amber-200 text-sm font-medium rounded-full group-hover:bg-amber-500/40 transition-colors backdrop-blur-sm">
-                                    View Fortune
-                                </span>
                             </div>
                         </Link>
                     </div>
