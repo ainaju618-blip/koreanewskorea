@@ -52,13 +52,22 @@ export const JEONNAM_PROVINCE: Region[] = [
 ];
 
 // 교육청 (Agencies)
-// Note: DB reporters.region uses '광주시교육청' (not '광주광역시교육청')
+// Note: Supports multiple naming conventions used in DB
+// - reporters.region may use: '광주교육청', '광주시교육청'
+// - reporters.region may use: '전남교육청', '전라남도교육청'
 export const EDUCATION_AGENCIES: Region[] = [
-    { code: 'gwangju_edu', name: '광주시교육청', type: 'agency' },
-    { code: 'jeonnam_edu', name: '전라남도교육청', type: 'agency' },
+    { code: 'gwangju_edu', name: '광주교육청', type: 'agency' },
+    { code: 'jeonnam_edu', name: '전남교육청', type: 'agency' },
     { code: 'jeonnam_edu_org', name: '전남교육청 기관', type: 'agency' },
     { code: 'jeonnam_edu_school', name: '전남교육청 학교', type: 'agency' },
 ];
+
+// Alternative names mapping (for DB compatibility)
+// When querying reporters, also check these alternative names
+export const REGION_ALIASES: Record<string, string[]> = {
+    '광주교육청': ['광주시교육청', '광주광역시교육청'],
+    '전남교육청': ['전라남도교육청'],
+};
 
 // 전남 시(city)만 필터링
 export const JEONNAM_CITIES = JEONNAM_REGIONS.filter(r => r.type === 'city');

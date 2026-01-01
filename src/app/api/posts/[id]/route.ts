@@ -24,14 +24,24 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
         let assignResult: AssignResult | null = null;
 
-        // [Touch-to-Top Logic + Auto-assign Reporter]
+        // [Touch-to-Top Logic + Auto-assign Reporter + Approval Tracking]
         // When status changes to 'published':
         // 1. Set published_at to now (for latest-first sorting)
-        // 2. Auto-assign reporter if enabled and no author specified
+        // 2. Set approved_at and approved_by for tracking
+        // 3. Auto-assign reporter if enabled and no author specified
         if (body.status === 'published') {
             const now = new Date().toISOString();
             body.published_at = now;
             body.approved_at = now;
+
+            // Set approved_by if provided (should be reporter.id of approving admin)
+            // This tracks who approved the article for audit purposes
+            if (body.approved_by) {
+                console.log('[PATCH /api/posts] Approval tracking:', {
+                    approved_by: body.approved_by,
+                    approved_at: now
+                });
+            }
 
             // Check if auto-assign is enabled and author not already specified
             const shouldAutoAssign = !body.author_id && !body.skip_auto_assign;
