@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   verification: {
     google: 'vEKVAG-M2htffG-I2SPMBIZfDYAuemCTZPseGjrUJo4',
     other: {
-      'naver-site-verification': process.env.NEXT_PUBLIC_NAVER_VERIFICATION || '',
+      'naver-site-verification': 'f865d2460b6a6defdba3bb6dbaee7c3b53442649',
     },
   },
 
