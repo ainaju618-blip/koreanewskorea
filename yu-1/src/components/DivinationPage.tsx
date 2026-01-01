@@ -389,6 +389,16 @@ ${result.yao.name}
             </div>
           </div>
 
+          {/* 2026 New Year Banner */}
+          <div className="bg-gradient-to-r from-amber-500/20 via-red-500/20 to-amber-500/20 border border-amber-500/30 rounded-2xl p-4 text-center">
+            <p className="text-lg font-bold text-amber-300 mb-1">
+              2026년 새해 신년운세는 코리아NEWS와 함께
+            </p>
+            <p className="text-sm text-gray-300">
+              무료운세 바로가기.
+            </p>
+          </div>
+
           {/* Today's fortune card */}
           {showFortune && todayFortune && (
             <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
