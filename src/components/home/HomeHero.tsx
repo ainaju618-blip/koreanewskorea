@@ -141,12 +141,9 @@ export default async function HomeHero() {
                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                             {/* Content */}
                             <div className="relative flex flex-col items-center justify-center w-full p-6 text-center">
-                                <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">
+                                <h3 className="text-white text-xl font-bold drop-shadow-lg">
                                     오늘의 운세
                                 </h3>
-                                <p className="text-purple-200 text-sm drop-shadow-md">
-                                    주역 점술
-                                </p>
                             </div>
                         </Link>
                     </div>
