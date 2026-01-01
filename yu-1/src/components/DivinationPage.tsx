@@ -38,8 +38,8 @@ interface DivinationResult {
 
 // Convert yao position to display name
 const getYaoDisplayName = (position: number): string => {
-  const names = ['cho-hyo', '2-hyo', '3-hyo', '4-hyo', '5-hyo', 'sang-hyo'];
-  return names[position - 1] || 'cho-hyo';
+  const names = ['초효', '2효', '3효', '4효', '5효', '상효'];
+  return names[position - 1] || '초효';
 };
 
 export default function DivinationPage() {
@@ -103,20 +103,20 @@ export default function DivinationPage() {
 
   const handleShare = () => {
     if (!result) return;
-    const shareText = `I Ching Divination Result
+    const shareText = `주역점 결과
 
 ${result.hexagram.name_full} (${result.hexagram.name_hanja})
 ${result.yao.name}
 
 "${result.interpretation}"
 
-Fortune: ${result.fortune_category} (${result.fortune_score} points)
+운세: ${result.fortune_category} (${result.fortune_score}점)
 
-#IChing #Divination #Fortune`;
+#주역 #점괘 #운세`;
 
     if (navigator.share) {
       navigator.share({
-        title: 'I Ching Divination Result',
+        title: '주역점 결과',
         text: shareText,
         url: window.location.href,
       });
@@ -161,12 +161,12 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-white mb-2">Drawing hexagram...</h2>
+          <h2 className="text-xl font-bold text-white mb-2">점괘를 뽑는 중...</h2>
           <p className="text-purple-200 text-sm mb-6">
-            {loadingProgress < 30 && 'Preparing 49 yarrow stalks...'}
-            {loadingProgress >= 30 && loadingProgress < 60 && 'Dividing the stalks...'}
-            {loadingProgress >= 60 && loadingProgress < 90 && 'Reading the hexagram...'}
-            {loadingProgress >= 90 && 'Interpreting the oracle...'}
+            {loadingProgress < 30 && '49개의 시초를 준비하는 중...'}
+            {loadingProgress >= 30 && loadingProgress < 60 && '시초를 나누는 중...'}
+            {loadingProgress >= 60 && loadingProgress < 90 && '괘상을 읽는 중...'}
+            {loadingProgress >= 90 && '점괘를 해석하는 중...'}
           </p>
 
           {/* Progress Bar */}
@@ -206,9 +206,9 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
               onClick={handleReset}
               className="text-purple-200 hover:text-white transition-colors"
             >
-              ← Back
+              ← 뒤로
             </button>
-            <h1 className="text-white font-bold">Divination Result</h1>
+            <h1 className="text-white font-bold">점괘 결과</h1>
             <div className="w-16" />
           </div>
 
@@ -225,7 +225,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
             <div className="flex items-stretch gap-3 mb-4">
               {/* Hexagram area */}
               <div className="relative rounded-xl p-4 pt-6 border border-amber-500/30 flex flex-col items-center justify-center">
-                <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">Hexagram</span>
+                <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">득괘</span>
                 <HexagramDisplay
                   hexagramNumber={result.hexagram.number}
                   highlightYao={result.yao.position}
@@ -247,7 +247,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
             {/* Interpretation area */}
             <div className="rounded-xl p-5 border border-green-500/30 mb-4">
-              <span className="text-xs text-green-300/80 font-medium">Interpretation</span>
+              <span className="text-xs text-green-300/80 font-medium">해석</span>
               <p className="text-sm text-gray-300 leading-relaxed mt-2">
                 {result.interpretation}
               </p>
@@ -265,7 +265,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
             {/* Fortune Score */}
             <div className="bg-white/5 rounded-xl p-4 text-center mb-4">
-              <p className="text-xs text-gray-500 mb-1">Fortune Score</p>
+              <p className="text-xs text-gray-500 mb-1">운세 점수</p>
               <div className="flex items-center justify-center gap-2 mb-1">
                 <span className="text-2xl">{getFortuneEmoji(result.fortune_score)}</span>
                 <div className="text-lg text-yellow-400">
@@ -273,7 +273,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
                   {'☆'.repeat(5 - Math.round(result.fortune_score / 20))}
                 </div>
               </div>
-              <p className="text-amber-400 font-bold">{result.fortune_score} points - {result.fortune_category}</p>
+              <p className="text-amber-400 font-bold">{result.fortune_score}점 - {result.fortune_category}</p>
             </div>
 
             {/* Keywords area */}
@@ -294,28 +294,28 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
               onClick={handleShare}
               className="py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 transition"
             >
-              Share
+              공유
             </button>
             <button
               onClick={() => { setStep('home'); setQuestion(''); setShowFortune(true); }}
               className="py-3 bg-amber-500/20 border border-amber-500/30 rounded-xl text-sm font-medium text-amber-300 hover:bg-amber-500/30 transition"
             >
-              Again
+              다시
             </button>
             <Link
               href="/"
               className="py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 transition text-center"
             >
-              Home
+              홈
             </Link>
           </div>
 
           {/* Disclaimer */}
           <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
             <p className="text-xs text-gray-500 text-center leading-relaxed">
-              ⚠️ <span className="text-gray-400">Disclaimer</span><br />
-              All divination results are provided for <span className="text-amber-400/80">entertainment and reference purposes only</span>.<br />
-              Consult professionals for important decisions.
+              ⚠️ <span className="text-gray-400">면책 고지</span><br />
+              본 서비스의 모든 점괘 결과는 <span className="text-amber-400/80">오락 및 참고 목적</span>으로만 제공됩니다.<br />
+              중요한 결정은 전문가와 상담하세요.
             </p>
           </div>
         </div>
@@ -361,7 +361,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
           href="/"
           className="inline-block text-white/80 hover:text-white transition-colors bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm"
         >
-          ← Home
+          ← 홈
         </Link>
       </div>
 
@@ -384,7 +384,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
             {/* Caption */}
             <div className={`absolute inset-x-0 bottom-2 flex justify-center transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <p className="font-serif text-sm text-white/90 tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                3000 Years of History - Seeking <span className="font-bold text-white">Heaven's Will</span> through Cosmic Mystery
+                3천년 역사 · 우주의 신비로 <span className="font-bold text-white">하늘의 뜻</span>을 구하다
               </p>
             </div>
           </div>
@@ -393,10 +393,10 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
           {showFortune && todayFortune && (
             <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-amber-300">🎯 Today's Fortune</span>
+                <span className="text-sm font-medium text-amber-300">🎯 오늘의 운세</span>
                 <span className="text-xs bg-amber-500/30 text-amber-200 px-2 py-1 rounded-full border border-amber-400/30">
                   {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  <span className="text-amber-300/70 ml-1">(Lunar {lunarDate})</span>
+                  <span className="text-amber-300/70 ml-1">(음 {lunarDate})</span>
                 </span>
               </div>
 
@@ -405,7 +405,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
                 <div className="flex items-stretch gap-3">
                   {/* Hexagram area */}
                   <div className="relative rounded-xl p-4 pt-6 border border-amber-500/30 flex flex-col items-center justify-center">
-                    <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">Hexagram</span>
+                    <span className="absolute -top-[5px] left-3 px-2 text-xs text-amber-300 font-medium bg-black/40">득괘</span>
                     <HexagramDisplay
                       hexagramNumber={todayFortune.hexagram_number}
                       highlightYao={todayFortune.yao_position}
@@ -427,7 +427,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
 
                 {/* Interpretation area */}
                 <div className="rounded-xl p-5 border border-green-500/30">
-                  <span className="text-xs text-green-300/80 font-medium">Interpretation</span>
+                  <span className="text-xs text-green-300/80 font-medium">해석</span>
                   {todayFortune.daily_headline && (
                     <h3 className="text-lg font-bold text-amber-300 text-center mb-3 mt-2">
                       {todayFortune.daily_headline}
@@ -458,7 +458,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
           <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">💬</span>
-              <span className="text-white font-medium">Ask Your Question</span>
+              <span className="text-white font-medium">질문 입력</span>
             </div>
 
             <div className="relative">
@@ -471,15 +471,15 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
               />
               {!isFocused && !question && (
                 <div className="absolute top-4 left-4 text-gray-400 pointer-events-none">
-                  <p>Ex: Will my job interview go well this month?</p>
-                  <p className="mt-1">💡 Be specific for better results.</p>
+                  <p>예: 이번 달 취업 면접이 잘 될까요?</p>
+                  <p className="mt-1">💡 구체적으로 질문할수록 정확해요.</p>
                 </div>
               )}
             </div>
 
             {/* Category selection */}
             <div className="mt-4 mb-4">
-              <p className="text-xs text-gray-400 mb-2">Select Category</p>
+              <p className="text-xs text-gray-400 mb-2">분야 선택</p>
               <div className="flex flex-wrap gap-2">
                 {MAJOR_CATEGORIES.map((cat) => (
                   <button
@@ -508,7 +508,7 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
                     : 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed'
                 }`}
               >
-                🔮 Receive Oracle
+                🔮 응답받기
               </button>
             </div>
           </div>
@@ -516,10 +516,10 @@ Fortune: ${result.fortune_category} (${result.fortune_score} points)
           {/* Disclaimer */}
           <div className="p-4 bg-gray-900/50 border border-gray-700/50 rounded-xl">
             <p className="text-xs text-gray-500 text-center leading-relaxed">
-              ⚠️ <span className="text-gray-400">Disclaimer</span><br />
-              All divination results are provided for <span className="text-amber-400/80">entertainment and reference purposes only</span>.<br />
-              <span className="font-medium text-gray-400">KoreaNEWS</span> assumes no <span className="text-red-400/80">legal responsibility</span> for any decisions or actions based on these results.<br />
-              Consult professionals for important decisions.
+              ⚠️ <span className="text-gray-400">면책 고지</span><br />
+              본 서비스의 모든 점괘 결과는 <span className="text-amber-400/80">오락 및 참고 목적</span>으로만 제공됩니다.<br />
+              <span className="font-medium text-gray-400">코리아NEWS</span>는 점괘 결과에 따른 어떠한 결정이나 행동에 대해<br />
+              <span className="text-red-400/80">법적 책임을 지지 않습니다.</span> 중요한 결정은 전문가와 상담하세요.
             </p>
           </div>
         </section>
