@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import HeroSlider from './HeroSlider';
 import AdBanner from './AdBanner';
 import { createClient } from '@/lib/supabase-server';
@@ -127,25 +128,29 @@ export default async function HomeHero() {
                             href="/divination"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
+                            className="group relative flex h-full rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]"
                         >
-                            {/* Mystical background pattern */}
-                            <div className="absolute inset-0 opacity-20">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.2)_0%,transparent_50%)]" />
-                            </div>
+                            {/* Background Image */}
+                            <Image
+                                src="/images/divination/divination-bg.png"
+                                alt="Divination Background"
+                                fill
+                                className="object-cover"
+                            />
+                            {/* Dark overlay for text readability */}
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                             {/* Content */}
                             <div className="relative flex flex-col items-center justify-center w-full p-6 text-center">
                                 <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
                                     &#9775;
                                 </span>
-                                <h3 className="text-white text-lg font-bold mb-1">
+                                <h3 className="text-white text-lg font-bold mb-1 drop-shadow-lg">
                                     Today Fortune
                                 </h3>
-                                <p className="text-purple-200 text-xs mb-3">
+                                <p className="text-purple-200 text-xs mb-3 drop-shadow-md">
                                     I Ching Divination
                                 </p>
-                                <span className="inline-block px-4 py-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-300 text-sm font-medium rounded-full group-hover:bg-amber-500/30 transition-colors">
+                                <span className="inline-block px-4 py-1.5 bg-amber-500/30 border border-amber-400/50 text-amber-200 text-sm font-medium rounded-full group-hover:bg-amber-500/40 transition-colors backdrop-blur-sm">
                                     View Fortune
                                 </span>
                             </div>
