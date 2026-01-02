@@ -24,6 +24,9 @@ export default function Home() {
       {/* SEO: Organization Schema for AI and Google News */}
       <OrganizationSchema />
 
+      {/* SEO: Screen-reader-only H1 for accessibility and SEO */}
+      <h1 className="sr-only">코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘</h1>
+
       <main className="min-h-screen bg-white font-sans">
         {/* ===== PERSONALIZED NEWS SECTION (Disabled - enable later via admin) ===== */}
         {/* <PersonalizedNewsContainer /> */}
@@ -102,13 +105,13 @@ export default function Home() {
           </div>
 
           {/* RIGHT COLUMN: Sidebar (28%) - Streaming */}
-          <div className="w-full lg:w-[28%]">
+          <aside className="w-full lg:w-[28%]" aria-label="Sidebar">
             <div className="sticky top-[120px]">
               <Suspense fallback={<SidebarSkeleton />}>
                 <Sidebar />
               </Suspense>
             </div>
-          </div>
+          </aside>
 
         </div>
       </div>

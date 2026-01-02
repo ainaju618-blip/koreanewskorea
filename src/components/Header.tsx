@@ -115,7 +115,7 @@ export default function Header() {
     const hasChildren = (category: Category) => category.children && category.children.length > 0;
 
     return (
-        <div className="flex flex-col w-full bg-white relative z-50 font-sans">
+        <header className="flex flex-col w-full bg-white relative z-50 font-sans">
             {/* =========================================================================
                 LAYER 1: TOP UTILITY BAR (32px) - Deep Royal Blue (Authority)
             ========================================================================= */}
@@ -502,6 +502,6 @@ export default function Header() {
                     </div>
                 </div>
             </div>
-        </div>
+        </header>
     );
 }

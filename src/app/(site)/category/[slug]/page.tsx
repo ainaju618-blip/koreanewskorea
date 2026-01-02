@@ -1,10 +1,75 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase-server';
 import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+
+// Site URL for metadata
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+
+// Generate dynamic metadata for SEO
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const categoryInfo = CATEGORY_MAP[slug] || { name: slug.toUpperCase() };
+    const categoryName = categoryInfo.name;
+
+    const title = `${categoryName} 뉴스`;
+    const description = `${categoryName} 지역의 최신 뉴스와 정보를 빠르게 전달합니다. 코리아NEWS에서 ${categoryName} 소식을 확인하세요.`;
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title: `${title} | 코리아NEWS`,
+            description,
+            url: `${siteUrl}/category/${slug}`,
+            type: 'website',
+            siteName: '코리아NEWS',
+            images: [`${siteUrl}/og-image.png`],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: `${title} | 코리아NEWS`,
+            description,
+            images: [`${siteUrl}/og-image.png`],
+        },
+        alternates: {
+            canonical: `${siteUrl}/category/${slug}`,
+        },
+    };
+}
+
+// CollectionPage Schema component
+function CollectionPageSchema({ categoryName, slug, itemCount }: { categoryName: string; slug: string; itemCount: number }) {
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: `${categoryName} 뉴스`,
+        description: `${categoryName} 지역의 최신 뉴스 모음`,
+        url: `${siteUrl}/category/${slug}`,
+        isPartOf: {
+            '@type': 'WebSite',
+            name: '코리아NEWS',
+            url: siteUrl,
+        },
+        numberOfItems: itemCount,
+        publisher: {
+            '@type': 'Organization',
+            name: '코리아NEWS',
+            url: siteUrl,
+        },
+    };
+
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+    );
+}
 
 // Gwangju history content
 const GWANGJU_HISTORY = [
@@ -139,6 +204,9 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans">
+            {/* SEO: CollectionPage Schema */}
+            <CollectionPageSchema categoryName={categoryInfo.name} slug={slug} itemCount={totalCount} />
+
             {/* ... Header ... */}
             <CategoryHeader slug={slug} />
 
@@ -211,7 +279,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                     {/* ... Right Column logic is below but we only replace up to here */}
 
                     {/* RIGHT COLUMN: Sidebar (3 cols) */}
-                    <div className="lg:col-span-3 space-y-6">
+                    <aside className="lg:col-span-3 space-y-6" aria-label="Sidebar">
 
                         {/* Widget 1: Most Viewed */}
                         <div className="bg-slate-50 p-4">
@@ -318,7 +386,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                             </div>
                         </div>
 
-                    </div>
+                    </aside>
 
                 </div>
             </div>

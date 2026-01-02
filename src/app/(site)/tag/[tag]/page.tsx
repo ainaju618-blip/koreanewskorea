@@ -9,6 +9,9 @@ interface TagPageProps {
     params: Promise<{ tag: string }>;
 }
 
+// Site URL for canonical
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+
 // SEO: Dynamic metadata
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
     const { tag } = await params;
@@ -21,6 +24,18 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
             title: `#${decodedTag} - 태그별 기사 | 코리아NEWS`,
             description: `${decodedTag} 관련 뉴스 모음`,
             type: 'website',
+            siteName: '코리아NEWS',
+            url: `${siteUrl}/tag/${tag}`,
+            images: [`${siteUrl}/og-image.png`],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: `#${decodedTag} - 태그별 기사 | 코리아NEWS`,
+            description: `${decodedTag} 관련 뉴스 모음`,
+            images: [`${siteUrl}/og-image.png`],
+        },
+        alternates: {
+            canonical: `${siteUrl}/tag/${tag}`,
         },
     };
 }

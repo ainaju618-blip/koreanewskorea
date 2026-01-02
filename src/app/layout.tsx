@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import { WebSiteSchema } from "@/components/seo";
 // PWA 하단 배너 제거 - 햄버거 메뉴에서만 설치 가능
 
 // 웹폰트는 globals.css에서 @font-face로 로드
@@ -134,6 +135,8 @@ export default function RootLayout({
         {/* Serif font - NOT preloaded (433KB is too heavy, use font-display:swap instead) */}
       </head>
       <body className="font-sans min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white" suppressHydrationWarning>
+        {/* SEO: WebSite Schema for Google Sitelinks Search Box */}
+        <WebSiteSchema />
         <Providers>
           {children}
         </Providers>
