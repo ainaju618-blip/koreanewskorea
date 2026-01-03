@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -104,6 +104,47 @@ export default function Header() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // ESC key handler for closing menus (WCAG 2.1 AA)
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+            if (isMobileMenuOpen) {
+                setIsMobileMenuOpen(false);
+            }
+            if (activeMegaMenu) {
+                setActiveMegaMenu(null);
+            }
+        }
+    }, [isMobileMenuOpen, activeMegaMenu]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
+
+    // Focus trap for mobile menu (WCAG 2.1 AA)
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isMobileMenuOpen && mobileMenuRef.current) {
+            // Focus first focusable element in mobile menu
+            const focusableElements = mobileMenuRef.current.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            if (focusableElements.length > 0) {
+                (focusableElements[0] as HTMLElement).focus();
+            }
+
+            // Prevent body scroll when menu is open
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isMobileMenuOpen]);
+
     const getCategoryUrl = (category: Category, parent?: Category): string => {
         if (category.custom_url) return category.custom_url;
         // region goes to jeonnam-region page
@@ -116,6 +157,14 @@ export default function Header() {
 
     return (
         <header className="flex flex-col w-full bg-white relative z-50 font-sans">
+            {/* Skip Navigation Link (WCAG 2.1 AA) */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                본문으로 바로가기
+            </a>
+
             {/* =========================================================================
                 LAYER 1: TOP UTILITY BAR (32px) - Deep Royal Blue (Authority)
             ========================================================================= */}
@@ -123,9 +172,9 @@ export default function Header() {
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex justify-between items-center text-xs">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3">
-                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Facebook"><Facebook className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors p-2" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Facebook"><Facebook className="w-5 h-5" /></a>
+                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
                         </div>
                         <span className="text-white/95 font-medium">
                             {currentDate}
@@ -133,9 +182,9 @@ export default function Header() {
                     </div>
 
                     <div className="flex items-center gap-4 font-medium tracking-wide opacity-90">
-                        <Link href="/subscribe" className="hover:text-primary transition-colors">Subscribe</Link>
+                        <Link href="/subscribe" className="hover:text-primary transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary">Subscribe</Link>
                         <span className="w-[1px] h-2.5 bg-white/20"></span>
-                        <Link href="/reporter/login" className="flex items-center gap-1 hover:text-primary transition-colors">
+                        <Link href="/reporter/login" className="flex items-center gap-1 hover:text-primary transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary">
                             <User className="w-3 h-3" /> Reporter Login
                         </Link>
                     </div>
@@ -149,10 +198,10 @@ export default function Header() {
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex flex-row items-center justify-between">
 
                     {/* Left Logo Image - Optimized with Next.js Image */}
-                    <Link href="/" className="hidden lg:flex items-center mt-5">
+                    <Link href="/" className="hidden lg:flex items-center mt-5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                         <Image
                             src="/logo-koreanews.png"
-                            alt="Korea NEWS Logo"
+                            alt="Korea NEWS 홈으로 이동"
                             width={108}
                             height={60}
                             className="object-contain"
@@ -162,7 +211,7 @@ export default function Header() {
 
                     {/* Center Logo branding */}
                     <div className="flex flex-col items-center justify-center flex-1">
-                        <Link href="/" className="group flex items-center gap-1.5">
+                        <Link href="/" className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                             <span className="text-4xl md:text-5xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
                                 코리아<span className="text-primary">NEWS</span>
                             </span>
@@ -173,9 +222,10 @@ export default function Header() {
                     <div className="md:hidden absolute right-4 top-5">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 text-secondary"
-                            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                            className="p-2 text-secondary min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                            aria-label={isMobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
                             aria-expanded={isMobileMenuOpen}
+                            aria-controls="mobile-menu"
                         >
                             {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
                         </button>
@@ -197,7 +247,7 @@ export default function Header() {
                     <nav className="hidden md:flex items-center justify-center h-full">
                         {/* Center aligned menu */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
-                            <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative
+                            <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                                 ${pathname === '/' ? 'text-primary' : 'text-secondary hover:text-primary'}
                             `}>
                                 Home
@@ -206,7 +256,7 @@ export default function Header() {
                                 )}
                             </Link>
 
-                            <Link href="/news/network" className={`h-full flex items-center transition-colors relative
+                            <Link href="/news/network" className={`h-full flex items-center transition-colors relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                                 ${pathname.startsWith('/news') ? 'text-primary' : 'text-slate-800 hover:text-primary'}
                             `}>
                                 <span>News TV</span>
@@ -228,7 +278,9 @@ export default function Header() {
                                         href={getCategoryUrl(category)}
                                         target={category.link_target || undefined}
                                         rel={category.link_target === '_blank' ? 'noopener noreferrer' : undefined}
-                                        className={`h-full flex items-center transition-colors relative
+                                        aria-haspopup={hasChildren(category) ? 'true' : undefined}
+                                        aria-expanded={hasChildren(category) ? activeMegaMenu === category.id : undefined}
+                                        className={`h-full flex items-center transition-colors relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                                             ${isActiveCategory(category) || activeMegaMenu === category.id ? 'text-primary' : 'text-slate-900'}
                                             hover:text-primary
                                         `}
@@ -287,7 +339,7 @@ export default function Header() {
                             {/* CosmicPulse Link (no dropdown) */}
                             <Link
                                 href="/cosmos"
-                                className={`h-full flex items-center gap-1.5 transition-colors relative
+                                className={`h-full flex items-center gap-1.5 transition-colors relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2
                                     ${pathname.startsWith('/cosmos') ? 'text-purple-500' : 'text-slate-900'}
                                     hover:text-purple-500
                                 `}
@@ -338,15 +390,25 @@ export default function Header() {
             {/* =========================================================================
                 MOBILE MENU OVERLAY - Modern Slide-in Design
             ========================================================================= */}
-            <div className={`fixed inset-0 z-[100] transition-all duration-300 ${isMobileMenuOpen ? 'visible' : 'invisible'}`}>
+            <div
+                className={`fixed inset-0 z-[100] transition-all duration-300 ${isMobileMenuOpen ? 'visible' : 'invisible'}`}
+                role="dialog"
+                aria-modal="true"
+                aria-label="모바일 메뉴"
+            >
                 {/* Backdrop */}
                 <div
                     className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}`}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-hidden="true"
                 />
 
                 {/* Menu Panel */}
-                <div className={`absolute right-0 top-0 h-full w-[85%] max-w-[360px] bg-white shadow-2xl transition-transform duration-300 ease-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                <div
+                    ref={mobileMenuRef}
+                    id="mobile-menu"
+                    className={`absolute right-0 top-0 h-full w-[85%] max-w-[360px] bg-white shadow-2xl transition-transform duration-300 ease-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                >
                     {/* Header */}
                     <div className="p-5 flex justify-between items-center bg-gradient-to-r from-secondary to-secondary-light text-white">
                         <div className="flex items-center gap-3">
@@ -360,8 +422,8 @@ export default function Header() {
                         </div>
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-                            aria-label="Close menu"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] bg-white/10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+                            aria-label="메뉴 닫기"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -487,13 +549,13 @@ export default function Header() {
                             <div className="pt-4 border-t border-slate-100">
                                 <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider mb-3">Follow Us</p>
                                 <div className="flex items-center gap-3">
-                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#1DA1F2] hover:text-white transition-colors" aria-label="Twitter">
+                                    <a href="#" className="w-12 h-12 min-w-[44px] min-h-[44px] bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#1DA1F2] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Twitter">
                                         <Twitter className="w-5 h-5" />
                                     </a>
-                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#4267B2] hover:text-white transition-colors" aria-label="Facebook">
+                                    <a href="#" className="w-12 h-12 min-w-[44px] min-h-[44px] bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-[#4267B2] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Facebook">
                                         <Facebook className="w-5 h-5" />
                                     </a>
-                                    <a href="#" className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors" aria-label="Instagram">
+                                    <a href="#" className="w-12 h-12 min-w-[44px] min-h-[44px] bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#e6683c] hover:to-[#dc2743] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label="Instagram">
                                         <Instagram className="w-5 h-5" />
                                     </a>
                                 </div>
