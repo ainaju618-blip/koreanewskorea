@@ -117,9 +117,10 @@ logs/
 _backup/
 
 # Deprecated/Development folders (not part of production build)
-# Production is src/ only
-gwangju/
-jeonnam/
-koreanewshq/
-koreanewskorea/
-dec30-admin/
+# Note: Only root-level deprecated folders, not src/ subfolders
+/gwangju/
+/jeonnam/
+/koreanewshq/
+/koreanewskorea/
+/dec30-admin/
+/backupscrapers/

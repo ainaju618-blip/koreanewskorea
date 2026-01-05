@@ -375,6 +375,7 @@ CREATE TABLE weather_cache (
 > **참고**: `src/app/region/` 하위에 4단계 라우팅 구현 완료
 > **참고**: `src/components/molecules/RegionSelector.tsx` 계단식 드롭다운 구현 완료
 > **참고**: `src/lib/geolocation.ts`에 전국 IP→지역 매핑 함수 확장 완료
+> **🆕 참고**: `src/lib/slogans.ts`에 지역 슬로건 및 교육청 정보 데이터 완료
 
 ### Phase 3: 지역 콘텐츠 섹션 (5일)
 
@@ -574,6 +575,106 @@ src/
 1. **본사 메인 페이지**: `region='national'` 필터로 전국 뉴스 10개 표시
 2. **전국 지도**: SVG 지도 컴포넌트 생성 (광주/전남 클릭 시 지사 이동)
 3. **지역 선택 UI**: 드롭다운으로 지역 수동 변경 기능
+
+---
+
+---
+
+## 10. 지역 슬로건 & 교육청 통합 (2026-01-05 추가)
+
+### 10.1 슬로건 데이터 구조 (`src/lib/slogans.ts`)
+
+```typescript
+// 17개 광역시도 슬로건
+SIDO_SLOGANS: Record<string, { slogan: string; sloganEn?: string }>
+// 예: seoul: { slogan: 'Seoul, My Soul' }
+//     jeonnam: { slogan: '생명의 땅, 으뜸 전남' }
+
+// 전남 22개 시군 슬로건
+JEONNAM_SLOGANS: Record<string, { slogan: string; sloganEn?: string }>
+// 예: naju: { slogan: '살고 싶은 나주, 앞서가는 나주' }
+//     jindo: { slogan: '군민 모두가 행복한 진도' }
+```
+
+### 10.2 교육청 정보 구조
+
+```typescript
+// 17개 시도교육청 정보
+EDUCATION_OFFICES: Record<string, EducationOfficeInfo>
+interface EducationOfficeInfo {
+  name: string;       // '전라남도교육청'
+  slogan: string;     // '다함께 여는 미래, 탄탄한 전남교육'
+  website: string;    // 'https://www.jne.go.kr'
+  code: string;       // 'jne' (스크래핑용)
+  newsUrl?: string;   // 보도자료 URL
+}
+
+// 전남 22개 지역교육지원청 정보
+JEONNAM_EDUCATION_OFFICES: Record<string, LocalEducationOfficeInfo>
+interface LocalEducationOfficeInfo {
+  name: string;       // '나주교육지원청'
+  sidoCode: string;   // 'jeonnam'
+  sigunguCode: string;// 'naju'
+  website: string;    // 'https://njedu.jne.go.kr'
+  code: string;       // 'naju_edu'
+  newsUrl?: string;
+}
+```
+
+### 10.3 슬로건 UI 적용 현황
+
+| 페이지 | 적용 | 표시 내용 |
+|--------|------|-----------|
+| 나주 지역페이지 | ✅ | 나주 슬로건 + 전남 슬로건 배지 |
+| 진도 지역페이지 | ✅ | 진도 슬로건 + 전남 슬로건 배지 |
+| 기타 지역페이지 | 🔜 | 동일 패턴 적용 예정 |
+
+### 10.4 교육청 뉴스 통합 계획
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  교육청 뉴스 통합 로드맵                                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Phase 1: 데이터베이스 (1일)                                │
+│  ├─ education_news 테이블 생성                             │
+│  └─ 교육청 코드 인덱스 설정                                │
+│                                                             │
+│  Phase 2: 스크래퍼 개발 (3일)                               │
+│  ├─ 전남교육청 스크래퍼 (jne.go.kr)                        │
+│  ├─ 광주교육청 스크래퍼 (gen.go.kr)                        │
+│  └─ 지역교육지원청 스크래퍼 (22개)                         │
+│                                                             │
+│  Phase 3: API 엔드포인트 (1일)                              │
+│  ├─ /api/education/[code]/news                             │
+│  └─ /api/region/[code]/education-news                      │
+│                                                             │
+│  Phase 4: 프론트엔드 통합 (2일)                             │
+│  ├─ 지역페이지에 "교육 소식" 탭 추가                       │
+│  └─ 교육청 슬로건 및 배지 표시                             │
+│                                                             │
+│  Phase 5: 전국 확장 (5일)                                   │
+│  └─ 17개 시도교육청 스크래퍼 확장                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 10.5 슬로건 활용 유틸 함수
+
+```typescript
+// 지역 슬로건 조회
+getRegionSlogan(regionCode: string): string | null
+
+// 교육청 슬로건 조회
+getEducationSlogan(sidoCode: string): string | null
+
+// 지역 전체 정보 조회
+getRegionInfo(regionCode: string, sidoCode: string): {
+  region: { slogan: string } | null;
+  sido: { slogan: string } | null;
+  education: string | null;
+}
+```
 
 ---
 
