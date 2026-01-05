@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright, Page
 from playwright_stealth import Stealth
 
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
-from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr, safe_add_pagination
 from utils.content_cleaner import clean_article_content
 from utils.category_detector import detect_category
 from utils.error_collector import ErrorCollector
@@ -45,30 +45,29 @@ REGION_CODE = 'chungnam'
 REGION_NAME = '충청남도'
 CATEGORY_NAME = '전국'
 BASE_URL = 'https://www.chungnam.go.kr'
-LIST_URL = 'https://www.chungnam.go.kr/cnportal/media/articleMain/mainAlm.do'
+# 올바른 도정뉴스 목록 URL
+LIST_URL = 'https://www.chungnam.go.kr/cnportal/media/article/list.do?menuNo=500181'
 
-# 충남은 동적 로딩 (페이지네이션 방식 확인 필요)
+# 충남은 pageIndex 파라미터 사용 (& 연결)
 PAGE_PARAM = 'pageIndex'
 
-# SPA/동적 로딩 대응을 위한 다양한 셀렉터
+# 충남 도정뉴스 목록 구조: main 내 ul > li (카드형 레이아웃)
+# 실제 구조: main > div > div > ul > li with a[href*="view.do"]
 LIST_ROW_SELECTORS = [
-    'ul.news_list > li',
-    'ul.article_list > li',
-    'div.news_list ul > li',
-    'table.board_list tbody tr',
-    'table tbody tr',
-    '.board_list li',
-    '.article_item',
+    'main li:has(a[href*="view.do"])',   # 가장 명확한 셀렉터
+    'ul > li:has(a[href*="view.do"])',
+    'li a[href*="view.do"]',             # 링크만 찾기
+    '.article-list li',
 ]
 
 CONTENT_SELECTORS = [
+    'main li:has(p)',        # 충남: 본문이 main > div > div > li > div > div 안에 있음
+    'main',                   # 최후 fallback: main 전체에서 찾기
+    'main article',
+    'main .article_content',
+    'main .view_content',
     'div.view_content',
     'div.article_content',
-    'div.news_content',
-    'div.board_view',
-    '.content_view',
-    'div.view_box',
-    '.bbs_view',
 ]
 
 
@@ -265,29 +264,52 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         collected_count = 0
 
         while page_num <= 5 and not stop and collected_count < max_articles:
-            list_url = f'{LIST_URL}?{PAGE_PARAM}={page_num}'
+            # safe_add_pagination으로 URL 파라미터 안전 생성 (중복 ? 방지)
+            list_url = safe_add_pagination(LIST_URL, PAGE_PARAM, page_num)
             print(f"\n   [PAGE] 페이지 {page_num} 수집 중...")
 
             delay = delay_gen.get_page_delay()
             print(f"      [DELAY] {delay:.2f}s")
 
             try:
-                if not safe_goto(page, list_url): page_num += 1; continue
-            except: page_num += 1; continue
-
-            # 동적 콘텐츠 로딩 대기
-            wait_for_content(page, timeout=10000)
-
-            content = page.content()
-            block_type = block_detector.detect(content, 200)
-            if block_type != BlockType.NONE:
-                strategy = block_detector.get_recovery_strategy(block_type)
-                if strategy['action'] in ['abort', 'manual_intervention']: break
-                smart_delay(strategy['delay'], strategy['delay'] * 1.5, 1.0)
+                if not safe_goto(page, list_url):
+                    print("      [WARN] safe_goto returned False")
+                    page_num += 1
+                    continue
+            except Exception as e:
+                print(f"      [ERROR] safe_goto exception: {e}")
+                page_num += 1
                 continue
 
+            # 동적 콘텐츠 로딩 대기
+            print("      [DEBUG] Waiting for content...")
+            wait_for_content(page, timeout=10000)
+            print("      [DEBUG] Content wait done")
+
+            try:
+                content = page.content()
+                print(f"      [DEBUG] Page content length: {len(content)}")
+                block_type = block_detector.detect(content, 200)
+                print(f"      [DEBUG] Block type: {block_type}")
+                # 정부 웹사이트에서는 CAPTCHA 오탐지가 흔하므로 IP_BAN과 RATE_LIMIT만 중단
+                # CAPTCHA, CLOUDFLARE 등은 무시 (정부 사이트는 이런 보호를 사용하지 않음)
+                if block_type in [BlockType.IP_BAN, BlockType.RATE_LIMIT]:
+                    strategy = block_detector.get_recovery_strategy(block_type)
+                    print(f"      [DEBUG] Block strategy: {strategy}")
+                    if strategy['action'] in ['abort', 'manual_intervention']:
+                        print(f"      [WARN] Aborting due to block: {block_type}")
+                        break
+                    smart_delay(strategy['delay'], strategy['delay'] * 1.5, 1.0)
+                    continue
+                elif block_type != BlockType.NONE:
+                    print(f"      [INFO] Ignoring false positive block: {block_type}")
+            except Exception as e:
+                print(f"      [ERROR] Block detection error: {e}")
+
             smart_delay(1.5, 2.5, 2.0)
+            print("      [DEBUG] Calling wait_and_find...")
             rows = wait_and_find(page, LIST_ROW_SELECTORS, timeout=15000)
+            print(f"      [DEBUG] wait_and_find returned: {rows}")
             if not rows:
                 print("      [WARN] 기사 목록 없음")
                 break
@@ -305,22 +327,37 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                     row_classes = safe_get_attr(row, 'class') or ''
                     if 'notice' in row_classes.lower() or 'header' in row_classes.lower(): continue
 
-                    link_elem = row.locator('a').first
+                    link_elem = row.locator('a[href*="view.do"]').first
+                    if not link_elem or link_elem.count() == 0:
+                        link_elem = row.locator('a').first
                     if not link_elem or link_elem.count() == 0: continue
 
-                    title = safe_get_text(link_elem).strip()
-                    title = re.sub(r'\s*새로운글\s*', '', title).strip()
                     href = safe_get_attr(link_elem, 'href')
-                    if not title or not href: continue
+                    if not href: continue
 
-                    full_url = href if href.startswith('http') else urljoin(BASE_URL, href)
+                    # 충남: 제목은 첫 번째 p 태그에 있음
+                    title_elem = link_elem.locator('p').first
+                    if title_elem.count() > 0:
+                        title = safe_get_text(title_elem).strip()
+                    else:
+                        title = safe_get_text(link_elem).strip()
 
+                    title = re.sub(r'\s*새로운글\s*', '', title).strip()
+                    # 제목에서 날짜/소스/본문 미리보기 제거 (줄바꿈 이후 제거)
+                    if '\n' in title:
+                        title = title.split('\n')[0].strip()
+                    if not title: continue
+
+                    full_url = href if href.startswith('http') else urljoin(BASE_URL + '/cnportal/media/article/', href)
+
+                    # 충남: 날짜는 두 번째 p 태그 안에 있음 (YYYY-MM-DD 형식)
                     n_date = None
                     try:
-                        # 날짜 찾기 (다양한 위치 시도)
-                        date_elem = row.locator('.date, span.date, .info_date, td:last-child').first
-                        if date_elem.count() > 0:
-                            n_date = normalize_date(safe_get_text(date_elem))
+                        paragraphs = link_elem.locator('p')
+                        if paragraphs.count() >= 2:
+                            date_text = safe_get_text(paragraphs.nth(1))
+                            if date_text:
+                                n_date = normalize_date(date_text)
                     except: pass
 
                     if n_date:
@@ -330,7 +367,17 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                     if full_url in seen_urls: continue
                     seen_urls.add(full_url)
 
-                    link_data.append({'title': title, 'url': full_url, 'list_date': n_date})
+                    # 썸네일 URL도 목록에서 추출
+                    thumb_url = None
+                    try:
+                        img_elem = link_elem.locator('img').first
+                        if img_elem.count() > 0:
+                            thumb_src = safe_get_attr(img_elem, 'src')
+                            if thumb_src and not any(x in thumb_src.lower() for x in ['icon', 'btn', 'logo']):
+                                thumb_url = thumb_src if thumb_src.startswith('http') else urljoin(BASE_URL, thumb_src)
+                    except: pass
+
+                    link_data.append({'title': title, 'url': full_url, 'list_date': n_date, 'list_thumbnail': thumb_url})
                 except: continue
 
             urls_to_check = [item['url'] for item in link_data]

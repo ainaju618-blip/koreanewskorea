@@ -818,3 +818,38 @@ def extract_subtitle_and_clean(content: str, title: str = '') -> dict:
         'subtitle': subtitle,
         'content': cleaned_content
     }
+
+
+# ============================================================
+# URL Parameter Safe Generation Utility (v1.0)
+# ============================================================
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+def safe_add_pagination(base_url: str, page_param: str, page_num: int) -> str:
+    """
+    Safely add pagination parameter to URL without duplicating '?'.
+
+    Handles all edge cases:
+    - URL already has query parameters
+    - URL has no query parameters
+    - Page parameter already exists (will be updated)
+
+    Args:
+        base_url: Base URL (may or may not have existing query params)
+        page_param: Name of the pagination parameter (e.g., 'page', 'pageIndex', 'bpage')
+        page_num: Page number to set
+
+    Returns:
+        str: Properly constructed URL with pagination parameter
+
+    Example:
+        >>> safe_add_pagination('https://example.com/list?cat=1', 'page', 2)
+        'https://example.com/list?cat=1&page=2'
+        >>> safe_add_pagination('https://example.com/list', 'page', 2)
+        'https://example.com/list?page=2'
+    """
+    parsed = urlparse(base_url)
+    query = parse_qs(parsed.query)
+    query[page_param] = [str(page_num)]
+    new_query = urlencode(query, doseq=True)
+    return urlunparse(parsed._replace(query=new_query))

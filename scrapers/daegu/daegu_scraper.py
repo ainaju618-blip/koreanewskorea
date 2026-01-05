@@ -30,7 +30,7 @@ from playwright.sync_api import sync_playwright, Page
 from playwright_stealth import Stealth
 
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
-from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr, safe_add_pagination
 from utils.content_cleaner import clean_article_content
 from utils.category_detector import detect_category
 from utils.error_collector import ErrorCollector
@@ -193,8 +193,9 @@ def fetch_detail(page: Page, url: str, delay_gen: PODMPDelayGenerator) -> Tuple[
                 if thumbnail_url: break
             except: continue
 
-    # 대구는 보도자료 모음집 형태로 이미지가 없는 경우가 많음 (korea_kr과 유사)
-    # 이미지 없이도 기사 저장 허용
+    if not thumbnail_url:
+        return "", None, pub_date, ErrorCollector.IMAGE_MISSING
+
     return content, thumbnail_url, pub_date, None
 
 
@@ -241,8 +242,8 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         collected_count = 0
 
         while page_num <= 5 and not stop and collected_count < max_articles:
-            # 대구는 &bpage 파라미터 사용
-            list_url = f'{LIST_URL}&{PAGE_PARAM}={page_num}'
+            # safe_add_pagination으로 URL 파라미터 안전 생성 (중복 ? 방지)
+            list_url = safe_add_pagination(LIST_URL, PAGE_PARAM, page_num)
             print(f"\n   [PAGE] 페이지 {page_num} 수집 중...")
 
             delay = delay_gen.get_page_delay()

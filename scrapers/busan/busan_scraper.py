@@ -47,7 +47,7 @@ from playwright_stealth import Stealth
 # 4. 로컬 모듈
 # ============================================================
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
-from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr, safe_add_pagination
 from utils.content_cleaner import clean_article_content
 from utils.category_detector import detect_category
 from utils.error_collector import ErrorCollector
@@ -279,7 +279,6 @@ def fetch_detail(page: Page, url: str, delay_gen: PODMPDelayGenerator) -> Tuple[
             except:
                 continue
 
-    # 이미지 없으면 스킵
     if not thumbnail_url:
         return "", None, pub_date, ErrorCollector.IMAGE_MISSING
 
@@ -369,7 +368,7 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
         collected_count = 0
 
         while page_num <= 5 and not stop and collected_count < max_articles:
-            list_url = f'{LIST_URL}?{PAGE_PARAM}={page_num}'
+            list_url = safe_add_pagination(LIST_URL, PAGE_PARAM, page_num)
             print(f"\n   [PAGE] 페이지 {page_num} 수집 중...")
             log_to_server(REGION_CODE, 'running', f'페이지 {page_num} 탐색', 'info')
 

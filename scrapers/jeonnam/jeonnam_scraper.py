@@ -1,5 +1,5 @@
 """
-울산광역시 보도자료 스크래퍼 - Enterprise Stealth v3.0
+전라남도 보도자료 스크래퍼 - Enterprise Stealth v3.0
 - 버전: v3.0 (Enterprise Stealth Enhanced)
 - 최종수정: 2026-01-05
 - 담당: AI Agent
@@ -12,6 +12,7 @@
 - 표준 게시판 테이블 구조
 - 페이지네이션: ?pageIndex={page_num}
 - JS 불필요 (일반 HTML)
+- 팝업 창이 다수 표시될 수 있음
 """
 
 import sys
@@ -40,11 +41,11 @@ from utils.enterprise_stealth import (
     FingerprintManager, retry_with_backoff, smart_delay,
 )
 
-REGION_CODE = 'ulsan'
-REGION_NAME = '울산광역시'
+REGION_CODE = 'jeonnam'
+REGION_NAME = '전라남도'
 CATEGORY_NAME = '전국'
-BASE_URL = 'https://www.ulsan.go.kr'
-LIST_URL = 'https://www.ulsan.go.kr/u/rep/bbs/list.ulsan?bbsId=BBS_0000000000000003&mId=001004001001000000'
+BASE_URL = 'https://www.jeonnam.go.kr'
+LIST_URL = 'https://www.jeonnam.go.kr/M7124/boardList.do?menuId=jeonnam0201000000'
 
 PAGE_PARAM = 'pageIndex'
 

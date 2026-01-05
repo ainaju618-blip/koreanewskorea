@@ -1,5 +1,5 @@
 """
-울산광역시 보도자료 스크래퍼 - Enterprise Stealth v3.0
+광주광역시 보도자료 스크래퍼 - Enterprise Stealth v3.0
 - 버전: v3.0 (Enterprise Stealth Enhanced)
 - 최종수정: 2026-01-05
 - 담당: AI Agent
@@ -9,6 +9,7 @@
 - Supabase: ainaju618@gmail.com 계정 (신규 DB)
 
 [특이사항]:
+- 별도 뉴스 포털 (news.gwangju.go.kr) 운영
 - 표준 게시판 테이블 구조
 - 페이지네이션: ?pageIndex={page_num}
 - JS 불필요 (일반 HTML)
@@ -40,11 +41,11 @@ from utils.enterprise_stealth import (
     FingerprintManager, retry_with_backoff, smart_delay,
 )
 
-REGION_CODE = 'ulsan'
-REGION_NAME = '울산광역시'
+REGION_CODE = 'gwangju'
+REGION_NAME = '광주광역시'
 CATEGORY_NAME = '전국'
-BASE_URL = 'https://www.ulsan.go.kr'
-LIST_URL = 'https://www.ulsan.go.kr/u/rep/bbs/list.ulsan?bbsId=BBS_0000000000000003&mId=001004001001000000'
+BASE_URL = 'https://www.gwangju.go.kr'
+LIST_URL = 'https://www.gwangju.go.kr/boardList.do?boardId=BD_0000000027&pageId=www789'
 
 PAGE_PARAM = 'pageIndex'
 

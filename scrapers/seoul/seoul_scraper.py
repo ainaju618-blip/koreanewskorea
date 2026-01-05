@@ -47,7 +47,7 @@ from playwright_stealth import Stealth
 # 4. 로컬 모듈
 # ============================================================
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
-from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr
+from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr, safe_add_pagination
 from utils.content_cleaner import clean_article_content
 from utils.category_detector import detect_category
 from utils.error_collector import ErrorCollector
@@ -278,7 +278,10 @@ def fetch_detail_from_page(page: Page, delay_gen: PODMPDelayGenerator) -> Tuple[
         except:
             pass
 
-        # 이미지 없어도 본문 있으면 진행 (서울시는 이미지 없는 경우 많음)
+        # 이미지가 없으면 스킵 (시·도 스크래퍼는 이미지 필수)
+        if not thumbnail_url:
+            return "", None, pub_date, ErrorCollector.IMAGE_MISSING
+
         if not content:
             return "", None, pub_date, "CONTENT_EMPTY"
 
