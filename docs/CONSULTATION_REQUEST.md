@@ -314,5 +314,456 @@ src/
 
 ---
 
+---
+
+# 📦 [Part 2] 스크래퍼 기술 자문요청서
+
+> **추가 작성일:** 2026-01-05
+> **모듈명:** Enterprise Stealth v3.0 (전국 17개 시·도 보도자료 수집 시스템)
+> **기술 스택:** Python, Playwright, playwright-stealth, Supabase, Cloudinary
+
+---
+
+## 9. 스크래퍼 프로젝트 개요
+
+### 9.1 목적
+전국 17개 광역시·도 지방자치단체의 **보도자료**를 자동 수집하여 koreanewskorea.com에 제공
+
+### 9.2 대상 사이트 현황
+
+| # | 지역 | 도메인 | 페이지 구조 | 테스트 상태 |
+|---|------|--------|------------|-------------|
+| 1 | 서울특별시 | news.seoul.go.kr | 리스트형 | 개발완료 |
+| 2 | 부산광역시 | busan.go.kr | 리스트형 | 개발완료 |
+| 3 | 대구광역시 | info.daegu.go.kr | **테이블형** | ✅ 완료 |
+| 4 | 인천광역시 | incheon.go.kr | 리스트형 | 개발완료 |
+| 5 | 광주광역시 | gwangju.go.kr | 리스트형 | 개발완료 |
+| 6 | 대전광역시 | daejeon.go.kr | 리스트형 | 개발완료 |
+| 7 | 울산광역시 | ulsan.go.kr | 리스트형 | 개발완료 |
+| 8 | 세종특별자치시 | sejong.go.kr | 리스트형 | 개발완료 |
+| 9 | 경기도 | gnews.gg.go.kr | 리스트형 | 개발완료 |
+| 10 | 강원특별자치도 | gangwon.go.kr | 리스트형 | 개발완료 |
+| 11 | 충청북도 | chungbuk.go.kr | 리스트형 | 개발완료 |
+| 12 | 충청남도 | chungnam.go.kr | **중첩 리스트** | 🔄 테스트중 |
+| 13 | 전북특별자치도 | jeonbuk.go.kr | 리스트형 | 개발완료 |
+| 14 | 전라남도 | jeonnam.go.kr | 리스트형 | 개발완료 |
+| 15 | 경상북도 | gb.go.kr | 리스트형 | 개발완료 |
+| 16 | 경상남도 | gyeongnam.go.kr | 리스트형 | 개발완료 |
+| 17 | 제주특별자치도 | jeju.go.kr | 리스트형 | ✅ 완료 |
+
+### 9.3 기술 아키텍처
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    Enterprise Stealth v3.0                        │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐   │
+│  │ Playwright  │ → │ Stealth Plugin  │ → │ Page Scraping   │   │
+│  │ Browser     │    │ (fingerprint)   │    │ (content)       │   │
+│  └─────────────┘    └─────────────────┘    └─────────────────┘   │
+│         ↓                   ↓                      ↓              │
+│  ┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐   │
+│  │ Fingerprint │    │ BlockDetector   │    │ Content         │   │
+│  │ Manager     │    │ (차단 감지)     │    │ Extractor       │   │
+│  └─────────────┘    └─────────────────┘    └─────────────────┘   │
+│         ↓                   ↓                      ↓              │
+│  ┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐   │
+│  │ POMDP Delay │    │ Recovery        │    │ Cloudinary      │   │
+│  │ Generator   │    │ Strategy        │    │ (이미지 업로드) │   │
+│  └─────────────┘    └─────────────────┘    └─────────────────┘   │
+│                            ↓                       ↓              │
+│                    ┌─────────────────────────────────────┐       │
+│                    │      Supabase (PostgreSQL)          │       │
+│                    │      → posts 테이블 저장            │       │
+│                    └─────────────────────────────────────┘       │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 10. 🚨 발생한 주요 문제들 및 애로사항
+
+### 10.1 BlockDetector 오탐지 문제 (Critical)
+
+**증상:**
+- 정상적인 정부 웹사이트에서 `BlockType.CAPTCHA` 감지
+- 스크래핑이 즉시 중단되어 데이터 수집 불가
+
+**원인 분석:**
+```python
+# enterprise_stealth.py의 BLOCK_PATTERNS (문제의 패턴)
+BLOCK_PATTERNS = {
+    BlockType.CAPTCHA: [
+        r'captcha', r'recaptcha', r'hcaptcha',
+        r'challenge', r'verify.*human', r'not.*robot',  # ← 이 패턴이 문제!
+        r'security.*check', r'bot.*detect',
+    ],
+}
+```
+
+**문제 상황:**
+- 정부 웹사이트의 일반 텍스트에 "robot", "verify" 등의 단어가 포함
+- 실제 CAPTCHA가 없는데 CAPTCHA로 오인하여 중단
+
+**현재 임시 해결책:**
+```python
+# IP_BAN과 RATE_LIMIT만 중단, 나머지(CAPTCHA, CLOUDFLARE)는 무시
+if block_type in [BlockType.IP_BAN, BlockType.RATE_LIMIT]:
+    # 중단 로직 실행
+elif block_type != BlockType.NONE:
+    print(f"[INFO] Ignoring false positive: {block_type}")
+```
+
+**❓ 자문 필요 질문:**
+1. 정부 웹사이트 전용으로 BlockDetector 패턴을 어떻게 조정해야 하는가?
+2. HTTP 응답 코드(403, 429 등) 기반 차단 감지가 더 신뢰성 있는가?
+3. 오탐지와 실제 차단을 구분하는 정교한 방법이 있는가?
+4. 정부 사이트에서 실제로 사용하는 차단 방식은 무엇인가?
+
+---
+
+### 10.2 CSS 셀렉터 불일치 문제 (High)
+
+**증상:**
+- "All selectors failed" 에러 빈발
+- 한 사이트에서 작동하는 셀렉터가 다른 사이트에서 실패
+
+**발견된 페이지 구조 유형:**
+
+| 유형 | 예시 | HTML 구조 | 셀렉터 예시 |
+|------|------|----------|------------|
+| 테이블형 | 대구 | `<table><tbody><tr><td>` | `table tbody tr` |
+| 리스트형 | 제주 | `<ul><li><a><strong>` | `ul li:has(a[href*="view"])` |
+| 중첩 리스트 | 충남 | `<main><div><div><ul><li><a>` | `main li:has(a[href*="view.do"])` |
+| 카드형 | 서울 | `<div class="card"><div>` | `.card, .news-item` |
+
+**각 사이트별 셀렉터 조사 필요:**
+```
+대구: table tbody tr → 정상 작동
+제주: ul li:has(a[href*="act=view"]) → 정상 작동
+충남: main li:has(a[href*="view.do"]) → 조정 필요
+기타: 테스트 필요
+```
+
+**❓ 자문 필요 질문:**
+1. 동적으로 셀렉터를 탐지하는 자동화 방법이 있는가?
+2. 셀렉터 우선순위를 어떻게 설정하는 것이 효율적인가?
+3. 사이트 구조 변경 시 대응하는 모니터링/알림 시스템 권장사항?
+4. XPath vs CSS Selector 중 정부 사이트에 더 안정적인 것은?
+
+---
+
+### 10.3 URL 파라미터 구성 오류 (Medium)
+
+**증상:**
+```
+# 잘못된 URL 생성 (이중 물음표)
+https://www.chungnam.go.kr/.../list.do?menuNo=500181?pageIndex=2
+                                       ↑              ↑
+                                   이미 있음       중복 발생!
+```
+
+**원인:**
+- 각 사이트의 기본 URL에 이미 쿼리 파라미터 포함
+- 페이지네이션 파라미터 추가 시 `?` vs `&` 구분 미흡
+
+**현재 해결책:**
+```python
+if '?' in LIST_URL:
+    list_url = f'{LIST_URL}&{PAGE_PARAM}={page_num}'
+else:
+    list_url = f'{LIST_URL}?{PAGE_PARAM}={page_num}'
+```
+
+**❓ 자문 필요 질문:**
+1. Python `urllib.parse.urljoin`/`urlencode` 사용이 더 안전한가?
+2. 각 사이트 페이지네이션 패턴 관리 모범 사례?
+
+---
+
+### 10.4 이미지 추출 실패 (IMAGE_MISSING) (Medium)
+
+**증상:**
+- 기사 본문은 정상 추출, 이미지 URL 미발견
+- 브라우저에서 직접 확인 시 이미지 존재
+
+**원인 분석:**
+1. 이미지가 본문 셀렉터 범위 밖에 위치
+2. JavaScript로 동적 로드되는 이미지 (lazy loading)
+3. `<img>` 대신 `background-image` CSS 사용
+4. 첨부파일 형태로 이미지 제공 (다운로드 링크)
+
+**현재 이미지 추출 로직:**
+```python
+# 1차: 첨부파일 링크에서 이미지 확장자 찾기
+attach_links = page.locator('a[href*="download"], a[href*="file"]')
+for link in attach_links:
+    if any(ext in title for ext in ['.jpg', '.png', '.gif']):
+        # Cloudinary 업로드
+
+# 2차: 본문 내 <img> 태그 탐색
+for sel in CONTENT_SELECTORS:
+    imgs = page.locator(f'{sel} img')
+    # src 속성 추출
+```
+
+**❓ 자문 필요 질문:**
+1. 정부 보도자료는 이미지 없는 경우가 많음 - IMAGE_MISSING을 에러로 처리해야 하는가?
+2. lazy loading 이미지 대기 적절한 방법? (`page.wait_for_selector`?)
+3. 아이콘/버튼 이미지 필터링 로직 권장사항?
+
+---
+
+### 10.5 날짜 형식 불일치 (Low)
+
+**발견된 형식 다양성:**
+```
+2026.01.05          # 점 구분
+2026-01-05          # 대시 구분
+2026/01/05          # 슬래시 구분
+2026년 01월 05일    # 한글 포함
+20260105            # 구분자 없음
+1월 5일             # 연도 없음
+```
+
+**현재 파싱 로직:**
+```python
+def normalize_date(date_str: str) -> str:
+    date_str = date_str.replace('.', '-').replace('/', '-')
+    match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', date_str)
+    if match:
+        y, m, d = match.groups()
+        return f"{y}-{int(m):02d}-{int(d):02d}"
+    return datetime.now().strftime('%Y-%m-%d')  # fallback
+```
+
+**❓ 자문 필요 질문:**
+1. 한국어 날짜 형식 전용 파서 라이브러리 추천? (`dateparser`, `arrow`?)
+2. 연도 없는 날짜 처리 정책? (현재 연도 가정?)
+
+---
+
+## 11. 🏗️ 아키텍처 관련 질문
+
+### 11.1 Enterprise Stealth 모듈 적정 수준
+
+**현재 구현된 기능:**
+- POMDP 기반 지연 시간 생성 (Poisson 분포)
+- 브라우저 핑거프린트 순환 (15분 간격)
+- User-Agent 랜덤화
+- 차단 감지 및 복구 전략
+- playwright-stealth 플러그인
+
+**질문:**
+- 정부 웹사이트 스크래핑에 이 정도 수준의 스텔스가 필요한가?
+- 정부 사이트는 일반적으로 차단 정책이 느슨한데, 오버엔지니어링 아닌가?
+- 더 단순한 접근법(단순 requests + 고정 User-Agent)으로도 충분한가?
+
+### 11.2 병렬 처리 vs 순차 처리
+
+**현재:** 17개 스크래퍼가 순차적으로 실행
+
+**고려 옵션:**
+```python
+# 옵션 A: 완전 순차 (현재)
+for scraper in scrapers:
+    scraper.collect_articles()
+
+# 옵션 B: 병렬 처리 (ThreadPoolExecutor)
+with ThreadPoolExecutor(max_workers=5) as executor:
+    executor.map(lambda s: s.collect_articles(), scrapers)
+
+# 옵션 C: 시간대 분산 (스케줄러)
+schedule.every(10).minutes.do(run_random_scraper)
+```
+
+**질문:**
+1. 정부 사이트 대상 병렬 스크래핑이 문제될 수 있는가?
+2. 권장되는 요청 간격? (현재: 1.5~4초 랜덤)
+3. 17개 사이트 전체 스크래핑 권장 주기? (현재: 3시간)
+
+### 11.3 중복 체크 전략
+
+**현재 로직:**
+```python
+# API 호출로 URL 기반 중복 체크
+existing_urls = check_duplicates(urls_to_check)
+new_items = [item for item in items if item['url'] not in existing_urls]
+```
+
+**문제점:**
+- 매번 API 호출 발생 (네트워크 비용)
+- URL 변경 시 중복 감지 실패 가능
+
+**대안:**
+1. 제목 + 날짜 해시로 중복 체크
+2. 로컬 캐시 활용 (SQLite, Redis)
+3. Bloom Filter 사용
+
+**질문:** 대규모 스크래핑에서 중복 체크 모범 사례?
+
+---
+
+## 12. ⚡ 성능 및 안정성 질문
+
+### 12.1 메모리 관리
+
+**이슈:**
+- Playwright 브라우저 인스턴스가 메모리를 많이 사용 (수백 MB)
+- 장시간 실행 시 메모리 누수 가능성
+
+**질문:**
+1. 브라우저 컨텍스트 재사용 vs 매번 새로 생성?
+2. 메모리 사용량 모니터링 방법?
+3. OOM 방지 설정?
+
+### 12.2 네트워크 오류 처리
+
+**발생하는 오류:**
+- `TimeoutError`: 페이지 로드 시간 초과
+- `ConnectionError`: 네트워크 연결 실패
+- `SSLError`: 인증서 문제 (일부 정부 사이트)
+
+**현재 재시도 로직:**
+```python
+@retry_with_backoff(max_retries=3, base_backoff=2.0, max_backoff=30.0)
+def safe_goto(page, url, timeout=20000):
+    page.goto(url, wait_until='networkidle', timeout=timeout)
+```
+
+**질문:**
+1. `wait_until` 옵션 중 어느 것이 가장 안정적?
+   - `'load'`, `'domcontentloaded'`, `'networkidle'`
+2. 타임아웃 값 최적화 방법?
+3. 특정 사이트 반복 실패 시 스킵 정책?
+
+### 12.3 로깅 및 모니터링
+
+**현재:**
+- 콘솔 출력 (print)
+- API 호출로 서버에 상태 전송
+
+**필요한 모니터링 지표:**
+- 사이트별 성공/실패율
+- 평균 수집 시간
+- 이미지 추출률
+- 차단 발생 빈도
+
+**질문:** 추천하는 로깅/모니터링 도구?
+
+---
+
+## 13. 📊 데이터 품질 질문
+
+### 13.1 본문 정제 (Content Cleaning)
+
+**현재 처리:**
+```python
+def clean_article_content(text: str) -> str:
+    # 특수문자, 과도한 공백 제거
+    # HTML 태그 제거
+    # 5000자 제한
+```
+
+**질문:**
+1. 보도자료의 연락처/담당자 정보 처리 방법?
+2. 표(table) 데이터 처리 방법?
+3. 첨부파일 목록 - 본문 포함 vs 별도 필드?
+
+### 13.2 카테고리 자동 분류
+
+**현재:**
+```python
+def detect_category(title: str, content: str) -> Tuple[str, str]:
+    # 키워드 기반 분류 (예: "코로나" → "보건의료")
+```
+
+**질문:**
+1. 정부 보도자료 표준 카테고리 체계?
+2. ML 기반 분류기 도입 가치?
+3. 분류 정확도 측정 방법?
+
+---
+
+## 14. 🎯 우선순위 자문 요청
+
+**가장 먼저 해결해야 할 문제:**
+
+| 순위 | 문제 | 영향도 | 복잡도 | 현재 상태 |
+|------|------|--------|--------|----------|
+| 1️⃣ | BlockDetector 오탐지 | 높음 (수집 중단) | 중간 | 임시 해결 |
+| 2️⃣ | CSS 셀렉터 불일치 | 높음 (데이터 누락) | 높음 | 사이트별 조사 중 |
+| 3️⃣ | 이미지 추출 실패 | 중간 (품질 저하) | 중간 | 부분 해결 |
+| 4️⃣ | 날짜 파싱 오류 | 낮음 (대체값) | 낮음 | 작동 중 |
+| 5️⃣ | 성능 최적화 | 중간 (운영 비용) | 높음 | 미착수 |
+
+---
+
+## 15. 📎 첨부: 실제 로그 예시
+
+### 정상 작동 로그 (대구)
+```
+============================================================
+[대구광역시] 보도자료 스크래퍼 v3.0 (Enterprise Stealth)
+============================================================
+   [DATE] 2026-01-02 ~ 2026-01-05
+
+   [PAGE] 페이지 1 수집 중...
+      [DELAY] 2.34s
+      [FOUND] 10개 항목
+      [ARTICLE] 대구시, 2026년 신년 해맞이 행사 개최...
+         [DELAY] 1.87s
+         [OK] 저장 완료
+      [ARTICLE] 대구시, 복지시설 점검 결과 발표...
+         [DELAY] 2.15s
+         [OK] 저장 완료
+
+============================================================
+SUMMARY REPORT for 대구광역시
+============================================================
+Processed: 10 | Success: 8 | Skipped: 2 (duplicates)
+```
+
+### 오류 발생 로그 (충남 - 수정 전)
+```
+============================================================
+[충청남도] 보도자료 스크래퍼 v3.0 (Enterprise Stealth)
+============================================================
+   [DATE] 2026-01-02 ~ 2026-01-05
+
+   [PAGE] 페이지 1 수집 중...
+      [DEBUG] Page content length: 125432
+      [DEBUG] Block type: BlockType.CAPTCHA    ← 오탐지!
+      [WARN] Aborting due to block: BlockType.CAPTCHA
+
+============================================================
+ERROR REPORT for 충청남도
+============================================================
+Processed: 0 | Success: 0 | Skipped: 0
+Error: BlockDetector false positive
+```
+
+### 셀렉터 실패 로그
+```
+[PAGE] 페이지 1 수집 중...
+   [DEBUG] Calling wait_and_find...
+   [ERROR] All selectors failed: ['ul.news_list > li', '.board-list li', ...]
+   [DEBUG] wait_and_find returned: None
+   [WARN] 기사 목록 없음
+```
+
+---
+
+## 16. 📞 스크래퍼 관련 연락처
+
+- **GitHub 저장소**: github.com/ainaju618-blip/koreanewskorea
+- **Supabase 프로젝트 ID**: ebagdrupjfwkawbwqjjg
+- **담당자 이메일**: ainaju618@gmail.com
+- **스크래퍼 코드 위치**: `d:\cbt\koreanewskorea\scrapers\`
+
+---
+
 *본 자문의뢰서에 대한 문의사항이 있으시면 언제든 연락 부탁드립니다.*
 *성실한 자문에 미리 감사드립니다.*
