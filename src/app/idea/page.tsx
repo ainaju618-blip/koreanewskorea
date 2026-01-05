@@ -330,7 +330,7 @@ export default function IdeaDashboardPage() {
                                 key={index}
                                 source={article.source_name}
                                 title={article.title}
-                                time={new Date(article.collected_at).toLocaleString('ko-KR')}
+                                time={new Date(article.collected_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
                                 status="success"
                             />
                         ))}

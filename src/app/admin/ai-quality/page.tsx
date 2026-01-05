@@ -205,6 +205,7 @@ export default function AIQualityDashboard() {
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleString('ko-KR', {
+            timeZone: 'Asia/Seoul',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
@@ -250,12 +251,25 @@ export default function AIQualityDashboard() {
                         onChange={(e) => setRegionFilter(e.target.value)}
                         className="px-3 py-1.5 text-sm border border-[#30363d] rounded-lg bg-[#0d1117] text-[#e6edf3] focus:ring-2 focus:ring-[#1f6feb] focus:border-[#1f6feb] outline-none"
                     >
-                        <option value="all">All Regions</option>
-                        <option value="gwangju">Gwangju</option>
-                        <option value="jeonnam">Jeonnam</option>
-                        <option value="mokpo">Mokpo</option>
-                        <option value="yeosu">Yeosu</option>
-                        <option value="suncheon">Suncheon</option>
+                        <option value="all">전체 지역</option>
+                        <option value="korea">정부(korea.kr)</option>
+                        <option value="seoul">서울</option>
+                        <option value="busan">부산</option>
+                        <option value="daegu">대구</option>
+                        <option value="incheon">인천</option>
+                        <option value="gwangju">광주</option>
+                        <option value="daejeon">대전</option>
+                        <option value="ulsan">울산</option>
+                        <option value="sejong">세종</option>
+                        <option value="gyeonggi">경기</option>
+                        <option value="gangwon">강원</option>
+                        <option value="chungbuk">충북</option>
+                        <option value="chungnam">충남</option>
+                        <option value="jeonbuk">전북</option>
+                        <option value="jeonnam">전남</option>
+                        <option value="gyeongbuk">경북</option>
+                        <option value="gyeongnam">경남</option>
+                        <option value="jeju">제주</option>
                     </select>
                 </div>
             </div>

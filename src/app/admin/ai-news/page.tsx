@@ -365,10 +365,10 @@ function AINewsPage() {
                                                     <span className="text-xs text-[#8b949e]">{article.source}</span>
                                                     <div className="ml-auto flex gap-3 text-[10px]">
                                                         <span className="text-[#58a6ff]" title="원문작성일">
-                                                            {article.published_at ? new Date(article.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
+                                                            {article.published_at ? new Date(article.published_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
                                                         </span>
                                                         <span className="text-[#6e7681]" title="수집일">
-                                                            {new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                            {new Date(article.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -494,12 +494,12 @@ function AINewsPage() {
                                         <div className="flex gap-2">
                                             <span className="text-[#8b949e] w-20">원문작성일:</span>
                                             <span className={selectedArticle.published_at ? "text-[#58a6ff] font-bold" : "text-[#6e7681]"}>
-                                                {selectedArticle.published_at ? new Date(selectedArticle.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
+                                                {selectedArticle.published_at ? new Date(selectedArticle.published_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
                                             </span>
                                         </div>
                                         <div className="flex gap-2">
                                             <span className="text-[#8b949e] w-20">수집일:</span>
-                                            <span className="text-[#c9d1d9]">{new Date(selectedArticle.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                            <span className="text-[#c9d1d9]">{new Date(selectedArticle.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                         </div>
                                     </div>
                                 </div>

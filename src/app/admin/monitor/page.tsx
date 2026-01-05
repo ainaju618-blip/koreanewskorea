@@ -448,7 +448,7 @@ function PerformanceTab({ data }: { data: any[] }) {
 
             {/* Last Measured */}
             <div className="text-xs text-slate-500 text-right">
-                Last measured: {new Date(latest.measured_at).toLocaleString('ko-KR')}
+                Last measured: {new Date(latest.measured_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
             </div>
         </div>
     );
@@ -542,6 +542,7 @@ function BotStatusTab({ data }: { data: any }) {
                                     <td className="px-4 py-2 text-center text-slate-400">{info.totalArticles}</td>
                                     <td className="px-4 py-2 text-slate-500 text-xs">
                                         {info.lastRun ? new Date(info.lastRun).toLocaleString('ko-KR', {
+                                            timeZone: 'Asia/Seoul',
                                             month: '2-digit',
                                             day: '2-digit',
                                             hour: '2-digit',
@@ -682,6 +683,7 @@ function GithubActionsTab({ data }: { data: any }) {
                                     <td className="px-4 py-2 text-slate-500 text-xs">{run.event}</td>
                                     <td className="px-4 py-2 text-slate-500 text-xs">
                                         {run.run_started_at ? new Date(run.run_started_at).toLocaleString('ko-KR', {
+                                            timeZone: 'Asia/Seoul',
                                             month: '2-digit',
                                             day: '2-digit',
                                             hour: '2-digit',

@@ -37,16 +37,30 @@ export default function SourcesPage() {
         active: true
     });
 
-    // 지역 옵션
+    // 지역 옵션 (전국 17개 시·도 + 정부 보도자료)
     const regionOptions = [
         { value: '', label: '선택 안함' },
+        // 정부 보도자료
+        { value: 'korea', label: '정부(korea.kr)' },
+        // 특별시·광역시·특별자치시 (8개)
+        { value: 'seoul', label: '서울특별시' },
+        { value: 'busan', label: '부산광역시' },
+        { value: 'daegu', label: '대구광역시' },
+        { value: 'incheon', label: '인천광역시' },
         { value: 'gwangju', label: '광주광역시' },
+        { value: 'daejeon', label: '대전광역시' },
+        { value: 'ulsan', label: '울산광역시' },
+        { value: 'sejong', label: '세종특별자치시' },
+        // 도·특별자치도 (9개)
+        { value: 'gyeonggi', label: '경기도' },
+        { value: 'gangwon', label: '강원특별자치도' },
+        { value: 'chungbuk', label: '충청북도' },
+        { value: 'chungnam', label: '충청남도' },
+        { value: 'jeonbuk', label: '전북특별자치도' },
         { value: 'jeonnam', label: '전라남도' },
-        { value: 'naju', label: '나주시' },
-        { value: 'mokpo', label: '목포시' },
-        { value: 'yeosu', label: '여수시' },
-        { value: 'suncheon', label: '순천시' },
-        { value: 'gwangyang', label: '광양시' },
+        { value: 'gyeongbuk', label: '경상북도' },
+        { value: 'gyeongnam', label: '경상남도' },
+        { value: 'jeju', label: '제주특별자치도' },
     ];
 
     // 카테고리 옵션
@@ -278,7 +292,7 @@ export default function SourcesPage() {
                                     </td>
                                     <td className="p-4 text-sm text-[#8b949e]">
                                         {source.last_fetched_at
-                                            ? new Date(source.last_fetched_at).toLocaleString('ko-KR')
+                                            ? new Date(source.last_fetched_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
                                             : '없음'
                                         }
                                     </td>

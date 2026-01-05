@@ -42,34 +42,30 @@ interface JobLog {
     created_at: string;
 }
 
-// Region name mapping (Korean)
+// 전국 17개 시·도 + 정부 보도자료 (Korean)
 const REGION_NAMES: Record<string, string> = {
-    'gwangju': '광주시',
+    // 정부 보도자료
+    'korea': '정부(korea.kr)',
+    'korea_kr': '정부(korea.kr)',
+    // 특별시·광역시·특별자치시 (8개)
+    'seoul': '서울특별시',
+    'busan': '부산광역시',
+    'daegu': '대구광역시',
+    'incheon': '인천광역시',
+    'gwangju': '광주광역시',
+    'daejeon': '대전광역시',
+    'ulsan': '울산광역시',
+    'sejong': '세종특별자치시',
+    // 도·특별자치도 (9개)
+    'gyeonggi': '경기도',
+    'gangwon': '강원특별자치도',
+    'chungbuk': '충청북도',
+    'chungnam': '충청남도',
+    'jeonbuk': '전북특별자치도',
     'jeonnam': '전라남도',
-    'mokpo': '목포시',
-    'yeosu': '여수시',
-    'suncheon': '순천시',
-    'naju': '나주시',
-    'gwangyang': '광양시',
-    'damyang': '담양군',
-    'gokseong': '곡성군',
-    'gurye': '구례군',
-    'goheung': '고흥군',
-    'boseong': '보성군',
-    'hwasun': '화순군',
-    'jangheung': '장흥군',
-    'gangjin': '강진군',
-    'haenam': '해남군',
-    'yeongam': '영암군',
-    'muan': '무안군',
-    'hampyeong': '함평군',
-    'yeonggwang': '영광군',
-    'jangseong': '장성군',
-    'wando': '완도군',
-    'jindo': '진도군',
-    'shinan': '신안군',
-    'gwangju_edu': '광주교육청',
-    'jeonnam_edu': '전남교육청'
+    'gyeongbuk': '경상북도',
+    'gyeongnam': '경상남도',
+    'jeju': '제주특별자치도'
 };
 
 export default function MonitorPopupPage() {
@@ -451,7 +447,7 @@ export default function MonitorPopupPage() {
                 {session && (
                     <span>
                         세션: {session.id.substring(0, 8)}... |
-                        시작: {new Date(session.started_at).toLocaleString('ko-KR')} |
+                        시작: {new Date(session.started_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} |
                         오류: {session.error_count}건
                     </span>
                 )}

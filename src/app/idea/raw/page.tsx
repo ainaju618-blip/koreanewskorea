@@ -160,9 +160,9 @@ function ArticleDetailModal({
                             <span>작성자: {article.author}</span>
                         )}
                         {article.published_at && (
-                            <span>발행: {new Date(article.published_at).toLocaleString('ko-KR')}</span>
+                            <span>발행: {new Date(article.published_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</span>
                         )}
-                        <span>수집: {new Date(article.collected_at).toLocaleString('ko-KR')}</span>
+                        <span>수집: {new Date(article.collected_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</span>
                     </div>
 
                     {/* 원문 링크 */}

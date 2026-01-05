@@ -750,7 +750,7 @@ export default function BotSchedulePage() {
                                         )}
                                         <span className="text-[#8b949e]">마지막 실행:</span>
                                         <span className="text-[#c9d1d9]">
-                                            {new Date(stats.lastRun.timestamp).toLocaleString('ko-KR')}
+                                            {new Date(stats.lastRun.timestamp).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
                                         </span>
                                     </div>
                                 </div>

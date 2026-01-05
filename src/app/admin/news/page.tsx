@@ -666,17 +666,17 @@ function AdminNewsListPage() {
                     for (const id of ids) {
                         const article = articles.find(a => a.id === id);
                         if (article) {
+                            // 전국 17개 시·도 + 정부 보도자료
                             const regionMap: Record<string, string> = {
-                                '광주광역시': 'gwangju', '전라남도': 'jeonnam',
-                                '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
-                                '나주시': 'naju', '광양시': 'gwangyang',
-                                '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
-                                '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
-                                '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
-                                '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
-                                '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
-                                '진도군': 'jindo', '신안군': 'sinan',
-                                '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                                '정부': 'korea', 'korea.kr': 'korea',
+                                '서울특별시': 'seoul', '부산광역시': 'busan', '대구광역시': 'daegu',
+                                '인천광역시': 'incheon', '광주광역시': 'gwangju', '대전광역시': 'daejeon',
+                                '울산광역시': 'ulsan', '세종특별자치시': 'sejong',
+                                '경기도': 'gyeonggi', '강원특별자치도': 'gangwon',
+                                '충청북도': 'chungbuk', '충청남도': 'chungnam',
+                                '전북특별자치도': 'jeonbuk', '전라남도': 'jeonnam',
+                                '경상북도': 'gyeongbuk', '경상남도': 'gyeongnam',
+                                '제주특별자치도': 'jeju'
                             };
                             const articleRegion = regionMap[article.source] || '';
                             if (enabledRegions.includes(articleRegion)) {
@@ -705,18 +705,17 @@ function AdminNewsListPage() {
             // [STEP 2] AI 활성화 - 각 기사별로 AI 재가공 처리
             addProgressLog('AI 재가공', `${ids.length}개 기사 AI 재가공 시작...`, 'info');
 
-            // 지역 매핑 (already defined in pre-check, but keep for clarity)
+            // 전국 17개 시·도 + 정부 보도자료
             const regionMap: Record<string, string> = {
-                '광주광역시': 'gwangju', '전라남도': 'jeonnam',
-                '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
-                '나주시': 'naju', '광양시': 'gwangyang',
-                '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
-                '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
-                '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
-                '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
-                '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
-                '진도군': 'jindo', '신안군': 'sinan',
-                '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                '정부': 'korea', 'korea.kr': 'korea',
+                '서울특별시': 'seoul', '부산광역시': 'busan', '대구광역시': 'daegu',
+                '인천광역시': 'incheon', '광주광역시': 'gwangju', '대전광역시': 'daejeon',
+                '울산광역시': 'ulsan', '세종특별자치시': 'sejong',
+                '경기도': 'gyeonggi', '강원특별자치도': 'gangwon',
+                '충청북도': 'chungbuk', '충청남도': 'chungnam',
+                '전북특별자치도': 'jeonbuk', '전라남도': 'jeonnam',
+                '경상북도': 'gyeongbuk', '경상남도': 'gyeongnam',
+                '제주특별자치도': 'jeju'
             };
 
             let successCount = 0;
@@ -1261,18 +1260,18 @@ function AdminNewsListPage() {
                     addProgressLog('AI 설정', `활성화 지역: ${enabledRegions.join(', ') || '없음'}`, 'info');
 
                     // 기사의 region이 AI 활성화 지역에 포함되어 있는지 확인
-                    // previewArticle.source에서 region 추출 (예: "광주광역시" -> "gwangju")
+                    // previewArticle.source에서 region 추출 (예: "서울특별시" -> "seoul")
+                    // 전국 17개 시·도 + 정부 보도자료
                     const regionMap: Record<string, string> = {
-                        '광주광역시': 'gwangju', '전라남도': 'jeonnam',
-                        '목포시': 'mokpo', '여수시': 'yeosu', '순천시': 'suncheon',
-                        '나주시': 'naju', '광양시': 'gwangyang',
-                        '담양군': 'damyang', '곡성군': 'gokseong', '구례군': 'gurye',
-                        '고흥군': 'goheung', '보성군': 'boseong', '화순군': 'hwasun',
-                        '장흥군': 'jangheung', '강진군': 'gangjin', '해남군': 'haenam',
-                        '영암군': 'yeongam', '무안군': 'muan', '함평군': 'hampyeong',
-                        '영광군': 'yeonggwang', '장성군': 'jangseong', '완도군': 'wando',
-                        '진도군': 'jindo', '신안군': 'sinan',
-                        '광주교육청': 'gwangju_edu', '전남교육청': 'jeonnam_edu'
+                        '정부': 'korea', 'korea.kr': 'korea',
+                        '서울특별시': 'seoul', '부산광역시': 'busan', '대구광역시': 'daegu',
+                        '인천광역시': 'incheon', '광주광역시': 'gwangju', '대전광역시': 'daejeon',
+                        '울산광역시': 'ulsan', '세종특별자치시': 'sejong',
+                        '경기도': 'gyeonggi', '강원특별자치도': 'gangwon',
+                        '충청북도': 'chungbuk', '충청남도': 'chungnam',
+                        '전북특별자치도': 'jeonbuk', '전라남도': 'jeonnam',
+                        '경상북도': 'gyeongbuk', '경상남도': 'gyeongnam',
+                        '제주특별자치도': 'jeju'
                     };
 
                     const articleRegion = regionMap[previewArticle.source] || '';
@@ -1855,15 +1854,15 @@ function AdminNewsListPage() {
                                 </td>
                                 <td className="py-1 px-3 text-xs text-[#e6edf3]">
                                     {article.published_at
-                                        ? new Date(article.published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+                                        ? new Date(article.published_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
                                         : '-'}
                                 </td>
                                 <td className="py-1 px-3 text-xs text-[#8b949e]">
-                                    {new Date(article.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                                    {new Date(article.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </td>
                                 <td className="py-1 px-3 text-xs text-[#58a6ff]">
                                     {article.site_published_at
-                                        ? new Date(article.site_published_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+                                        ? new Date(article.site_published_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
                                         : '-'}
                                 </td>
                             </tr>

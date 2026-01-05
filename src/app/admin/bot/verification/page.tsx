@@ -287,6 +287,7 @@ export default function VerificationDashboard() {
                                 <tr key={log.id} className="border-b border-[#21262d] hover:bg-[#21262d]">
                                     <td className="py-2 px-2 text-[#6e7681] whitespace-nowrap">
                                         {new Date(log.created_at).toLocaleString('ko-KR', {
+                                            timeZone: 'Asia/Seoul',
                                             month: '2-digit',
                                             day: '2-digit',
                                             hour: '2-digit',

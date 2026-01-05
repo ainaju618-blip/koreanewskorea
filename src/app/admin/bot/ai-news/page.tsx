@@ -191,7 +191,7 @@ export default function AiNewsPage() {
                                             {log.log_message}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-[#8b949e]">
-                                            {new Date(log.created_at).toLocaleString('ko-KR')}
+                                            {new Date(log.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
                                         </td>
                                     </tr>
                                 ))
