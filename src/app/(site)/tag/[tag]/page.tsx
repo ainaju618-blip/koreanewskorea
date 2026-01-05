@@ -10,7 +10,7 @@ interface TagPageProps {
 }
 
 // Site URL for canonical
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
 // SEO: Dynamic metadata
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 
     return {
         title: `#${decodedTag} - 태그별 기사 | 코리아NEWS`,
-        description: `${decodedTag} 관련 뉴스 모음 - 광주, 전남 지역 소식을 전하는 코리아NEWS`,
+        description: `${decodedTag} 관련 뉴스 모음 - 대한민국 뉴스 포털 코리아NEWS 본사`,
         openGraph: {
             title: `#${decodedTag} - 태그별 기사 | 코리아NEWS`,
             description: `${decodedTag} 관련 뉴스 모음`,

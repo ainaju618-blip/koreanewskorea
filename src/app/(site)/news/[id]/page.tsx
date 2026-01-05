@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
     // 본문에서 160자 추출 (메타 설명용)
     const description = news.ai_summary
         || news.content?.replace(/\[이미지[^\]]*\]:[^\n]+/g, '').slice(0, 160).trim() + '...'
-        || '코리아NEWS에서 전하는 광주·전남 지역 소식';
+        || '코리아NEWS 본사에서 전하는 대한민국 뉴스';
 
     const publishedTime = news.published_at || news.created_at;
     const modifiedTime = news.last_edited_at || news.published_at || news.created_at;
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
     return {
         title: news.title,
         description,
-        keywords: [news.category, '광주', '전남', '지역뉴스', '코리아NEWS', news.source].filter(Boolean),
+        keywords: [news.category, '전국뉴스', '대한민국', '정책브리핑', '코리아NEWS', news.source].filter(Boolean),
         authors: news.author_name ? [{ name: news.author_name }] : undefined,
         openGraph: {
             title: news.title,
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
             modifiedTime,
             authors: news.author_name ? [news.author_name] : undefined,
             section: news.category,
-            tags: [news.category, '광주', '전남'],
+            tags: [news.category, '전국뉴스', '대한민국'],
             images: news.thumbnail_url ? [
                 {
                     url: news.thumbnail_url,

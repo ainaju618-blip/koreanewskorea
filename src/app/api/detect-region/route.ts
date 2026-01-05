@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             {
                 success: false,
-                region: 'gwangju',
+                region: 'korea',
                 source: 'default',
                 error: 'Failed to detect region'
             },
-            { status: 200 } // Return 200 with default region
+            { status: 200 } // Return 200 with default region (national)
         );
     }
 }

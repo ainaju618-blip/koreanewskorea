@@ -9,16 +9,16 @@ import { WebSiteSchema } from "@/components/seo";
 // - 제목: 조선일보명조 (신문사 권위감)
 
 // 사이트 기본 URL
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
 export const metadata: Metadata = {
   // 기본 메타데이터
   title: {
-    default: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
+    default: '코리아NEWS 본사 - 대한민국 뉴스 포털',
     template: '%s | 코리아NEWS',
   },
-  description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
-  keywords: ['광주뉴스', '전남뉴스', '나주뉴스', '지역뉴스', '혁신도시', 'AI뉴스', '코리아NEWS'],
+  description: '대한민국 17개 시도 뉴스와 정책 브리핑을 가장 빠르게 전달합니다. AI 기반 뉴스 큐레이션.',
+  keywords: ['대한민국뉴스', '전국뉴스', '정책브리핑', '시도뉴스', '중앙뉴스', 'AI뉴스', '코리아NEWS'],
   authors: [{ name: '코리아NEWS', url: siteUrl }],
   creator: '코리아NEWS',
   publisher: '코리아NEWS',
@@ -29,14 +29,14 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
     url: siteUrl,
     siteName: '코리아NEWS',
-    title: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
-    description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
+    title: '코리아NEWS 본사 - 대한민국 뉴스 포털',
+    description: '대한민국 17개 시도 뉴스와 정책 브리핑을 가장 빠르게 전달합니다. AI 기반 뉴스 큐레이션.',
     images: [
       {
         url: `${siteUrl}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: '코리아NEWS - 광주·전남 지역 뉴스',
+        alt: '코리아NEWS 본사 - 대한민국 뉴스 포털',
       },
     ],
   },
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
   // Twitter Card
   twitter: {
     card: 'summary_large_image',
-    title: '코리아NEWS - 로컬과 세계를 잇는 AI 저널리즘',
-    description: '광주, 전남, 나주시 뉴스와 AI/교육 정보를 가장 빠르게 전달합니다.',
+    title: '코리아NEWS 본사 - 대한민국 뉴스 포털',
+    description: '대한민국 17개 시도 뉴스와 정책 브리핑을 가장 빠르게 전달합니다. AI 기반 뉴스 큐레이션.',
     images: [`${siteUrl}/og-image.png`],
   },
 
