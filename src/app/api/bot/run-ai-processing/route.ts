@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { spawn } from 'child_process';
 import os from 'os';
+import { autoAssignReporter, getAutoAssignSetting, type AssignResult } from '@/lib/auto-assign';
 
 const isWindows = os.platform() === 'win32';
 
@@ -163,6 +164,40 @@ async function callOllama(prompt: string, model: string = PRIMARY_MODEL): Promis
 }
 
 // Validate output: check for English ratio and length
+// 원문에서 핵심 키워드 추출 (숫자, 고유명사, 주요 명사)
+function extractKeywords(text: string): string[] {
+    const keywords: string[] = [];
+
+    // 1. 숫자 포함 표현 (연도, 금액, 퍼센트 등)
+    const numbers = text.match(/\d+(?:,\d{3})*(?:\.\d+)?(?:원|억|만|%|년|월|일|개|명|건)?/g) || [];
+    keywords.push(...numbers);
+
+    // 2. 큰따옴표 안의 문구 (인용문, 고유명사)
+    const quoted = text.match(/["'「」『』]([^"'「」『』]+)["'「」『』]/g) || [];
+    quoted.forEach(q => {
+        const clean = q.replace(/["'「」『』]/g, '').trim();
+        if (clean.length >= 2) keywords.push(clean);
+    });
+
+    // 3. 기관/단체명 패턴 (OO부, OO청, OO원, OO시, OO도 등)
+    const orgs = text.match(/[가-힣]{2,10}(?:부|청|원|처|위원회|공사|공단|협회|연구원|진흥원|재단|센터)/g) || [];
+    keywords.push(...orgs);
+
+    // 4. 지역명
+    const regions = text.match(/(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)(?:시|도|특별시|광역시)?/g) || [];
+    keywords.push(...regions);
+
+    // 5. 주요 명사 (2-6글자 한글 단어)
+    const nouns = text.match(/[가-힣]{2,6}(?=이|가|을|를|은|는|에|의|로|으로|과|와|도|만|부터|까지|에서)/g) || [];
+    keywords.push(...nouns.filter(n => n.length >= 3));
+
+    // 중복 제거 및 너무 일반적인 단어 필터링
+    const commonWords = new Set(['하는', '있는', '위한', '대한', '관련', '통해', '따라', '위해', '있다', '했다', '된다', '한다']);
+    const uniqueKeywords = [...new Set(keywords)].filter(k => !commonWords.has(k) && k.length >= 2);
+
+    return uniqueKeywords;
+}
+
 function validateOutput(original: string, output: string): { valid: boolean; reason?: string } {
     // Check for English ratio (more than 10% English = invalid)
     const englishChars = (output.match(/[a-zA-Z]/g) || []).length;
@@ -177,6 +212,26 @@ function validateOutput(original: string, output: string): { valid: boolean; rea
     const lengthRatio = output.length / original.length;
     if (lengthRatio < 0.5) {
         return { valid: false, reason: `Output too short: ${(lengthRatio * 100).toFixed(1)}% of original` };
+    }
+
+    // ★ 핵심어 일치 검증 (환각 방지)
+    const originalKeywords = extractKeywords(original);
+    if (originalKeywords.length >= 3) {
+        const matchedKeywords = originalKeywords.filter(kw => output.includes(kw));
+        const matchRatio = matchedKeywords.length / originalKeywords.length;
+
+        // 최소 30% 이상의 핵심어가 출력에 포함되어야 함
+        if (matchRatio < 0.3) {
+            console.log(`[validateOutput] 키워드 불일치: ${matchedKeywords.length}/${originalKeywords.length} (${(matchRatio * 100).toFixed(1)}%)`);
+            console.log(`[validateOutput] 원문 키워드 샘플: ${originalKeywords.slice(0, 10).join(', ')}`);
+            console.log(`[validateOutput] 매칭된 키워드: ${matchedKeywords.slice(0, 10).join(', ')}`);
+            return {
+                valid: false,
+                reason: `키워드 불일치: ${matchedKeywords.length}/${originalKeywords.length} (${(matchRatio * 100).toFixed(1)}%) - 최소 30% 필요`
+            };
+        }
+
+        console.log(`[validateOutput] 키워드 검증 통과: ${matchedKeywords.length}/${originalKeywords.length} (${(matchRatio * 100).toFixed(1)}%)`);
     }
 
     return { valid: true };
@@ -326,7 +381,8 @@ ${converted}`;
 // Process single article with local Ollama - with retry logic for C/D grades
 const MAX_RETRIES = 3;
 
-async function processArticle(article: { id: string; title: string; content: string }): Promise<{
+// useFallbackMode: if true, skip ai_* columns in DB updates (for DBs without these columns)
+async function processArticle(article: { id: string; title: string; content: string; region?: string | null }, useFallbackMode: boolean = false): Promise<{
     success: boolean;
     published: boolean;
     grade: string;
@@ -377,16 +433,20 @@ async function processArticle(article: { id: string; title: string; content: str
             console.error(`[Ollama] Error on attempt ${attempt + 1} for ${article.id}:`, errorMessage);
 
             if (attempt === MAX_RETRIES - 1) {
-                // Last attempt failed
-                await supabaseAdmin
-                    .from('posts')
-                    .update({
-                        ai_processed: true,
-                        ai_processed_at: new Date().toISOString(),
-                        ai_validation_grade: 'D',
-                        ai_validation_warnings: [`Processing error after ${MAX_RETRIES} attempts: ${errorMessage}`]
-                    })
-                    .eq('id', article.id);
+                // Last attempt failed - update DB (skip ai_* fields in fallback mode)
+                const errorUpdateData: Record<string, unknown> = useFallbackMode ? {} : {
+                    ai_processed: true,
+                    ai_processed_at: new Date().toISOString(),
+                    ai_validation_grade: 'D',
+                    ai_validation_warnings: [`Processing error after ${MAX_RETRIES} attempts: ${errorMessage}`]
+                };
+
+                if (Object.keys(errorUpdateData).length > 0) {
+                    await supabaseAdmin
+                        .from('posts')
+                        .update(errorUpdateData)
+                        .eq('id', article.id);
+                }
 
                 return {
                     success: false,
@@ -403,12 +463,15 @@ async function processArticle(article: { id: string; title: string; content: str
     const shouldPublish = lastGrade === 'A' || lastGrade === 'B';
     const now = new Date().toISOString();
 
-    const updateData: Record<string, unknown> = {
-        ai_processed: true,
-        ai_processed_at: now,
-        ai_validation_grade: lastGrade,
-        ai_validation_warnings: shouldPublish ? null : [lastVerification],
-    };
+    // Build update data - skip ai_* fields in fallback mode
+    const updateData: Record<string, unknown> = {};
+
+    if (!useFallbackMode) {
+        updateData.ai_processed = true;
+        updateData.ai_processed_at = now;
+        updateData.ai_validation_grade = lastGrade;
+        updateData.ai_validation_warnings = shouldPublish ? null : [lastVerification];
+    }
 
     if (shouldPublish) {
         // Grade A/B: Update content, subtitle and publish
@@ -416,12 +479,43 @@ async function processArticle(article: { id: string; title: string; content: str
         updateData.subtitle = lastSubtitle || '';
         updateData.status = 'published';
         updateData.published_at = now;
-        updateData.site_published_at = now;
-        console.log(`[Ollama] Article ${article.id}: PUBLISHED with grade ${lastGrade}`);
+        // site_published_at only in normal mode (column may not exist in some DBs)
+        if (!useFallbackMode) {
+            updateData.site_published_at = now;
+        }
+
+        // Auto-assign reporter when publishing
+        try {
+            const autoAssignEnabled = await getAutoAssignSetting();
+            if (autoAssignEnabled) {
+                const assignResult: AssignResult = await autoAssignReporter(article.region || null);
+                updateData.author_name = assignResult.reporter.name;
+
+                // Verify user_id exists in profiles before setting author_id (FK constraint)
+                if (assignResult.reporter.user_id) {
+                    const { data: profile, error: profileError } = await supabaseAdmin
+                        .from('profiles')
+                        .select('id')
+                        .eq('id', assignResult.reporter.user_id)
+                        .single();
+
+                    if (!profileError && profile) {
+                        updateData.author_id = assignResult.reporter.user_id;
+                    }
+                }
+
+                console.log(`[Ollama] Auto-assigned reporter: ${assignResult.reporter.name} (${assignResult.reason})`);
+            }
+        } catch (assignError) {
+            console.error(`[Ollama] Auto-assign failed for ${article.id}:`, assignError);
+            // Continue without auto-assign - don't block the approval
+        }
+
+        console.log(`[Ollama] Article ${article.id}: PUBLISHED with grade ${lastGrade}${useFallbackMode ? ' (fallback mode)' : ''}`);
     } else {
         // Grade C/D after all retries: Keep original, hold as draft
         updateData.status = 'draft';
-        console.log(`[Ollama] Article ${article.id}: HELD with grade ${lastGrade} after ${MAX_RETRIES} attempts`);
+        console.log(`[Ollama] Article ${article.id}: HELD with grade ${lastGrade} after ${MAX_RETRIES} attempts${useFallbackMode ? ' (fallback mode)' : ''}`);
     }
 
     const { error: updateError } = await supabaseAdmin
@@ -450,7 +544,8 @@ async function processArticle(article: { id: string; title: string; content: str
 
 // Background processing function (runs async, doesn't block response)
 // Now supports auto-continue: after finishing, checks for more pending articles
-async function runBackgroundProcessing(articles: { id: string; title: string; content: string }[], batchLimit: number = 50) {
+// useFallbackMode: if true, skip ai_* columns in queries/updates (for DBs without these columns)
+async function runBackgroundProcessing(articles: { id: string; title: string; content: string }[], batchLimit: number = 50, useFallbackMode: boolean = false) {
     let published = 0;
     let held = 0;
     let failed = 0;
@@ -463,7 +558,7 @@ async function runBackgroundProcessing(articles: { id: string; title: string; co
                 break;
             }
 
-            const result = await processArticle(article);
+            const result = await processArticle(article, useFallbackMode);
 
             processingStats.processed++;
 
@@ -495,22 +590,39 @@ async function runBackgroundProcessing(articles: { id: string; title: string; co
 
         // Auto-continue: Check for more pending articles (only if not stopped)
         if (!shouldStopProcessing) {
-            const { data: moreArticles, error: moreErr } = await supabaseAdmin
-                .from('posts')
-                .select('id, title, content, region')
-                .eq('status', 'draft')
-                .or('ai_processed.is.null,ai_processed.eq.false')
-                .order('created_at', { ascending: true })
-                .limit(batchLimit);
+            let moreArticles: { id: string; title: string; content: string; region?: string }[] | null = null;
 
-            if (!moreErr && moreArticles && moreArticles.length > 0) {
+            if (useFallbackMode) {
+                // Fallback mode: simple draft query
+                const { data, error } = await supabaseAdmin
+                    .from('posts')
+                    .select('id, title, content, region')
+                    .eq('status', 'draft')
+                    .order('created_at', { ascending: true })
+                    .limit(batchLimit);
+
+                if (!error) moreArticles = data;
+            } else {
+                // Normal mode: with ai_processed column
+                const { data, error } = await supabaseAdmin
+                    .from('posts')
+                    .select('id, title, content, region')
+                    .eq('status', 'draft')
+                    .or('ai_processed.is.null,ai_processed.eq.false')
+                    .order('created_at', { ascending: true })
+                    .limit(batchLimit);
+
+                if (!error) moreArticles = data;
+            }
+
+            if (moreArticles && moreArticles.length > 0) {
                 console.log(`[run-ai-processing] Auto-continue: Found ${moreArticles.length} more pending articles`);
 
                 // Update stats for new batch (accumulate totals)
                 processingStats.total += moreArticles.length;
 
                 // Recursively process the next batch
-                await runBackgroundProcessing(moreArticles, batchLimit);
+                await runBackgroundProcessing(moreArticles, batchLimit, useFallbackMode);
                 return; // Don't reset isProcessingActive here, let the final batch do it
             } else {
                 console.log('[run-ai-processing] Auto-continue: No more pending articles');
@@ -526,8 +638,23 @@ async function runBackgroundProcessing(articles: { id: string; title: string; co
 
 // POST: Trigger AI processing on pending articles using local Ollama
 // Returns immediately, processing runs in background
+// ⚠️ AI 처리 임시 비활성화 (환각 문제로 인해 2026-01-06 비활성화)
+// 원인: AI가 입력을 무시하고 학습 데이터 기반 허위 콘텐츠 생성
+// 해결책: 키워드 검증 로직 추가 후 재활성화 필요
+const AI_PROCESSING_DISABLED = true;
+
 export async function POST(req: NextRequest) {
     console.log('[run-ai-processing] POST request received');
+
+    // AI 처리 비활성화 체크
+    if (AI_PROCESSING_DISABLED) {
+        console.log('[run-ai-processing] ⚠️ AI processing is temporarily disabled due to hallucination issues');
+        return NextResponse.json({
+            success: false,
+            error: 'AI 처리 기능이 임시로 비활성화되었습니다. (환각 문제 해결 중)',
+            reason: 'AI_DISABLED'
+        }, { status: 503 });
+    }
 
     // Parse request body to get limit parameter
     let limit = 10; // Default limit
@@ -569,45 +696,74 @@ export async function POST(req: NextRequest) {
         console.log('[run-ai-processing] Ollama is ready, fetching pending articles...');
 
         // Step 1: Get pending articles with limit applied
-        // Split limit between unprocessed and failed articles (prioritize unprocessed)
-        const unprocessedLimit = Math.ceil(limit * 0.7); // 70% for unprocessed
-        const failedLimit = Math.floor(limit * 0.3);      // 30% for retry
+        // Try complex query first (with ai_processed column), fallback to simple query
+        let articles: { id: string; title: string; content: string; region?: string }[] = [];
+        let useFallbackMode = false;
 
-        const { data: unprocessed, error: err1 } = await supabaseAdmin
-            .from('posts')
-            .select('id, title, content, region')
-            .eq('status', 'draft')
-            .or('ai_processed.is.null,ai_processed.eq.false')
-            .order('created_at', { ascending: true })
-            .limit(unprocessedLimit);
+        try {
+            // Split limit between unprocessed and failed articles (prioritize unprocessed)
+            const unprocessedLimit = Math.ceil(limit * 0.7); // 70% for unprocessed
+            const failedLimit = Math.floor(limit * 0.3);      // 30% for retry
 
-        if (err1) throw err1;
-
-        // Get C/D grade articles for retry (only if we have room)
-        let failedArticles: typeof unprocessed = [];
-        if (failedLimit > 0) {
-            const { data: failed, error: err2 } = await supabaseAdmin
+            const { data: unprocessed, error: err1 } = await supabaseAdmin
                 .from('posts')
                 .select('id, title, content, region')
                 .eq('status', 'draft')
-                .eq('ai_processed', true)
-                .in('ai_validation_grade', ['C', 'D'])
+                .or('ai_processed.is.null,ai_processed.eq.false')
                 .order('created_at', { ascending: true })
-                .limit(failedLimit);
+                .limit(unprocessedLimit);
 
-            if (err2) throw err2;
-            failedArticles = failed || [];
+            if (err1) {
+                // ai_processed column doesn't exist, use fallback mode
+                console.log('[run-ai-processing] Fallback mode: ai_processed column not found');
+                useFallbackMode = true;
+                throw err1;
+            }
+
+            // Get C/D grade articles for retry (only if we have room)
+            let failedArticles: typeof unprocessed = [];
+            if (failedLimit > 0) {
+                const { data: failed, error: err2 } = await supabaseAdmin
+                    .from('posts')
+                    .select('id, title, content, region')
+                    .eq('status', 'draft')
+                    .eq('ai_processed', true)
+                    .in('ai_validation_grade', ['C', 'D'])
+                    .order('created_at', { ascending: true })
+                    .limit(failedLimit);
+
+                if (!err2) {
+                    failedArticles = failed || [];
+                }
+            }
+
+            // Combine and dedupe, then apply final limit
+            const allArticles = [...(unprocessed || []), ...failedArticles];
+            articles = allArticles
+                .filter((article, index, self) =>
+                    index === self.findIndex(a => a.id === article.id)
+                )
+                .slice(0, limit); // Final safety limit
+
+            console.log(`[run-ai-processing] Found ${unprocessed?.length || 0} unprocessed + ${failedArticles?.length || 0} C/D grade articles (limit: ${limit})`);
+
+        } catch {
+            // Fallback: Simple query without ai_processed column
+            console.log('[run-ai-processing] Using simple draft query (fallback mode)');
+            useFallbackMode = true;
+
+            const { data: draftArticles, error: fallbackErr } = await supabaseAdmin
+                .from('posts')
+                .select('id, title, content, region')
+                .eq('status', 'draft')
+                .order('created_at', { ascending: true })
+                .limit(limit);
+
+            if (fallbackErr) throw fallbackErr;
+            articles = draftArticles || [];
+
+            console.log(`[run-ai-processing] Fallback: Found ${articles.length} draft articles (limit: ${limit})`);
         }
-
-        // Combine and dedupe, then apply final limit
-        const allArticles = [...(unprocessed || []), ...failedArticles];
-        const articles = allArticles
-            .filter((article, index, self) =>
-                index === self.findIndex(a => a.id === article.id)
-            )
-            .slice(0, limit); // Final safety limit
-
-        console.log(`[run-ai-processing] Found ${unprocessed?.length || 0} unprocessed + ${failedArticles?.length || 0} C/D grade articles (limit: ${limit})`);
 
         if (!articles || articles.length === 0) {
             return NextResponse.json({
@@ -633,14 +789,15 @@ export async function POST(req: NextRequest) {
         };
 
         // Start background processing (don't await - returns immediately)
-        // Pass limit for auto-continue batches
-        runBackgroundProcessing(articles, limit);
+        // Pass limit for auto-continue batches and fallback mode flag
+        runBackgroundProcessing(articles, limit, useFallbackMode);
 
         // Return immediately with "started" response
         return NextResponse.json({
             success: true,
-            message: `Processing started for ${articles.length} articles`,
+            message: `Processing started for ${articles.length} articles${useFallbackMode ? ' (fallback mode)' : ''}`,
             total: articles.length,
+            fallbackMode: useFallbackMode,
             stats: processingStats
         });
 
