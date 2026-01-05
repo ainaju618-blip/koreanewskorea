@@ -5,8 +5,8 @@
  * 기존 regions.ts (광주/전남 권한 체계)와 분리된 전국 17개 시/도 지원
  */
 
-// JSON import - @/ alias resolves to src/ via tsconfig paths
-import regionsData from '@/data/regions.json';
+// TypeScript data import (JSON import가 Vercel 빌드에서 실패하여 TS로 변환)
+import { regionsData } from '@/data/regions-data';
 
 // ============================================
 // Types
