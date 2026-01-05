@@ -126,14 +126,19 @@ function formatDate(dateString: string) {
 
 function getCategoryColor(category: string) {
     const colors: Record<string, string> = {
-        '광주': 'bg-blue-500',
-        '전남': 'bg-green-500',
-        '나주': 'bg-teal-500',
+        '광주': 'bg-cyan-500',
+        '전남': 'bg-cyan-600',
+        '나주': 'bg-cyan-500',
         'AI': 'bg-violet-500',
         'Global AI': 'bg-indigo-600',
-        '교육': 'bg-indigo-500',
+        '교육': 'bg-cyan-600',
+        '시정': 'bg-cyan-500',
+        '의회': 'bg-slate-600',
+        '여행': 'bg-emerald-500',
+        '맛집': 'bg-orange-500',
+        '비즈니스': 'bg-slate-700',
     };
-    return colors[category] || 'bg-slate-500';
+    return colors[category] || 'bg-cyan-500';
 }
 
 // 평문에 줄바꿈 추가 (마침표 뒤 한글이면 문단 분리)
@@ -438,7 +443,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
                 {/* Summary Box - displayed from ai_summary field (below image) */}
                 {news.ai_summary && (
-                    <div className="article-summary bg-gradient-to-br from-sky-50 to-sky-100 border-l-4 border-sky-600 px-5 py-4 mb-10 rounded-r-lg text-[1.05em] leading-relaxed text-sky-900">
+                    <div className="article-summary bg-gradient-to-br from-cyan-50 to-cyan-100 border-l-4 border-cyan-500 px-5 py-4 mb-10 rounded-r-lg text-[1.05em] leading-relaxed text-cyan-900">
                         {news.ai_summary}
                     </div>
                 )}
@@ -467,9 +472,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
                 {/* 관련 기사 */}
                 {relatedNews.length > 0 && (
-                    <div className="bg-slate-50 rounded-2xl p-6">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <span className="w-1 h-6 bg-indigo-500 rounded"></span>
+                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-cyan-500 rounded"></span>
                             관련 기사
                         </h3>
                         <ul className="space-y-3">
@@ -477,7 +482,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                                 <li key={item.id}>
                                     <Link
                                         href={`/news/${item.id}`}
-                                        className="block text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors line-clamp-1"
+                                        className="block text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors line-clamp-1"
                                     >
                                         • {item.title}
                                     </Link>

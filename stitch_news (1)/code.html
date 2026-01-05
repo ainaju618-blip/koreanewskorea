@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea NEWS</title>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13b6ec",
+                        "primary-dark": "#0ea5d6",
+                        "background-light": "#f8fbfc",
+                        "background-dark": "#101d22",
+                        "text-main": "#0d181b",
+                        "text-sub": "#4c869a",
+                        "navy": "#003366",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "Noto Sans KR", "sans-serif"],
+                        "body": ["Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal tabs */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main antialiased selection:bg-primary/20">
+<!-- Header -->
+<header class="sticky top-0 z-50 w-full bg-background-light/95 backdrop-blur-sm border-b border-gray-200">
+<div class="flex items-center justify-between px-4 h-16 max-w-7xl mx-auto">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined">newspaper</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-text-main">코리아 NEWS</h1>
+</div>
+<!-- Right Actions -->
+<div class="flex items-center gap-3">
+<button class="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-colors hidden sm:block">
+                    지역판 바로가기
+                </button>
+<button class="text-text-main p-1 hover:bg-gray-100 rounded-full transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-text-main p-1 hover:bg-gray-100 rounded-full transition-colors sm:hidden">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+<!-- Horizontal Nav (Scrollable) -->
+<nav class="border-b border-gray-100 bg-white">
+<div class="max-w-7xl mx-auto flex overflow-x-auto no-scrollbar px-4 gap-6">
+<a class="whitespace-nowrap py-3 text-sm font-bold text-primary border-b-2 border-primary" href="#">전국뉴스</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">정치·경제</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">사회</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">문화</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">AI·테크</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">오피니언</a>
+<a class="whitespace-nowrap py-3 text-sm font-medium text-text-sub hover:text-primary transition-colors" href="#">여행/레저</a>
+</div>
+</nav>
+</header>
+<main class="max-w-7xl mx-auto flex flex-col gap-6 p-4">
+<!-- Hero Section: Main News & Policy List -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Main News Card (Left 60% on desktop) -->
+<article class="lg:col-span-7 xl:col-span-8 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 group cursor-pointer hover:shadow-md transition-shadow">
+<div class="relative aspect-video w-full overflow-hidden">
+<div class="absolute top-4 left-4 z-10 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">정치</div>
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Government official speaking at a press conference podium with microphones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUU6SSqpLzvidp1-poWX0Z6H0kcWq__q8TJIa2sVMjVqkqLXyqoZoquYUnTaYYCX1zx1n5kOJSJJPtg8BnO4ORlJu-JYZl3vmmDhbAbhXvApZXKD5mVTNWXypTz2RXZBqKCykOtn-JMdFwAldH2E-C4AG6eq4No-2GXoqCQCOY_leFGr6fWOCJgNjSUfGAztt2HUgVcocWabHf8d97JbIt4WnoEtNQsFml9gPo0Bbb8-in8QNnPLlPP0rXsWQiyFoIrH5EHSrTAZj6"/>
+</div>
+<div class="p-5 flex flex-col gap-3">
+<h2 class="text-2xl font-bold leading-tight text-text-main group-hover:text-primary transition-colors">
+                        정부, 내년도 AI 기술 지원 예산 2배 확대... "디지털 강국 도약"
+                    </h2>
+<p class="text-text-sub line-clamp-2 leading-relaxed">
+                        과학기술정보통신부는 오늘 브리핑을 통해 인공지능 분야의 글로벌 경쟁력을 강화하기 위한 대규모 예산 증액안을 발표했습니다. 중소기업 기술 지원과 인재 양성에 집중될 예정입니다.
+                    </p>
+<div class="flex items-center gap-2 text-xs text-text-sub mt-2">
+<span class="font-medium text-primary">김한국 기자</span>
+<span>•</span>
+<span>2023.10.24</span>
+<span>•</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">visibility</span> 1.5만</span>
+</div>
+</div>
+</article>
+<!-- Policy Briefing List (Right 40% on desktop) -->
+<aside class="lg:col-span-5 xl:col-span-4 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 h-full">
+<div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-xl">
+<h3 class="font-bold text-lg text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">policy</span>
+                        최신 정책 브리핑
+                    </h3>
+<a class="text-xs text-text-sub hover:text-primary font-medium" href="#">더보기</a>
+</div>
+<div class="flex flex-col divide-y divide-gray-100">
+<!-- List Item 1 -->
+<a class="flex gap-4 p-4 hover:bg-gray-50 transition-colors group" href="#">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img class="w-full h-full object-cover" data-alt="Close up of financial documents and calculator" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdPRa9urk6KAhAr4i-0q19mPflglhkGIIEm2-Zy-l07b7lE7pIBBiREitCr88H7Rxawj8kNdAvlGZ3xyQ3AplT21vAZso68VTITVz3tmNwLb5YqSYw7WVv9HdqzAA5caz2CEr2XDOxJpmsf8oFW1TonKgh_csxJYX1RPTMMkDxjUMBU2LQ4svArZN-7TJ5L6tjrVDKQoT7Oj--KcHIzDzOfBuCAMGAiGvOsX3REGwaJDiYzT4Hll7a0JsUbukMrjvcjU8F2DHJYqaE"/>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-xs font-bold text-primary mb-1">경제</span>
+<h4 class="text-sm font-bold text-text-main leading-snug group-hover:underline decoration-primary underline-offset-2">하반기 소상공인 대출 금리 인하 정책 발표</h4>
+<span class="text-xs text-text-sub mt-1">2023.10.24 14:00</span>
+</div>
+</a>
+<!-- List Item 2 -->
+<a class="flex gap-4 p-4 hover:bg-gray-50 transition-colors group" href="#">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img class="w-full h-full object-cover" data-alt="Modern apartment buildings under blue sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCya6bdANg80ZvOy0MPj-JsNQfNSXUvB42T_ZxymrZ0Iw-nhsgGsw5aYNO3YKhEy6ov7iyzajmjC3yDY06-Hj1YAmfDZGnpY2X8U_I5phwETGQ08FVIWUfRGQabslLB4bkUi9HIht7_xlkggrVcj_4u6Yyg23GqVr5ZnP61UMi6t-432t9BLCA34zN0ETZ5-kyrS8Pb7763ZSkuASDlBXGQiORjOKEeol0RPbbR9ZooA8YAKl49hpwuSVNhLabs0DpV7VA3itQeTAo"/>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-xs font-bold text-primary mb-1">부동산</span>
+<h4 class="text-sm font-bold text-text-main leading-snug group-hover:underline decoration-primary underline-offset-2">신도시 주택 공급 계획 수정안 공고</h4>
+<span class="text-xs text-text-sub mt-1">2023.10.24 11:30</span>
+</div>
+</a>
+<!-- List Item 3 -->
+<a class="flex gap-4 p-4 hover:bg-gray-50 transition-colors group" href="#">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img class="w-full h-full object-cover" data-alt="Worker in protective gear in a factory" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALj0hWBp79Y515sZZ7A2S3XGNRD7wfYKLzh3tAqkQRms-kl6prKjYKZ5tO0HTTdZkKjr6PvlHQTOhMC3cZdFf4iRK0rkEVmK2WKEYkO1Zh7x3ZMdGnm8hTwG2BVBB8IfxCGx22xK3-dIsHIeR-EW6SwPMAtwRpRL3J0auPTqVCneY4MMUbA6vqF9RnL0DctX1DpHzZ3zpdEGZWqauzMvmJVaC4oBSfeXWu8shU2XutlEmCyeouxWX0MwWfPmPoxvADoeT2xwpPaF88"/>
+</div>
+<div class="flex flex-col justify-center">
+<span class="text-xs font-bold text-primary mb-1">산업</span>
+<h4 class="text-sm font-bold text-text-main leading-snug group-hover:underline decoration-primary underline-offset-2">국가 첨단 전략 산업 특화단지 지정 결과</h4>
+<span class="text-xs text-text-sub mt-1">2023.10.24 09:15</span>
+</div>
+</a>
+</div>
+</aside>
+</section>
+<!-- Divider -->
+<div class="h-px bg-gray-200 w-full my-2"></div>
+<!-- National Map & Real-time Section -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Map Visualization (Simplified) -->
+<div class="flex flex-col gap-4">
+<div class="flex flex-col">
+<h3 class="text-xl font-bold text-text-main">전국 뉴스 지도</h3>
+<p class="text-sm text-text-sub">지역을 선택하여 현지 소식을 확인하세요.</p>
+</div>
+<div class="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex items-center justify-center min-h-[300px] relative overflow-hidden group">
+<!-- Decorative Map Abstract Background -->
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+<!-- Abstract Map Representation -->
+<div class="relative w-64 h-80 grid grid-cols-2 gap-2">
+<!-- Seoul/Gyeonggi -->
+<div class="col-span-2 bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center flex-col gap-1 group/region shadow-sm">
+<span class="text-xs font-bold text-text-main">수도권</span>
+<div class="h-1 w-8 bg-primary rounded-full"></div>
+</div>
+<!-- Gangwon -->
+<div class="bg-white border-2 border-transparent hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center shadow-sm">
+<span class="text-xs font-medium text-text-sub">강원</span>
+</div>
+<!-- Chungcheong -->
+<div class="bg-white border-2 border-transparent hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center shadow-sm">
+<span class="text-xs font-medium text-text-sub">충청</span>
+</div>
+<!-- Jeolla -->
+<div class="bg-white border-2 border-transparent hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center shadow-sm">
+<span class="text-xs font-medium text-text-sub">전라</span>
+</div>
+<!-- Gyeongsang -->
+<div class="bg-white border-2 border-transparent hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center shadow-sm">
+<span class="text-xs font-medium text-text-sub">경상</span>
+</div>
+<!-- Jeju -->
+<div class="col-span-2 mx-auto w-1/2 bg-white border-2 border-transparent hover:border-primary hover:bg-primary/5 rounded-lg p-2 cursor-pointer transition-all flex items-center justify-center shadow-sm mt-2">
+<span class="text-xs font-medium text-text-sub">제주</span>
+</div>
+</div>
+<div class="absolute bottom-4 right-4">
+<button class="bg-white shadow-md text-text-main text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 hover:bg-gray-50">
+<span class="material-symbols-outlined text-sm">map</span> 전체 지도 보기
+                        </button>
+</div>
+</div>
+</div>
+<!-- Real-time Feed & Ranking -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-gray-200 pb-2">
+<div class="flex gap-4">
+<button class="text-primary font-bold text-lg border-b-2 border-primary pb-2 -mb-2.5">실시간 뉴스</button>
+<button class="text-text-sub font-medium text-lg pb-2 hover:text-text-main">인기 지역</button>
+</div>
+<span class="flex h-2 w-2 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+</span>
+</div>
+<div class="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+<!-- Feed Item -->
+<div class="flex gap-3 items-start p-3 rounded-lg bg-white border border-gray-100 shadow-sm hover:border-primary/30 transition-colors cursor-pointer">
+<span class="text-primary font-bold text-xs mt-1 shrink-0 w-12">14:25</span>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="bg-gray-100 text-text-sub text-[10px] px-1.5 py-0.5 rounded font-medium">부산</span>
+<p class="text-sm font-medium text-text-main line-clamp-1">부산항 신항, 자동화 부두 개장식 개최</p>
+</div>
+</div>
+</div>
+<!-- Feed Item -->
+<div class="flex gap-3 items-start p-3 rounded-lg bg-white border border-gray-100 shadow-sm hover:border-primary/30 transition-colors cursor-pointer">
+<span class="text-primary font-bold text-xs mt-1 shrink-0 w-12">14:10</span>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="bg-gray-100 text-text-sub text-[10px] px-1.5 py-0.5 rounded font-medium">광주</span>
+<p class="text-sm font-medium text-text-main line-clamp-1">AI 창업 캠프 입주 기업 모집 시작</p>
+</div>
+</div>
+</div>
+<!-- Feed Item -->
+<div class="flex gap-3 items-start p-3 rounded-lg bg-white border border-gray-100 shadow-sm hover:border-primary/30 transition-colors cursor-pointer">
+<span class="text-text-sub font-medium text-xs mt-1 shrink-0 w-12">13:58</span>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="bg-gray-100 text-text-sub text-[10px] px-1.5 py-0.5 rounded font-medium">서울</span>
+<p class="text-sm font-medium text-text-main line-clamp-1">서울광장 봄맞이 행사 일정 안내</p>
+</div>
+</div>
+</div>
+<!-- Feed Item -->
+<div class="flex gap-3 items-start p-3 rounded-lg bg-white border border-gray-100 shadow-sm hover:border-primary/30 transition-colors cursor-pointer">
+<span class="text-text-sub font-medium text-xs mt-1 shrink-0 w-12">13:45</span>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="bg-gray-100 text-text-sub text-[10px] px-1.5 py-0.5 rounded font-medium">제주</span>
+<p class="text-sm font-medium text-text-main line-clamp-1">제주 국제공항 이용객 전년 대비 15% 증가</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Travel Section -->
+<section class="mt-4">
+<div class="flex items-center justify-between mb-4 px-1">
+<h3 class="text-xl font-bold text-text-main flex items-center gap-2">
+<span>🗺️</span> 추천 여행지
+                </h3>
+<a class="text-sm text-text-sub hover:text-primary" href="#">전체보기</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<!-- Travel Card 1 -->
+<a class="group relative rounded-xl overflow-hidden aspect-square shadow-sm" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Scenic landscape of Swiss Alps with green grass and mountains" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyANY_4mrUjv7KtzDGvLz5BtfCtOrIse6hsqbruFBwnCPyUE3wFp_yl3sZ_Cm5dpNsLwXO5eHl9JZWEk1dFvQWHqE4fzoS2SzJEWd5VHTiLwiVJt2ruSBx5ctEzVMJDF2FcZ2AAe7wVHLhxNwQ03myYwb4_b2Xf16UCNQLfGVTk_xpXUVssqv_mswA7g_oq47TkeEuFSuNPAMTUvq3SK_16w_TxZ9eQYA3EjAv_cP6Ol_txq76mxOfhn2SncAAak8B2_lDPplZQAyP"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-3 w-full">
+<span class="text-[10px] font-bold text-primary bg-white/90 backdrop-blur px-1.5 py-0.5 rounded mb-1 inline-block">강원</span>
+<p class="text-white font-bold text-sm leading-tight">대관령 양떼목장의 봄</p>
+</div>
+</a>
+<!-- Travel Card 2 -->
+<a class="group relative rounded-xl overflow-hidden aspect-square shadow-sm" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Traditional Japanese temple architecture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ7skdeF6-es-QNJaz9Wum-cyuIP1u67YpJlGCd2Z_7d2LamQ-0AD3K4iQoIKmYfkQ7gpyaCMxapcswbr_tvKvEcZ2ypLsAVQFz6bafucjqtsN_TIOn83kU_U4ExQhrl_G6t59BbZ6nwlx57gf73XZpYH9B7d2zv02NvFsEcYrsk5sSkG2tWBVAvmpf7g-vmHopmCi4UC9xzouH8uhmIlY12k6H3eB1y2zsx6oEPCPIWMaa8HOWT4zYXTl3H21u_xQPyP0_U3Z2D60"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-3 w-full">
+<span class="text-[10px] font-bold text-primary bg-white/90 backdrop-blur px-1.5 py-0.5 rounded mb-1 inline-block">경주</span>
+<p class="text-white font-bold text-sm leading-tight">불국사의 고즈넉한 아침</p>
+</div>
+</a>
+<!-- Travel Card 3 -->
+<a class="group relative rounded-xl overflow-hidden aspect-square shadow-sm" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="City skyline at night with reflections in water" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyAJzjzVtZl9R-Rj64dGWubImHWSngW45BT27LPHAjATYB_tIjeS9lrNgm94dNyOJJZ-77eiE3BSeYrgXW3leNxoEt8LFJuh65bZZ-FhcTPtUsynGYQeUwJQln0XdZpj-fBRKx6lL5Otuv2pb4ggkjBco0DD3l2jbHKc0n6jYK_QKyRIIyrnnXa2ojaPfNIeKb9uJ6C3X8jk2S6oVtwJlwrYpo-LUKrGd5S5u47MTyEiZuSYHlm1dSto8cYXrHyDqqStwjD-kJzAod"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-3 w-full">
+<span class="text-[10px] font-bold text-primary bg-white/90 backdrop-blur px-1.5 py-0.5 rounded mb-1 inline-block">부산</span>
+<p class="text-white font-bold text-sm leading-tight">해운대 야경 명소 BEST 5</p>
+</div>
+</a>
+<!-- Travel Card 4 -->
+<a class="group relative rounded-xl overflow-hidden aspect-square shadow-sm" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Tropical beach with turquoise water and white sand" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCXCO1zfhUY4tm1xLjnH2joy5a3-f_TDUCLk9HOzi_evL2eMDBHvtIvIL5xz3HyWQFXhaUWDzw8DMborNyhu3yzR751rRs1FqBh-psZeXT5uxs6PbjUqzfSJOoslTOJ46i9sQw7P1i_4CDuBqQKqScPYVQgrlz-YytFwjQOkFpdvA_Ma0D6ZEONrS0BvQHORbcfWMvPe_bVTiYWavluk9VaB2vYerdMgqEx05dg-vtrFQOy6ux5LOI3KfJAPcb-mQbLjH1PMvERrKv"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-3 w-full">
+<span class="text-[10px] font-bold text-primary bg-white/90 backdrop-blur px-1.5 py-0.5 rounded mb-1 inline-block">제주</span>
+<p class="text-white font-bold text-sm leading-tight">협재 해수욕장 숨은 스팟</p>
+</div>
+</a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-navy text-white mt-10">
+<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+<div class="col-span-1 md:col-span-2">
+<div class="flex items-center gap-2 mb-4">
+<div class="size-6 bg-white/10 rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm">newspaper</span>
+</div>
+<h2 class="text-xl font-bold">코리아 NEWS</h2>
+</div>
+<p class="text-gray-400 text-sm leading-relaxed max-w-sm">
+                        대한민국의 모든 소식을 가장 빠르고 정확하게 전달합니다. 전국 17개 시도의 생생한 뉴스를 만나보세요.
+                    </p>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-bold text-sm text-gray-200">회사 정보</h4>
+<a class="text-gray-400 hover:text-white text-sm" href="#">회사 소개</a>
+<a class="text-gray-400 hover:text-white text-sm" href="#">인재 채용</a>
+<a class="text-gray-400 hover:text-white text-sm" href="#">제휴 문의</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-bold text-sm text-gray-200">약관 및 정책</h4>
+<a class="text-gray-400 hover:text-white text-sm" href="#">이용약관</a>
+<a class="text-gray-400 hover:text-white text-sm font-medium" href="#">개인정보처리방침</a>
+<a class="text-gray-400 hover:text-white text-sm" href="#">청소년보호정책</a>
+</div>
+</div>
+<div class="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+<p class="text-xs text-gray-500">© 2023 KOREA NEWS Corp. All rights reserved.</p>
+<div class="flex gap-4">
+<a class="text-gray-400 hover:text-white transition-colors" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#"><span class="material-symbols-outlined">mail</span></a>
+<a class="text-gray-400 hover:text-white transition-colors" href="#"><span class="material-symbols-outlined">rss_feed</span></a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

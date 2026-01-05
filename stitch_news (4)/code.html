@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea News Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&amp;family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13b6ec",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#101d22",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Work Sans", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .map-region:hover, .map-region:active {
+            fill: #13b6ec;
+            transition: fill 0.3s ease;
+            cursor: pointer;
+        }
+        /* Custom scrollbar hide for horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white antialiased">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto bg-white dark:bg-[#101d22] border-x border-gray-100 dark:border-gray-800 shadow-xl">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 flex items-center justify-between bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-md px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+<span class="text-primary">코리아</span> NEWS
+            </h1>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col pb-20">
+<!-- Headline & Instruction -->
+<div class="px-5 pt-6 pb-2">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-2xl">map</span>
+<h2 class="text-2xl font-bold text-gray-900 dark:text-white">뉴스 지도</h2>
+</div>
+<p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    지역을 터치하여 실시간 이슈를 확인하세요.
+                </p>
+</div>
+<!-- Interactive Map Section -->
+<div class="relative w-full px-4 py-4 flex justify-center items-center min-h-[320px]">
+<!-- Simplified SVG Map of Korea -->
+<svg class="w-full h-auto drop-shadow-lg filter dark:brightness-90" viewbox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+<!-- Placeholder Groups representing regions roughly -->
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Gyeonggi & Seoul Area -->
+<path class="map-region dark:fill-gray-700 dark:stroke-gray-800" d="M120,80 Q160,60 200,80 T240,120 T200,160 T140,140 Z" fill="#e5e7eb" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none text-gray-800 dark:text-gray-200" fill="currentColor" font-size="12" x="180" y="110">서울/경기</text>
+</g>
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Gangwon Area -->
+<path class="map-region dark:fill-gray-700 dark:stroke-gray-800" d="M200,80 Q250,60 300,90 T320,160 T240,180 T200,160 Z" fill="#e5e7eb" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none text-gray-800 dark:text-gray-200" fill="currentColor" font-size="12" x="260" y="130">강원</text>
+</g>
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Chungcheong Area -->
+<path class="map-region dark:fill-gray-700 dark:stroke-gray-800" d="M140,140 Q200,160 240,180 T220,240 T140,220 T100,180 Z" fill="#e5e7eb" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none text-gray-800 dark:text-gray-200" fill="currentColor" font-size="12" x="170" y="200">충청</text>
+</g>
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Gyeongsang Area -->
+<path class="map-region shadow-lg" d="M240,180 Q300,160 340,200 T320,300 T240,280 T220,240 Z" fill="#13b6ec" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none" fill="white" font-size="12" x="280" y="240">경상</text>
+<!-- Ping Animation -->
+<circle class="animate-ping opacity-75" cx="280" cy="250" fill="white" r="4"></circle>
+<circle cx="280" cy="250" fill="white" r="4"></circle>
+</g>
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Jeolla Area -->
+<path class="map-region dark:fill-gray-700 dark:stroke-gray-800" d="M100,180 Q140,220 220,240 T200,320 T120,340 T80,260 Z" fill="#e5e7eb" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none text-gray-800 dark:text-gray-200" fill="currentColor" font-size="12" x="150" y="280">전라</text>
+</g>
+<g class="transition-transform duration-300 hover:scale-[1.01]">
+<!-- Jeju Area -->
+<path class="map-region dark:fill-gray-700 dark:stroke-gray-800" d="M120,360 Q160,350 180,380 T140,410 Z" fill="#e5e7eb" stroke="white" stroke-width="2"></path>
+<text class="font-bold pointer-events-none text-gray-800 dark:text-gray-200" fill="currentColor" font-size="12" x="145" y="385">제주</text>
+</g>
+</svg>
+<!-- Floating Info Card for Selected Region -->
+<div class="absolute bottom-6 right-6 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+<span class="text-xs font-bold text-gray-500 dark:text-gray-400">LIVE</span>
+</div>
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-tight">경상북도: 폭염 경보 발령</p>
+</div>
+</div>
+<!-- Content Switcher (Segmented Control) -->
+<div class="px-4 mt-2 mb-6">
+<div class="flex w-full rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
+<button class="flex-1 rounded-lg bg-white dark:bg-gray-700 shadow-sm py-2 text-sm font-semibold text-gray-900 dark:text-white transition-all">
+                        ✨ 인기 지역
+                    </button>
+<button class="flex-1 rounded-lg py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all">
+                        🔔 실시간 속보
+                    </button>
+</div>
+</div>
+<!-- Dynamic Content Area -->
+<div class="flex flex-col gap-6 px-4">
+<!-- Popular Regions Ranking -->
+<section>
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">실시간 관심 지역 🔥</h3>
+<a class="text-xs font-medium text-primary hover:text-primary/80" href="#">전체보기</a>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
+<!-- Card 1 -->
+<div class="min-w-[140px] snap-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+<div class="flex items-center justify-between mb-2">
+<span class="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded">1위</span>
+<span class="material-symbols-outlined text-gray-300 group-hover:text-primary text-lg">trending_up</span>
+</div>
+<h4 class="font-bold text-gray-900 dark:text-white mb-1">경상남도</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400 truncate">태풍 대비 현황</p>
+</div>
+<!-- Card 2 -->
+<div class="min-w-[140px] snap-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+<div class="flex items-center justify-between mb-2">
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded">2위</span>
+<span class="material-symbols-outlined text-gray-300 group-hover:text-primary text-lg">trending_up</span>
+</div>
+<h4 class="font-bold text-gray-900 dark:text-white mb-1">서울</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400 truncate">지하철 연장 발표</p>
+</div>
+<!-- Card 3 -->
+<div class="min-w-[140px] snap-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+<div class="flex items-center justify-between mb-2">
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded">3위</span>
+<span class="material-symbols-outlined text-gray-300 group-hover:text-primary text-lg">trending_flat</span>
+</div>
+<h4 class="font-bold text-gray-900 dark:text-white mb-1">제주</h4>
+<p class="text-xs text-gray-500 dark:text-gray-400 truncate">관광객 증가세</p>
+</div>
+</div>
+</section>
+<!-- Breaking News List -->
+<section>
+<div class="flex items-center gap-2 mb-3">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">지역별 속보</h3>
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- News Item 1 -->
+<article class="flex gap-4 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img alt="Busan News" class="w-full h-full object-cover" data-alt="Stormy sea waves crashing on the coast of Busan" data-location="Busan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5DbNCzf0SdKnYlDiZ4E4SA_9YZyLuRErVjjQRBopjczW0a9s-AtsJERn9yLYU7O77Pkpn3qy5mx3wFmx8XwMnb-YKpLlJgnzP7-fNdkcZs_qeGRzTEShXGZqIB3IEy5Cum__arFoa_Y_DSbDPnAFWbrRR1ChmTZC484ekEwZw0NVLB4gwxgbpTXZ-84MQlqnCLC9gkiv3oyo8K1hi3deGlLwg-4QDD57DB-Z9C9Yoq1cITrbzggWB0h7BEhtXTgKjTY2FbzpVumEO"/>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-primary">부산/경남</span>
+<span class="text-[10px] text-gray-400">10분 전</span>
+</div>
+<h4 class="text-sm font-bold text-gray-900 dark:text-white leading-snug line-clamp-2">해운대 앞바다 높은 파도 주의보, 어선 출항 금지</h4>
+</div>
+</article>
+<!-- News Item 2 -->
+<article class="flex gap-4 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img alt="Seoul News" class="w-full h-full object-cover" data-alt="Modern Seoul city skyline with Namsan Tower in the distance" data-location="Seoul" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLPgIevrzxGDIZZlolIn1374eAGyU-_WQIWGzEi5yXux_OAYwNBlv2qDSuKttjSJ6xRgikytKHpSaWHTF2EsK6gGPm08RJYau1nmrJ0MyHH69VGK7wR6_YA9VBfQNLX4e615pUDVRoRN6t4wem5pRfXCgAkka50LF0NpEgsH_MmovMCkyLOpGVwzEct9DrCbqcDVT64lNJqS92nA9qfRszDwftllWxsMn5OqL8U6xPrJp0nYtPXki0isjOTK_c6v2QZlCmK5d1zKRO"/>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-primary">서울</span>
+<span class="text-[10px] text-gray-400">32분 전</span>
+</div>
+<h4 class="text-sm font-bold text-gray-900 dark:text-white leading-snug line-clamp-2">서울시, 새로운 대중교통 패스 '기후동행카드' 이용자 50만 돌파</h4>
+</div>
+</article>
+<!-- News Item 3 -->
+<article class="flex gap-4 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer">
+<div class="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img alt="Jeonju News" class="w-full h-full object-cover" data-alt="Traditional Korean Hanok village rooftops in Jeonju" data-location="Jeonju" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBs_OgL9hxF4Ot-gFVBv6sd8VxshVEVzdHsU7TcWphzxo9eEky5hA-F1WiS-5ADZKlEi8j2bgAZkk4HJNGnb4rLd_MCvCLVGBj3wptDAfXaGJpDXJxKKJvbFF5PD7ol4m5Okacl0h8TRb5xoFTKWphYi5qsGkCCBkubO9GHlRrms8OnQXB9BvRshxC97pNAAfJCL-mjeZ-ZGKuBZ44YY2G_TgEwGHQv9cO9u4kWZiA_YCcchV87v1JF1NFI6bDwgnVX3imGJCA77Jcz"/>
+</div>
+<div class="flex flex-col justify-center flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-primary">전주</span>
+<span class="text-[10px] text-gray-400">1시간 전</span>
+</div>
+<h4 class="text-sm font-bold text-gray-900 dark:text-white leading-snug line-clamp-2">전주 한옥마을 가을 축제 일정 발표, 주말 교통 통제 안내</h4>
+</div>
+</article>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#101d22] border-t border-gray-100 dark:border-gray-800 pb-safe max-w-md mx-auto">
+<div class="flex justify-around items-center h-16">
+<button class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors gap-1">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-primary gap-1">
+<span class="material-symbols-outlined text-2xl fill-current">map</span>
+<span class="text-[10px] font-medium">지도</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors gap-1">
+<span class="material-symbols-outlined text-2xl">newspaper</span>
+<span class="text-[10px] font-medium">뉴스</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-primary transition-colors gap-1">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-[10px] font-medium">MY</span>
+</button>
+</div>
+</nav>
+</div>
+</body></html>

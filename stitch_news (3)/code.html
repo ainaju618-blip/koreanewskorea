@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea NEWS Naju Regional Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13b6ec",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#101d22",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1a2c33",
+                        "text-main-light": "#0d181b",
+                        "text-main-dark": "#e0e6e8",
+                        "text-sub-light": "#4c869a",
+                        "text-sub-dark": "#8faab5",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "Noto Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "sm": "0.125rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display antialiased transition-colors duration-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto shadow-xl bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-card-light dark:bg-card-dark shadow-sm border-b border-gray-100 dark:border-gray-800">
+<div class="flex items-center justify-between p-3 gap-2">
+<!-- Logo -->
+<div class="flex flex-col leading-none">
+<span class="text-[10px] text-primary font-bold tracking-wider uppercase">Korea NEWS</span>
+<h1 class="text-xl font-bold text-text-main-light dark:text-text-main-dark tracking-tight">NAJU <span class="text-sm font-normal text-text-sub-light dark:text-text-sub-dark">City</span></h1>
+</div>
+<!-- Region Selector -->
+<div class="flex-1 flex justify-center">
+<button class="flex items-center gap-1 bg-background-light dark:bg-background-dark px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
+<span class="text-sm font-medium">Naju-si</span>
+<span class="material-symbols-outlined text-base">expand_more</span>
+</button>
+</div>
+<!-- National Link -->
+<button aria-label="Go to National Edition" class="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined">public</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col gap-4 p-4 pb-20">
+<!-- Weather Widget -->
+<section class="rounded-lg bg-gradient-to-br from-[#13b6ec] to-[#0d9ecf] text-white p-5 shadow-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+<div class="relative z-10 flex justify-between items-center">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-lg">location_on</span>
+<span class="text-sm font-medium opacity-90">Bitgaram-dong, Naju</span>
+</div>
+<div class="flex items-end gap-2">
+<h2 class="text-4xl font-bold">24°</h2>
+<span class="text-lg font-medium mb-1 opacity-90">Sunny</span>
+</div>
+<p class="text-xs mt-2 opacity-80">Air Quality: Good • Humidity: 45%</p>
+</div>
+<span class="material-symbols-outlined text-6xl opacity-90">wb_sunny</span>
+</div>
+</section>
+<!-- Quick Access Chips (Optional but fits portal concept) -->
+<div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+<button class="shrink-0 px-4 py-2 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium whitespace-nowrap hover:border-primary hover:text-primary transition-colors">🏛️ City Hall</button>
+<button class="shrink-0 px-4 py-2 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium whitespace-nowrap hover:border-primary hover:text-primary transition-colors">🗺️ Travel</button>
+<button class="shrink-0 px-4 py-2 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium whitespace-nowrap hover:border-primary hover:text-primary transition-colors">🍜 Food</button>
+<button class="shrink-0 px-4 py-2 bg-card-light dark:bg-card-dark border border-gray-200 dark:border-gray-700 rounded-full text-sm font-medium whitespace-nowrap hover:border-primary hover:text-primary transition-colors">📅 Events</button>
+</div>
+<!-- Administrative News Section (Grid mimic - Stacked cards) -->
+<div class="grid grid-cols-1 gap-4">
+<!-- City Hall News -->
+<article class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">account_balance</span>
+<h3 class="font-bold text-lg">City Hall News</h3>
+</div>
+<span class="material-symbols-outlined text-gray-400 text-xl">chevron_right</span>
+</div>
+<ul class="flex flex-col gap-3">
+<li class="group cursor-pointer">
+<p class="text-sm font-medium text-text-main-light dark:text-text-main-dark line-clamp-1 group-hover:text-primary transition-colors">Mayor Yoon visits Innovation City site for inspection</p>
+<p class="text-xs text-text-sub-light dark:text-text-sub-dark mt-0.5">2023-10-27 | Press Release</p>
+</li>
+<li class="group cursor-pointer">
+<p class="text-sm font-medium text-text-main-light dark:text-text-main-dark line-clamp-1 group-hover:text-primary transition-colors">Notice on changes to garbage collection schedule</p>
+<p class="text-xs text-text-sub-light dark:text-text-sub-dark mt-0.5">2023-10-26 | Announcement</p>
+</li>
+</ul>
+</article>
+<!-- Council & Education (Side by side on wider mobile, stacked on very small) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Council -->
+<article class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">voting_chip</span>
+<h3 class="font-bold text-base">Council News</h3>
+</div>
+</div>
+<ul class="flex flex-col gap-3">
+<li class="flex justify-between items-start gap-2">
+<span class="text-sm line-clamp-2">254th Regular Session Agenda Approved</span>
+<span class="text-[10px] text-text-sub-light whitespace-nowrap bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Today</span>
+</li>
+<li class="flex justify-between items-start gap-2">
+<span class="text-sm line-clamp-2">Public Hearing on Budget Review</span>
+<span class="text-[10px] text-text-sub-light whitespace-nowrap bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Yesterday</span>
+</li>
+</ul>
+</article>
+<!-- Education -->
+<article class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">school</span>
+<h3 class="font-bold text-base">Education</h3>
+</div>
+</div>
+<ul class="flex flex-col gap-3">
+<li class="flex justify-between items-start gap-2">
+<span class="text-sm line-clamp-2">High School Admission Guide 2024</span>
+<span class="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">New</span>
+</li>
+<li class="flex justify-between items-start gap-2">
+<span class="text-sm line-clamp-2">Naju Science Festival Winners</span>
+</li>
+</ul>
+</article>
+</div>
+</div>
+<!-- Lifestyle Header -->
+<div class="flex items-center gap-2 mt-2 px-1">
+<span class="h-6 w-1 bg-primary rounded-full"></span>
+<h2 class="text-xl font-bold text-text-main-light dark:text-text-main-dark">Explore Naju</h2>
+</div>
+<!-- Travel Section -->
+<section class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">map</span>
+<h3 class="font-bold text-lg">Travel Hotspots</h3>
+</div>
+<a class="text-xs text-text-sub-light hover:text-primary" href="#">View All</a>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<!-- Card 1 -->
+<div class="group relative flex flex-col gap-2">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Scenic view of Yeongsangang River with a traditional boat" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCH965QHWXPT0qNlz731WP1TFrJsLdOAnEc-aS0FHct4jLXcLngbxVscj6H1sxhxTb3HknWk_giIv9mr2H-O92Gk7Q7oY8Amegohi2VQLVMKHPOnicUYd7eADyW5s60wriq7Xou9xXJm9A-0fjciocdkLUuFo9UNosu9K3V7gfdXG0dyqzD2iXRaq1e0Sduh02hVaMaqXUDY6XmROOduwo87qk57ocDfsIgErPE-RKF3YAUgmpvgWZ9zCFgKRdzS-VA3f9aURy-EDPM');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<button class="absolute bottom-2 right-2 flex items-center gap-1 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-primary shadow-sm hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-[14px]">explore</span>
+                                Guide
+                            </button>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-tight">Yeongsan River</h4>
+<p class="text-xs text-text-sub-light mt-0.5">Historical Waterway</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative flex flex-col gap-2">
+<div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" data-alt="Exterior of the Naju National Museum surrounded by greenery" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA98QEUEiJD5kyfLsNOzjIBrOTlpgX4g1PSOpJyffIh1NdV2xVGPMOT6xkZdtDbzgCNSPKMbnuHWSy85K99SUZPLRHQRGCuu8Gq1qGRTF_zOBYbaO14Kmo3HStx6DNWb9Bpez_1m0Ai54XREg8iEnmHTWeIPGwUqNlLAwHeKrqoWDFhLXZuICGNWFLbAE44L23CWJcWMPehc-W1KBPUeK4amZhFWI4J3h1GXWFUFQvzqmvb-EhxXHaxAnD2h_VamG_xHXXQOfmChSMH');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<button class="absolute bottom-2 right-2 flex items-center gap-1 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-primary shadow-sm hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-[14px]">explore</span>
+                                Guide
+                            </button>
+</div>
+<div>
+<h4 class="font-bold text-sm leading-tight">National Museum</h4>
+<p class="text-xs text-text-sub-light mt-0.5">Ancient Bannam Tombs</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Food & Culture Horizontal Scroll -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="font-bold text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">restaurant_menu</span>
+                        Local Tastes
+                    </h3>
+</div>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
+<!-- Food Card 1 -->
+<div class="shrink-0 w-60 bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+<div class="h-32 bg-cover bg-center" data-alt="Bowl of Naju Gomtang beef soup with rice and kimchi" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB1ZFF6SqbsjlMwtfL2LH-YiMG5ccg7zN0jX8Gsnv4dkY45CMA_JHkLYB6kNiB4mPmpX6tmM01kB0b9infuvCTrQKCDMINSZ1G8LuGz4MlTaJGTRcI-QBBe3jsQOhLCTEobXbdOmJ2u9puKe6qxdf5-gUB2utijWdR3XfAFDVwSnTYW3yJHpkLdp6cg3-WdMy5WXVrtBbgPdYO5MG9HWZJvCQrW2Lc-cD9oiXYXh2bkQBjgLuONLk8YOW8qrKcAhd_snpEAcVG87BfQ');"></div>
+<div class="p-3">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base">Naju Gomtang Street</h4>
+<span class="text-xs font-bold text-yellow-500 flex items-center"><span class="material-symbols-outlined text-[14px] mr-0.5">star</span>4.8</span>
+</div>
+<p class="text-xs text-text-sub-light mt-1 line-clamp-2">Famous clear beef soup alley near Geumseonggwan.</p>
+</div>
+</div>
+<!-- Food Card 2 -->
+<div class="shrink-0 w-60 bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+<div class="h-32 bg-cover bg-center" data-alt="Basket of fresh, golden Naju pears in an orchard" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBfrU7n6Dozki72nOvT4V-dtwMSvNsDwxxHBIEKMwS42FaQEJYtLkvUu7HYf5mNe40J65BUp-AguKmJl_eWB3KKSoiIyj1bPL70nqf_ctsdmlc07PX921iFrGXR956LxLuQG7kBqjCf2TUB4cXsqTR-vaeD1AbL-ki7F8KfSw3MlpcJRN40lzAvK21X595oFokxOz7uThqjT35ecJ58YkFk2tF8RAT6VC3sY5-XcNCNKL4Hq4KtjxAScScRAE_cqoxZKn3hdWNKshWe');"></div>
+<div class="p-3">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base">Premium Naju Pears</h4>
+<span class="text-xs font-bold text-yellow-500 flex items-center"><span class="material-symbols-outlined text-[14px] mr-0.5">star</span>4.9</span>
+</div>
+<p class="text-xs text-text-sub-light mt-1 line-clamp-2">Seasonal specials direct from local orchards.</p>
+</div>
+</div>
+<!-- Culture Card 1 -->
+<div class="shrink-0 w-60 bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+<div class="h-32 bg-cover bg-center" data-alt="Traditional Korean architecture of Geumseonggwan Guest House" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnY4BRpakoQia_oUvvrpT0oG_AxUswwa45n9b86TxH66bGHr8Xby0mxp8WzEe24CPaEj5jQ0lSPMqwfpmqiI7TGKJp3DE5Gx79VbyApCUbkG7XJ0b7oVvgHLMIXXSM1Lm7rw0VHaCmgKvy2o3CDeVYIW5SZao166kuDUSiUwDay0BbXWSOSFVtdoIiwWKGncxQoglwu6H4jpjMH7n3PCy33ORhmW1nHzWcf7ey4wyUQtsfAjbaJwZ-6VGx7qRneUDiLqGQMgAoOjtC');"></div>
+<div class="p-3">
+<div class="flex justify-between items-start">
+<h4 class="font-bold text-base">Geumseonggwan</h4>
+</div>
+<p class="text-xs text-text-sub-light mt-1 line-clamp-2">Historic guest house from the Joseon Dynasty.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Community & Events Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Daily News -->
+<article class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary">newspaper</span>
+<h3 class="font-bold text-lg">Neighborhood News</h3>
+</div>
+<div class="space-y-3">
+<div class="flex gap-3 items-start">
+<div class="size-16 rounded bg-gray-200 shrink-0 bg-cover bg-center" data-alt="Community center opening ceremony" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDkiCcIVwLKs6JQSS_Z-1Jtwd1YIr-8MP-dFcMWbHrWRVQ6yvSUxc5oIJN-rcvfaSdsWq4hYKIGtwUONuDnS8wtjr_cG_v1uFUuRbWjyyhSTmSu4eZJRVOnOs8aKazoM5-Ogg4ap4zmr14LfZQ9oL5cVsrQrFbxz8eG0QPP9DIFuKkCLQkGBrPph7iBbDaLn-RvcS2bF3DHSa6bxPDCnt_tZ36GmwY3eNAYXYK4KLDtAYWaUfeMrjhxxE86IaXZIo2ApdWEF9AT1RfZ');"></div>
+<div>
+<h4 class="text-sm font-medium line-clamp-2 leading-snug">New community center opens in Bitgaram-dong with library and gym</h4>
+<p class="text-xs text-text-sub-light mt-1">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-3 items-start">
+<div class="size-16 rounded bg-gray-200 shrink-0 bg-cover bg-center" data-alt="Volunteer group cleaning park" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCLiOOlQtPHReLXVjqcR7NOIjlQyPOurFti1ZnZEmufm2d3-oebmg5QCQqmZYTkdw68Jl12vAAgtrv4Aq7ZFmf2gKYTA6gVDrVP25HQvsHXpPZZGwyBQ0Hqo8MMEdQsViYANMvzSFAFNQUUCF2UfsfVl5bkR1S80k339KwSVdIHlsw3oTpXivCdoFKl9n_u2q_0zkj21Zkf1Q8sz3R76a92p3I-ODD5SHIDps1QkZhM0uIz0wgrasBFH4-eDjBtIB07kgJpavBcsFuJ');"></div>
+<div>
+<h4 class="text-sm font-medium line-clamp-2 leading-snug">Local volunteers gather for weekend park cleanup drive</h4>
+<p class="text-xs text-text-sub-light mt-1">5 hours ago</p>
+</div>
+</div>
+</div>
+</article>
+<!-- Events Calendar -->
+<article class="bg-card-light dark:bg-card-dark rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 p-4">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+<h3 class="font-bold text-lg">Upcoming Events</h3>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+<div class="flex flex-col items-center justify-center bg-primary/10 text-primary rounded w-12 h-12 shrink-0">
+<span class="text-[10px] font-bold uppercase">Oct</span>
+<span class="text-lg font-bold leading-none">28</span>
+</div>
+<div>
+<h4 class="text-sm font-bold">Naju Fall Flower Festival</h4>
+<p class="text-xs text-text-sub-light">Riverside Park • 10:00 AM</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+<div class="flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 rounded w-12 h-12 shrink-0">
+<span class="text-[10px] font-bold uppercase">Nov</span>
+<span class="text-lg font-bold leading-none">02</span>
+</div>
+<div>
+<h4 class="text-sm font-bold">Traditional Music Concert</h4>
+<p class="text-xs text-text-sub-light">Culture Arts Center • 7:00 PM</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-3 py-2 text-xs font-bold text-primary border border-primary/20 rounded hover:bg-primary/5 transition-colors">
+                        View Full Calendar
+                    </button>
+</article>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-[#0c161a] border-t border-gray-100 dark:border-gray-800 py-8 px-6 text-center">
+<h2 class="text-lg font-bold mb-4 text-primary">Korea NEWS Naju</h2>
+<div class="flex justify-center gap-4 mb-6">
+<a class="text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">public</span></a>
+<a class="text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="text-text-sub-light dark:text-text-sub-dark hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">mail</span></a>
+</div>
+<div class="text-xs text-text-sub-light dark:text-text-sub-dark space-y-2">
+<div class="flex justify-center gap-3">
+<a class="hover:underline" href="#">About Us</a>
+<span class="w-px h-3 bg-gray-300 dark:bg-gray-700 inline-block"></span>
+<a class="hover:underline font-bold" href="#">Privacy Policy</a>
+<span class="w-px h-3 bg-gray-300 dark:bg-gray-700 inline-block"></span>
+<a class="hover:underline" href="#">Terms</a>
+</div>
+<p class="mt-4 leading-relaxed opacity-70">
+                    Registration No: Jeonnam-A-00123<br/>
+                    Publisher: Korea NEWS Naju Branch<br/>
+                    Contact: 061-333-1234
+                </p>
+<p class="mt-4 opacity-50">© 2023 Korea NEWS Naju. All rights reserved.</p>
+</div>
+</footer>
+</div>
+</body></html>

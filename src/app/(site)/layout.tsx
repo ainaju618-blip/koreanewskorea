@@ -1,6 +1,6 @@
-
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import StitchHeader from '@/components/StitchHeader';
+import StitchFooter from '@/components/StitchFooter';
+import MobileTabBar from '@/components/MobileTabBar';
 
 export default function SiteLayout({
     children,
@@ -9,11 +9,12 @@ export default function SiteLayout({
 }) {
     return (
         <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-grow">
+            <StitchHeader />
+            <main className="flex-grow pb-16 lg:pb-0">
                 {children}
             </main>
-            <Footer />
+            <StitchFooter />
+            <MobileTabBar />
         </div>
     );
 }

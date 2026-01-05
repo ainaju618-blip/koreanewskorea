@@ -11,7 +11,7 @@ import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
 // Dynamic import for NewsTicker (reduces initial bundle, loads after header)
 const NewsTicker = dynamic(() => import('./NewsTicker'), {
     ssr: false,
-    loading: () => <div className="h-[45px] bg-slate-50 animate-pulse" />
+    loading: () => <div className="h-[36px] bg-slate-50 animate-pulse" />
 });
 
 // CosmicPulse categories
@@ -166,53 +166,27 @@ export default function Header() {
             </a>
 
             {/* =========================================================================
-                LAYER 1: TOP UTILITY BAR (32px) - Deep Royal Blue (Authority)
+                LAYER 1: LOGO ZONE (55px) - Compact for better content visibility
             ========================================================================= */}
-            <div className="h-[32px] bg-secondary text-white/90 hidden md:block">
-                <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Facebook"><Facebook className="w-5 h-5" /></a>
-                            <a href="#" className="hover:text-primary transition-colors p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
-                        </div>
-                        <span className="text-white/95 font-medium">
-                            {currentDate}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 font-medium tracking-wide opacity-90">
-                        <Link href="/subscribe" className="hover:text-primary transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary">Subscribe</Link>
-                        <span className="w-[1px] h-2.5 bg-white/20"></span>
-                        <Link href="/reporter/login" className="flex items-center gap-1 hover:text-primary transition-colors px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary">
-                            <User className="w-3 h-3" /> Reporter Login
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* =========================================================================
-                LAYER 2: LOGO ZONE (70px) - Increased whitespace
-            ========================================================================= */}
-            <div className="h-[70px] bg-white border-b border-slate-100">
+            <div className="h-[55px] bg-white border-b border-slate-100">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex flex-row items-center justify-between">
 
-                    {/* Left Logo Image - Optimized with Next.js Image */}
-                    <Link href="/" className="hidden lg:flex items-center mt-5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                    {/* Left Logo Image - Compact */}
+                    <Link href="/" className="hidden lg:flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                         <Image
                             src="/logo-koreanews.png"
                             alt="Korea NEWS 홈으로 이동"
-                            width={108}
-                            height={60}
+                            width={90}
+                            height={50}
                             className="object-contain"
                             priority
                         />
                     </Link>
 
-                    {/* Center Logo branding */}
+                    {/* Center Logo branding - Compact */}
                     <div className="flex flex-col items-center justify-center flex-1">
                         <Link href="/" className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                            <span className="text-4xl md:text-5xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
+                            <span className="text-3xl md:text-4xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
                                 코리아<span className="text-primary">NEWS</span>
                             </span>
                         </Link>
@@ -239,9 +213,9 @@ export default function Header() {
             </div>
 
             {/* =========================================================================
-                LAYER 3: MAIN NAVIGATION (GNB) (55px) - Sticky, Royal Blue Border
+                LAYER 3: MAIN NAVIGATION (GNB) (48px) - Sticky, Compact
             ========================================================================= */}
-            <div className="sticky top-0 z-40 bg-white border-t border-b-2 border-secondary shadow-sm h-[50px] md:h-[55px]">
+            <div className="sticky top-0 z-40 bg-white border-t border-b-2 border-secondary shadow-sm h-[44px] md:h-[48px]">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full relative">
 
                     <nav className="hidden md:flex items-center justify-center h-full">
@@ -294,7 +268,7 @@ export default function Header() {
                                     {/* MEGA MENU DROPDOWN - Modern Design with Animation */}
                                     {/* region(jeonnam-region) menu dropdown disabled */}
                                     {hasChildren(category) && category.slug !== 'jeonnam' && category.slug !== 'region' && category.slug !== 'jeonnam-region' && (
-                                        <div className={`absolute top-[55px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
+                                        <div className={`absolute top-[48px] left-1/2 -translate-x-1/2 w-[640px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100/80 p-0 overflow-hidden
                                             opacity-0 invisible translate-y-2 group-hover/menu:opacity-100 group-hover/menu:visible group-hover/menu:translate-y-0 transition-all duration-300 ease-out z-50
                                         `}>
                                             {/* Header */}
@@ -382,7 +356,7 @@ export default function Header() {
             </div>
 
             {/* =========================================================================
-                LAYER 4: TICKER (NewsTicker.tsx) (45px)
+                LAYER 4: TICKER (NewsTicker.tsx) (36px) - Compact
             ========================================================================= */}
             <NewsTicker />
 

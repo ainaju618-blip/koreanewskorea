@@ -42,10 +42,10 @@ logger = logging.getLogger('ApiClient')
 # .env 파일 로드 (프로젝트 루트 기준)
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
-# 설정 상수
-API_URL = os.getenv('BOT_API_URL', 'http://localhost:3000/api/bot/ingest')
-LOG_API_URL = os.getenv('BOT_LOG_API_URL', 'http://localhost:3000/api/bot/logs')
-DUPLICATE_CHECK_URL = os.getenv('BOT_DUPLICATE_CHECK_URL', 'http://localhost:3000/api/bot/check-duplicate')
+# 설정 상수 (koreanewskorea: 포트 3001 사용)
+API_URL = os.getenv('BOT_API_URL', 'http://localhost:3001/api/bot/ingest')
+LOG_API_URL = os.getenv('BOT_LOG_API_URL', 'http://localhost:3001/api/bot/logs')
+DUPLICATE_CHECK_URL = os.getenv('BOT_DUPLICATE_CHECK_URL', 'http://localhost:3001/api/bot/check-duplicate')
 API_KEY = os.getenv('BOT_API_KEY', '')
 REQUEST_TIMEOUT = 10  # 초
 MAX_RETRIES = 3

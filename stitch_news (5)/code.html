@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea NEWS - Interactive Map</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#13b6ec",
+              "background-light": "#f6f8f8",
+              "background-dark": "#101d22",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1a2c32",
+              "text-main": "#0d181b",
+              "text-muted": "#5f747a",
+            },
+            fontFamily: {
+              "display": ["Work Sans", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem", 
+              "lg": "0.5rem", 
+              "xl": "0.75rem", 
+              "2xl": "1rem",
+              "full": "9999px"
+            },
+            boxShadow: {
+              'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+              'glow': '0 0 15px rgba(19, 182, 236, 0.3)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar hiding for horizontal lists */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Pulse animation for map hotspots */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: #13b6ec;
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-2xl overflow-hidden">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 transition-colors">
+<div class="flex items-center justify-between p-4 h-16">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-text-main dark:text-white transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="text-primary font-black text-xl tracking-tight">KOREA NEWS</span>
+</div>
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-text-main dark:text-white transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content Scroll Area -->
+<main class="flex-1 overflow-y-auto pb-20 scroll-smooth">
+<!-- Headline Section -->
+<section class="px-5 pt-6 pb-2">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Interactive</span>
+</div>
+<h1 class="text-2xl font-bold leading-tight text-text-main dark:text-white">
+                    🔍 대한민국 뉴스 지도
+                </h1>
+<p class="text-text-muted dark:text-gray-400 text-sm mt-2 leading-relaxed">
+                    지역을 터치하여 실시간 이슈를 확인하세요. <br/>
+<span class="text-primary font-medium">지금 서울이 가장 뜨겁습니다!</span>
+</p>
+</section>
+<!-- Map Component -->
+<section class="relative w-full aspect-[4/5] my-4 overflow-hidden group">
+<!-- Map Background (Abstract/Stylized) -->
+<div class="absolute inset-0 mx-4 bg-surface-light dark:bg-surface-dark rounded-2xl border border-gray-200 dark:border-gray-800 shadow-soft">
+<!-- Decorative map background image -->
+<div class="w-full h-full opacity-30 dark:opacity-20 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/South_Korea_location_map.svg/856px-South_Korea_location_map.svg.png')] bg-contain bg-center bg-no-repeat" data-alt="Outline map of South Korea showing provincial borders" data-location="South Korea" style="https://lh3.googleusercontent.com/aida-public/AB6AXuBIpnntiEqiPOZrNxIMVYAlBfQtWOR01JhthgT42Ja-jK220mYCsockNpZ9XKiAOAKBTtsar_EfQ30oUQ0R8ekTY6n1okjpS9iBn3XxNOQX4xyDNZ3xc9HixZ9iF_FvWaO6uSi9aQ1lIDPaDDDH8OKlvlzmKqxGejOkwK3JhrUECeKjVp5Ba-XJ96fffW1MJTS8KrQV36l_RW61kskXW9Al46PDmSIhqvh1grYTqLt7-GLkilVnXJwkQb2L10OvJcQMDj5QSZF71Clf">
+</div>
+<!-- Interactive Hotspots (Absolute positioning relative to map container) -->
+<!-- Seoul (Center-ish Top) -->
+<button class="absolute top-[20%] left-[30%] -translate-x-1/2 flex flex-col items-center group/marker focus:outline-none">
+<div class="relative size-12 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary/20 rounded-full animate-ping"></div>
+<div class="relative size-8 bg-primary rounded-full shadow-glow border-2 border-white dark:border-gray-900 z-10 flex items-center justify-center text-white font-bold text-xs">
+                               1
+                           </div>
+</div>
+<div class="mt-1 bg-white dark:bg-gray-800 px-3 py-1 rounded shadow-lg border border-gray-100 dark:border-gray-700">
+<span class="text-xs font-bold text-text-main dark:text-white">서울</span>
+<span class="text-[10px] text-primary block text-center font-medium">+128건</span>
+</div>
+</button>
+<!-- Gyeonggi (Around Seoul) -->
+<button class="absolute top-[25%] left-[55%] flex flex-col items-center group/marker focus:outline-none opacity-80 hover:opacity-100 hover:scale-110 transition-all">
+<div class="size-4 bg-primary/60 rounded-full border border-white dark:border-gray-900 shadow-md"></div>
+<span class="mt-1 text-[10px] font-semibold bg-white/80 dark:bg-gray-800/80 px-1.5 rounded backdrop-blur-sm">경기</span>
+</button>
+<!-- Gangwon (Top Right) -->
+<button class="absolute top-[18%] right-[25%] flex flex-col items-center group/marker focus:outline-none opacity-80 hover:opacity-100 hover:scale-110 transition-all">
+<div class="size-4 bg-gray-400 rounded-full border border-white dark:border-gray-900 shadow-md"></div>
+<span class="mt-1 text-[10px] font-semibold bg-white/80 dark:bg-gray-800/80 px-1.5 rounded backdrop-blur-sm">강원</span>
+</button>
+<!-- Busan (Bottom Right) -->
+<button class="absolute bottom-[20%] right-[20%] flex flex-col items-center group/marker focus:outline-none">
+<div class="relative size-10 flex items-center justify-center pulse-ring">
+<div class="relative size-6 bg-red-500 rounded-full shadow-lg border-2 border-white dark:border-gray-900 z-10 flex items-center justify-center text-white font-bold text-[10px]">
+                               Hot
+                           </div>
+</div>
+<div class="mt-1 bg-white dark:bg-gray-800 px-2 py-0.5 rounded shadow-lg border border-gray-100 dark:border-gray-700">
+<span class="text-xs font-bold text-text-main dark:text-white">부산</span>
+</div>
+</button>
+<!-- Jeju (Bottom Center) -->
+<button class="absolute bottom-[5%] left-[25%] flex flex-col items-center group/marker focus:outline-none opacity-90 hover:opacity-100 hover:scale-110 transition-all">
+<div class="size-5 bg-teal-400 rounded-full border border-white dark:border-gray-900 shadow-md"></div>
+<span class="mt-1 text-[10px] font-semibold bg-white/80 dark:bg-gray-800/80 px-1.5 rounded backdrop-blur-sm">제주</span>
+</button>
+<!-- Jeonju/Jeolla (South West) -->
+<button class="absolute bottom-[25%] left-[30%] flex flex-col items-center group/marker focus:outline-none opacity-70 hover:opacity-100 hover:scale-110 transition-all">
+<div class="size-3 bg-gray-400 rounded-full border border-white dark:border-gray-900 shadow-md"></div>
+</button>
+<!-- Daegu (South Eastish) -->
+<button class="absolute bottom-[32%] right-[30%] flex flex-col items-center group/marker focus:outline-none opacity-70 hover:opacity-100 hover:scale-110 transition-all">
+<div class="size-3 bg-gray-400 rounded-full border border-white dark:border-gray-900 shadow-md"></div>
+</button>
+</div>
+<!-- Floating Map Controls -->
+<div class="absolute bottom-4 right-8 flex flex-col gap-2">
+<button class="size-10 bg-white dark:bg-surface-dark shadow-lg rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-xl">my_location</span>
+</button>
+<button class="size-10 bg-white dark:bg-surface-dark shadow-lg rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-xl">layers</span>
+</button>
+</div>
+</section>
+<!-- Rankings Header -->
+<div class="flex items-center justify-between px-5 mt-8 mb-4">
+<h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2">
+<span class="text-yellow-500 material-symbols-outlined filled text-xl">bolt</span>
+                    인기 지역 랭킹
+                </h3>
+<a class="text-sm text-primary font-medium hover:underline" href="#">전체보기</a>
+</div>
+<!-- Horizontal Scroll Ranking -->
+<div class="flex overflow-x-auto gap-3 px-5 pb-4 no-scrollbar">
+<!-- Rank 1 -->
+<div class="flex-shrink-0 flex items-center gap-3 pl-1 pr-4 py-2 bg-white dark:bg-surface-dark rounded-full border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform cursor-pointer">
+<div class="size-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-glow">1</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-text-main dark:text-white">서울</span>
+<span class="text-[10px] text-red-500 font-medium">▲ 급상승</span>
+</div>
+</div>
+<!-- Rank 2 -->
+<div class="flex-shrink-0 flex items-center gap-3 pl-1 pr-4 py-2 bg-white dark:bg-surface-dark rounded-full border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform cursor-pointer">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-text-main dark:text-white flex items-center justify-center font-bold text-sm">2</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-text-main dark:text-white">부산</span>
+<span class="text-[10px] text-text-muted">관심도 80%</span>
+</div>
+</div>
+<!-- Rank 3 -->
+<div class="flex-shrink-0 flex items-center gap-3 pl-1 pr-4 py-2 bg-white dark:bg-surface-dark rounded-full border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform cursor-pointer">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-text-main dark:text-white flex items-center justify-center font-bold text-sm">3</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-text-main dark:text-white">제주</span>
+<span class="text-[10px] text-text-muted">여행 이슈</span>
+</div>
+</div>
+<!-- Rank 4 -->
+<div class="flex-shrink-0 flex items-center gap-3 pl-1 pr-4 py-2 bg-white dark:bg-surface-dark rounded-full border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition-transform cursor-pointer">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 text-text-main dark:text-white flex items-center justify-center font-bold text-sm">4</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-text-main dark:text-white">경기</span>
+<span class="text-[10px] text-text-muted">부동산</span>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-2 bg-gray-100 dark:bg-gray-900 my-4"></div>
+<!-- Real-time News Feed Header -->
+<div class="px-5 pt-4 pb-2">
+<h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2">
+<span class="text-red-500 material-symbols-outlined text-xl animate-pulse">notifications_active</span>
+                    지역별 실시간 속보
+                </h3>
+</div>
+<!-- News Feed List -->
+<div class="flex flex-col px-4 gap-3">
+<!-- News Item 1 -->
+<article class="bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4 active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors">
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">서울</span>
+<span class="text-xs text-text-muted flex items-center gap-1">
+<span class="size-1 bg-red-500 rounded-full"></span>
+                                방금 전
+                            </span>
+</div>
+<h4 class="text-base font-bold text-text-main dark:text-white leading-snug line-clamp-2">
+                            강남대로 침수 피해 복구 작업 90% 완료, 차량 통제 해제
+                        </h4>
+<div class="mt-2 flex items-center gap-3">
+<span class="text-[11px] text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">visibility</span> 1.2k
+                            </span>
+<span class="text-[11px] text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">chat_bubble</span> 42
+                            </span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden relative">
+<div class="w-full h-full bg-cover bg-center" data-alt="Rainy street with traffic police" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB2DMWdB9BQN3FQUsi3Zf_9xbBycDa7BjK_rt4jCHz1Qyoi6gkrq-La_m4oninvRkndJdTIfsF98ob5Ca1mCBxeuDtLRPAE-6pRDvj62o4dRbUdpLMFxe4_WF9D4rEoHuDjHXpRRnMxKVLtS7TdeFwMFqRe77Enh5ep071cyHmECz4jRa-4pXThiAIopIhhNHqToilYu8JTbTkk5uwvtN7SpI7y81A30V0Khc2g_29dMPcUJ0sGviSdp3qhFNNpVJMMn_QwIVM_uP5Z');"></div>
+</div>
+</article>
+<!-- News Item 2 -->
+<article class="bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4 active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors">
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-bold">부산</span>
+<span class="text-xs text-text-muted">
+                                5분 전
+                            </span>
+</div>
+<h4 class="text-base font-bold text-text-main dark:text-white leading-snug line-clamp-2">
+                            부산국제영화제 개막식, 역대 최다 인파 몰려... 티켓 매진 행렬
+                        </h4>
+<div class="mt-2 flex items-center gap-3">
+<span class="text-[11px] text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">visibility</span> 850
+                            </span>
+</div>
+</div>
+<!-- No Image Layout Variation -->
+<div class="w-20 h-20 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex-shrink-0 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">movie</span>
+</div>
+</article>
+<!-- News Item 3 -->
+<article class="bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4 active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors">
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1.5">
+<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-bold">제주</span>
+<span class="text-xs text-text-muted">
+                                1시간 전
+                            </span>
+</div>
+<h4 class="text-base font-bold text-text-main dark:text-white leading-snug line-clamp-2">
+                            주말 제주 항공권 특가, 여행객 급증 예상
+                        </h4>
+<div class="mt-2 flex items-center gap-3">
+<span class="text-[11px] text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">visibility</span> 3.5k
+                            </span>
+<span class="text-[11px] text-text-muted flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">favorite</span> 120
+                            </span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
+<div class="w-full h-full bg-cover bg-center" data-alt="Airplane flying over blue ocean" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAcS39D00_IodWtdj_B0HIyX8toeIbF-9AUbQGUI6DtEpiQucbtPyXx_joCzLfAz2smXigu5e7MNKcmjxoGN0CqE8fmC4jPMpvifRxjGrY_gjo6r4Mkfmw7EcJ5eHzAoKybC2L3kPL-AjUeKmi3a3AaezaHJvIRFw1N3NosqnoEvs_Cwp1iPctQn1RNt_w9GOydHyZP0ye0ksT2s57H9NeY9jYl6pBUP0PP5blN2k3tXpe509fivnkDVhIlJ08CMeYWGXUzb8sEaFE2');"></div>
+</div>
+</article>
+<!-- News Item 4 (Text Only Compact) -->
+<article class="bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-center active:bg-gray-50 dark:active:bg-gray-800/50 transition-colors">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-bold">대구</span>
+<span class="text-xs text-text-muted">2시간 전</span>
+</div>
+<h4 class="text-sm font-medium text-text-main dark:text-white leading-snug truncate">
+                        대구 지역 스타트업 지원 정책 발표, 투자 유치 설명회 개최
+                    </h4>
+</article>
+</div>
+<!-- Load More Button -->
+<div class="px-5 mt-6 mb-8">
+<button class="w-full py-3 rounded-lg bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-sm font-bold text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    더 많은 뉴스 보기
+                </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="absolute bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-100 dark:border-gray-800 flex justify-around items-center h-16 pb-2 z-50">
+<button class="flex flex-col items-center justify-center w-full h-full text-text-muted hover:text-primary transition-colors">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium mt-0.5">홈</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-primary">
+<span class="material-symbols-outlined filled">map</span>
+<span class="text-[10px] font-medium mt-0.5">지도</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-text-muted hover:text-primary transition-colors">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="text-[10px] font-medium mt-0.5">랭킹</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full h-full text-text-muted hover:text-primary transition-colors">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium mt-0.5">MY</span>
+</button>
+</nav>
+</div>
+</body></html>

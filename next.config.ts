@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.supabase.co' },   // Supabase storage
       { protocol: 'https', hostname: 'placehold.co' },    // Mock images
       { protocol: 'https', hostname: 'res.cloudinary.com' },  // Cloudinary CDN
+      { protocol: 'https', hostname: 'images.unsplash.com' },  // Unsplash images
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },  // Google images (Stitch AI)
     ],
   },
   

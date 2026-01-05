@@ -1,9 +1,11 @@
 // src/components/Sidebar.tsx
-// Server Component - Modern Design
+// Server Component - Modern Design with MapWidget
 
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { TrendingUp, Calendar, MapPin, Video, ArrowRight, Flame } from 'lucide-react';
+import { Calendar, ArrowRight, Flame } from 'lucide-react';
+import MapWidget, { MapWidgetSkeleton } from './sidebar/MapWidget';
+import NativeAdSlot from './ads/NativeAdSlot';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -19,7 +21,12 @@ interface Post {
 
 /**
  * Korea NEWS Sidebar (Server Component)
- * Modern design with refined visual hierarchy
+ * =====================================
+ * 사이드바 구성:
+ * 1. 전국 지도 위젯 (MapWidget)
+ * 2. 많이 본 뉴스
+ * 3. 최신 뉴스
+ * 4. 네이티브 광고
  */
 export default async function Sidebar() {
     // Server-side data fetching
@@ -39,6 +46,9 @@ export default async function Sidebar() {
 
     return (
         <aside className="space-y-5">
+            {/* ===== Map Widget ===== */}
+            <MapWidget />
+
             {/* ===== Hot Issue Widget ===== */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80">
                 <div className="bg-gradient-to-r from-primary to-primary-light px-5 py-4 flex items-center gap-2.5">
@@ -52,7 +62,7 @@ export default async function Sidebar() {
                         <li key={post.id} className="group">
                             <Link
                                 href={`/news/${post.id}`}
-                                className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50/80 transition-colors"
+                                className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
                             >
                                 <span className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-[11px] font-black transition-colors
                                     ${idx < 3
@@ -83,7 +93,7 @@ export default async function Sidebar() {
                         <li key={post.id} className="group">
                             <Link
                                 href={`/news/${post.id}`}
-                                className="block px-5 py-3.5 hover:bg-slate-50/80 transition-colors"
+                                className="block px-5 py-3.5 hover:bg-slate-50/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
                             >
                                 <span className="text-[14px] text-slate-700 leading-snug group-hover:text-slate-900 line-clamp-2 block font-medium transition-colors">
                                     {post.title}
@@ -97,37 +107,31 @@ export default async function Sidebar() {
                 </ul>
             </div>
 
+            {/* ===== Native Ad Slot ===== */}
+            <NativeAdSlot variant="card" position="sidebar-1" />
+
             {/* ===== Quick Links ===== */}
             <div className="bg-white rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80 p-5">
                 <h3 className="font-bold text-slate-800 text-[15px] mb-4 flex items-center gap-2">
                     <ArrowRight className="w-4 h-4 text-primary" />
-                    Quick Links
+                    바로가기
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
                     <Link
-                        href="/map"
-                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10"
+                        href="/news"
+                        className="flex items-center justify-center p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
-                        <MapPin className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
-                        <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">Namdo Daiso</span>
+                        <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">전체뉴스</span>
                     </Link>
                     <Link
-                        href="/news/network"
-                        className="flex items-center gap-2.5 p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10"
+                        href="https://koreanewsone.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
-                        <Video className="w-4 h-4 text-primary group-hover:text-white transition-colors" />
-                        <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">News TV</span>
+                        <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">지사방문</span>
                     </Link>
                 </div>
-            </div>
-
-            {/* ===== Ad Slot ===== */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl h-[250px] flex flex-col items-center justify-center text-slate-400 border border-slate-200/50 shadow-inner">
-                <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-                    <span className="text-lg font-bold text-slate-300">AD</span>
-                </div>
-                <span className="font-bold text-sm mb-1">Advertise Here</span>
-                <span className="text-xs text-slate-400">010-2631-3865</span>
             </div>
         </aside>
     );
@@ -137,6 +141,10 @@ export default async function Sidebar() {
 export function SidebarSkeleton() {
     return (
         <aside className="space-y-5">
+            {/* Map Widget Skeleton */}
+            <MapWidgetSkeleton />
+
+            {/* Hot News Skeleton */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80">
                 <div className="bg-gradient-to-r from-slate-200 to-slate-300 h-14 animate-pulse"></div>
                 <div className="p-5 space-y-3">
@@ -148,6 +156,8 @@ export function SidebarSkeleton() {
                     ))}
                 </div>
             </div>
+
+            {/* Recent News Skeleton */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] border border-slate-100/80">
                 <div className="bg-gradient-to-r from-slate-200 to-slate-300 h-14 animate-pulse"></div>
                 <div className="p-5 space-y-3">
@@ -156,6 +166,9 @@ export function SidebarSkeleton() {
                     ))}
                 </div>
             </div>
+
+            {/* Ad Skeleton */}
+            <div className="h-[200px] bg-slate-100 rounded-2xl animate-pulse"></div>
         </aside>
     );
 }
