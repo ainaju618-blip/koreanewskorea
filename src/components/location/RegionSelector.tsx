@@ -74,9 +74,27 @@ export default function RegionSelector({ value, onChange, isLoading }: RegionSel
             {/* Dropdown Menu */}
             {isOpen && (
                 <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 max-h-80 overflow-y-auto">
-                    {/* Metro */}
+                    {/* Government */}
                     <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">
-                        Metropolitan
+                        정부
+                    </div>
+                    {grouped.government.map((code) => (
+                        <button
+                            key={code}
+                            onClick={() => handleSelect(code)}
+                            className={`
+                w-full text-left px-3 py-2 text-sm
+                hover:bg-slate-50 transition-colors
+                ${value === code ? 'bg-red-50 text-red-700 font-medium' : 'text-slate-700'}
+              `}
+                        >
+                            {REGIONS[code as RegionCode].name}
+                        </button>
+                    ))}
+
+                    {/* Metro - 특별시·광역시 */}
+                    <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-t border-b border-slate-100">
+                        특별시·광역시
                     </div>
                     {grouped.metro.map((code) => (
                         <button
@@ -92,29 +110,11 @@ export default function RegionSelector({ value, onChange, isLoading }: RegionSel
                         </button>
                     ))}
 
-                    {/* Cities */}
+                    {/* Province - 도 */}
                     <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-t border-b border-slate-100">
-                        Cities
+                        도
                     </div>
-                    {grouped.city.map((code) => (
-                        <button
-                            key={code}
-                            onClick={() => handleSelect(code)}
-                            className={`
-                w-full text-left px-3 py-2 text-sm
-                hover:bg-slate-50 transition-colors
-                ${value === code ? 'bg-red-50 text-red-700 font-medium' : 'text-slate-700'}
-              `}
-                        >
-                            {REGIONS[code as RegionCode].name}
-                        </button>
-                    ))}
-
-                    {/* Counties */}
-                    <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 border-t border-b border-slate-100">
-                        Counties
-                    </div>
-                    {grouped.county
+                    {grouped.province
                         .sort((a, b) => REGIONS[a as RegionCode].name.localeCompare(REGIONS[b as RegionCode].name, 'ko'))
                         .map((code) => (
                             <button
