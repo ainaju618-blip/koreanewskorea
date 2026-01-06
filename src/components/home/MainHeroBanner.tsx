@@ -50,7 +50,7 @@ export default function MainHeroBanner() {
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 h-full max-w-7xl mx-auto flex flex-col justify-center">
+      <div className="relative z-10 h-full max-w-7xl mx-auto flex flex-col items-center justify-center text-center">
         {/* Badge */}
         <div className="flex items-center gap-2 mb-4">
           <span className="px-3 py-1 bg-primary/90 text-white text-xs font-bold rounded-full uppercase tracking-wide">
@@ -76,8 +76,8 @@ export default function MainHeroBanner() {
         </p>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="mb-8">
-          <div className="relative max-w-xl">
+        <form onSubmit={handleSearch} className="mb-8 w-full max-w-xl">
+          <div className="relative">
             <input
               type="text"
               value={searchQuery}
@@ -96,7 +96,7 @@ export default function MainHeroBanner() {
         </form>
 
         {/* Quick Region Links */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <span className="flex items-center gap-1 text-slate-400 text-sm mr-2">
             <MapPin className="w-4 h-4" />
             주요 지역:
