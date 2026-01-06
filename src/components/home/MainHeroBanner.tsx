@@ -34,13 +34,13 @@ export default function MainHeroBanner() {
   ];
 
   return (
-    <section className="relative w-full h-[400px] md:h-[480px] overflow-hidden -mx-4 px-4 lg:-mx-[calc((100vw-1280px)/2)] lg:px-[calc((100vw-1280px)/2)]">
+    <section className="relative w-screen left-1/2 -translate-x-1/2 h-[400px] md:h-[480px] overflow-hidden">
       {/* Background Image */}
       <Image
         src="/images/hero/main-hero.png"
         alt="코리아뉴스코리아 전국 뉴스"
         fill
-        className="object-cover"
+        className="object-cover object-center"
         priority
         quality={90}
       />
@@ -49,8 +49,8 @@ export default function MainHeroBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-900/50" />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
 
-      {/* Content */}
-      <div className="relative z-10 h-full max-w-7xl mx-auto flex flex-col items-center justify-center text-center">
+      {/* Content - 정중앙 배치 */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
         {/* Badge */}
         <div className="flex items-center gap-2 mb-4">
           <span className="px-3 py-1 bg-primary/90 text-white text-xs font-bold rounded-full uppercase tracking-wide">
