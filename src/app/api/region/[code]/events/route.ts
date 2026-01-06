@@ -16,11 +16,11 @@ export async function GET(request: NextRequest, { params }: Props) {
     const category = searchParams.get('category');
     const upcoming = searchParams.get('upcoming') === 'true';
 
-    // 기본 쿼리
+    // 기본 쿼리 - 최소 필수 컬럼만 조회 (start_date 사용)
     let query = supabaseAdmin
       .from('events')
       .select(
-        'id, title, description, thumbnail_url, location, address, event_date, end_date, event_time, category, tags, is_featured, view_count',
+        'id, title, description, location, start_date, end_date, category, is_featured, sido_code, sigungu_code, region, status',
         { count: 'exact' }
       )
       .or(`sigungu_code.eq.${code},region.eq.${code}`)
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: Props) {
     // 다가오는 행사만 필터
     if (upcoming) {
       const today = new Date().toISOString().split('T')[0];
-      query = query.gte('event_date', today);
+      query = query.gte('start_date', today);
     }
 
     // 카테고리 필터
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, { params }: Props) {
     // 정렬 및 페이지네이션
     query = query
       .order('is_featured', { ascending: false })
-      .order('event_date', { ascending: true })
+      .order('start_date', { ascending: true })
       .range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
@@ -53,21 +53,17 @@ export async function GET(request: NextRequest, { params }: Props) {
       );
     }
 
-    // 응답 데이터 변환
+    // 응답 데이터 변환 (eventDate는 페이지 호환용)
     const events = (data || []).map((event) => ({
       id: event.id,
       title: event.title,
       description: event.description,
-      thumbnail: event.thumbnail_url,
       location: event.location,
-      address: event.address,
-      eventDate: event.event_date,
+      eventDate: event.start_date,
+      startDate: event.start_date,
       endDate: event.end_date,
-      eventTime: event.event_time,
       category: event.category,
-      tags: event.tags,
       isFeatured: event.is_featured,
-      viewCount: event.view_count,
     }));
 
     return NextResponse.json({

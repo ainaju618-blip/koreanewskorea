@@ -15,42 +15,36 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Region data
+// Region data - 전국 17개 시·도 + 정부 보도자료
 const ALL_REGIONS = {
-    education: [
-        { source: 'gwangju_edu', name: '광주광역시교육청' },
-        { source: 'jeonnam_edu', name: '전라남도교육청' }
+    government: [
+        { source: 'korea', name: '정부(korea.kr)' }
     ],
-    local: [
+    metro: [
+        { source: 'seoul', name: '서울특별시' },
+        { source: 'busan', name: '부산광역시' },
+        { source: 'daegu', name: '대구광역시' },
+        { source: 'incheon', name: '인천광역시' },
         { source: 'gwangju', name: '광주광역시' },
+        { source: 'daejeon', name: '대전광역시' },
+        { source: 'ulsan', name: '울산광역시' },
+        { source: 'sejong', name: '세종특별자치시' }
+    ],
+    province: [
+        { source: 'gyeonggi', name: '경기도' },
+        { source: 'gangwon', name: '강원특별자치도' },
+        { source: 'chungbuk', name: '충청북도' },
+        { source: 'chungnam', name: '충청남도' },
+        { source: 'jeonbuk', name: '전북특별자치도' },
         { source: 'jeonnam', name: '전라남도' },
-        { source: 'naju', name: '나주시' },
-        { source: 'mokpo', name: '목포시' },
-        { source: 'yeosu', name: '여수시' },
-        { source: 'suncheon', name: '순천시' },
-        { source: 'gwangyang', name: '광양시' },
-        { source: 'damyang', name: '담양군' },
-        { source: 'gokseong', name: '곡성군' },
-        { source: 'gurye', name: '구례군' },
-        { source: 'goheung', name: '고흥군' },
-        { source: 'boseong', name: '보성군' },
-        { source: 'hwasun', name: '화순군' },
-        { source: 'jangheung', name: '장흥군' },
-        { source: 'gangjin', name: '강진군' },
-        { source: 'haenam', name: '해남군' },
-        { source: 'yeongam', name: '영암군' },
-        { source: 'muan', name: '무안군' },
-        { source: 'hampyeong', name: '함평군' },
-        { source: 'yeonggwang', name: '영광군' },
-        { source: 'jangseong', name: '장성군' },
-        { source: 'wando', name: '완도군' },
-        { source: 'jindo', name: '진도군' },
-        { source: 'shinan', name: '신안군' }
+        { source: 'gyeongbuk', name: '경상북도' },
+        { source: 'gyeongnam', name: '경상남도' },
+        { source: 'jeju', name: '제주특별자치도' }
     ]
 };
 
 const REGION_NAMES: Record<string, string> = {};
-[...ALL_REGIONS.education, ...ALL_REGIONS.local].forEach(r => {
+[...ALL_REGIONS.government, ...ALL_REGIONS.metro, ...ALL_REGIONS.province].forEach(r => {
     REGION_NAMES[r.source] = r.name;
 });
 
@@ -96,15 +90,20 @@ export default function AdminDashboardPage() {
             });
 
             const allRegionStats = [
-                ...ALL_REGIONS.education.map(r => ({
+                ...ALL_REGIONS.government.map(r => ({
                     ...r,
                     count: sourceCounts[r.name] || 0,
-                    type: 'education'
+                    type: 'government'
                 })),
-                ...ALL_REGIONS.local.map(r => ({
+                ...ALL_REGIONS.metro.map(r => ({
                     ...r,
                     count: sourceCounts[r.name] || 0,
-                    type: 'local'
+                    type: 'metro'
+                })),
+                ...ALL_REGIONS.province.map(r => ({
+                    ...r,
+                    count: sourceCounts[r.name] || 0,
+                    type: 'province'
                 }))
             ];
 

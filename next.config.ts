@@ -31,6 +31,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.or.kr' },      // Organizations
       { protocol: 'http', hostname: '**.go.kr' },       // HTTP fallback
       { protocol: 'http', hostname: '**.or.kr' },
+      { protocol: 'http', hostname: 'tong.visitkorea.or.kr' },  // TourAPI images
+      { protocol: 'https', hostname: 'tong.visitkorea.or.kr' }, // TourAPI images (https)
       { protocol: 'https', hostname: 'www.gwangju.go.kr' },
       { protocol: 'https', hostname: 'www.jeonnam.go.kr' },
       { protocol: 'https', hostname: 'www.naju.go.kr' },

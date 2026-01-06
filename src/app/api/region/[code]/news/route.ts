@@ -33,9 +33,17 @@ export async function GET(request: NextRequest, { params }: Props) {
         'id, title, content, thumbnail_url, source, region, category, published_at, created_at, ai_summary, view_count',
         { count: 'exact' }
       )
-      .eq('region', code)
       .in('status', ['published', 'limited'])
       .order('published_at', { ascending: false });
+
+    // 지역 필터: naju인 경우 naju, naju_edu 등 관련 region 모두 포함
+    if (code === 'naju') {
+      query = query.or('region.eq.naju,region.like.naju_%');
+    } else if (code === 'jindo') {
+      query = query.or('region.eq.jindo,region.like.jindo_%');
+    } else {
+      query = query.eq('region', code);
+    }
 
     // Apply category filter if provided
     if (category) {

@@ -192,11 +192,19 @@ export default function EditNewsPage() {
                                 onChange={(e) => setCategory(e.target.value)}
                                 className="w-full p-2 bg-[#21262d] border border-[#30363d] rounded-lg text-sm font-medium text-[#c9d1d9]"
                             >
-                                <option value="나주">나주</option>
+                                <option value="정부">정부</option>
+                                <option value="서울">서울</option>
+                                <option value="부산">부산</option>
+                                <option value="대구">대구</option>
+                                <option value="인천">인천</option>
                                 <option value="광주">광주</option>
+                                <option value="대전">대전</option>
+                                <option value="울산">울산</option>
+                                <option value="경기">경기</option>
+                                <option value="강원">강원</option>
                                 <option value="전남">전남</option>
-                                <option value="교육">교육</option>
-                                <option value="AI">AI/경제</option>
+                                <option value="경제">경제</option>
+                                <option value="문화">문화</option>
                                 <option value="오피니언">오피니언</option>
                             </select>
                         </div>

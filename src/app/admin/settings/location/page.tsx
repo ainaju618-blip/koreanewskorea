@@ -25,7 +25,7 @@ interface LocationSettings {
 
 const DEFAULT_SETTINGS: LocationSettings = {
     enabled: false, // Default: OFF - enable after testing
-    defaultRegion: 'gwangju',
+    defaultRegion: 'korea', // 전국판: 정부 보도자료가 기본값
     showNearby: true,
     nearbyCount: 4,
 };
@@ -209,20 +209,18 @@ export default function LocationSettingsPage() {
                                     onChange={(e) => setSettings(prev => ({ ...prev, defaultRegion: e.target.value as RegionCode }))}
                                     className="w-full px-4 py-2 border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-[#21262d] text-[#e6edf3]"
                                 >
-                                    <optgroup label="광역시/도">
+                                    <optgroup label="정부 보도자료">
+                                        {grouped.government.map(code => (
+                                            <option key={code} value={code}>{REGIONS[code as RegionCode].name}</option>
+                                        ))}
+                                    </optgroup>
+                                    <optgroup label="특별시·광역시">
                                         {grouped.metro.map(code => (
                                             <option key={code} value={code}>{REGIONS[code as RegionCode].name}</option>
                                         ))}
                                     </optgroup>
-                                    <optgroup label="시">
-                                        {grouped.city.map(code => (
-                                            <option key={code} value={code}>{REGIONS[code as RegionCode].name}</option>
-                                        ))}
-                                    </optgroup>
-                                    <optgroup label="군">
-                                        {grouped.county.sort((a, b) =>
-                                            REGIONS[a as RegionCode].name.localeCompare(REGIONS[b as RegionCode].name, 'ko')
-                                        ).map(code => (
+                                    <optgroup label="도">
+                                        {grouped.province.map(code => (
                                             <option key={code} value={code}>{REGIONS[code as RegionCode].name}</option>
                                         ))}
                                     </optgroup>

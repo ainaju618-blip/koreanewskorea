@@ -8,36 +8,14 @@ import {
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 
-// Region data (from existing ScraperPanel)
+// Region data - 활성화된 스크래퍼 (2026-01-06 확정: 4개만!)
 const REGIONS = [
-  { id: 'gwangju', nameKo: '광주', group: 'agency' },
-  { id: 'jeonnam', nameKo: '전남', group: 'agency' },
-  { id: 'gwangju_edu', nameKo: '광주교육청', group: 'agency' },
-  { id: 'jeonnam_edu', nameKo: '전남교육청', group: 'agency' },
-  { id: 'jeonnam_edu_org', nameKo: '전남교육청(기관)', group: 'agency' },
-  { id: 'jeonnam_edu_school', nameKo: '전남교육청(학교)', group: 'agency' },
-  { id: 'mokpo', nameKo: '목포', group: 'local' },
-  { id: 'yeosu', nameKo: '여수', group: 'local' },
-  { id: 'suncheon', nameKo: '순천', group: 'local' },
-  { id: 'naju', nameKo: '나주', group: 'local' },
-  { id: 'gwangyang', nameKo: '광양', group: 'local' },
-  { id: 'damyang', nameKo: '담양', group: 'local' },
-  { id: 'gokseong', nameKo: '곡성', group: 'local' },
-  { id: 'gurye', nameKo: '구례', group: 'local' },
-  { id: 'goheung', nameKo: '고흥', group: 'local' },
-  { id: 'boseong', nameKo: '보성', group: 'local' },
-  { id: 'hwasun', nameKo: '화순', group: 'local' },
-  { id: 'jangheung', nameKo: '장흥', group: 'local' },
-  { id: 'gangjin', nameKo: '강진', group: 'local' },
-  { id: 'haenam', nameKo: '해남', group: 'local' },
-  { id: 'yeongam', nameKo: '영암', group: 'local' },
-  { id: 'muan', nameKo: '무안', group: 'local' },
-  { id: 'hampyeong', nameKo: '함평', group: 'local' },
-  { id: 'yeonggwang', nameKo: '영광', group: 'local' },
-  { id: 'jangseong', nameKo: '장성', group: 'local' },
-  { id: 'wando', nameKo: '완도', group: 'local' },
-  { id: 'jindo', nameKo: '진도', group: 'local' },
-  { id: 'shinan', nameKo: '신안', group: 'local' },
+  // 전남 - 나주
+  { id: 'naju', nameKo: '나주시청', group: 'local' },
+  { id: 'naju_council', nameKo: '나주시의회', group: 'local' },
+  // 전남 - 진도
+  { id: 'jindo', nameKo: '진도군청', group: 'local' },
+  { id: 'jindo_council', nameKo: '진도군의회', group: 'local' },
 ];
 
 interface LogEntry {
@@ -774,8 +752,8 @@ export default function Dec30Page() {
 
   const clearLogs = () => setLogs([]);
 
-  const agencyRegions = REGIONS.filter(r => r.group === 'agency');
-  const localRegions = REGIONS.filter(r => r.group === 'local');
+  // 활성화된 스크래퍼 (2026-01-06: 4개만)
+  const localScrapers = REGIONS.filter(r => r.group === 'local');
 
   return (
     <div className="space-y-6">
@@ -891,30 +869,11 @@ export default function Dec30Page() {
               </span>
             </div>
 
-            {/* Agency Regions */}
-            <div className="mb-2 p-2 bg-[#0d1117] rounded border border-[#21262d]">
-              <p className="text-xs text-[#8b949e] mb-1">교육기관</p>
-              <div className="flex flex-wrap gap-2">
-                {agencyRegions.map(region => (
-                  <label key={region.id} className="flex items-center gap-1 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedRegions.includes(region.id)}
-                      onChange={() => toggleRegion(region.id)}
-                      disabled={isScraperRunning}
-                      className="accent-[#58a6ff]"
-                    />
-                    <span className="text-[#c9d1d9]">{region.nameKo}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Local Regions */}
-            <div className="p-2 bg-[#0d1117] rounded border border-[#21262d] max-h-[200px] overflow-y-auto">
-              <p className="text-xs text-[#8b949e] mb-1">지자체</p>
-              <div className="grid grid-cols-4 gap-2">
-                {localRegions.map(region => (
+            {/* 활성화된 스크래퍼 (4개만) */}
+            <div className="p-2 bg-[#0d1117] rounded border border-[#21262d]">
+              <p className="text-xs text-[#8b949e] mb-1">활성화된 스크래퍼 (전남 - 나주/진도)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {localScrapers.map(region => (
                   <label key={region.id} className="flex items-center gap-1 cursor-pointer text-sm">
                     <input
                       type="checkbox"

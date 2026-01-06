@@ -10,31 +10,50 @@ const supabaseAdmin = createClient(
 // Includes: 1) Unprocessed articles, 2) C/D grade articles for re-processing
 export async function GET() {
     try {
-        // Count unprocessed articles
+        // Try complex query first (with ai_processed column)
         const { count: unprocessedCount, error: err1 } = await supabaseAdmin
             .from('posts')
             .select('id', { count: 'exact', head: true })
             .eq('status', 'draft')
             .or('ai_processed.is.null,ai_processed.eq.false');
 
-        if (err1) throw err1;
+        if (err1) {
+            // Fallback: If ai_processed column doesn't exist, just count all draft articles
+            console.log('[pending-count API] Fallback to simple draft count');
+            const { count: draftCount, error: fallbackErr } = await supabaseAdmin
+                .from('posts')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', 'draft');
 
-        // Count C/D grade articles for retry
-        const { count: retryCount, error: err2 } = await supabaseAdmin
+            if (fallbackErr) throw fallbackErr;
+
+            return NextResponse.json({
+                count: draftCount || 0,
+                unprocessed: draftCount || 0,
+                retry: 0,
+                fallback: true
+            });
+        }
+
+        // Count C/D grade articles for retry (only if first query succeeded)
+        let retryCount = 0;
+        const { count: retry, error: err2 } = await supabaseAdmin
             .from('posts')
             .select('id', { count: 'exact', head: true })
             .eq('status', 'draft')
             .eq('ai_processed', true)
             .in('ai_validation_grade', ['C', 'D']);
 
-        if (err2) throw err2;
+        if (!err2) {
+            retryCount = retry || 0;
+        }
 
-        const totalCount = (unprocessedCount || 0) + (retryCount || 0);
+        const totalCount = (unprocessedCount || 0) + retryCount;
 
         return NextResponse.json({
             count: totalCount,
             unprocessed: unprocessedCount || 0,
-            retry: retryCount || 0
+            retry: retryCount
         });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

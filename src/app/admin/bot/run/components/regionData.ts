@@ -1,51 +1,75 @@
 /**
- * 지역 데이터 정의
+ * 전국 지역 데이터 정의 (koreanewskorea 전국판)
  * 스크래퍼와 DB 관리에서 공통으로 사용
+ *
+ * 2026-01-06 확정: 4개 봇만 활성화
  */
 
 export interface Region {
     id: string;       // 영문 코드 (스크래퍼용)
     label: string;    // 한글명 (DB source 값 및 UI 표시용)
+    type?: 'metro' | 'province' | 'government' | 'local';  // 분류
 }
 
-// 지자체 목록 (24개)
-export const localRegions: Region[] = [
-    { id: "gwangju", label: "광주광역시" },
-    { id: "jeonnam", label: "전라남도" },
-    { id: "naju", label: "나주시" },
-    { id: "mokpo", label: "목포시" },
-    { id: "yeosu", label: "여수시" },
-    { id: "suncheon", label: "순천시" },
-    { id: "gwangyang", label: "광양시" },
-    { id: "damyang", label: "담양군" },
-    { id: "gokseong", label: "곡성군" },
-    { id: "gurye", label: "구례군" },
-    { id: "goheung", label: "고흥군" },
-    { id: "boseong", label: "보성군" },
-    { id: "hwasun", label: "화순군" },
-    { id: "jangheung", label: "장흥군" },
-    { id: "gangjin", label: "강진군" },
-    { id: "haenam", label: "해남군" },
-    { id: "yeongam", label: "영암군" },
-    { id: "muan", label: "무안군" },
-    { id: "hampyeong", label: "함평군" },
-    { id: "yeonggwang", label: "영광군" },
-    { id: "jangseong", label: "장성군" },
-    { id: "wando", label: "완도군" },
-    { id: "jindo", label: "진도군" },
-    { id: "shinan", label: "신안군" },
+// ============================================
+// 활성화된 스크래퍼 (4개만\!)
+// ============================================
+
+// 활성화된 시·군 단위 스크래퍼 (2026-01-06 확정)
+export const activeLocalScrapers: Region[] = [
+    { id: "naju", label: "나주시청", type: "local" },
+    { id: "naju_council", label: "나주시의회", type: "local" },
+    { id: "jindo", label: "진도군청", type: "local" },
+    { id: "jindo_council", label: "진도군의회", type: "local" },
 ];
 
-// 교육기관 목록 (4개)
-export const agencyRegions: Region[] = [
-    { id: "gwangju_edu", label: "광주시교육청" },
-    { id: "jeonnam_edu", label: "전남교육청" },
-    { id: "jeonnam_edu_org", label: "전남교육청 기관" },
-    { id: "jeonnam_edu_school", label: "전남교육청 학교" },
+// ============================================
+// 비활성화됨 - 전국 17개 시·도 (참고용만)
+// ============================================
+
+// 특별시·광역시·특별자치시 (8개) - 비활성화
+export const metroRegions: Region[] = [
+    { id: "seoul", label: "서울특별시", type: "metro" },
+    { id: "busan", label: "부산광역시", type: "metro" },
+    { id: "daegu", label: "대구광역시", type: "metro" },
+    { id: "incheon", label: "인천광역시", type: "metro" },
+    { id: "gwangju", label: "광주광역시", type: "metro" },
+    { id: "daejeon", label: "대전광역시", type: "metro" },
+    { id: "ulsan", label: "울산광역시", type: "metro" },
+    { id: "sejong", label: "세종특별자치시", type: "metro" },
 ];
 
-// 전체 지역 목록
-export const allRegions: Region[] = [...localRegions, ...agencyRegions];
+// 도·특별자치도 (9개) - 비활성화
+export const provinceRegions: Region[] = [
+    { id: "gyeonggi", label: "경기도", type: "province" },
+    { id: "gangwon", label: "강원특별자치도", type: "province" },
+    { id: "chungbuk", label: "충청북도", type: "province" },
+    { id: "chungnam", label: "충청남도", type: "province" },
+    { id: "jeonbuk", label: "전북특별자치도", type: "province" },
+    { id: "jeonnam", label: "전라남도", type: "province" },
+    { id: "gyeongbuk", label: "경상북도", type: "province" },
+    { id: "gyeongnam", label: "경상남도", type: "province" },
+    { id: "jeju", label: "제주특별자치도", type: "province" },
+];
+
+// 정부 보도자료 - 비활성화
+export const governmentRegions: Region[] = [
+    { id: "korea", label: "정부(korea.kr)", type: "government" },
+];
+
+// ============================================
+// 통합 목록
+// ============================================
+
+// 활성화된 스크래퍼만 (실제 사용)
+export const allRegions: Region[] = [...activeLocalScrapers];
+
+// 지자체만 (레거시 호환)
+export const localRegions: Region[] = [...activeLocalScrapers];
+
+// ============================================
+// 매핑 헬퍼
+// ============================================
 
 // ID → Label 매핑 (빠른 조회용)
 export const regionIdToLabel: Record<string, string> = Object.fromEntries(
@@ -71,25 +95,18 @@ export function getRegionId(label: string): string | undefined {
     return regionLabelToId[label];
 }
 
+// ============================================
+// 스크래퍼 상태
+// ============================================
+
 /**
- * 스크래퍼가 실제로 구현된 지역 ID 목록
- * (scrapers/{region}/{region}_scraper.py가 존재하는 지역)
+ * 활성화된 스크래퍼 ID 목록 (2026-01-06 확정: 4개만\!)
  */
 export const availableScraperIds: string[] = [
-    "damyang",
-    "gangjin",
-    "gokseong",
-    "gwangju",
-    "gwangju_edu",
-    "jeonnam",
-    "jeonnam_edu",
-    "jeonnam_edu_org",
-    "jeonnam_edu_school",
-    "mokpo",
     "naju",
-    "suncheon",
-    "yeonggwang",
-    "yeosu",
+    "naju_council",
+    "jindo",
+    "jindo_council",
 ];
 
 /**
@@ -98,3 +115,17 @@ export const availableScraperIds: string[] = [
 export function hasScraperAvailable(id: string): boolean {
     return availableScraperIds.includes(id);
 }
+
+/**
+ * 지역 타입별 그룹 가져오기
+ */
+export function getRegionsByType(type: Region['type']): Region[] {
+    return allRegions.filter(r => r.type === type);
+}
+
+// ============================================
+// 레거시 호환 (기존 코드 지원)
+// ============================================
+
+// 기존 agencyRegions 참조하는 코드 호환용 (빈 배열)
+export const agencyRegions: Region[] = [];

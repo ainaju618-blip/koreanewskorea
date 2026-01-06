@@ -14,13 +14,21 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client'; // Client-side Supabase
 import { useToast } from '@/components/ui/Toast';
 
-// Mock Categories (To be replaced with DB data)
+// 카테고리 (전국판)
 const CATEGORIES = [
-    { id: 'naju', name: '나주' },
+    { id: 'korea', name: '정부' },
+    { id: 'seoul', name: '서울' },
+    { id: 'busan', name: '부산' },
+    { id: 'daegu', name: '대구' },
+    { id: 'incheon', name: '인천' },
     { id: 'gwangju', name: '광주' },
+    { id: 'daejeon', name: '대전' },
+    { id: 'ulsan', name: '울산' },
+    { id: 'gyeonggi', name: '경기' },
+    { id: 'gangwon', name: '강원' },
     { id: 'jeonnam', name: '전남' },
-    { id: 'edu', name: '교육' },
-    { id: 'ai', name: 'AI/경제' },
+    { id: 'economy', name: '경제' },
+    { id: 'culture', name: '문화' },
     { id: 'opinion', name: '오피니언' },
 ];
 

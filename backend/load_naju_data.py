@@ -83,7 +83,8 @@ async def load_naju_data(input_file="naju_articles.json"):
                 "source": "나주시", # Fixed source
                 "thumbnail_url": article.get("image_url"),
                 "view_count": article.get("view_count", 0),
-                "category": "나주시", # 기획 변경: '지역' -> '나주시'로 세분화 매핑
+                "category": "나주시정", # 시정소식 카테고리
+                "region": "naju", # 지역 필터용
                 "status": "published", # 즉시 발행
                 "created_at": datetime.now().isoformat()
             }

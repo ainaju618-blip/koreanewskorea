@@ -1,40 +1,35 @@
-// Location-based news regions data
-// 25 regions (excluding education offices: gwangju_edu, jeonnam_edu)
+// Location-based news regions data (전국판)
+// 17개 시·도 + 정부 보도자료
 
 export interface RegionInfo {
     name: string;
-    type: 'metro' | 'city' | 'county';
+    type: 'metro' | 'province' | 'government';
 }
 
 export const REGIONS: Record<string, RegionInfo> = {
-    // Metro (1)
+    // 정부 보도자료
+    korea: { name: '정부(korea.kr)', type: 'government' },
+
+    // 특별시·광역시·특별자치시 (8개)
+    seoul: { name: '서울특별시', type: 'metro' },
+    busan: { name: '부산광역시', type: 'metro' },
+    daegu: { name: '대구광역시', type: 'metro' },
+    incheon: { name: '인천광역시', type: 'metro' },
     gwangju: { name: '광주광역시', type: 'metro' },
+    daejeon: { name: '대전광역시', type: 'metro' },
+    ulsan: { name: '울산광역시', type: 'metro' },
+    sejong: { name: '세종특별자치시', type: 'metro' },
 
-    // Cities (5)
-    mokpo: { name: '목포시', type: 'city' },
-    yeosu: { name: '여수시', type: 'city' },
-    suncheon: { name: '순천시', type: 'city' },
-    naju: { name: '나주시', type: 'city' },
-    gwangyang: { name: '광양시', type: 'city' },
-
-    // Counties (17)
-    damyang: { name: '담양군', type: 'county' },
-    gokseong: { name: '곡성군', type: 'county' },
-    gurye: { name: '구례군', type: 'county' },
-    goheung: { name: '고흥군', type: 'county' },
-    boseong: { name: '보성군', type: 'county' },
-    hwasun: { name: '화순군', type: 'county' },
-    jangheung: { name: '장흥군', type: 'county' },
-    gangjin: { name: '강진군', type: 'county' },
-    haenam: { name: '해남군', type: 'county' },
-    yeongam: { name: '영암군', type: 'county' },
-    muan: { name: '무안군', type: 'county' },
-    hampyeong: { name: '함평군', type: 'county' },
-    yeonggwang: { name: '영광군', type: 'county' },
-    jangseong: { name: '장성군', type: 'county' },
-    wando: { name: '완도군', type: 'county' },
-    jindo: { name: '진도군', type: 'county' },
-    sinan: { name: '신안군', type: 'county' },
+    // 도·특별자치도 (9개)
+    gyeonggi: { name: '경기도', type: 'province' },
+    gangwon: { name: '강원특별자치도', type: 'province' },
+    chungbuk: { name: '충청북도', type: 'province' },
+    chungnam: { name: '충청남도', type: 'province' },
+    jeonbuk: { name: '전북특별자치도', type: 'province' },
+    jeonnam: { name: '전라남도', type: 'province' },
+    gyeongbuk: { name: '경상북도', type: 'province' },
+    gyeongnam: { name: '경상남도', type: 'province' },
+    jeju: { name: '제주특별자치도', type: 'province' },
 } as const;
 
 export type RegionCode = keyof typeof REGIONS;
@@ -51,11 +46,15 @@ export function getRegionName(code: RegionCode): string {
 
 // Get regions grouped by type
 export function getRegionsByType(): {
+    government: RegionCode[];
     metro: RegionCode[];
-    city: RegionCode[];
-    county: RegionCode[];
+    province: RegionCode[];
 } {
-    const result = { metro: [] as RegionCode[], city: [] as RegionCode[], county: [] as RegionCode[] };
+    const result = {
+        government: [] as RegionCode[],
+        metro: [] as RegionCode[],
+        province: [] as RegionCode[]
+    };
 
     for (const [code, info] of Object.entries(REGIONS)) {
         result[info.type].push(code as RegionCode);
@@ -68,3 +67,6 @@ export function getRegionsByType(): {
 export function isValidRegionCode(code: string): code is RegionCode {
     return code in REGIONS;
 }
+
+// 레거시 호환용 (city, county → 제거됨)
+// 전국판에서는 metro와 province만 사용

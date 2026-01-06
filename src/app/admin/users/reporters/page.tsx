@@ -23,35 +23,30 @@ const POSITIONS = [
     { value: 'foreign_correspondent', label: '해외특파원' },
 ];
 
-// 지역 데이터
+// 전국 17개 시·도 + 정부 보도자료
 const REGIONS = [
     { value: '전체', label: '전체' },
+    // 정부 보도자료
+    { value: '정부(korea.kr)', label: '정부(korea.kr)' },
+    // 특별시·광역시·특별자치시 (8개)
+    { value: '서울특별시', label: '서울특별시' },
+    { value: '부산광역시', label: '부산광역시' },
+    { value: '대구광역시', label: '대구광역시' },
+    { value: '인천광역시', label: '인천광역시' },
     { value: '광주광역시', label: '광주광역시' },
-    { value: '광주시교육청', label: '광주시교육청' },
+    { value: '대전광역시', label: '대전광역시' },
+    { value: '울산광역시', label: '울산광역시' },
+    { value: '세종특별자치시', label: '세종특별자치시' },
+    // 도·특별자치도 (9개)
+    { value: '경기도', label: '경기도' },
+    { value: '강원특별자치도', label: '강원특별자치도' },
+    { value: '충청북도', label: '충청북도' },
+    { value: '충청남도', label: '충청남도' },
+    { value: '전북특별자치도', label: '전북특별자치도' },
     { value: '전라남도', label: '전라남도' },
-    { value: '전라남도교육청', label: '전라남도교육청' },
-    { value: '목포시', label: '목포시' },
-    { value: '여수시', label: '여수시' },
-    { value: '순천시', label: '순천시' },
-    { value: '나주시', label: '나주시' },
-    { value: '광양시', label: '광양시' },
-    { value: '담양군', label: '담양군' },
-    { value: '곡성군', label: '곡성군' },
-    { value: '구례군', label: '구례군' },
-    { value: '고흥군', label: '고흥군' },
-    { value: '보성군', label: '보성군' },
-    { value: '화순군', label: '화순군' },
-    { value: '장흥군', label: '장흥군' },
-    { value: '강진군', label: '강진군' },
-    { value: '해남군', label: '해남군' },
-    { value: '영암군', label: '영암군' },
-    { value: '무안군', label: '무안군' },
-    { value: '함평군', label: '함평군' },
-    { value: '영광군', label: '영광군' },
-    { value: '장성군', label: '장성군' },
-    { value: '완도군', label: '완도군' },
-    { value: '진도군', label: '진도군' },
-    { value: '신안군', label: '신안군' },
+    { value: '경상북도', label: '경상북도' },
+    { value: '경상남도', label: '경상남도' },
+    { value: '제주특별자치도', label: '제주특별자치도' },
 ];
 
 // API 키 타입

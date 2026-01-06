@@ -14,32 +14,29 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
-// All available regions
+// 전국 17개 시·도 + 정부 보도자료
 const ALL_REGIONS = [
+    // 정부 보도자료
+    { code: 'korea', name: 'Korea', nameKr: '정부' },
+    // 특별시·광역시·특별자치시 (8개)
+    { code: 'seoul', name: 'Seoul', nameKr: '서울' },
+    { code: 'busan', name: 'Busan', nameKr: '부산' },
+    { code: 'daegu', name: 'Daegu', nameKr: '대구' },
+    { code: 'incheon', name: 'Incheon', nameKr: '인천' },
     { code: 'gwangju', name: 'Gwangju', nameKr: '광주' },
+    { code: 'daejeon', name: 'Daejeon', nameKr: '대전' },
+    { code: 'ulsan', name: 'Ulsan', nameKr: '울산' },
+    { code: 'sejong', name: 'Sejong', nameKr: '세종' },
+    // 도·특별자치도 (9개)
+    { code: 'gyeonggi', name: 'Gyeonggi', nameKr: '경기' },
+    { code: 'gangwon', name: 'Gangwon', nameKr: '강원' },
+    { code: 'chungbuk', name: 'Chungbuk', nameKr: '충북' },
+    { code: 'chungnam', name: 'Chungnam', nameKr: '충남' },
+    { code: 'jeonbuk', name: 'Jeonbuk', nameKr: '전북' },
     { code: 'jeonnam', name: 'Jeonnam', nameKr: '전남' },
-    { code: 'naju', name: 'Naju', nameKr: '나주' },
-    { code: 'mokpo', name: 'Mokpo', nameKr: '목포' },
-    { code: 'yeosu', name: 'Yeosu', nameKr: '여수' },
-    { code: 'suncheon', name: 'Suncheon', nameKr: '순천' },
-    { code: 'gwangyang', name: 'Gwangyang', nameKr: '광양' },
-    { code: 'damyang', name: 'Damyang', nameKr: '담양' },
-    { code: 'gokseong', name: 'Gokseong', nameKr: '곡성' },
-    { code: 'gurye', name: 'Gurye', nameKr: '구례' },
-    { code: 'goheung', name: 'Goheung', nameKr: '고흥' },
-    { code: 'boseong', name: 'Boseong', nameKr: '보성' },
-    { code: 'hwasun', name: 'Hwasun', nameKr: '화순' },
-    { code: 'jangheung', name: 'Jangheung', nameKr: '장흥' },
-    { code: 'gangjin', name: 'Gangjin', nameKr: '강진' },
-    { code: 'haenam', name: 'Haenam', nameKr: '해남' },
-    { code: 'yeongam', name: 'Yeongam', nameKr: '영암' },
-    { code: 'muan', name: 'Muan', nameKr: '무안' },
-    { code: 'hampyeong', name: 'Hampyeong', nameKr: '함평' },
-    { code: 'yeonggwang', name: 'Yeonggwang', nameKr: '영광' },
-    { code: 'jangseong', name: 'Jangseong', nameKr: '장성' },
-    { code: 'wando', name: 'Wando', nameKr: '완도' },
-    { code: 'jindo', name: 'Jindo', nameKr: '진도' },
-    { code: 'shinan', name: 'Shinan', nameKr: '신안' },
+    { code: 'gyeongbuk', name: 'Gyeongbuk', nameKr: '경북' },
+    { code: 'gyeongnam', name: 'Gyeongnam', nameKr: '경남' },
+    { code: 'jeju', name: 'Jeju', nameKr: '제주' },
 ];
 
 interface HeroSliderSettings {
@@ -49,7 +46,7 @@ interface HeroSliderSettings {
 }
 
 const DEFAULT_SETTINGS: HeroSliderSettings = {
-    regions: ['gwangju', 'jeonnam', 'naju', 'suncheon', 'gwangyang', 'gwangju'],
+    regions: ['korea', 'seoul', 'busan', 'gwangju', 'daegu', 'incheon'],
     interval: 4000,
     enabled: true,
 };

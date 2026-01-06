@@ -1,0 +1,106 @@
+{
+  "fetched_at": "2025-12-28T17:00:48.522879",
+  "by_region": {
+    "gwangju": {
+      "name": "광주",
+      "count": 563
+    },
+    "gangjin": {
+      "name": "강진군",
+      "count": 110
+    },
+    "goheung": {
+      "name": "고흥군",
+      "count": 125
+    },
+    "gokseong": {
+      "name": "곡성군",
+      "count": 103
+    },
+    "gwangyang": {
+      "name": "광양시",
+      "count": 96
+    },
+    "gurye": {
+      "name": "구례군",
+      "count": 143
+    },
+    "naju": {
+      "name": "나주시",
+      "count": 130
+    },
+    "damyang": {
+      "name": "담양군",
+      "count": 159
+    },
+    "mokpo": {
+      "name": "목포시",
+      "count": 221
+    },
+    "muan": {
+      "name": "무안군",
+      "count": 102
+    },
+    "boseong": {
+      "name": "보성군",
+      "count": 117
+    },
+    "suncheon": {
+      "name": "순천시",
+      "count": 203
+    },
+    "sinan": {
+      "name": "신안군",
+      "count": 135
+    },
+    "yeosu": {
+      "name": "여수시",
+      "count": 487
+    },
+    "yeonggwang": {
+      "name": "영광군",
+      "count": 102
+    },
+    "yeongam": {
+      "name": "영암군",
+      "count": 86
+    },
+    "wando": {
+      "name": "완도군",
+      "count": 118
+    },
+    "jangseong": {
+      "name": "장성군",
+      "count": 93
+    },
+    "jangheung": {
+      "name": "장흥군",
+      "count": 106
+    },
+    "jindo": {
+      "name": "진도군",
+      "count": 113
+    },
+    "hampyeong": {
+      "name": "함평군",
+      "count": 75
+    },
+    "haenam": {
+      "name": "해남군",
+      "count": 121
+    },
+    "hwasun": {
+      "name": "화순군",
+      "count": 126
+    }
+  },
+  "by_content_type": {
+    "관광지": 1528,
+    "문화시설": 249,
+    "축제공연행사": 78,
+    "레포츠": 206,
+    "숙박": 337,
+    "쇼핑": 229,
+    "음식점": 1007
+  }
+}
