@@ -5,8 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot } from 'lucide-react';
+import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot, Home } from 'lucide-react';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
+import HeaderRegionSelector, { getRegionFromPath, getHeaderRegionName, mapToHeaderRegion, HEADER_REGIONS } from './HeaderRegionSelector';
+import { useUserRegion } from '@/hooks/useUserRegion';
 
 // Dynamic import for NewsTicker (reduces initial bundle, loads after header)
 const NewsTicker = dynamic(() => import('./NewsTicker'), {
@@ -44,6 +46,21 @@ export default function Header() {
     const [currentDate, setCurrentDate] = useState('');
     const megaMenuRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+
+    // IP 기반 지역 감지
+    const { region: detectedRegion, isLoading: isRegionLoading } = useUserRegion();
+
+    // 현재 경로 기반 지역 (우선) 또는 IP 기반 지역
+    const currentPathRegion = getRegionFromPath(pathname);
+    const displayRegionCode = currentPathRegion !== 'korea' ? currentPathRegion : mapToHeaderRegion(detectedRegion);
+    const displayRegionName = getHeaderRegionName(displayRegionCode);
+
+    // IP 기반 홈 경로 계산
+    const getHomePathByRegion = useCallback(() => {
+        const mappedRegion = mapToHeaderRegion(detectedRegion);
+        const regionInfo = HEADER_REGIONS.find(r => r.code === mappedRegion);
+        return regionInfo?.path || '/';
+    }, [detectedRegion]);
 
     // Check if current path matches category
     const isActiveCategory = (category: Category): boolean => {
@@ -171,24 +188,23 @@ export default function Header() {
             <div className="h-[55px] bg-white border-b border-slate-100">
                 <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex flex-row items-center justify-between">
 
-                    {/* Left Logo Image - Compact */}
-                    <Link href="/" className="hidden lg:flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                        <Image
-                            src="/logo-koreanews.png"
-                            alt="Korea NEWS 홈으로 이동"
-                            width={90}
-                            height={50}
-                            className="object-contain"
-                            priority
-                        />
-                    </Link>
+                    {/* Left: Region Selector */}
+                    <div className="hidden lg:flex items-center">
+                        <HeaderRegionSelector />
+                    </div>
 
-                    {/* Center Logo branding - Compact */}
+                    {/* Center Logo branding - 동적 지역명 표시 */}
                     <div className="flex flex-col items-center justify-center flex-1">
-                        <Link href="/" className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                        <Link href={getHomePathByRegion()} className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                             <span className="text-3xl md:text-4xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
                                 코리아<span className="text-primary">NEWS</span>
                             </span>
+                            {/* 지역명 표시 (전국이 아닐 때만) */}
+                            {displayRegionCode !== 'korea' && (
+                                <span className="text-xl md:text-2xl font-serif font-bold text-slate-600 ml-1 group-hover:opacity-90 transition-opacity">
+                                    {displayRegionName}
+                                </span>
+                            )}
                         </Link>
                     </div>
 
@@ -221,11 +237,12 @@ export default function Header() {
                     <nav className="hidden md:flex items-center justify-center h-full">
                         {/* Center aligned menu */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
-                            <Link href="/" className={`h-full flex items-center transition-colors font-serif italic text-lg mr-2 relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
-                                ${pathname === '/' ? 'text-primary' : 'text-secondary hover:text-primary'}
+                            <Link href={getHomePathByRegion()} className={`h-full flex items-center gap-1 transition-colors font-serif italic text-lg mr-2 relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                                ${pathname === '/' || pathname.startsWith('/region/') ? 'text-primary' : 'text-secondary hover:text-primary'}
                             `}>
+                                <Home className="w-4 h-4" />
                                 Home
-                                {pathname === '/' && (
+                                {(pathname === '/' || pathname.startsWith('/region/')) && (
                                     <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary"></span>
                                 )}
                             </Link>
@@ -345,9 +362,7 @@ export default function Header() {
 
                     {/* Mobile Only Header Content */}
                     <div className="md:hidden flex items-center justify-between h-full">
-                        <span className="font-bold text-lg text-secondary">
-                            Menu
-                        </span>
+                        <HeaderRegionSelector />
                         <button className="p-2" aria-label="Search articles">
                             <Search className="w-6 h-6 text-secondary" />
                         </button>
@@ -406,6 +421,23 @@ export default function Header() {
                     {/* Content */}
                     <div className="h-[calc(100%-80px)] overflow-y-auto">
                         <div className="p-5 space-y-6">
+                            {/* Home Link - IP 기반 */}
+                            <Link
+                                href={getHomePathByRegion()}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-3 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl border border-primary/20"
+                            >
+                                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                                    <Home className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <span className="font-bold text-lg text-secondary font-serif block">
+                                        코리아NEWS {displayRegionCode !== 'korea' ? displayRegionName : ''}
+                                    </span>
+                                    <span className="text-xs text-slate-500">홈으로 이동</span>
+                                </div>
+                            </Link>
+
                             {/* App Install Button */}
                             <PWAInstallMenuItem onMenuClose={() => setIsMobileMenuOpen(false)} />
 
