@@ -10,7 +10,7 @@ export const revalidate = 86400; // 24 hours
 interface RegionItem {
     code: string;
     name: string;
-    type: 'metro' | 'city' | 'county';
+    type: 'government' | 'metro' | 'province';
 }
 
 export async function GET() {
@@ -19,7 +19,16 @@ export async function GET() {
 
         const regions: RegionItem[] = [];
 
-        // Add metro first
+        // Add government first
+        for (const code of grouped.government) {
+            regions.push({
+                code,
+                name: REGIONS[code as RegionCode].name,
+                type: 'government',
+            });
+        }
+
+        // Add metro (광역시)
         for (const code of grouped.metro) {
             regions.push({
                 code,
@@ -28,25 +37,16 @@ export async function GET() {
             });
         }
 
-        // Add cities
-        for (const code of grouped.city) {
-            regions.push({
-                code,
-                name: REGIONS[code as RegionCode].name,
-                type: 'city',
-            });
-        }
-
-        // Add counties (sorted by name)
-        const counties = grouped.county
+        // Add provinces (도) sorted by name
+        const provinces = grouped.province
             .map(code => ({
                 code,
                 name: REGIONS[code as RegionCode].name,
-                type: 'county' as const,
+                type: 'province' as const,
             }))
             .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-        regions.push(...counties);
+        regions.push(...provinces);
 
         return NextResponse.json({
             regions,
