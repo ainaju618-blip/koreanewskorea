@@ -489,7 +489,7 @@ export default function AdminDashboardPage() {
                                 <button
                                     onClick={async () => {
                                         setTestRunning(true);
-                                        const totalRegions = ALL_REGIONS.education.length + ALL_REGIONS.local.length;
+                                        const totalRegions = ALL_REGIONS.government.length + ALL_REGIONS.metro.length + ALL_REGIONS.province.length;
                                         setTestProgress({ current: 0, total: totalRegions, currentRegion: 'Starting...' });
                                         try {
                                             await fetch('/api/bot/test-schedule', {
