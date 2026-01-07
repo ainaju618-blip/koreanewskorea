@@ -224,7 +224,12 @@
     }
 
     body {
-        @apply bg-white text-slate-800 antialiased;
+        @apply bg-white text-slate-800 antialiased overflow-x-hidden;
+    }
+
+    /* 전역 이미지 스타일 - 그리드 오버플로우 방지 */
+    img {
+        @apply max-w-full h-auto block;
     }
 
     h1 {
@@ -2268,4 +2273,95 @@
 .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* No-scrollbar utility (alias for hide-scrollbar) */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ===================================
+   Stitch Design System v2
+   - National Edition (Mobile-first)
+   - Primary: #1152d4 (News Blue)
+   - Background: #f6f6f8 (Light) / #101622 (Dark)
+   =================================== */
+
+/* Stitch Font Families */
+@font-face {
+    font-family: 'Newsreader';
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+    src: url('https://fonts.gstatic.com/s/newsreader/v21/cY9qfjOCX1hbuyalUrK49dLac06G1ZGsZBtoBCzBDXXD9JVF438.woff2') format('woff2');
+}
+
+/* Stitch Theme Variables */
+.stitch-theme {
+    /* Primary Brand Color - News Blue */
+    --stitch-primary: #1152d4;
+    --stitch-primary-dark: #0d3fa8;
+    --stitch-primary-light: #3a6fdc;
+
+    /* Background Colors */
+    --stitch-bg-light: #f6f6f8;
+    --stitch-bg-dark: #101622;
+    --stitch-surface-light: #ffffff;
+    --stitch-surface-dark: #1a2230;
+
+    /* Text Colors */
+    --stitch-text-primary: #111318;
+    --stitch-text-secondary: #616f89;
+    --stitch-text-muted: #94a3b8;
+
+    /* Border Colors */
+    --stitch-border-light: #e5e7eb;
+    --stitch-border-dark: #374151;
+}
+
+/* Stitch Display Font (Headlines) */
+.font-display {
+    font-family: 'Newsreader', 'Noto Sans KR', Georgia, serif;
+}
+
+/* Material Symbols Configuration */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Stitch Primary Color Utilities */
+.text-primary {
+    color: var(--stitch-primary);
+}
+
+.bg-primary {
+    background-color: var(--stitch-primary);
+}
+
+.border-primary {
+    border-color: var(--stitch-primary);
+}
+
+/* Safe Area Padding for iOS */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Stitch Background Colors */
+.bg-background-light {
+    background-color: var(--stitch-bg-light);
+}
+
+.dark .bg-background-dark,
+.dark.bg-background-dark {
+    background-color: var(--stitch-bg-dark);
 }
