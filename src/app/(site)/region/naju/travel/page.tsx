@@ -124,7 +124,7 @@ export default function NajuTravelPage() {
               <Link
                 key={place.id}
                 href={`/region/naju/travel/${place.id}`}
-                className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-shadow group"
+                className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-shadow group cursor-pointer"
               >
                 <div className="aspect-video relative overflow-hidden">
                   {place.thumbnail ? (

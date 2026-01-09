@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NewsPortal - Search Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for sidebar if needed */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display flex flex-col min-h-screen overflow-x-hidden">
+<!-- Header Section -->
+<header class="bg-white dark:bg-[#1a202c] border-b border-[#e5e7eb] dark:border-[#2d3748] sticky top-0 z-50">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
+<!-- Logo -->
+<div class="flex items-center gap-3 cursor-pointer shrink-0">
+<div class="size-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-xl font-bold tracking-tight hidden sm:block">NewsPortal</h1>
+</div>
+<!-- Search Bar (Centered) -->
+<div class="flex-1 max-w-2xl mx-auto">
+<div class="relative flex items-center w-full h-10 rounded-full bg-[#f0f2f5] dark:bg-[#2d3748] focus-within:ring-2 focus-within:ring-primary focus-within:bg-white dark:focus-within:bg-[#2d3748] transition-all shadow-sm">
+<div class="grid place-items-center h-full w-12 text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="peer h-full w-full outline-none text-sm text-gray-700 dark:text-gray-200 pr-10 bg-transparent placeholder-gray-500 dark:placeholder-gray-400 font-medium" id="search" placeholder="검색어를 입력하세요..." type="text" value="AI 트렌드"/>
+<button class="absolute right-3 grid place-items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- User Actions -->
+<div class="flex items-center gap-2 sm:gap-4 shrink-0">
+<button class="hidden sm:flex items-center justify-center size-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center gap-2 pl-1 pr-1 sm:pr-3 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+<div class="size-8 rounded-full bg-gray-200 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="User profile picture placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANMYE0JlC2-xoY1wlMYVKeu_RzfcJfGYFHm8SwvclH8B9fpZeyu5NbYq1I9pS7Y8227nZpao9dbhlRyi542NWE_AJfY1abVStxmrN3yRmPEIuNUyeEotsUsVtanv-Mv3CPaOABxvAlZcvHaT-l33i8mSdC6jqmnSTPXWU-b771CsUVvq0QAHP9ozOJWFe2xWYm-hyyVwqzPipBlcZlKpxRwBuTxHLFrFYWHOx3QBEbVm33MOFDLeouiejvwkWDAkbByWPKfhC1b9U"/>
+</div>
+<span class="text-sm font-medium hidden sm:block">김지수</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Layout Container -->
+<main class="flex-1 w-full max-w-[1280px] mx-auto p-4 lg:p-6 lg:py-8 flex flex-col lg:flex-row gap-8">
+<!-- Left Sidebar: Filters -->
+<aside class="w-full lg:w-[260px] shrink-0 flex flex-col gap-6">
+<div class="flex items-center justify-between lg:hidden mb-4">
+<h2 class="text-lg font-bold">필터</h2>
+<button class="text-primary text-sm font-medium">닫기</button>
+</div>
+<!-- Date Range Filter -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h3 class="text-sm font-bold text-gray-900 dark:text-white">기간</h3>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-1.5 px-3 text-xs font-medium rounded-full bg-primary text-white text-center">전체</button>
+<button class="flex-1 py-1.5 px-3 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-center">1주</button>
+<button class="flex-1 py-1.5 px-3 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 text-center">1개월</button>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<div class="relative flex-1">
+<input class="w-full pl-8 pr-2 py-2 text-xs rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-primary focus:border-primary" placeholder="YYYY.MM.DD" type="text" value="2023.10.01"/>
+<span class="material-symbols-outlined absolute left-2 top-1.5 text-gray-400 text-[16px]">calendar_today</span>
+</div>
+<span class="text-gray-400">-</span>
+<div class="relative flex-1">
+<input class="w-full pl-8 pr-2 py-2 text-xs rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-primary focus:border-primary" placeholder="YYYY.MM.DD" type="text" value="2023.10.31"/>
+<span class="material-symbols-outlined absolute left-2 top-1.5 text-gray-400 text-[16px]">calendar_today</span>
+</div>
+</div>
+</div>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Category Filter -->
+<div class="flex flex-col gap-3">
+<h3 class="text-sm font-bold text-gray-900 dark:text-white">카테고리</h3>
+<div class="flex flex-col gap-2.5">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">IT/과학 (1,204)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">경제 (842)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">사회 (521)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">정치 (310)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">문화/예술 (120)</span>
+</label>
+</div>
+<button class="text-xs text-gray-500 hover:text-primary text-left font-medium mt-1 flex items-center gap-1">
+                    더보기 <span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+</div>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Source Filter -->
+<div class="flex flex-col gap-3">
+<h3 class="text-sm font-bold text-gray-900 dark:text-white">언론사</h3>
+<div class="flex flex-col gap-2.5">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">주요 일간지</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">경제지</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4" type="checkbox"/>
+<span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors">방송/통신사</span>
+</label>
+</div>
+</div>
+<!-- Action Buttons (Sticky on mobile, inline on desktop) -->
+<div class="mt-4 flex flex-col gap-3 sticky bottom-4 lg:static">
+<button class="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">check</span>
+                    필터 적용
+                </button>
+<button class="w-full bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium py-2 rounded-xl transition-all flex items-center justify-center gap-2 text-sm">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                    초기화
+                </button>
+</div>
+</aside>
+<!-- Right Content: Results -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- Result Meta & Stats -->
+<div class="mb-6">
+<div class="flex items-baseline gap-2 mb-4">
+<p class="text-gray-500 dark:text-gray-400 text-sm">
+<span class="font-bold text-gray-900 dark:text-white">"AI 트렌드"</span>에 대한 검색결과
+                    </p>
+<span class="text-gray-400 text-xs">•</span>
+<p class="text-gray-400 text-xs">약 15,200건 (0.34초)</p>
+</div>
+<!-- Related Chips -->
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                        생성형 AI
+                    </button>
+<button class="shrink-0 px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        머신러닝
+                    </button>
+<button class="shrink-0 px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        AI 규제
+                    </button>
+<button class="shrink-0 px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        반도체 전망
+                    </button>
+<button class="shrink-0 px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        챗GPT 5.0
+                    </button>
+</div>
+</div>
+<!-- Sorting Tabs -->
+<div class="flex items-center gap-6 border-b border-gray-200 dark:border-gray-700 mb-6">
+<button class="relative pb-3 text-sm font-bold text-primary">
+                    정확도순
+                    <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></span>
+</button>
+<button class="relative pb-3 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
+                    최신순
+                </button>
+<button class="relative pb-3 text-sm font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
+                    관련도순
+                </button>
+</div>
+<!-- Results List -->
+<div class="flex flex-col gap-8">
+<!-- Card 1: Main Article with Image -->
+<article class="flex flex-col sm:flex-row gap-5 group">
+<div class="shrink-0 w-full sm:w-[160px]">
+<div class="aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 relative">
+<img alt="Artificial Intelligence abstract visualization" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Blue digital brain network visualization representing AI" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxphoYCqKh3uwhdgGYZtGy8Aj2IvAvvVOVVoqJiqJ1VbOhdsZZInaNRa-11HRTYP4CdYN4Z82R-rFT_kmfLJtbgbScgA65wXeDTw5ICiWiI0QzUO5wvP1cjYfkO9entVbqYpD99BEKV49gRxnzI4bkOnjOVCHWeBm1e5lEPRlmK93aWzXxZJv4soV1Gl-_3o8lv86Oo1BvjW2o-hcFUIfSF85_Njk6zvRCNH-OTdRrMRpHYzt9v_JgvRFzL103QeBw6z40ivuwupo"/>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="inline-flex items-center justify-center size-5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+<img alt="Source Icon" class="w-full h-full object-cover" data-alt="News source logo placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd-8FN5qZwkRyXLUQ9jPETIGPXpEP0RjemcJjKfG3GHWgVmjWXsi-2p0xe6f5hOP-N0wAwE8B-o3ieaYBanmuH7QzM6Qe74OKf5EupYjNJdOPPZx89LBhGcyeaeVOOa9ZsF1WTQp0dCc-iqgiWY9NxizP6glg0RePAe4NCzAqW8_dObkkFhL4GF5HtdIJtm9RV8JZumLjm37zLdbYtBh1aNRELm1ZFDJzG_oyTxmgh0HpWCEpnauowGMEqKglHLiYVfIXZlMCtVP0"/>
+</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">코리아테크뉴스</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs text-gray-400">3시간 전</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">IT/과학</span>
+</div>
+<a class="block group-hover:underline decoration-primary decoration-2 underline-offset-2" href="#">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                2024년 주목해야 할 핵심 <span class="text-primary">AI 트렌드</span> 5가지와 산업별 영향 분석
+                            </h3>
+</a>
+<p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed mb-2">
+                            생성형 인공지능(AI)의 발전 속도가 가속화됨에 따라 기업들의 도입 전략도 변화하고 있다. 특히 이번 보고서에서는 <span class="font-bold text-gray-800 dark:text-gray-200">AI 트렌드</span>가 반도체, 금융, 의료 등 다양한 산업군에 미칠 구체적인 영향을 분석했다...
+                        </p>
+<div class="flex items-center gap-3">
+<button class="text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">bookmark</span> 저장
+                             </button>
+<button class="text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">share</span> 공유
+                             </button>
+</div>
+</div>
+</article>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Card 2: Text only, stacked -->
+<article class="flex flex-col gap-1 group">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">데일리경제</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs text-gray-400">5시간 전</span>
+</div>
+<a class="block group-hover:underline decoration-primary decoration-2 underline-offset-2" href="#">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                            정부, "내년부터 공공기관 업무에 <span class="text-primary">AI 트렌드</span> 분석 시스템 도입 의무화"
+                        </h3>
+</a>
+<p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+                        행정안전부는 25일 브리핑을 통해 공공 데이터 분석 역량 강화를 위한 새로운 지침을 발표했다. 이에 따라 모든 중앙 부처는 실시간 데이터 분석을 위한 전담 부서를 신설하고...
+                    </p>
+</article>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Card 3: Article with Related Articles Dropdown -->
+<article class="flex flex-col gap-4 group">
+<div class="flex flex-col sm:flex-row gap-5">
+<div class="shrink-0 w-full sm:w-[160px]">
+<div class="aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 relative">
+<img alt="Robotic hand touching human hand" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Futuristic robot hand shaking human hand showing collaboration" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe135YgsMa00kaX1pd1gK-71JVuxq2_jaYFko-cPvjKMEi_V49YbqsB-22wNxwehVUPTgisYUY7sleLfArH896fsMzlXFWF96aDr0pCicEsfkZZV1n3wSTPp1Aa4KrWRIjvVxw26gzHdda8ye0qgSbU5UXL8zsyD9j4aVwohk70nFdm-PXdeZuTd9eqGma8s3Y3NEEKbTT5eH96DEdwshrapU7jogSivaJomBTf0nHQw6DqfEWvBcq0osKhzW-H3H4hWxrtLihyfU"/>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">IT 월드</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs text-gray-400">1일 전</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">오피니언</span>
+</div>
+<a class="block group-hover:underline decoration-primary decoration-2 underline-offset-2" href="#">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                    [칼럼] 생성형 AI가 바꿀 노동의 미래: 위기인가 기회인가?
+                                </h3>
+</a>
+<p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed mb-3">
+                                단순 반복 업무의 자동화를 넘어 창의적인 영역까지 침투하고 있는 인공지능 기술은 우리에게 근본적인 질문을 던진다. 기술의 발전이 인간의 노동 가치를 훼손할 것인가, 아니면 새로운...
+                            </p>
+<!-- Expandable Section Button -->
+<button class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors w-fit">
+                                관련기사 3건 더보기
+                                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Expanded Content (Simulated as open for design purpose, or closed) - Let's keep it visually suggestive of interactivity -->
+<div class="ml-0 sm:ml-[180px] bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 flex flex-col gap-3 border border-gray-100 dark:border-gray-800">
+<div class="flex justify-between items-start">
+<a class="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-primary leading-snug hover:underline" href="#">
+                                AI로 인한 일자리 감소 우려, 실제 데이터는 다르다
+                             </a>
+<span class="text-xs text-gray-400 whitespace-nowrap ml-2">전자신문</span>
+</div>
+<div class="flex justify-between items-start">
+<a class="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-primary leading-snug hover:underline" href="#">
+                                글로벌 기업 70%, "AI 도입 후 채용 규모 유지하거나 확대"
+                             </a>
+<span class="text-xs text-gray-400 whitespace-nowrap ml-2">매일경제</span>
+</div>
+</div>
+</article>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Card 4: Video Result -->
+<article class="flex flex-col sm:flex-row gap-5 group">
+<div class="shrink-0 w-full sm:w-[160px]">
+<div class="aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-black relative group-hover:ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-[#101722] transition-all">
+<img alt="Video thumbnail of AI conference" class="w-full h-full object-cover opacity-80" data-alt="Dark futuristic tech background with code overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUCyEGW0c0-swlnnx3XszTpGPqmYmIzgKFQlW8ZPsOHK1LioBhVBfvL3Amim1GqfziiDRMOvWL6IO7A0vXLSa_K75hoS6UXGzzj1pdg3moFU8YT9i9VAY1gOmvgxirbk1OODEhYhKRcAKG8PBwm42YWWcF1iUq46ZAXDyvy2JxFjIjvPwih3_479OB5USedC3AlKbJ4Dv4dqaA9JXwRpZeL-sRTv4nNkAkY1eZfwZx_8n7QvFh3ZFqu3i1QfOt0sKrgWkfSIcmgTQ"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="size-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/40">
+<span class="material-symbols-outlined text-white text-[24px]">play_arrow</span>
+</div>
+</div>
+<span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">12:04</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">TechReview TV</span>
+<span class="text-xs text-gray-300 dark:text-gray-600">•</span>
+<span class="text-xs text-gray-400">1일 전</span>
+</div>
+<a class="block group-hover:underline decoration-primary decoration-2 underline-offset-2" href="#">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                CES 2024 현장에서 본 최신 <span class="text-primary">AI 트렌드</span> 총정리 (영상)
+                            </h3>
+</a>
+<p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+                            라스베이거스에서 열린 CES 2024에서 공개된 혁신적인 AI 기술들을 직접 체험해봤습니다. 온디바이스 AI부터 자율주행 기술까지, 올해를 관통할 핵심 키워드를 영상으로 확인하세요.
+                        </p>
+</div>
+</article>
+</div>
+<!-- Pagination -->
+<div class="mt-12 flex justify-center">
+<nav aria-label="Pagination" class="flex items-center gap-1">
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400" href="#">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-sm shadow-md shadow-blue-500/20" href="#">1</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium text-sm" href="#">2</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium text-sm" href="#">3</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium text-sm" href="#">4</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium text-sm" href="#">5</a>
+<a class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400" href="#">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</a>
+</nav>
+</div>
+<!-- Popular Searches / No Results Alternative Section -->
+<div class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
+<h4 class="text-base font-bold text-gray-900 dark:text-white mb-4">인기 검색어</h4>
+<div class="flex flex-wrap gap-2">
+<a class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors" href="#">
+                        #반도체 수출
+                    </a>
+<a class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors" href="#">
+                        #전기차 보조금
+                    </a>
+<a class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors" href="#">
+                        #부동산 정책
+                    </a>
+<a class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors" href="#">
+                        #기후 변화
+                    </a>
+<a class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors" href="#">
+                        #스타트업 투자
+                    </a>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-[#1a202c] border-t border-gray-200 dark:border-gray-800 mt-auto">
+<div class="max-w-[1280px] mx-auto px-6 py-8">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
+<a class="hover:text-gray-900 dark:hover:text-white" href="#">이용약관</a>
+<a class="font-bold hover:text-gray-900 dark:hover:text-white" href="#">개인정보처리방침</a>
+<a class="hover:text-gray-900 dark:hover:text-white" href="#">청소년보호정책</a>
+<a class="hover:text-gray-900 dark:hover:text-white" href="#">고객센터</a>
+</div>
+<p class="text-sm text-gray-400">© 2024 NewsPortal Corp. All rights reserved.</p>
+</div>
+</div>
+</footer>
+</body></html>

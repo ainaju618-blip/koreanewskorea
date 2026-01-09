@@ -379,7 +379,7 @@ export default function ReporterProfilePage() {
                                     className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg cursor-pointer hover:opacity-80 transition relative"
                                 >
                                     {displayImage ? (
-                                        <Image src={displayImage} alt="Profile" fill className="object-cover" unoptimized={displayImage.startsWith("blob:")} />
+                                        <Image src={displayImage} alt="Profile" fill sizes="128px" className="object-cover" unoptimized={displayImage.startsWith("blob:")} />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
                                             <User className="w-16 h-16 text-gray-300" />

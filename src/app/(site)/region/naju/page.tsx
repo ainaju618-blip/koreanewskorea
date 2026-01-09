@@ -7,7 +7,8 @@ import {
   TravelSection,
   FoodSection,
   SidebarTabs,
-  SearchBar,
+  NewsHeroSlider,
+  SidebarBanners,
 } from '@/components/region';
 import WeatherWidgetWrapper from './WeatherWidgetWrapper';
 import DesktopLayout from '@/components/stitch-v2/layout/DesktopLayout';
@@ -45,16 +46,35 @@ export default async function NajuRegionPage() {
   }
 
   // Server-side data fetching
-  const { news, weather, events, places } = await fetchRegionData(regionCode);
+  const { news, weather, events, regionalEvents, places } = await fetchRegionData(regionCode);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Banner - Server Component (풀 와이드) */}
       <HeroBanner region={region} />
 
-      {/* Search Bar */}
-      <div className="max-w-[1280px] mx-auto px-4 lg:px-8 -mt-6 relative z-20 mb-6">
-        <SearchBar regionCode={regionCode} regionName={region.name} />
+      {/* Spacer between Hero Banner and Main Content */}
+      <div className="h-8" />
+
+      {/* Hero Section - NewsHeroSlider + SidebarBanners (8:4 Grid) */}
+      {/* DesktopLayout과 동일한 컨테이너 설정: max-w-[1280px], px-4 lg:px-8, gap-6 */}
+      <div className="w-full max-w-[1280px] mx-auto px-4 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left: News Hero Slider (8 cols) */}
+          <div className="lg:col-span-8">
+            <NewsHeroSlider
+              articles={news}
+              interval={6000}
+              regionName={region.name}
+            />
+          </div>
+          {/* Right: Sidebar Banners (4 cols) - 높이를 슬라이더와 맞춤 */}
+          <div className="lg:col-span-4 hidden lg:block">
+            <div className="aspect-[16/9] md:aspect-[21/9] lg:aspect-auto lg:h-full">
+              <SidebarBanners className="h-full" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content - DesktopLayout (8:4 Grid) */}
@@ -71,18 +91,20 @@ export default async function NajuRegionPage() {
               places={places}
             />
 
-            {/* Sidebar Tabs (Events/News/Heritage) - Client Component */}
-            <SidebarTabs events={events} places={places} />
+            {/* Sidebar Tabs (전국축제/지역축제/문화유적) - Client Component */}
+            <SidebarTabs events={events} regionalEvents={regionalEvents} places={places} />
           </div>
         }
       >
-        {/* Weather Section - Client Component */}
+
+        {/* Weather Section - Client Component (임시 비활성화)
         <Suspense fallback={<WeatherSkeleton />}>
           <WeatherWidgetWrapper
             regionName={`전라남도 ${region.name} 빛가람동`}
             weather={weather}
           />
         </Suspense>
+        */}
 
         {/* News Section - Client Component (for tab interaction) */}
         <div className="mt-6">
@@ -94,7 +116,7 @@ export default async function NajuRegionPage() {
         </div>
 
         {/* Divider (Mobile only) */}
-        <div className="h-2 bg-gray-100 my-6 lg:hidden" />
+        <div className="h-2 bg-gray-100 dark:bg-gray-800 my-6 lg:hidden" />
 
         {/* Travel Section - Server Component */}
         <TravelSection

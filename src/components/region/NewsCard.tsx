@@ -16,7 +16,7 @@ export default function NewsCard({ article }: NewsCardProps) {
   return (
     <Link
       href={`/news/${article.id}`}
-      className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer block"
+      className="bg-white dark:bg-gray-800 rounded-xl pt-3 px-3 pb-[7px] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer block"
     >
       <div className="flex gap-4">
         <div className="flex-1 flex flex-col justify-between">
@@ -24,16 +24,16 @@ export default function NewsCard({ article }: NewsCardProps) {
             <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded mb-2 ${style.color}`}>
               {style.emoji} {article.category || '뉴스'}
             </span>
-            <h3 className="text-base font-bold text-gray-900 leading-tight line-clamp-2 mb-1">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight line-clamp-2 mb-1">
               {article.title}
             </h3>
           </div>
-          <p className="text-gray-500 text-xs mt-2">
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-2">
             {formatRelativeTime(article.publishedAt)} · {article.source || '뉴스'}
           </p>
         </div>
         {article.thumbnail && (
-          <div className="w-[156px] h-[88px] shrink-0 rounded-lg bg-gray-200 overflow-hidden relative aspect-video">
+          <div className="w-[156px] h-[88px] shrink-0 rounded-lg bg-gray-200 dark:bg-gray-700 overflow-hidden relative aspect-video">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={article.thumbnail}

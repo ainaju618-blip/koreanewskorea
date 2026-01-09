@@ -5,22 +5,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Home, Newspaper, MapPin, Building2, Users, GraduationCap, Flame, Briefcase, MessageCircle, Search, UtensilsCrossed, Map, Landmark, Lightbulb } from 'lucide-react';
 
-// 나주 전용 네비게이션 메뉴
+// 나주 전용 네비게이션 메뉴 (모두 서브페이지로 연결)
 const NAJU_MENUS = [
   { name: '홈', href: '/region/naju', icon: Home },
-  { name: '나주시소식', href: '/region/naju?tab=government', icon: Building2 },
-  { name: '의회소식', href: '/region/naju?tab=council', icon: Users },
-  { name: '교육소식', href: '/region/naju?tab=education', icon: GraduationCap },
-  { name: '소방서소식', href: '/region/naju?tab=fire', icon: Flame },
-  { name: '기업소식', href: '/region/naju?tab=business', icon: Briefcase },
-  { name: '오피니언', href: '/region/naju?tab=local', icon: MessageCircle },
+  { name: '나주시소식', href: '/region/naju/government', icon: Building2 },
+  { name: '의회소식', href: '/region/naju/council', icon: Users },
+  { name: '교육소식', href: '/region/naju/education', icon: GraduationCap },
+  { name: '소방서소식', href: '/region/naju/fire', icon: Flame },
+  { name: '기업소식', href: '/region/naju/business', icon: Briefcase },
+  { name: '오피니언', href: '/region/naju/opinion', icon: Lightbulb },
 ];
 
 // 여행/맛집 서브메뉴
 const NAJU_SUB_MENUS = [
   { name: '맛집', href: '/region/naju/food', icon: UtensilsCrossed },
   { name: '여행', href: '/region/naju/travel', icon: Map },
-  { name: '인사이트', href: '/region/naju/opinion', icon: Lightbulb },
 ];
 
 export default function NajuHeader() {

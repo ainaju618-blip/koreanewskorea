@@ -21,16 +21,16 @@ export default function FoodSection({ regionCode, regionName, places, isLoading 
 
   if (isLoading) {
     return (
-      <section className="px-4 mb-2 lg:bg-white lg:rounded-xl lg:p-4 lg:shadow-sm lg:border lg:border-gray-100 lg:mb-4">
+      <section className="px-4 mb-2 lg:bg-white lg:dark:bg-gray-800 lg:rounded-xl lg:p-4 lg:shadow-sm lg:border lg:border-gray-100 lg:dark:border-gray-700 lg:mb-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <UtensilsCrossed className="w-5 h-5 text-cyan-500" />
             {regionName}의 맛
           </h2>
         </div>
         <div className="grid grid-cols-2 gap-3 animate-pulse">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-gray-200 rounded-xl h-40" />
+            <div key={i} className="bg-gray-200 dark:bg-gray-700 rounded-xl h-40" />
           ))}
         </div>
       </section>
@@ -38,15 +38,15 @@ export default function FoodSection({ regionCode, regionName, places, isLoading 
   }
 
   return (
-    <section className="px-4 mb-2 lg:bg-white lg:rounded-xl lg:p-4 lg:shadow-sm lg:border lg:border-gray-100 lg:mb-4">
+    <section className="px-4 mb-2 lg:bg-white lg:dark:bg-gray-800 lg:rounded-xl lg:p-4 lg:shadow-sm lg:border lg:border-gray-100 lg:dark:border-gray-700 lg:mb-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <UtensilsCrossed className="w-5 h-5 text-cyan-500" />
           {regionName}의 맛
         </h2>
         <Link
           href={`/region/${regionCode}/food`}
-          className="text-gray-500 text-xs font-medium hover:text-cyan-500"
+          className="text-gray-500 dark:text-gray-400 text-xs font-medium hover:text-cyan-500"
         >
           더보기 &gt;
         </Link>
@@ -62,7 +62,7 @@ export default function FoodSection({ regionCode, regionName, places, isLoading 
           />
         ))}
         {foodPlaces.length === 0 && (
-          <div className="col-span-2 text-center py-8 text-gray-400">
+          <div className="col-span-2 text-center py-8 text-gray-400 dark:text-gray-500">
             <UtensilsCrossed className="w-10 h-10 mx-auto mb-2 opacity-30" />
             <p>맛집 정보를 준비 중입니다.</p>
           </div>

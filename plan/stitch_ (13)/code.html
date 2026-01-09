@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MY 페이지</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f3f4f6", // Slightly darker than white for contrast sections
+                        "background-dark": "#101722",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Public Sans", "Noto Sans KR", sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white overflow-x-hidden min-h-screen pb-20">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center bg-surface-light dark:bg-surface-dark px-4 py-3 justify-between shadow-sm border-b border-gray-100 dark:border-gray-800">
+<button aria-label="Menu" class="flex size-10 items-center justify-center text-[#111418] dark:text-white">
+<span class="material-symbols-outlined" style="font-size: 28px;">menu</span>
+</button>
+<h2 class="text-[#111418] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">MY</h2>
+<button aria-label="Settings" class="flex size-10 items-center justify-center text-[#111418] dark:text-white">
+<span class="material-symbols-outlined" style="font-size: 28px;">settings</span>
+</button>
+</header>
+<main class="flex flex-col gap-4 p-4">
+<!-- Profile Section -->
+<section class="flex flex-col gap-4 rounded-xl bg-surface-light dark:bg-surface-dark p-5 shadow-sm">
+<div class="flex flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-16 w-16 border-2 border-gray-100 dark:border-gray-700" data-alt="User profile avatar image" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD9QtFK2hHQT2XZ5y39Lgdfj8gGWkkYmV1XzsVzh_YjVYowmd7uJDisOE4j_EIXyhXPxGivhQ4o71Km9UyvL6X9KlnjFs2TZRWKdQki_nc7w5fN3q66svF64CzLCadHIVH33-P7vLR67pl176WeS4ZTTjnG2eaeD0BVK8Wwjx0hRfTM4tFJssD4vWWoBJkaEfVuTK1VLApy8_WhMiYfXHrXRFVcUtIjao2m_4OkmjrHubkhfWwAPAvmSMXnp0ZtzRXzFNh_o2BkJb51");'>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-[#111418] dark:text-white text-[20px] font-bold leading-tight">김뉴스</p>
+<p class="text-[#60708a] dark:text-gray-400 text-sm font-normal leading-normal">ko***@gmail.com</p>
+</div>
+</div>
+</div>
+<button class="flex w-full cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-white text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="truncate">프로필 수정</span>
+</button>
+</section>
+<!-- Stats Section -->
+<section class="grid grid-cols-3 gap-3">
+<div class="flex flex-col gap-1 rounded-xl bg-surface-light dark:bg-surface-dark p-4 items-center text-center shadow-sm">
+<span class="material-symbols-outlined text-primary mb-1" style="font-size: 24px;">bookmark</span>
+<p class="text-[#111418] dark:text-white text-xl font-bold leading-tight">12</p>
+<p class="text-[#60708a] dark:text-gray-400 text-xs font-medium">스크랩</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl bg-surface-light dark:bg-surface-dark p-4 items-center text-center shadow-sm">
+<span class="material-symbols-outlined text-primary mb-1" style="font-size: 24px;">chat_bubble</span>
+<p class="text-[#111418] dark:text-white text-xl font-bold leading-tight">5</p>
+<p class="text-[#60708a] dark:text-gray-400 text-xs font-medium">댓글</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl bg-surface-light dark:bg-surface-dark p-4 items-center text-center shadow-sm">
+<span class="material-symbols-outlined text-primary mb-1" style="font-size: 24px;">thumb_up</span>
+<p class="text-[#111418] dark:text-white text-xl font-bold leading-tight">28</p>
+<p class="text-[#60708a] dark:text-gray-400 text-xs font-medium">좋아요</p>
+</div>
+</section>
+<!-- Menu Group 1: Activity -->
+<section class="flex flex-col overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm">
+<!-- ListItem -->
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-primary shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">bookmark_border</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">내 스크랩</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-primary shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">chat</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">내 댓글</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-primary shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">favorite_border</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">좋아요한 기사</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+</section>
+<!-- Menu Group 2: Settings -->
+<section class="flex flex-col overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm">
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">notifications</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">알림 설정</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">location_on</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">관심 지역 설정</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">category</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">관심 카테고리</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+</section>
+<!-- Menu Group 3: Support -->
+<section class="flex flex-col overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm">
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings_applications</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">앱 설정</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">headset_mic</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">고객센터</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-4 w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 text-left">
+<div class="flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 shrink-0 size-9">
+<span class="material-symbols-outlined" style="font-size: 20px;">description</span>
+</div>
+<div class="flex-1">
+<p class="text-[#111418] dark:text-white text-[15px] font-medium leading-normal">이용약관</p>
+</div>
+<span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">chevron_right</span>
+</button>
+</section>
+<!-- Footer Actions -->
+<div class="mt-4 flex flex-col items-center gap-4 mb-20">
+<button class="w-full rounded-xl bg-surface-light dark:bg-surface-dark py-4 text-center text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors shadow-sm">
+                로그아웃
+            </button>
+<p class="text-xs text-gray-400 dark:text-gray-600">앱 버전 v1.0.0</p>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe">
+<div class="flex justify-around items-center h-16">
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors gap-1" href="#">
+<span class="material-symbols-outlined" style="font-size: 24px;">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors gap-1" href="#">
+<span class="material-symbols-outlined" style="font-size: 24px;">search</span>
+<span class="text-[10px] font-medium">검색</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors gap-1" href="#">
+<span class="material-symbols-outlined" style="font-size: 24px;">newspaper</span>
+<span class="text-[10px] font-medium">뉴스</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-primary transition-colors gap-1 relative" href="#">
+<span class="material-symbols-outlined filled" style="font-variation-settings: 'FILL' 1; font-size: 24px;">person</span>
+<span class="text-[10px] font-bold">MY</span>
+</a>
+</div>
+</div>
+</body></html>

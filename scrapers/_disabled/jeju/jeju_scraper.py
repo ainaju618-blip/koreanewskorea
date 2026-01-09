@@ -1,80 +1,48 @@
+# -*- coding: utf-8 -*-
+"""제주특별자치도 보도자료 스크래퍼 v4.0 (Simple Playwright)
+- 운영서버 방식으로 단순화
+- 리스트 구조 (ul > li)
 """
-제주특별자치도 보도자료 스크래퍼 - Enterprise Stealth v3.0
-- 버전: v3.0 (Enterprise Stealth Enhanced)
-- 최종수정: 2026-01-05
-- 담당: AI Agent
-
-[프로젝트: koreanewskorea]
-- 전국 17개 시·도 보도자료 수집용
-- Supabase: ainaju618@gmail.com 계정 (신규 DB)
-
-[특이사항]:
-- 표준 게시판 테이블 구조
-- 페이지네이션: ?page={page_num}
-- JS 불필요 (일반 HTML)
-- 특별자치도
-"""
-
-import sys
-import os
-import re
+import sys, os, time, re
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple, Optional
 from urllib.parse import urljoin
+from playwright.sync_api import sync_playwright, Page
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SCRAPERS_DIR = os.path.dirname(SCRIPT_DIR)
+if '_disabled' in SCRIPT_DIR:
+    SCRAPERS_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+else:
+    SCRAPERS_DIR = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, SCRAPERS_DIR)
 
-from playwright.sync_api import sync_playwright, Page
-from playwright_stealth import Stealth
-
 from utils.api_client import send_article_to_server, log_to_server, ensure_server_running, check_duplicates
-from utils.scraper_utils import wait_and_find, safe_get_text, safe_get_attr, safe_add_pagination
-from utils.content_cleaner import clean_article_content
-from utils.category_detector import detect_category
-from utils.error_collector import ErrorCollector
+from utils.scraper_utils import safe_goto, wait_and_find, safe_get_text, safe_get_attr, clean_article_content, detect_category, extract_subtitle
 from utils.cloudinary_uploader import download_and_upload_image
-
-from utils.enterprise_stealth import (
-    StealthConfig, PODMPDelayGenerator, BlockDetector, BlockType,
-    FingerprintManager, retry_with_backoff, smart_delay,
-)
+from utils.error_collector import ErrorCollector
+from utils.default_images import get_default_image
 
 REGION_CODE = 'jeju'
 REGION_NAME = '제주특별자치도'
-CATEGORY_NAME = '전국'
 BASE_URL = 'https://www.jeju.go.kr'
 LIST_URL = 'https://www.jeju.go.kr/news/bodo/list.htm'
 
-PAGE_PARAM = 'page'
-
 LIST_ROW_SELECTORS = [
-    'ul li:has(a[href*="list.htm?act=view"])',  # 제주 실제 구조: ul > li > a
+    'ul li:has(a[href*="list.htm?act=view"])',
     'li:has(a[href*="act=view"])',
 ]
 
 CONTENT_SELECTORS = [
+    'div.article-contents',  # 제주도 본문 영역
     'div.view_content',
     'div.board_view',
     '.article_content',
     'div.bbs_view',
     'div.view_box',
     '.content_view',
-    'div.view-body',      # 제주 상세 페이지
+    'div.view-body',
     'article',
 ]
-
-
-def get_stealth_config() -> StealthConfig:
-    return StealthConfig(
-        headless=True, use_persistent_context=True,
-        context_dir=os.path.join(SCRAPERS_DIR, 'browser_contexts'),
-        min_delay=1.5, max_delay=4.0, poisson_lambda=2.0,
-        max_retries=3, base_backoff=2.0, max_backoff=60.0,
-        jitter_factor=0.3, use_http2=True, rotate_fingerprint=True,
-        fingerprint_interval=15
-    )
 
 
 def safe_str(s):
@@ -94,62 +62,22 @@ def normalize_date(date_str: str) -> str:
     return datetime.now().strftime('%Y-%m-%d')
 
 
-def extract_subtitle(content: str, title: str) -> Tuple[Optional[str], str]:
-    if not content: return None, content
-    lines = content.strip().split('\n')
-    for line in lines[:3]:
-        line = line.strip()
-        if line and len(line) > 10 and line != title and not line.startswith('▲'):
-            if len(line) < 200: return line, content
-    return None, content
+def fetch_detail(page: Page, url: str) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    if not safe_goto(page, url, timeout=20000):
+        return "", None, None, "PAGE_LOAD_FAIL"
 
-
-@retry_with_backoff(max_retries=3, base_backoff=2.0, max_backoff=30.0)
-def safe_goto(page: Page, url: str, timeout: int = 20000) -> bool:
-    try:
-        page.goto(url, wait_until='networkidle', timeout=timeout)
-        return True
-    except Exception as e:
-        print(f"      [ERROR] Page load failed: {e}")
-        raise
-
-
-def fetch_detail(page: Page, url: str, delay_gen: PODMPDelayGenerator) -> Tuple[str, Optional[str], str, Optional[str]]:
-    try:
-        if not safe_goto(page, url, timeout=20000):
-            return "", None, datetime.now().strftime('%Y-%m-%d'), "PAGE_LOAD_FAIL"
-    except Exception as e:
-        return "", None, datetime.now().strftime('%Y-%m-%d'), f"PAGE_LOAD_ERROR: {e}"
-
-    smart_delay(1.0, 2.5, 2.0)
+    time.sleep(1.0)
     content = ""
     thumbnail_url = None
-    pub_date = datetime.now().strftime('%Y-%m-%d')
+    pub_date = None
 
-    # 제주: "작성일 | 2026-01-05 16:10:27" 형식
-    date_selectors = [
-        'p:has-text("작성일")',  # 제주 상세 페이지
-        'span:has-text("작성일")', 'li:has-text("작성일")', 'th:has-text("작성일") + td',
-        'span:has-text("등록일")', '.view_info span', 'td.date',
-    ]
-    for sel in date_selectors:
-        try:
-            elem = page.locator(sel).first
-            if elem.count() > 0:
-                text = safe_get_text(elem)
-                if text and re.search(r'\d{4}', text):
-                    pub_date = normalize_date(text)
-                    break
-        except: continue
-
-    if pub_date == datetime.now().strftime('%Y-%m-%d'):
-        try:
-            page_text = page.locator('body').inner_text()[:3000]
-            date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
-            if date_match:
-                y, m, d = date_match.groups()
-                pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
-        except: pass
+    try:
+        page_text = page.locator('body').inner_text()[:3000]
+        date_match = re.search(r'(\d{4})[-./](\d{1,2})[-./](\d{1,2})', page_text)
+        if date_match:
+            y, m, d = date_match.groups()
+            pub_date = f"{y}-{int(m):02d}-{int(d):02d}"
+    except: pass
 
     for sel in CONTENT_SELECTORS:
         try:
@@ -169,7 +97,6 @@ def fetch_detail(page: Page, url: str, delay_gen: PODMPDelayGenerator) -> Tuple[
             link_text = safe_get_text(link) or ''
             title_attr = safe_get_attr(link, 'title') or link_text
             href = safe_get_attr(link, 'href') or ''
-            # 링크 텍스트 또는 href에 이미지 확장자가 있는지 확인
             check_text = (title_attr + ' ' + href).lower()
             if any(ext in check_text for ext in ['.jpg', '.png', '.gif', '.jpeg']):
                 img_url = urljoin(BASE_URL, href) if href else None
@@ -184,21 +111,19 @@ def fetch_detail(page: Page, url: str, delay_gen: PODMPDelayGenerator) -> Tuple[
         for sel in CONTENT_SELECTORS:
             try:
                 imgs = page.locator(f'{sel} img')
-                for i in range(min(imgs.count(), 3)):
+                for i in range(min(imgs.count(), 5)):
                     src = safe_get_attr(imgs.nth(i), 'src')
                     if src and not any(x in src.lower() for x in ['icon', 'btn', 'logo', 'banner', 'bg', 'button']):
                         img_url = urljoin(BASE_URL, src) if not src.startswith('http') else src
                         cloudinary_url = download_and_upload_image(img_url, BASE_URL, folder=REGION_CODE)
                         if cloudinary_url:
                             thumbnail_url = cloudinary_url
-                        else:
-                            thumbnail_url = img_url
-                        break
+                            break
                 if thumbnail_url: break
             except: continue
 
     if not thumbnail_url:
-        return "", None, pub_date, ErrorCollector.IMAGE_MISSING
+        thumbnail_url = get_default_image(REGION_CODE)
 
     return content, thumbnail_url, pub_date, None
 
@@ -208,70 +133,42 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
     if not start_date: start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     print(f"\n{'='*60}")
-    print(f"[{REGION_NAME}] 보도자료 스크래퍼 v3.0 (Enterprise Stealth)")
+    print(f"[{REGION_NAME}] 보도자료 스크래퍼 v4.0")
     print(f"{'='*60}")
     print(f"   [DATE] {start_date} ~ {end_date}")
 
     if not ensure_server_running():
-        print("[ERROR] Dev server could not be started. Aborting.")
+        print("[ERROR] Dev server could not be started.")
         return []
 
-    log_to_server(REGION_CODE, 'running', f'{REGION_NAME} 스크래퍼 v3.0 시작', 'info')
-
-    config = get_stealth_config()
-    config.headless = headless
-    delay_gen = PODMPDelayGenerator(config)
-    block_detector = BlockDetector()
-    fingerprint_manager = FingerprintManager(config.fingerprint_interval)
+    log_to_server(REGION_CODE, 'running', f'{REGION_NAME} 스크래퍼 시작', 'info')
     error_collector = ErrorCollector(REGION_CODE, REGION_NAME)
 
     with sync_playwright() as p:
-        fp = fingerprint_manager.get_fingerprint()
-        browser = p.chromium.launch(
-            headless=config.headless,
-            args=['--disable-blink-features=AutomationControlled', '--disable-infobars',
-                  '--disable-dev-shm-usage', '--no-sandbox', '--disable-setuid-sandbox',
-                  f'--window-size={fp["screen"]["width"]},{fp["screen"]["height"]}']
-        )
-        context = browser.new_context(
-            user_agent=fp['userAgent'], viewport=fp['screen'],
-            locale='ko-KR', timezone_id='Asia/Seoul', color_scheme='light',
-        )
+        browser = p.chromium.launch(headless=headless)
+        context = browser.new_context(locale='ko-KR', timezone_id='Asia/Seoul')
         page = context.new_page()
-        Stealth().apply_stealth_sync(page)
-        page.add_init_script(fingerprint_manager.get_stealth_js())
 
         page_num = 1
         stop = False
         collected_count = 0
 
         while page_num <= 5 and not stop and collected_count < max_articles:
-            list_url = safe_add_pagination(LIST_URL, PAGE_PARAM, page_num)
-            print(f"\n   [PAGE] 페이지 {page_num} 수집 중...")
+            list_url = f'{LIST_URL}?page={page_num}'
+            print(f"\n   [PAGE] 페이지 {page_num}...")
 
-            delay = delay_gen.get_page_delay()
-            print(f"      [DELAY] {delay:.2f}s")
-
-            try:
-                if not safe_goto(page, list_url): page_num += 1; continue
-            except: page_num += 1; continue
-
-            content = page.content()
-            block_type = block_detector.detect(content, 200)
-            if block_type != BlockType.NONE:
-                strategy = block_detector.get_recovery_strategy(block_type)
-                if strategy['action'] in ['abort', 'manual_intervention']: break
-                smart_delay(strategy['delay'], strategy['delay'] * 1.5, 1.0)
+            if not safe_goto(page, list_url):
+                page_num += 1
                 continue
 
-            smart_delay(1.0, 2.0, 2.0)
+            time.sleep(1.0)
             rows = wait_and_find(page, LIST_ROW_SELECTORS, timeout=10000)
             if not rows:
                 print("      [WARN] 기사 목록 없음")
                 break
 
             row_count = rows.count()
-            print(f"      [FOUND] {row_count}개 행")
+            print(f"      [FOUND] {row_count}개 항목")
 
             link_data = []
             seen_urls = set()
@@ -328,12 +225,9 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
             for item in new_link_data:
                 if collected_count >= max_articles: break
                 title, full_url = item['title'], item['url']
-                print(f"      [ARTICLE] {safe_str(title[:35])}...")
+                print(f"      [ARTICLE] {safe_str(title[:40])}...")
 
-                article_delay = delay_gen.get_delay()
-                print(f"         [DELAY] {article_delay:.2f}s")
-
-                content, thumbnail_url, detail_date, error_reason = fetch_detail(page, full_url, delay_gen)
+                content, thumbnail_url, detail_date, error_reason = fetch_detail(page, full_url)
                 error_collector.increment_processed()
 
                 if error_reason:
@@ -343,7 +237,6 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
                 final_date = detail_date or item.get('list_date') or datetime.now().strftime('%Y-%m-%d')
                 if final_date < start_date: stop = True; break
-                if not content: content = f"본문 내용을 가져올 수 없습니다.\n원본 링크: {full_url}"
 
                 subtitle, content = extract_subtitle(content, title)
                 cat_code, cat_name = detect_category(title, content)
@@ -352,20 +245,18 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
                     'title': title, 'subtitle': subtitle, 'content': content,
                     'published_at': f"{final_date}T09:00:00+09:00",
                     'original_link': full_url, 'source': REGION_NAME,
-                    'category': cat_name, 'region': REGION_CODE, 'thumbnail_url': thumbnail_url,
+                    'category': cat_name, 'region': REGION_CODE,
+                    'thumbnail_url': thumbnail_url,
                 }
 
                 result = send_article_to_server(article_data)
                 collected_count += 1
                 if result.get('status') == 'created':
                     error_collector.add_success()
-                    print(f"         [OK] 저장 완료")
-
-                smart_delay(0.5, 1.5, 2.0)
+                    print(f"         [OK] 저장")
 
             page_num += 1
             if stop: break
-            smart_delay(1.0, 2.5, 2.0)
 
         browser.close()
 
@@ -379,10 +270,9 @@ def collect_articles(days: int = 3, max_articles: int = 30, start_date: str = No
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼 v3.0')
+    parser = argparse.ArgumentParser(description=f'{REGION_NAME} 보도자료 스크래퍼')
     parser.add_argument('--days', type=int, default=3)
     parser.add_argument('--max-articles', type=int, default=10)
-    parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--start-date', type=str, default=None)
     parser.add_argument('--end-date', type=str, default=None)
     parser.add_argument('--headful', action='store_true')

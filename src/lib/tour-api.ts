@@ -1,19 +1,37 @@
 /**
- * 한국관광공사 TourAPI 연동 라이브러리
+ * 한국관광공사 TourAPI 연동 라이브러리 (KorService2)
  * - 관광지, 맛집, 숙박, 행사 정보 조회
- * - API: https://api.visitkorea.or.kr
+ * - API: https://apis.data.go.kr/B551011/KorService2
  *
- * 나주시 지역코드: 38 (전라남도), 시군구코드: 13 (나주시)
+ * 전라남도(38) 시군구코드: 나주시=6, 진도군=21, 목포시=8, 순천시=11, 여수시=13
+ * 2026-01-07: KorService1 → KorService2 마이그레이션, 시군구코드 수정
  */
 
-// 지역 코드 매핑
+// 지역 코드 매핑 (KorService2 기준, 2026-01-07 수정)
 export const REGION_CODES: Record<string, { areaCode: number; sigunguCode: number }> = {
-  naju: { areaCode: 38, sigunguCode: 13 },      // 전남 나주시
-  jindo: { areaCode: 38, sigunguCode: 18 },     // 전남 진도군
+  naju: { areaCode: 38, sigunguCode: 6 },       // 전남 나주시 ✓
+  jindo: { areaCode: 38, sigunguCode: 21 },     // 전남 진도군 ✓
   gwangju: { areaCode: 5, sigunguCode: 0 },     // 광주광역시
-  mokpo: { areaCode: 38, sigunguCode: 7 },      // 전남 목포시
-  suncheon: { areaCode: 38, sigunguCode: 10 },  // 전남 순천시
-  yeosu: { areaCode: 38, sigunguCode: 11 },     // 전남 여수시
+  mokpo: { areaCode: 38, sigunguCode: 8 },      // 전남 목포시 ✓
+  suncheon: { areaCode: 38, sigunguCode: 11 },  // 전남 순천시 ✓
+  yeosu: { areaCode: 38, sigunguCode: 13 },     // 전남 여수시 ✓
+  gangiin: { areaCode: 38, sigunguCode: 1 },    // 전남 강진군
+  goheung: { areaCode: 38, sigunguCode: 2 },    // 전남 고흥군
+  gokseong: { areaCode: 38, sigunguCode: 3 },   // 전남 곡성군
+  gwangyang: { areaCode: 38, sigunguCode: 4 },  // 전남 광양시
+  gurye: { areaCode: 38, sigunguCode: 5 },      // 전남 구례군
+  damyang: { areaCode: 38, sigunguCode: 7 },    // 전남 담양군
+  muan: { areaCode: 38, sigunguCode: 9 },       // 전남 무안군
+  boseong: { areaCode: 38, sigunguCode: 10 },   // 전남 보성군
+  sinan: { areaCode: 38, sigunguCode: 12 },     // 전남 신안군
+  yeonggwang: { areaCode: 38, sigunguCode: 16 },// 전남 영광군
+  yeongam: { areaCode: 38, sigunguCode: 17 },   // 전남 영암군
+  wando: { areaCode: 38, sigunguCode: 18 },     // 전남 완도군
+  jangseong: { areaCode: 38, sigunguCode: 19 }, // 전남 장성군
+  jangheung: { areaCode: 38, sigunguCode: 20 }, // 전남 장흥군
+  hampyeong: { areaCode: 38, sigunguCode: 22 }, // 전남 함평군
+  haenam: { areaCode: 38, sigunguCode: 23 },    // 전남 해남군
+  hwasun: { areaCode: 38, sigunguCode: 24 },    // 전남 화순군
 };
 
 // 콘텐츠 타입
@@ -36,26 +54,27 @@ export interface TourApiConfig {
 }
 
 export interface TourSpot {
-  contentId: string;
-  contentTypeId: string;
+  contentid: string;      // KorService2: 소문자
+  contenttypeid: string;  // KorService2: 소문자
   title: string;
-  address: string;
-  firstImage: string;
-  firstImage2: string;
+  addr1: string;          // KorService2: addr1 (address 아님)
+  addr2?: string;
+  firstimage: string;     // KorService2: 소문자
+  firstimage2: string;    // KorService2: 소문자
   tel: string;
-  mapX: string;
-  mapY: string;
+  mapx: string;           // KorService2: 소문자
+  mapy: string;           // KorService2: 소문자
   overview?: string;
   homepage?: string;
 }
 
 export interface TourEvent {
-  contentId: string;
+  contentid: string;        // KorService2: 소문자
   title: string;
-  address: string;
-  firstImage: string;
-  eventStartDate: string;
-  eventEndDate: string;
+  addr1: string;            // KorService2: addr1
+  firstimage: string;       // KorService2: 소문자
+  eventstartdate: string;   // KorService2: 소문자
+  eventenddate: string;     // KorService2: 소문자
   tel: string;
 }
 
@@ -87,7 +106,8 @@ export class TourApiClient {
 
   constructor(config: TourApiConfig) {
     this.serviceKey = config.serviceKey;
-    this.baseUrl = config.baseUrl || 'https://apis.data.go.kr/B551011/KorService1';
+    // KorService1 → KorService2 변경 (2026-01-07)
+    this.baseUrl = config.baseUrl || 'https://apis.data.go.kr/B551011/KorService2';
     this.mobileOS = config.mobileOS || 'WEB';
     this.mobileApp = config.mobileApp || 'koreanewskorea';
   }
@@ -107,23 +127,58 @@ export class TourApiClient {
     }
 
     try {
+      console.log(`[TourAPI] Requesting: ${url.toString().replace(this.serviceKey, '***KEY***')}`);
+
       const response = await fetch(url.toString());
+
+      // 에러 응답 시 상세 로깅 (주인님 가이드에 따라)
       if (!response.ok) {
-        throw new Error(`TourAPI error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`[TourAPI] HTTP ${response.status} Error:`);
+        console.error(`[TourAPI] Response Headers:`, Object.fromEntries(response.headers.entries()));
+        console.error(`[TourAPI] Response Body:`, errorText);
+        throw new Error(`TourAPI HTTP ${response.status}: ${errorText}`);
       }
 
-      const data: TourApiResponse<T> = await response.json();
+      // 응답 텍스트 먼저 받아서 파싱 시도
+      const responseText = await response.text();
 
-      if (data.response.header.resultCode !== '0000') {
-        throw new Error(`TourAPI error: ${data.response.header.resultMsg}`);
+      // XML 응답인지 확인 (에러 시 XML로 오는 경우)
+      if (responseText.startsWith('<?xml') || responseText.startsWith('<')) {
+        console.error(`[TourAPI] XML Response received (check for errors):`, responseText.substring(0, 500));
+        // XML 에러 응답 파싱
+        const errCodeMatch = responseText.match(/<returnReasonCode>(\d+)<\/returnReasonCode>/);
+        const errMsgMatch = responseText.match(/<returnAuthMsg>([^<]+)<\/returnAuthMsg>/);
+        if (errCodeMatch || errMsgMatch) {
+          throw new Error(`TourAPI Auth Error: ${errCodeMatch?.[1] || 'unknown'} - ${errMsgMatch?.[1] || 'unknown'}`);
+        }
+      }
+
+      const data = JSON.parse(responseText);
+
+      // KorService2 에러 응답 처리 (플랫 형식: {resultCode, resultMsg, responseTime})
+      if ('resultCode' in data && data.resultCode !== '0000' && !data.response) {
+        console.error(`[TourAPI] KorService2 Error: ${data.resultCode} - ${data.resultMsg}`);
+        throw new Error(`TourAPI error: ${data.resultMsg}`);
+      }
+
+      // 정상 응답 처리 (중첩 형식: {response: {header, body}})
+      if (data.response?.header?.resultCode !== '0000') {
+        console.error(`[TourAPI] API Error: ${data.response?.header?.resultCode} - ${data.response?.header?.resultMsg}`);
+        throw new Error(`TourAPI error: ${data.response?.header?.resultMsg}`);
       }
 
       const items = data.response.body?.items?.item;
-      if (!items) return [];
+      if (!items) {
+        console.log(`[TourAPI] No items in response for ${endpoint}`);
+        return [];
+      }
 
-      return Array.isArray(items) ? items : [items];
+      const result = Array.isArray(items) ? items : [items];
+      console.log(`[TourAPI] Success: ${result.length} items from ${endpoint}`);
+      return result;
     } catch (error) {
-      console.error(`TourAPI fetch error (${endpoint}):`, error);
+      console.error(`[TourAPI] Fetch error (${endpoint}):`, error);
       return [];
     }
   }
@@ -147,7 +202,7 @@ export class TourApiClient {
       areaCode: codes.areaCode,
       numOfRows: options.numOfRows || 10,
       pageNo: options.pageNo || 1,
-      listYN: 'Y',
+      // listYN: 'Y', // KorService2에서 미지원 - 2026-01-07 제거
       arrange: 'A', // 제목순
     };
 
@@ -159,7 +214,7 @@ export class TourApiClient {
       params.contentTypeId = options.contentTypeId;
     }
 
-    return this.fetchApi<TourSpot>('areaBasedList1', params);
+    return this.fetchApi<TourSpot>('areaBasedList2', params);
   }
 
   /**
@@ -207,36 +262,89 @@ export class TourApiClient {
   }
 
   /**
-   * 축제/행사 목록 조회
+   * 레포츠/자연경관 목록 조회
+   */
+  async getLeisure(regionCode: string, limit: number = 10): Promise<TourSpot[]> {
+    return this.getAreaBasedList({
+      regionCode,
+      contentTypeId: CONTENT_TYPE.LEISURE,
+      numOfRows: limit,
+    });
+  }
+
+  /**
+   * 축제/행사 목록 조회 (전국 축제)
+   * - 지역 축제가 적으므로 전국 축제를 가져와서 1월 축제 등을 안내
+   * - areaCode 없이 호출하면 전국 축제 조회
    */
   async getFestivals(regionCode: string, eventStartDate?: string): Promise<TourEvent[]> {
+    // regionCode는 참고용으로만 사용 (전국 축제 조회)
+
+    // KorService2: eventStartDate 필수 파라미터 (2026-01-07)
+    // 기본값: 이번 달 1일부터 (현재 진행 중인 축제 + 예정 축제)
+    const today = new Date();
+    const defaultStartDate = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}01`;
+
+    const params: Record<string, string | number> = {
+      // areaCode 없이 전국 축제 검색 (100개 가져와서 지역 필터링)
+      numOfRows: 100,
+      pageNo: 1,
+      arrange: 'A',
+      eventStartDate: eventStartDate || defaultStartDate,
+    };
+
+    return this.fetchApi<TourEvent>('searchFestival2', params);
+  }
+
+  /**
+   * 특정 지역 축제/행사 목록 조회
+   */
+  async getRegionalFestivals(regionCode: string, eventStartDate?: string): Promise<TourEvent[]> {
     const codes = REGION_CODES[regionCode];
     if (!codes) return [];
+
+    const today = new Date();
+    const defaultStartDate = `${today.getFullYear()}0101`;
 
     const params: Record<string, string | number> = {
       areaCode: codes.areaCode,
       numOfRows: 20,
       pageNo: 1,
-      listYN: 'Y',
       arrange: 'A',
+      eventStartDate: eventStartDate || defaultStartDate,
     };
 
     if (codes.sigunguCode > 0) {
       params.sigunguCode = codes.sigunguCode;
     }
 
-    if (eventStartDate) {
-      params.eventStartDate = eventStartDate;
-    }
+    return this.fetchApi<TourEvent>('searchFestival2', params);
+  }
 
-    return this.fetchApi<TourEvent>('searchFestival1', params);
+  /**
+   * 시도 전체 축제 조회 (sigunguCode 없이)
+   * 전남 전체, 광주 전체 등
+   */
+  async getSidoFestivals(areaCode: number, eventStartDate?: string): Promise<TourEvent[]> {
+    const today = new Date();
+    const defaultStartDate = `${today.getFullYear()}0101`;
+
+    const params: Record<string, string | number> = {
+      areaCode,
+      numOfRows: 30,
+      pageNo: 1,
+      arrange: 'A',
+      eventStartDate: eventStartDate || defaultStartDate,
+    };
+
+    return this.fetchApi<TourEvent>('searchFestival2', params);
   }
 
   /**
    * 상세정보 조회
    */
   async getDetailInfo(contentId: string, contentTypeId: number): Promise<TourSpot | null> {
-    const items = await this.fetchApi<TourSpot>('detailCommon1', {
+    const items = await this.fetchApi<TourSpot>('detailCommon2', {
       contentId,
       contentTypeId,
       defaultYN: 'Y',
@@ -271,45 +379,47 @@ export function getTourApiClient(): TourApiClient | null {
 }
 
 /**
- * TourSpot → DB용 Place 변환
+ * TourSpot → DB용 Place 변환 (KorService2 필드명: 소문자, addr1)
  */
 export function tourSpotToPlace(spot: TourSpot, regionCode: string, category: string) {
   return {
     name: spot.title,
     description: spot.overview || '',
     category,
-    address: spot.address,
+    address: spot.addr1 || '주소 미등록',  // KorService2: addr1, null 방지
     phone: spot.tel || null,
-    image_url: spot.firstImage || spot.firstImage2 || null,
-    latitude: spot.mapY ? parseFloat(spot.mapY) : null,
-    longitude: spot.mapX ? parseFloat(spot.mapX) : null,
+    thumbnail_url: spot.firstimage || spot.firstimage2 || null,  // KorService2: 소문자
+    lat: spot.mapy ? parseFloat(spot.mapy) : null,  // KorService2: mapy (소문자)
+    lng: spot.mapx ? parseFloat(spot.mapx) : null,  // KorService2: mapx (소문자)
     region: regionCode,
     sigungu_code: regionCode,
-    content_id: spot.contentId,
-    content_type_id: spot.contentTypeId,
-    homepage: spot.homepage || null,
     is_featured: false,
+    status: 'published',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 }
 
 /**
- * TourEvent → DB용 Event 변환
+ * TourEvent → DB용 Event 변환 (KorService2 필드명: 소문자, addr1)
  */
 export function tourEventToEvent(event: TourEvent, regionCode: string) {
+  // 시도 코드 결정 (전남 지역은 jeonnam, 광주는 gwangju)
+  const sidoCode = regionCode === 'gwangju' ? 'gwangju' : 'jeonnam';
+
   return {
     title: event.title,
     description: '',
-    start_date: formatDateString(event.eventStartDate),
-    end_date: formatDateString(event.eventEndDate),
-    location: event.address,
-    image_url: event.firstImage || null,
+    start_date: formatDateString(event.eventstartdate),  // KorService2: 소문자
+    end_date: formatDateString(event.eventenddate),      // KorService2: 소문자
+    location: event.addr1 || '장소 미등록',              // KorService2: addr1
+    image_url: event.firstimage || null,                 // KorService2: 소문자
     phone: event.tel || null,
+    sido_code: sidoCode,
     region: regionCode,
     sigungu_code: regionCode,
-    content_id: event.contentId,
     category: 'festival',
+    status: 'published',
     is_featured: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

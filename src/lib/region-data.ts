@@ -1,7 +1,7 @@
 import type { NewsArticle, WeatherData, EventData, PlaceData, RegionInfo } from '@/types/region';
+import { supabaseAdmin } from './supabase-admin';
 
-const API_BASE = process.env.NEXT_PUBLIC_SITE_URL || '';
-// 운영서버에서 뉴스 데이터 가져오기
+// 뉴스 데이터는 운영서버(koreanewsone.com)에서 가져옴
 const PRODUCTION_API = 'https://www.koreanewsone.com';
 
 /**
@@ -11,46 +11,129 @@ const PRODUCTION_API = 'https://www.koreanewsone.com';
 export interface RegionPageData {
   news: NewsArticle[];
   weather: WeatherData | null;
-  events: EventData[];
+  events: EventData[];           // 전국 축제
+  regionalEvents: EventData[];   // 지역 축제 (전남+광주)
   places: PlaceData[];
 }
 
 /**
  * 지역 페이지 데이터 통합 페칭
- * 뉴스: 운영서버(koreanewsone.com)에서 가져옴
- * 기타: 로컬 API 사용
+ * - 뉴스: 운영서버(koreanewsone.com)
+ * - places/events: 로컬 Supabase
  */
 export async function fetchRegionData(regionCode: string): Promise<RegionPageData> {
-  const baseUrl = API_BASE || 'http://localhost:3001';
-
   try {
-    // Parallel fetch all data
-    // 뉴스는 운영서버에서, 나머지는 로컬에서
-    const [newsRes, weatherRes, eventsRes, placesRes] = await Promise.all([
-      fetch(`${PRODUCTION_API}/api/region/${regionCode}/news?limit=30`, {
+    // 1. 뉴스/날씨는 운영서버에서 가져옴
+    const [newsRes, weatherRes] = await Promise.all([
+      fetch(`${PRODUCTION_API}/api/region/${regionCode}/news?limit=100`, {
         next: { revalidate: 60 },
       }).catch(() => null),
-      fetch(`${baseUrl}/api/region/${regionCode}/weather`, {
-        next: { revalidate: 300 }, // Weather updates less frequently
+      fetch(`${PRODUCTION_API}/api/region/${regionCode}/weather`, {
+        next: { revalidate: 300 },
       }).catch(() => null),
-      fetch(`${baseUrl}/api/region/${regionCode}/events?limit=5&upcoming=true`, {
-        next: { revalidate: 3600 }, // Events update hourly
-      }).catch(() => null),
-      fetch(`${baseUrl}/api/region/${regionCode}/places?limit=150`, {
-        next: { revalidate: 3600 }, // Places update hourly
-      }).catch(() => null),
+    ]);
+
+    // 2. places는 로컬 Supabase에서 직접 가져옴
+    const placesPromise = supabaseAdmin
+      .from('places')
+      .select('*')
+      .or(`sigungu_code.eq.${regionCode},region.eq.${regionCode}`)
+      .eq('status', 'published')
+      .order('is_featured', { ascending: false })
+      .order('rating', { ascending: false, nullsFirst: false })
+      .limit(150);
+
+    // 3. 전국 축제 (sigungu_code = 'national')
+    const eventsPromise = supabaseAdmin
+      .from('events')
+      .select('*')
+      .eq('sigungu_code', 'national')
+      .gte('end_date', new Date().toISOString())
+      .order('start_date', { ascending: true })
+      .limit(20);
+
+    // 4. 지역 축제 (전남 + 광주 지역) - sido_code로 필터
+    const regionalEventsPromise = supabaseAdmin
+      .from('events')
+      .select('*')
+      .or('sido_code.eq.jeonnam,sido_code.eq.gwangju')
+      .neq('sigungu_code', 'national')
+      .gte('end_date', new Date().toISOString())
+      .order('start_date', { ascending: true })
+      .limit(20);
+
+    const [placesResult, eventsResult, regionalEventsResult] = await Promise.all([
+      placesPromise,
+      eventsPromise,
+      regionalEventsPromise,
     ]);
 
     // Process responses
     const news = newsRes?.ok ? (await newsRes.json()).articles || [] : [];
     const weather = weatherRes?.ok ? (await weatherRes.json()).weather || null : null;
-    const events = eventsRes?.ok ? (await eventsRes.json()).events || [] : [];
-    const places = placesRes?.ok ? (await placesRes.json()).places || [] : [];
 
-    return { news, weather, events, places };
+    // places 데이터 변환 (이미지 없는 장소 필터링)
+    const places: PlaceData[] = (placesResult.data || [])
+      .filter((place) => place.thumbnail_url) // 이미지가 있는 장소만 노출
+      .map((place) => ({
+      id: place.id,
+      name: place.name,
+      description: place.description,
+      thumbnail: place.thumbnail_url,
+      address: place.address,
+      lat: place.lat,
+      lng: place.lng,
+      category: place.category,
+      subCategory: place.sub_category,
+      tags: place.tags,
+      phone: place.phone,
+      rating: place.rating,
+      reviewCount: place.review_count,
+      naverMapUrl: place.naver_map_url,
+      kakaoMapUrl: place.kakao_map_url,
+      isFeatured: place.is_featured,
+      isVerified: place.is_verified,
+      viewCount: place.view_count,
+      specialties: place.specialties,
+      heritageType: place.heritage_type,
+    }));
+
+    // 전국 축제 (이미지 있는 것만)
+    const events: EventData[] = (eventsResult.data || [])
+      .filter((event) => event.image_url)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        eventDate: event.start_date,
+        startDate: event.start_date,
+        endDate: event.end_date,
+        location: event.location,
+        category: event.category,
+        imageUrl: event.image_url,
+        phone: event.phone,
+      }));
+
+    // 지역 축제 - 전남+광주 (이미지 있는 것만)
+    const regionalEvents: EventData[] = (regionalEventsResult.data || [])
+      .filter((event) => event.image_url)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        eventDate: event.start_date,
+        startDate: event.start_date,
+        endDate: event.end_date,
+        location: event.location,
+        category: event.category,
+        imageUrl: event.image_url,
+        phone: event.phone,
+      }));
+
+    return { news, weather, events, regionalEvents, places };
   } catch (error) {
     console.error(`Failed to fetch region data for ${regionCode}:`, error);
-    return { news: [], weather: null, events: [], places: [] };
+    return { news: [], weather: null, events: [], regionalEvents: [], places: [] };
   }
 }
 

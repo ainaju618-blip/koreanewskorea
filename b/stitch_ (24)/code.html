@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea News - Naju City</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&amp;family=Public+Sans:wght@300;400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "primary-dark": "#2563eb",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display overflow-x-hidden">
+<!-- Header -->
+<header class="bg-white dark:bg-[#1a2230] border-b border-[#f0f2f5] dark:border-[#2a3441] sticky top-0 z-50">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-10 h-16 flex items-center justify-between gap-8">
+<div class="flex items-center gap-6">
+<a class="flex items-center gap-3 text-[#111418] dark:text-white group" href="#">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">newspaper</span>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-[-0.015em] flex items-center gap-1">
+                        KOREA NEWS <span class="text-primary">나주</span>
+</h2>
+</a>
+<!-- Desktop Nav -->
+<nav class="hidden lg:flex items-center gap-6 ml-4">
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">홈</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">뉴스</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">오피니언</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">커뮤니티</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">제보하기</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-4 items-center">
+<div class="hidden md:flex w-full max-w-[280px] items-center bg-[#f0f2f5] dark:bg-[#2a3441] rounded-xl h-10 px-3">
+<span class="material-symbols-outlined text-[#60708a]">search</span>
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm px-2 text-[#111418] dark:text-white placeholder-[#60708a]" placeholder="뉴스 검색"/>
+</div>
+<button class="size-10 rounded-full bg-cover bg-center border border-[#e5e7eb] dark:border-[#374151]" data-alt="User profile placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAdAPGwv5F7yXKEhsCyo3oeFNC-OFg06Vyjp1D6f7jx23r1nxGvZUhTgCSHAMVzTzuhDkhrddL4-22hbndOmDGtkfDYvPAjFNhA2Lwf029Vtirxjb8lOx_aDmL8RAdIK9lhoQHuZZ4XO0V5fuH5kO0fqrzgZwKEuHzOBfwFUfCayNcots-0pZrIhnV1qiKZXxSMUDqrGF03BOgtfNNgSBrugES0K00Iegl1F71xMd_3jhzR_ukAcGikmouvbSaG04SUpoQbECXJUpc");'>
+</button>
+</div>
+</div>
+</header>
+<main class="w-full flex flex-col items-center">
+<!-- Breadcrumbs -->
+<div class="w-full max-w-[1280px] px-4 lg:px-10 py-4">
+<div class="flex items-center gap-2 text-sm text-[#60708a] dark:text-gray-400">
+<a class="hover:text-primary hover:underline" href="#">홈</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary hover:underline" href="#">전라남도</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-medium text-[#111418] dark:text-white">나주시</span>
+</div>
+</div>
+<!-- Hero Section -->
+<div class="w-full max-w-[1280px] px-4 lg:px-10 mb-8">
+<div class="relative w-full rounded-2xl overflow-hidden h-[360px] md:h-[420px] group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Scenic view of Naju Geumseonggwan historic site" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBpnweYsdgYzPAGZ3JfNRcQmwXSsgqXSmyXzD0jIgTk62j81hGxALj_LAmyeGDosiphjiRe7byA9c332KWWKXYQqHAKtXt6ZH9z45evtmFTnXY4c9AO_rEat1QIse_kJVhXWL5dPD1DsiR0ZMOQp2cNwLknsxtIcp4Vn12rLixnnN1u2e3WfC_fV0LMNrbLlM8D_yQyX9NcM-n5N0nq7KotiMQseTHZ7o0RvR-z0T-s6j0lah3Kgv1PKPh8R-4GpdHdyimKh9UWHVo");'>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10"></div>
+<div class="relative h-full flex flex-col justify-end p-6 md:p-10 text-white">
+<div class="flex flex-wrap gap-3 mb-4">
+<div class="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/10">
+<span class="material-symbols-outlined text-sm">wb_sunny</span>
+<span>24°C 맑음</span>
+</div>
+<div class="flex items-center gap-1 bg-green-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/10">
+<span class="material-symbols-outlined text-sm">air</span>
+<span>미세먼지 좋음</span>
+</div>
+</div>
+<h1 class="text-3xl md:text-5xl font-black mb-2 leading-tight">천년의 역사,<br/>살아숨쉬는 나주</h1>
+<p class="text-white/90 text-sm md:text-base font-medium mb-6 max-w-xl">
+                        나주의 새로운 소식과 다양한 정보를 한눈에 확인하세요. 시민과 함께 만드는 스마트 생태문화도시.
+                    </p>
+<button class="w-fit bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-6 rounded-xl flex items-center gap-2 transition-colors">
+<span>나주시청 바로가기</span>
+<span class="material-symbols-outlined text-sm">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Menu (Actions Bar) -->
+<div class="w-full max-w-[1280px] px-4 lg:px-10 mb-10">
+<div class="grid grid-cols-5 gap-2 md:gap-4 bg-white dark:bg-[#1a2230] p-4 md:p-6 rounded-2xl shadow-sm border border-[#f0f2f5] dark:border-[#2a3441]">
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="size-12 md:size-14 rounded-full bg-[#eaf2ff] dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-2xl md:text-3xl">account_balance</span>
+</div>
+<span class="text-xs md:text-sm font-semibold text-[#111418] dark:text-gray-200">시청소식</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="size-12 md:size-14 rounded-full bg-[#eaf2ff] dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-2xl md:text-3xl">gavel</span>
+</div>
+<span class="text-xs md:text-sm font-semibold text-[#111418] dark:text-gray-200">의회소식</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="size-12 md:size-14 rounded-full bg-[#eaf2ff] dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-2xl md:text-3xl">info</span>
+</div>
+<span class="text-xs md:text-sm font-semibold text-[#111418] dark:text-gray-200">생활정보</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="size-12 md:size-14 rounded-full bg-[#eaf2ff] dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-2xl md:text-3xl">map</span>
+</div>
+<span class="text-xs md:text-sm font-semibold text-[#111418] dark:text-gray-200">관광명소</span>
+</a>
+<a class="flex flex-col items-center gap-3 group" href="#">
+<div class="size-12 md:size-14 rounded-full bg-[#eaf2ff] dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-2xl md:text-3xl">restaurant</span>
+</div>
+<span class="text-xs md:text-sm font-semibold text-[#111418] dark:text-gray-200">맛집탐방</span>
+</a>
+</div>
+</div>
+<!-- Main Layout: Content + Sidebar -->
+<div class="w-full max-w-[1280px] px-4 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+<!-- Left Column: Main Content (approx 72%) -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Tabs -->
+<div class="border-b border-[#dbdfe6] dark:border-[#374151]">
+<div class="flex gap-8 overflow-x-auto">
+<a class="flex items-center gap-2 border-b-[3px] border-primary text-primary pb-3 pt-2" href="#">
+<span class="material-symbols-outlined filled text-xl">newspaper</span>
+<span class="text-base font-bold whitespace-nowrap">뉴스 홈</span>
+</a>
+<a class="flex items-center gap-2 border-b-[3px] border-transparent text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-gray-200 pb-3 pt-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">event</span>
+<span class="text-base font-bold whitespace-nowrap">지역행사</span>
+</a>
+<a class="flex items-center gap-2 border-b-[3px] border-transparent text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-gray-200 pb-3 pt-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">photo_camera</span>
+<span class="text-base font-bold whitespace-nowrap">문화/관광</span>
+</a>
+<a class="flex items-center gap-2 border-b-[3px] border-transparent text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-gray-200 pb-3 pt-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">storefront</span>
+<span class="text-base font-bold whitespace-nowrap">우리동네 소식</span>
+</a>
+</div>
+</div>
+<!-- Featured News -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="group cursor-pointer">
+<div class="rounded-xl overflow-hidden mb-3 aspect-[16/10]">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Naju pear orchard harvest festival scene" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBREC4Pt6wqhEdI04ZdSdfuuJtbTWrpliGqwCnGJLv9AIiIR659sjAt63SykQWg42Co1OXp9nEXlR3v2Osvo6sxqdIpZ5PwDvgs5wz-zLdLrW--kdIM9v0IaOXv90rMYoEInFsRh7Tq6BssK20CAl3bm_IrCraomnzlwm-0IJNxiqk9tLOte4TBfuv4s7z5uQz7JyjSfc4B3LiI7XmZ4R5IKuHhp5MwE0c4kS1ixDHW9zvpPZrJHxXLUxAN-4BJ82XOl5z0CrTDnKc");'>
+</div>
+</div>
+<div class="flex items-center gap-2 text-primary text-xs font-bold mb-2">
+<span>헤드라인</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>축제</span>
+</div>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight mb-2 group-hover:text-primary transition-colors">
+                            '나주 배 축제' 오는 10월 개최 확정, 역대 최대 규모 예상
+                        </h3>
+<p class="text-[#60708a] dark:text-gray-400 text-sm line-clamp-2">
+                            올해로 20주년을 맞는 나주 배 축제가 오는 10월 영산강 둔치 체육공원에서 화려한 막을 올린다. 다양한 체험 행사와 먹거리가 준비될 예정이다.
+                        </p>
+</div>
+<div class="group cursor-pointer">
+<div class="rounded-xl overflow-hidden mb-3 aspect-[16/10]">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Naju Innovation City tech hub building" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBrT7IfO75TEUzIhagCADiQtkvaM5fiDlY2hXVKHJOHfYLlNBL8G3W5vnwsN0nlI1b3Jbag338J-6ZGU-RmBCN3ZXM40M-8L9QNSTGPMFnPgKAoWMZVLrNRNNDj-w3DcyMxdpX3dNVLnOsv91Eo4g-veuqLK41hBiGC4DUnLFoLlJhvrW8FHM5RqWwZcxwA-9DahSRbdfy6rTJ-uBYWWkvz629t9XS692pCQsYmhkYwnFrYL40OTZ-5oWA7hlABfOorNOl-0yHfdxc");'>
+</div>
+</div>
+<div class="flex items-center gap-2 text-primary text-xs font-bold mb-2">
+<span>경제</span>
+<span class="w-1 h-1 rounded-full bg-gray-300"></span>
+<span>혁신도시</span>
+</div>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight mb-2 group-hover:text-primary transition-colors">
+                            빛가람 혁신도시, 에너지 밸리 기업 유치 가속화
+                        </h3>
+<p class="text-[#60708a] dark:text-gray-400 text-sm line-clamp-2">
+                            한전과 협력하여 에너지 관련 스타트업 15개사가 추가로 입주를 확정지었다. 지역 경제 활성화와 일자리 창출에 큰 기여를 할 것으로 보인다.
+                        </p>
+</div>
+</div>
+<!-- News List -->
+<div class="flex flex-col divide-y divide-[#f0f2f5] dark:divide-[#2a3441] mt-4">
+<div class="py-4 flex gap-4 group cursor-pointer">
+<div class="flex-1">
+<div class="flex items-center gap-2 text-xs font-medium text-[#60708a] mb-1">
+<span class="text-primary font-bold">사회</span>
+<span>•</span>
+<span>1시간 전</span>
+</div>
+<h4 class="text-lg font-bold text-[#111418] dark:text-white mb-1 group-hover:text-primary transition-colors">나주시, 노인 일자리 사업 참여자 500명 추가 모집</h4>
+<p class="text-[#60708a] dark:text-gray-400 text-sm line-clamp-1">어르신들의 활기찬 노후 생활을 위해 공익활동, 사회서비스형 등 다양한 분야에서 참여자를 모집합니다.</p>
+</div>
+<div class="w-24 h-24 md:w-32 md:h-24 rounded-lg bg-cover bg-center flex-shrink-0" data-alt="Seniors participating in community gardening" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB58M-MBfZgEs2bPmRMO2EB8Ny6ENSTe-WIdCcCJo5lv0y8-5LpI9mATEp9DEuKSahNyYwkltq6ijuwduJI5ojJPR04Hc_RdcjdCt52j3Yr9O4PEysUjXks21uISiHf98Ptl_6ZrycmdYfA6lmUAGbcJGWpatRatkCh7ZcGwdY1qEjZhk6RENxCR4a_A-Akx2w-ayv7h7XlTApuSMobJVfQD9_8ogCKakuCpy-AC7K2V9KeX3cLrrWrleWWhcm8EEa9tJbNWz7mr-U");'>
+</div>
+</div>
+<div class="py-4 flex gap-4 group cursor-pointer">
+<div class="flex-1">
+<div class="flex items-center gap-2 text-xs font-medium text-[#60708a] mb-1">
+<span class="text-primary font-bold">교통</span>
+<span>•</span>
+<span>3시간 전</span>
+</div>
+<h4 class="text-lg font-bold text-[#111418] dark:text-white mb-1 group-hover:text-primary transition-colors">나주-광주 광역버스 노선 신설, 출퇴근길 빨라진다</h4>
+<p class="text-[#60708a] dark:text-gray-400 text-sm line-clamp-1">빛가람동에서 광주 송정역을 잇는 직행 노선이 다음 달부터 운행을 시작해 시민들의 불편이 해소될 전망입니다.</p>
+</div>
+<div class="w-24 h-24 md:w-32 md:h-24 rounded-lg bg-cover bg-center flex-shrink-0" data-alt="Modern city bus on the road" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD4_sS14O9VWNmfPBZRDD00t6IKykhTvhcmmp2QJMRrXS4iW5V6voxaU4MqKyAt8Gh7ucog0-DkmUyPKfvfPt8B3hVo_8LAbQ4rrw5Eq3_UGsKsndFa5mf85dSDlmD_rl23HhvvWqbk9mhYVd7bOSBOE0jZSgiFG4awkt_wIfKvawhheU5wQwT7lmDg3YGsEIM_fUEpjj3p6mBeA9oJr231ySngxE0eZUpUbybUG0UWOx13fdPaPmxiQbYv43syPGnO1sWfzk5lAqg");'>
+</div>
+</div>
+<div class="py-4 flex gap-4 group cursor-pointer">
+<div class="flex-1">
+<div class="flex items-center gap-2 text-xs font-medium text-[#60708a] mb-1">
+<span class="text-primary font-bold">문화</span>
+<span>•</span>
+<span>5시간 전</span>
+</div>
+<h4 class="text-lg font-bold text-[#111418] dark:text-white mb-1 group-hover:text-primary transition-colors">국립나주박물관, 주말 가족 체험 프로그램 운영</h4>
+<p class="text-[#60708a] dark:text-gray-400 text-sm line-clamp-1">고분군 역사 탐방과 유물 만들기 등 아이들과 함께할 수 있는 다채로운 프로그램이 매주 주말 진행됩니다.</p>
+</div>
+<div class="w-24 h-24 md:w-32 md:h-24 rounded-lg bg-cover bg-center flex-shrink-0" data-alt="Pottery artifacts in a museum display" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC0OBgTTfe1OdMp8A9LmYJ3F8WWpvjLMFV1ZLduw1fbzT4E7fjvW-qloQtvunjxL6sZfHrJBGZEB4pk5XFNrC4Koi-xLSktEVOMpnkzrzH5v1rqty8jBNVyXTsmw4KML3dFAFR7fvMdM8V339Ts_CQ2i9Y7cyGJY4LqPeXw4VKCOAlcUBzHTYX510Iqwxw3RP1V1Y_SknBFHdwZmSxNbAmeVhent7S5icMNWilsfsEsGvA5iA5XlWSiwm1rOzhUnFcJr74gWRTIieI");'>
+</div>
+</div>
+</div>
+<button class="w-full py-3 rounded-lg border border-[#dbdfe6] dark:border-[#374151] text-[#60708a] dark:text-gray-300 font-bold hover:bg-[#f0f2f5] dark:hover:bg-[#2a3441] transition-colors">
+                    뉴스 더보기
+                </button>
+</div>
+<!-- Right Column: Sidebar (approx 28%) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Weather Widget -->
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-2xl border border-[#f0f2f5] dark:border-[#2a3441] shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-[#111418] dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">cloud</span>
+                            오늘의 날씨
+                        </h3>
+<span class="text-xs text-[#60708a] dark:text-gray-400">나주시 성북동 기준</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-4xl font-black text-[#111418] dark:text-white">24°</span>
+<span class="text-sm font-medium text-[#60708a] dark:text-gray-400 mt-1">맑음, 강수확률 0%</span>
+</div>
+<span class="material-symbols-outlined text-[64px] text-yellow-500">sunny</span>
+</div>
+<div class="mt-4 pt-4 border-t border-[#f0f2f5] dark:border-[#2a3441] flex justify-between text-sm">
+<div class="flex flex-col items-center">
+<span class="text-[#60708a] text-xs">미세먼지</span>
+<span class="font-bold text-green-500">좋음</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[#60708a] text-xs">초미세먼지</span>
+<span class="font-bold text-blue-500">보통</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[#60708a] text-xs">습도</span>
+<span class="font-bold text-[#111418] dark:text-white">45%</span>
+</div>
+</div>
+</div>
+<!-- Transport Widget -->
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-2xl border border-[#f0f2f5] dark:border-[#2a3441] shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-[#111418] dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">train</span>
+                            나주역 열차정보
+                        </h3>
+<a class="text-xs text-primary font-bold hover:underline" href="#">전체보기</a>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-background-light dark:bg-background-dark rounded-lg">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded w-fit mb-1">KTX 512</span>
+<span class="font-bold text-[#111418] dark:text-white">나주 <span class="text-[#60708a] mx-1">→</span> 용산</span>
+</div>
+<div class="text-right">
+<span class="block font-bold text-[#111418] dark:text-white">14:35</span>
+<span class="text-xs text-green-600 font-medium">정시운행</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-background-light dark:bg-background-dark rounded-lg">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-purple-600 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded w-fit mb-1">SRT 608</span>
+<span class="font-bold text-[#111418] dark:text-white">나주 <span class="text-[#60708a] mx-1">→</span> 수서</span>
+</div>
+<div class="text-right">
+<span class="block font-bold text-[#111418] dark:text-white">15:10</span>
+<span class="text-xs text-green-600 font-medium">정시운행</span>
+</div>
+</div>
+</div>
+<div class="mt-4 flex gap-2">
+<button class="flex-1 py-2 text-xs font-bold rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">버스정보</button>
+<button class="flex-1 py-2 text-xs font-bold rounded bg-gray-100 dark:bg-gray-700 text-[#60708a] dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">터미널</button>
+</div>
+</div>
+<!-- Emergency Contacts -->
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-2xl border border-[#f0f2f5] dark:border-[#2a3441] shadow-sm">
+<h3 class="font-bold text-[#111418] dark:text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500">sos</span>
+                        긴급/민원 연락처
+                    </h3>
+<div class="grid grid-cols-2 gap-3">
+<a class="flex flex-col items-center justify-center p-3 rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" href="tel:061-119">
+<span class="material-symbols-outlined text-red-500 mb-1">local_fire_department</span>
+<span class="text-sm font-bold text-[#111418] dark:text-white">119 안전센터</span>
+</a>
+<a class="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors" href="tel:061-112">
+<span class="material-symbols-outlined text-blue-500 mb-1">local_police</span>
+<span class="text-sm font-bold text-[#111418] dark:text-white">나주경찰서</span>
+</a>
+<a class="col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" href="tel:061-120">
+<span class="material-symbols-outlined text-[#60708a]">headset_mic</span>
+<span class="text-sm font-bold text-[#111418] dark:text-white">나주시 민원콜센터 061-339-7114</span>
+</a>
+</div>
+</div>
+<!-- Ad Slot -->
+<div class="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800 rounded-2xl flex items-center justify-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="Advertisement for Naju local pear juice products" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAbSYPnKCwhYdYGlxXDEdOxcKrVpnVr9-JHba2629nxZlMLf5Hc5nM3tCi36w8HXWL0wRWodM7O5lgi0noCxI9_76s-vpDpdmEwjGK_YZFK5VI7Yuap1pRDXeP8Hql_qrIruSPqP_TFa211AEuuMAPyKXqO3PwYsn_zZHci5xH2Qo8P9kgiyHBNNmqTiTDVdCpi6s7hSwhHB027HAwFE7z3rvhnM5VqMEpyvyJR-zH0cfXdkf8_oFrU0C0bRH_CwrPaXHyycPeyeY0");'>
+</div>
+<div class="relative z-10 bg-white/90 dark:bg-black/80 px-4 py-2 rounded-lg text-center backdrop-blur-sm">
+<span class="text-xs font-bold text-[#60708a] block mb-1">AD</span>
+<span class="font-bold text-sm text-[#111418] dark:text-white">나주 배즙 선물세트 특가</span>
+<button class="mt-2 text-xs bg-primary text-white px-3 py-1 rounded hover:bg-primary-dark">구매하기</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-[#1a2230] border-t border-[#f0f2f5] dark:border-[#2a3441] py-10">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-10">
+<div class="flex flex-col md:flex-row justify-between gap-8">
+<div class="flex flex-col gap-4">
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em] flex items-center gap-1 text-[#111418] dark:text-white">
+                        KOREA NEWS <span class="text-primary">나주</span>
+</h2>
+<div class="text-sm text-[#60708a] dark:text-gray-400">
+<p class="mb-1">(58263) 전라남도 나주시 시청길 22 (송월동)</p>
+<p class="mb-1">대표전화: 061-339-7114 | 팩스: 061-339-2808</p>
+<p>Copyright © Naju City. All Rights Reserved.</p>
+</div>
+</div>
+<div class="flex gap-8">
+<div class="flex flex-col gap-2">
+<h4 class="font-bold text-[#111418] dark:text-white mb-2">바로가기</h4>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">나주시청</a>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">나주시의회</a>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">보건소</a>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-bold text-[#111418] dark:text-white mb-2">서비스</h4>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">구인구직</a>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">부동산</a>
+<a class="text-sm text-[#60708a] dark:text-gray-400 hover:text-primary" href="#">중고장터</a>
+</div>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
@@ -9,6 +9,12 @@ import type { Metadata } from 'next';
 import { BreadcrumbSchema } from '@/components/seo';
 
 export const dynamic = 'force-dynamic';
+
+// 운영서버 Supabase 클라이언트 (koreanewsone.com 데이터베이스)
+const PRODUCTION_SUPABASE_URL = 'https://xdcxfaoucvzfrryhczmy.supabase.co';
+const PRODUCTION_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkY3hmYW91Y3Z6ZnJyeWhjem15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjA5MjAsImV4cCI6MjA4MDQzNjkyMH0.mc_IQ_CrmR4djs7f7lkI8qHh9p3ozwwJ8tzkreMLask';
+
+const productionSupabase = createClient(PRODUCTION_SUPABASE_URL, PRODUCTION_SUPABASE_ANON_KEY);
 
 // SEO: 동적 메타데이터 생성
 export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
@@ -74,9 +80,10 @@ interface NewsDetailProps {
     params: Promise<{ id: string }>;
 }
 
+// 운영서버 Supabase에서 뉴스 가져오기
 async function getNewsById(id: string) {
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await productionSupabase
             .from('posts')
             .select('*')
             .eq('id', id)
@@ -91,7 +98,7 @@ async function getNewsById(id: string) {
 
 async function getRelatedNews(category: string, currentId: string) {
     try {
-        const { data } = await supabaseAdmin
+        const { data } = await productionSupabase
             .from('posts')
             .select('id, title, category, published_at')
             .eq('status', 'published')
@@ -232,14 +239,14 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
         notFound();
     }
 
-    // 1. Fetch Reporter Info
+    // 1. Fetch Reporter Info (운영서버 Supabase에서)
     // Priority: author_id -> author_name -> null (NO random selection!)
     // Random assignment should ONLY happen at approval time, not on page load
     let reporter = null;
 
     // Try 1: Match by author_id (references profiles.id -> reporters.user_id)
     if (news.author_id) {
-        const { data } = await supabaseAdmin
+        const { data } = await productionSupabase
             .from('reporters')
             .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
             .eq('user_id', news.author_id)
@@ -249,7 +256,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
     // Try 2: Match by author_name (fallback when author_id not in profiles)
     if (!reporter && news.author_name) {
-        const { data } = await supabaseAdmin
+        const { data } = await productionSupabase
             .from('reporters')
             .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
             .eq('name', news.author_name)
@@ -345,7 +352,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
             {/* 상단 네비게이션 */}
             <div className="bg-slate-50 border-b border-slate-200">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
+                    <Link href="/region/naju" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                         <span className="text-sm font-medium">홈으로</span>
                     </Link>

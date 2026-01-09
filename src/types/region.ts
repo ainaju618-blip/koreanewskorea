@@ -43,8 +43,14 @@ export interface EventData {
   id: string;
   title: string;
   eventDate: string;
+  startDate?: string;
+  endDate?: string;
   location: string;
   category: string;
+  description?: string;
+  imageUrl?: string | null;
+  phone?: string | null;
+  isFeatured?: boolean;
 }
 
 // 장소 데이터 타입
@@ -72,8 +78,8 @@ export interface RegionInfo {
   themeColor: string;     // 테마 색상 (emerald, cyan, purple 등)
 }
 
-// 뉴스 탭 카테고리 (3단계 정규화)
-export type NewsCategory = 'all' | 'government' | 'council' | 'education';
+// 뉴스 탭 카테고리 (5단계 정규화)
+export type NewsCategory = 'all' | 'government' | 'council' | 'fire' | 'education' | 'business' | 'local';
 
 export interface NewsTab {
   id: NewsCategory;
@@ -82,19 +88,25 @@ export interface NewsTab {
   description: string;
 }
 
-// 3단계 시군구 뉴스 탭 정의
+// 4단계 시군구 뉴스 탭 정의
 export const SIGUNGU_NEWS_TABS: NewsTab[] = [
   { id: 'all', label: '전체', emoji: '📰', description: '모든 소식' },
-  { id: 'government', label: '시정소식', emoji: '🏛️', description: '시군청 보도자료' },
+  { id: 'government', label: '나주시소식', emoji: '🏛️', description: '시군청 보도자료' },
   { id: 'education', label: '교육소식', emoji: '🏫', description: '지역교육지원청 보도자료' },
   { id: 'council', label: '의회소식', emoji: '🗳️', description: '시군의회 보도자료' },
+  { id: 'fire', label: '나주소방서', emoji: '🚒', description: '나주소방서 보도자료' },
+  { id: 'business', label: '기업소식', emoji: '🏢', description: '기업 보도자료' },
+  { id: 'local', label: '오피니언', emoji: '🏘️', description: '오피니언' },
 ];
 
 // 카테고리별 스타일
 export const CATEGORY_STYLES: Record<string, { color: string; emoji: string }> = {
   government: { color: 'bg-cyan-100 text-cyan-600', emoji: '🏛️' },
   council: { color: 'bg-purple-100 text-purple-600', emoji: '🗳️' },
+  fire: { color: 'bg-orange-100 text-orange-600', emoji: '🚒' },
   education: { color: 'bg-green-100 text-green-600', emoji: '🏫' },
+  business: { color: 'bg-indigo-100 text-indigo-600', emoji: '🏢' },
+  local: { color: 'bg-amber-100 text-amber-600', emoji: '🏘️' },
   // Legacy mapping
   '시정': { color: 'bg-cyan-100 text-cyan-600', emoji: '🏛️' },
   '의회': { color: 'bg-purple-100 text-purple-600', emoji: '🗳️' },

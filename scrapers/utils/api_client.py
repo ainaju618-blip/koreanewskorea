@@ -326,11 +326,11 @@ def ensure_server_running(max_wait: int = 30) -> bool:
         return False
 
     try:
-        # Start dev server in background
+        # Start dev server in background on port 3001
         # Use shell=True on Windows for npm command
         if sys.platform == 'win32':
             _dev_server_process = subprocess.Popen(
-                'npm run dev',
+                'npm run dev -- -p 3001',
                 cwd=project_root,
                 shell=True,
                 stdout=subprocess.DEVNULL,
@@ -339,7 +339,7 @@ def ensure_server_running(max_wait: int = 30) -> bool:
             )
         else:
             _dev_server_process = subprocess.Popen(
-                ['npm', 'run', 'dev'],
+                ['npm', 'run', 'dev', '--', '-p', '3001'],
                 cwd=project_root,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -374,7 +374,8 @@ def _is_server_accessible() -> bool:
         # Try to connect to the API endpoint
         resp = requests.get(API_URL, timeout=2)
         # 405 Method Not Allowed is expected for POST-only endpoints
-        return resp.status_code in [200, 400, 401, 405]
+        # 500 Internal Server Error also indicates server is running
+        return resp.status_code in [200, 400, 401, 405, 500]
     except:
         return False
 

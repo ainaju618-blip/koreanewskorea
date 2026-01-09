@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KOREA NEWS - 광주판</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&amp;family=Public+Sans:wght@300;400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                        "gwangju": "#00A651", // Custom accent for Gwangju
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display overflow-x-hidden">
+<div class="flex min-h-screen flex-col">
+<!-- HEADER -->
+<header class="bg-white dark:bg-[#1a202c] border-b border-[#f0f2f5] dark:border-gray-800 sticky top-0 z-50">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-8">
+<!-- Top Utility Bar -->
+<div class="flex justify-end items-center py-2 text-xs text-gray-500 dark:text-gray-400 gap-4 border-b border-gray-100 dark:border-gray-800">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">wb_sunny</span>
+                        광주 24°C, 맑음
+                    </span>
+<a class="hover:text-primary" href="#">로그인</a>
+<a class="hover:text-primary" href="#">회원가입</a>
+<a class="hover:text-primary" href="#">고객센터</a>
+</div>
+<!-- Main Header -->
+<div class="flex flex-col lg:flex-row items-center justify-between py-4 gap-4">
+<!-- Logo -->
+<div class="flex items-end gap-2 shrink-0">
+<a class="flex items-center gap-2 group" href="#">
+<div class="size-10 bg-[#00A651] rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">newspaper</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-2xl font-black leading-none tracking-tight text-[#111418] dark:text-white">
+                                    KOREA NEWS
+                                </h1>
+<span class="text-[#00A651] font-bold text-sm leading-none mt-1">광주판 GWANGJU</span>
+</div>
+</a>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center w-full lg:w-auto gap-4 flex-1 justify-end">
+<!-- Search Bar -->
+<div class="hidden md:flex w-full max-w-md items-center bg-[#f0f2f5] dark:bg-gray-800 rounded-xl px-4 py-2.5">
+<span class="material-symbols-outlined text-gray-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full text-[#111418] dark:text-white placeholder-gray-400" placeholder="광주 소식을 검색해보세요" type="text"/>
+</div>
+<!-- Buttons -->
+<div class="flex gap-2 shrink-0">
+<button class="size-10 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-[#111418] dark:text-white transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+</button>
+<button class="hidden sm:flex items-center gap-2 bg-[#00A651] hover:bg-[#008f45] text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+<span>뉴스레터 구독</span>
+</button>
+<button class="md:hidden size-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-white">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</div>
+</div>
+<!-- GNB -->
+<nav class="flex overflow-x-auto no-scrollbar gap-8 pt-2">
+<a class="border-b-[3px] border-[#00A651] text-[#00A651] font-bold pb-3 whitespace-nowrap px-1" href="#">종합</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">정치</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">경제</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">사회</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">문화</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">라이프</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">오피니언</a>
+<a class="border-b-[3px] border-transparent hover:border-gray-300 text-gray-600 dark:text-gray-400 font-medium pb-3 whitespace-nowrap px-1 transition-colors" href="#">구·군</a>
+</nav>
+</div>
+</header>
+<main class="flex-grow w-full max-w-[1280px] mx-auto px-4 lg:px-8 py-8 space-y-10">
+<!-- HERO SECTION (8:4) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 h-auto lg:h-[500px]">
+<!-- Main Featured News (8 cols) -->
+<div class="lg:col-span-8 relative group cursor-pointer overflow-hidden rounded-2xl h-[400px] lg:h-full">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Modern urban construction site at sunset representing city development" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCJwK8TqezKMsyl68I6uap8V6UmXkfItHzXZsdSD6wEzmmlBgU8LtKh4Jc8QFBBCIU_46ogZWjAxin5GF0lSyEEQ_A9VGkhRKKl-PxaZid7-LnflMDQ7OxJ8mLRwfi9zjWHcs-_u1nodNFpTFWLaPEk46zn9-TZRIOa85pzWvV7nLx06thradOh8ZfRi1Ar_a-cubAJg_3afn99dGdnv5K_hqukb7x2GQ8NAA0CAiSCMXD9xW2FSQgAsP-COV90dC850iyvDCWLjjo');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6 lg:p-10 w-full">
+<span class="inline-block px-3 py-1 bg-[#00A651] text-white text-xs font-bold rounded-full mb-3">헤드라인</span>
+<h2 class="text-white text-3xl lg:text-5xl font-black leading-tight mb-4 line-clamp-2">
+                            광주 도시철도 2호선 2단계 구간<br/>본격 착공, 2029년 완공 목표
+                        </h2>
+<p class="text-gray-200 text-base lg:text-lg line-clamp-2 mb-4 hidden md:block">
+                            시민 교통 편의성 대폭 개선 기대... 주요 정거장 위치 확정 및 공사 일정 오늘 오전 공식 발표. 시청 관계자는 "안전을 최우선으로 진행하겠다"고 밝혀.
+                        </p>
+<div class="flex items-center gap-3 text-gray-300 text-sm">
+<span class="font-medium text-white">광주광역시청</span>
+<span>•</span>
+<span>2시간 전</span>
+</div>
+</div>
+</div>
+<!-- Sub News List (4 cols) -->
+<div class="lg:col-span-4 flex flex-col h-full gap-4">
+<!-- Sub Item 1 -->
+<article class="flex-1 flex gap-4 p-4 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-24 h-24 shrink-0 rounded-lg bg-cover bg-center" data-alt="Business professionals in a meeting discussion" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDrWoP7-a6FW1Bl5XPHnW3Ebu7nrNK2fDg44qe-ksXNPEeZnysCNMHrixApqPeya8APUM1WXpaeT2metpVvvaBD7XFwQSszXmAh-T9JAgdBkXzUUo2D2lSGy_lInv3uN411MzTPleIS1EskL23_Q2S5ljaqg4mpLAFMUT5CJEsVLL3nzIjueI2kWoqgYqMIjtkE0XcH5FW_pHWziqY0ZA1prkAj_81uMQd-ySNlUF0i4azT9S8BMJfjY-z4NksPzNnsMh6QfNLsvkQ');"></div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<span class="text-[#00A651] text-xs font-bold mb-1 block">경제</span>
+<h3 class="text-[#111418] dark:text-white font-bold text-lg leading-snug line-clamp-2">
+                                    광주 AI 산업단지, 글로벌 기업 5곳 유치 성공
+                                </h3>
+</div>
+<span class="text-xs text-gray-500">경제신문 • 1시간 전</span>
+</div>
+</article>
+<!-- Sub Item 2 -->
+<article class="flex-1 flex gap-4 p-4 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-24 h-24 shrink-0 rounded-lg bg-cover bg-center" data-alt="Colorful festival lanterns and crowd" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDsm0aaa7GwdK4A4KjAZaRlNCYwjbx5-DICTvkyo2UbLgUxZ7uUdZU8f_wiSMcDT59sxdSzESIbFsfmkJrf8z7jlcGc6LXFSSV9DsCLJZxfayPjqHXLf1UHiwpZgE-Wo5oykZDcTR7DJct7fuNkDAiBIt4-ghrI1VkLUzt-YRelhTHBslQaUXjhVjabkNN8BdvczN0QHdTgOlgOkjGSe6FjFzdnrTfpf98VHrnqzvVkqn-JByBMBRRz2YX0t0XTOVaqDQPg5-wXWrs');"></div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<span class="text-[#00A651] text-xs font-bold mb-1 block">문화</span>
+<h3 class="text-[#111418] dark:text-white font-bold text-lg leading-snug line-clamp-2">
+                                    '빛고을 축제' 이번 주말 개막, 볼거리 풍성
+                                </h3>
+</div>
+<span class="text-xs text-gray-500">문화일보 • 3시간 전</span>
+</div>
+</article>
+<!-- Sub Item 3 -->
+<article class="flex-1 flex gap-4 p-4 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-24 h-24 shrink-0 rounded-lg bg-cover bg-center" data-alt="Government building exterior" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCRdpBR7zVQSnmVnauPz2qliWJ-Txh2h0itgn9bRf65AtS-klgj33ExvbnWFFF19Ed2bnSYdAERlucuj5_G6pv-CFt55dzJGOA5pPugPckSuxM6ipVo-EptOPgYQmH54VxfYqxpDF7d95zfpU2DQk_YKp_BobQ-fsxr8wXH5uU_sNK2TXq1ivcG0i51TbKmXhmmZbsD-YP3vwWW50uvoV9mLBQA1gr6-hfH7TAoDzCw6kMIehqvhZN7tX65cvWxik0j2fylv0qLVYY');"></div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<span class="text-[#00A651] text-xs font-bold mb-1 block">사회</span>
+<h3 class="text-[#111418] dark:text-white font-bold text-lg leading-snug line-clamp-2">
+                                    시민 참여 예산제 확대 운영, 주민 의견 수렴
+                                </h3>
+</div>
+<span class="text-xs text-gray-500">시정뉴스 • 5시간 전</span>
+</div>
+</article>
+</div>
+</section>
+<!-- DISTRICT QUICK ACCESS -->
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-2xl font-bold text-[#111418] dark:text-white flex items-center gap-2">
+<span class="w-1.5 h-6 bg-[#00A651] rounded-full"></span>
+                        구·군별 뉴스
+                    </h2>
+<a class="text-sm font-medium text-gray-500 hover:text-[#00A651]" href="#">전체보기 &gt;</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+<!-- District Card -->
+<a class="group flex flex-col p-5 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#00A651] dark:hover:border-[#00A651] transition-all hover:shadow-lg" href="#">
+<div class="flex justify-between items-start mb-4">
+<span class="text-lg font-bold text-gray-800 dark:text-gray-100">동구</span>
+<span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+</div>
+<div class="mt-auto">
+<span class="text-3xl font-black text-[#111418] dark:text-white group-hover:text-[#00A651] transition-colors">12</span>
+<span class="text-sm text-gray-500 ml-1">건의 새 소식</span>
+</div>
+</a>
+<!-- District Card -->
+<a class="group flex flex-col p-5 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#00A651] dark:hover:border-[#00A651] transition-all hover:shadow-lg" href="#">
+<div class="flex justify-between items-start mb-4">
+<span class="text-lg font-bold text-gray-800 dark:text-gray-100">서구</span>
+<span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+</div>
+<div class="mt-auto">
+<span class="text-3xl font-black text-[#111418] dark:text-white group-hover:text-[#00A651] transition-colors">34</span>
+<span class="text-sm text-gray-500 ml-1">건의 새 소식</span>
+</div>
+</a>
+<!-- District Card -->
+<a class="group flex flex-col p-5 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#00A651] dark:hover:border-[#00A651] transition-all hover:shadow-lg" href="#">
+<div class="flex justify-between items-start mb-4">
+<span class="text-lg font-bold text-gray-800 dark:text-gray-100">남구</span>
+</div>
+<div class="mt-auto">
+<span class="text-3xl font-black text-[#111418] dark:text-white group-hover:text-[#00A651] transition-colors">8</span>
+<span class="text-sm text-gray-500 ml-1">건의 새 소식</span>
+</div>
+</a>
+<!-- District Card -->
+<a class="group flex flex-col p-5 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#00A651] dark:hover:border-[#00A651] transition-all hover:shadow-lg" href="#">
+<div class="flex justify-between items-start mb-4">
+<span class="text-lg font-bold text-gray-800 dark:text-gray-100">북구</span>
+<span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+</div>
+<div class="mt-auto">
+<span class="text-3xl font-black text-[#111418] dark:text-white group-hover:text-[#00A651] transition-colors">21</span>
+<span class="text-sm text-gray-500 ml-1">건의 새 소식</span>
+</div>
+</a>
+<!-- District Card -->
+<a class="group flex flex-col p-5 bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#00A651] dark:hover:border-[#00A651] transition-all hover:shadow-lg" href="#">
+<div class="flex justify-between items-start mb-4">
+<span class="text-lg font-bold text-gray-800 dark:text-gray-100">광산구</span>
+<span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+</div>
+<div class="mt-auto">
+<span class="text-3xl font-black text-[#111418] dark:text-white group-hover:text-[#00A651] transition-colors">45</span>
+<span class="text-sm text-gray-500 ml-1">건의 새 소식</span>
+</div>
+</a>
+</div>
+</section>
+<!-- MAIN CONTENT + SIDEBAR -->
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- MAIN COLUMN (72%) -->
+<div class="w-full lg:w-[72%] flex flex-col gap-6">
+<!-- Content Tabs -->
+<div class="flex border-b border-gray-200 dark:border-gray-700">
+<button class="px-6 py-3 text-[#00A651] font-bold border-b-2 border-[#00A651]">전체 뉴스</button>
+<button class="px-6 py-3 text-gray-500 font-medium hover:text-[#111418] dark:hover:text-white transition-colors">언론사별</button>
+<button class="px-6 py-3 text-gray-500 font-medium hover:text-[#111418] dark:hover:text-white transition-colors">기자별</button>
+</div>
+<!-- News Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- News Card 1 -->
+<div class="group flex flex-col gap-3">
+<div class="overflow-hidden rounded-xl aspect-video bg-gray-100 dark:bg-gray-800">
+<img alt="Clean solar energy panels in a field" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Clean solar energy panels in a field" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbDT7uBd5tZH9hmIp3U2nxx6VJpbMp4kCKMuJctRyly-6ot3JJIqi5_asNB6Uj3xH08bV_MgZdsDqEHhq2sYP7OiEgnuTbtOHTt3xOrbDSRiazrCUDa37T-5calyMIb18E1SmsW0BhVZPKa7buBvOMpOcwiNyOZIHHWjRrKU3Zu4wJHh7zmFS5vTin3yWctwzAmO_r6BZgmTRQU0B-Z1dm1pVNcNsy6vODQelk-8Gig-mC2f4veFM0QW_3WmkIsqtOlpUXKEnf25I"/>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-[#00A651] text-xs font-bold uppercase tracking-wider">환경</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight group-hover:text-[#00A651] transition-colors">
+                                    광주시, 탄소중립 실현을 위한 태양광 발전 확대 계획 발표
+                                </h3>
+<p class="text-sm text-gray-500 line-clamp-2">
+                                    2030년까지 공공기관 옥상 유휴부지 100% 활용 목표, 시민 참여형 에너지 협동조합 지원 강화.
+                                </p>
+<span class="text-xs text-gray-400">환경일보 • 40분 전</span>
+</div>
+</div>
+<!-- News Card 2 -->
+<div class="group flex flex-col gap-3">
+<div class="overflow-hidden rounded-xl aspect-video bg-gray-100 dark:bg-gray-800">
+<img alt="Computer screen displaying code and AI graphics" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Computer screen displaying code and AI graphics" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlCvU2OVDteqfjlDtxiPt0hYf7CbS2grMyQfT6xMGTWU1PisFZ0sRRNRcLsADPVaOLkxq5g9mWdczZYDyD-mtAXc-Mh3U9T2mRdPFTYl0-dPnx_AQdn0CXu_c5KBkoOpU8eMxTI7zL0UPmwIfuZBVrRtJz8feTdVKdrN6fSuxgWeXOm9j-e3ChvPQRhWg4-TYcVrRdWf1z4Fbj0_bMVMKAWK7j8mR8-OeBhsIIX3peMIRnRX7ta9vF0iUinJOrpXTKvXyuy-jXn1M"/>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-[#00A651] text-xs font-bold uppercase tracking-wider">IT/과학</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight group-hover:text-[#00A651] transition-colors">
+                                    인공지능 중심도시 광주, 스타트업 경진대회 성황리 종료
+                                </h3>
+<p class="text-sm text-gray-500 line-clamp-2">
+                                    전국 120개 팀 참가, 치열한 경쟁 속 AI 헬스케어 솔루션 개발팀 대상 수상.
+                                </p>
+<span class="text-xs text-gray-400">테크뉴스 • 2시간 전</span>
+</div>
+</div>
+<!-- News Card 3 -->
+<div class="group flex flex-col gap-3">
+<div class="overflow-hidden rounded-xl aspect-video bg-gray-100 dark:bg-gray-800">
+<img alt="Plate of delicious Korean Bibimbap" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Plate of delicious Korean Bibimbap" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPMntm4uE9yqcIJNg1JaJELNgcxvc6UjkjMzEgGtEfyuF59g3_WdLnD2U2-jkzgcAjLVdHvWTwdBVF49JEUMcEdS6d1rVhAx9RUmYeTtQdzUv7MYGS8a823NI_Q9gmGbFc6BgxodP7We0FyOZ8z3ClKhro3Jtond7rc6ld2lLEfib-DajMjvEqR8L4CGRivrURwjdgw29XmEFc1u_G4aPmsh5-1OXqqWH1CqyZxzimZxD1fsunqMCUACAisFZiYiqOApKNwR_ZuuM"/>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-[#00A651] text-xs font-bold uppercase tracking-wider">라이프</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight group-hover:text-[#00A651] transition-colors">
+                                    광주 맛집 탐방: 현지인이 추천하는 숨은 골목 식당 BEST 5
+                                </h3>
+<p class="text-sm text-gray-500 line-clamp-2">
+                                    전통의 맛부터 퓨전 요리까지, 남도 미식의 진수를 보여주는 보석 같은 식당들을 소개합니다.
+                                </p>
+<span class="text-xs text-gray-400">푸드매거진 • 5시간 전</span>
+</div>
+</div>
+<!-- News Card 4 -->
+<div class="group flex flex-col gap-3">
+<div class="overflow-hidden rounded-xl aspect-video bg-gray-100 dark:bg-gray-800">
+<img alt="Workers in helmets discussing architectural plans" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Workers in helmets discussing architectural plans" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdsuZLku6MczQwtaul-GO_X6mbVMyzIOskRslXn14PRPoLC_zkgg-svS3aFnRHn4P3ZKZOlCZIPro9jfqylOGZZ7OpbT1jAWk638jZ58JZe_1MhNz__yAiYzoAbrk6-fHX__GvfIIL2HWMYtlXEr_T6R34eZzWSW8GiD5BH4FPvo8lFKOqYBDmMf5KhviPsnWJrl6WTfIWbAxJgsRHGQ86VucWRMFmOyYVT25WlDs4t4E8WPMeLNWSub3Gw40GHPq-b8pmUgXes2M"/>
+</div>
+<div class="flex flex-col gap-2">
+<span class="text-[#00A651] text-xs font-bold uppercase tracking-wider">부동산</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white leading-tight group-hover:text-[#00A651] transition-colors">
+                                    광주 신규 아파트 분양 시장 동향 분석, 청약 경쟁률 상승
+                                </h3>
+<p class="text-sm text-gray-500 line-clamp-2">
+                                    북구와 광산구를 중심으로 신규 공급 물량 증가, 실수요자들의 관심 집중.
+                                </p>
+<span class="text-xs text-gray-400">부동산뉴스 • 6시간 전</span>
+</div>
+</div>
+</div>
+<!-- Wide Ad Slot -->
+<div class="w-full h-28 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center border border-dashed border-gray-300 dark:border-gray-600 my-4 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-700 opacity-50"></div>
+<div class="relative text-center z-10">
+<span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Advertisement</span>
+<span class="text-gray-500 dark:text-gray-400 font-medium">광주 지역 소상공인 광고 문의 환영</span>
+</div>
+</div>
+<!-- More News List -->
+<div class="flex flex-col gap-4">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white">주요 단신</h3>
+<a class="flex gap-4 items-start py-3 border-b border-gray-100 dark:border-gray-800 group" href="#">
+<span class="text-lg font-bold text-gray-300 group-hover:text-[#00A651] w-6">01</span>
+<div>
+<h4 class="text-base font-medium text-[#111418] dark:text-white group-hover:underline">무등산 국립공원, 가을맞이 탐방로 정비 완료</h4>
+</div>
+</a>
+<a class="flex gap-4 items-start py-3 border-b border-gray-100 dark:border-gray-800 group" href="#">
+<span class="text-lg font-bold text-gray-300 group-hover:text-[#00A651] w-6">02</span>
+<div>
+<h4 class="text-base font-medium text-[#111418] dark:text-white group-hover:underline">광주시립미술관, 현대미술 특별기획전 개최</h4>
+</div>
+</a>
+<a class="flex gap-4 items-start py-3 border-b border-gray-100 dark:border-gray-800 group" href="#">
+<span class="text-lg font-bold text-gray-300 group-hover:text-[#00A651] w-6">03</span>
+<div>
+<h4 class="text-base font-medium text-[#111418] dark:text-white group-hover:underline">지역 대학생들을 위한 취업 멘토링 프로그램 모집</h4>
+</div>
+</a>
+</div>
+</div>
+<!-- SIDEBAR (28%) -->
+<aside class="w-full lg:w-[28%] flex flex-col gap-8">
+<!-- Popular News Widget -->
+<div class="bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-lg">실시간 인기 뉴스</h3>
+<span class="text-xs text-gray-400">14:00 기준</span>
+</div>
+<div class="flex flex-col gap-4">
+<a class="flex gap-3 group" href="#">
+<span class="flex items-center justify-center w-6 h-6 rounded bg-[#00A651] text-white text-xs font-bold shrink-0">1</span>
+<p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-[#00A651] line-clamp-2">광주형 일자리 사업, 새로운 모델로 도약 준비</p>
+</a>
+<a class="flex gap-3 group" href="#">
+<span class="flex items-center justify-center w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold shrink-0">2</span>
+<p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-[#00A651] line-clamp-2">시내버스 노선 개편안, 주민 공청회 개최</p>
+</a>
+<a class="flex gap-3 group" href="#">
+<span class="flex items-center justify-center w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold shrink-0">3</span>
+<p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-[#00A651] line-clamp-2">가을 야구 진출 실패, KIA 타이거즈 내년 시즌 전망</p>
+</a>
+<a class="flex gap-3 group" href="#">
+<span class="flex items-center justify-center w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold shrink-0">4</span>
+<p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-[#00A651] line-clamp-2">광주천 수질 개선 사업, 생태계 복원 신호탄</p>
+</a>
+<a class="flex gap-3 group" href="#">
+<span class="flex items-center justify-center w-6 h-6 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold shrink-0">5</span>
+<p class="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-[#00A651] line-clamp-2">지역 화폐 '상생카드' 혜택 변경 안내</p>
+</a>
+</div>
+</div>
+<!-- Regional Stats -->
+<div class="bg-gradient-to-br from-[#00A651] to-[#008f45] rounded-xl p-6 text-white shadow-lg">
+<h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">monitoring</span>
+                            광주광역시 현황
+                        </h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+<p class="text-xs opacity-80 mb-1">인구수</p>
+<p class="font-bold text-lg">142만명</p>
+</div>
+<div class="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+<p class="text-xs opacity-80 mb-1">미세먼지</p>
+<p class="font-bold text-lg flex items-center gap-1">
+<span class="size-2 rounded-full bg-blue-400"></span> 좋음
+                                </p>
+</div>
+<div class="bg-white/10 rounded-lg p-3 backdrop-blur-sm col-span-2">
+<p class="text-xs opacity-80 mb-1">주요 지수</p>
+<div class="flex justify-between items-end">
+<span>소비자물가</span>
+<span class="font-bold">▲ 3.2%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Events Calendar -->
+<div class="bg-white dark:bg-[#1a202c] rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-lg">우리동네 행사</h3>
+<a class="text-xs text-gray-400 hover:text-[#00A651]" href="#">더보기</a>
+</div>
+<div class="space-y-4">
+<div class="flex gap-3 items-start">
+<div class="flex flex-col items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-2 min-w-[50px]">
+<span class="text-xs text-gray-500 dark:text-gray-400">OCT</span>
+<span class="text-lg font-bold text-[#111418] dark:text-white">24</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#111418] dark:text-white">충장 축제 거리 퍼레이드</h4>
+<p class="text-xs text-gray-500 mt-1">금남로 일대 • 14:00~</p>
+</div>
+</div>
+<div class="flex gap-3 items-start">
+<div class="flex flex-col items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-2 min-w-[50px]">
+<span class="text-xs text-gray-500 dark:text-gray-400">OCT</span>
+<span class="text-lg font-bold text-[#111418] dark:text-white">28</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-[#111418] dark:text-white">광주 디자인 비엔날레</h4>
+<p class="text-xs text-gray-500 mt-1">비엔날레 전시관 • 상시</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Ad -->
+<div class="sticky top-24 bg-gray-100 dark:bg-gray-800 rounded-xl aspect-[3/4] flex items-center justify-center border border-dashed border-gray-300 dark:border-gray-600 overflow-hidden relative group">
+<div class="absolute inset-0 bg-cover bg-center opacity-70 group-hover:opacity-60 transition-opacity" data-alt="Office workspace advertisement background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCJj50VfbEmehl45bQBA7zGNy3pl4udC9oZiJBOMltCHY_9mmgGItzadDAOshL36dKUAZojAiaIC-oeyTXPA2mb3tNlMfdctqT6Um9shbKUI5qxZX9Z5L0vr0T9fZGj4ylAVfRL-JVbzkQFFhkE5s1SrkgOYenIB7kDjc5BTsmu_w1QZdjdFg6gJPny_H0DxV7Otz3uD2hdUEVKGJ_Yw-lXNYcBuPdBVAs0gdrChz15AZdSLR3lQb7V_FyjtMas7R4SF5eF_z5tR7w');"></div>
+<div class="relative z-10 text-center p-6 bg-white/80 dark:bg-black/60 backdrop-blur-sm rounded-lg mx-6">
+<span class="block text-sm font-bold mb-2">프리미엄 채용관</span>
+<p class="text-xs mb-3">광주 지역 우수 기업 채용 정보를<br/>한눈에 확인하세요.</p>
+<button class="bg-[#111418] dark:bg-white text-white dark:text-[#111418] text-xs font-bold px-4 py-2 rounded-full">바로가기</button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- FOOTER -->
+<footer class="bg-white dark:bg-[#1a202c] border-t border-gray-200 dark:border-gray-800 py-10 mt-12">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-8">
+<div class="flex flex-col md:flex-row justify-between items-start gap-8">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-2">
+<div class="size-8 bg-[#00A651] rounded-md flex items-center justify-center text-white text-sm">
+<span class="material-symbols-outlined text-[18px]">newspaper</span>
+</div>
+<span class="font-bold text-xl tracking-tight text-[#111418] dark:text-white">KOREA NEWS 광주판</span>
+</div>
+<p class="text-sm text-gray-500 max-w-sm leading-relaxed">
+                            정확하고 빠른 뉴스로 광주 시민과 함께합니다.<br/>
+                            우) 61945 광주광역시 서구 내방로 111
+                        </p>
+<div class="flex gap-4 mt-2">
+<a class="text-gray-400 hover:text-[#00A651] transition-colors" href="#"><i class="fa-brands fa-facebook text-xl"></i><span class="material-symbols-outlined">public</span></a>
+<a class="text-gray-400 hover:text-[#00A651] transition-colors" href="#"><i class="fa-brands fa-twitter text-xl"></i><span class="material-symbols-outlined">share</span></a>
+<a class="text-gray-400 hover:text-[#00A651] transition-colors" href="#"><i class="fa-brands fa-youtube text-xl"></i><span class="material-symbols-outlined">play_circle</span></a>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-16">
+<div class="flex flex-col gap-3">
+<h4 class="font-bold text-[#111418] dark:text-white">회사소개</h4>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">KOREA NEWS 소개</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">인재채용</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">제휴문의</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-bold text-[#111418] dark:text-white">고객센터</h4>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">공지사항</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">제보하기</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">구독신청</a>
+</div>
+<div class="flex flex-col gap-3">
+<h4 class="font-bold text-[#111418] dark:text-white">약관 및 정책</h4>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">이용약관</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651] font-bold" href="#">개인정보처리방침</a>
+<a class="text-sm text-gray-500 hover:text-[#00A651]" href="#">청소년보호정책</a>
+</div>
+</div>
+</div>
+<div class="border-t border-gray-100 dark:border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-xs text-gray-400">© 2023 KOREA NEWS Corp. All rights reserved.</p>
+<div class="flex items-center gap-2">
+<select class="bg-gray-50 dark:bg-gray-800 border-none text-xs text-gray-500 rounded-md py-1 px-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+<option>광주판</option>
+<option>서울판</option>
+<option>부산판</option>
+<option>대구판</option>
+</select>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

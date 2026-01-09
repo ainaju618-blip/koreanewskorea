@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>뉴스 상세 페이지 - 뉴스포털</title>
+<!-- Google Fonts: Public Sans (UI) and Noto Serif KR (Article Body) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;800&amp;family=Noto+Serif+KR:wght@300;400;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"],
+                        "body": ["Noto Serif KR", "serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for sidebar if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] font-display antialiased">
+<!-- Top Navigation -->
+<header class="bg-white sticky top-0 z-50 border-b border-[#f0f2f5]">
+<div class="max-w-[1280px] mx-auto px-4 lg:px-8">
+<div class="flex items-center justify-between h-16 gap-4">
+<!-- Logo & Nav -->
+<div class="flex items-center gap-8">
+<a class="flex items-center gap-2 text-[#111418] hover:opacity-80 transition-opacity" href="#">
+<div class="w-8 h-8 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold tracking-tight">뉴스포털</h2>
+</a>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">정치</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">경제</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">사회</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">생활/문화</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">IT/과학</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">세계</a>
+</nav>
+</div>
+<!-- Search & Actions -->
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center bg-[#f0f2f5] rounded-xl px-3 h-10 w-64">
+<span class="material-symbols-outlined text-[#60708a] text-[20px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2 placeholder-[#60708a]" placeholder="검색어를 입력하세요" type="text"/>
+</div>
+<button class="bg-primary hover:bg-blue-600 text-white text-sm font-bold px-5 h-10 rounded-xl transition-colors">
+                        로그인
+                    </button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Layout -->
+<main class="max-w-[1280px] mx-auto px-4 lg:px-8 py-8 flex gap-10 items-start">
+<!-- Left Column: Article (Max 800px) -->
+<article class="flex-1 max-w-[840px] w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-10 lg:p-12 mx-auto">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-sm text-[#60708a] mb-6">
+<a class="hover:text-primary hover:underline" href="#">홈</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary hover:underline" href="#">정치·경제</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-[#111418] font-medium">경제</span>
+</nav>
+<!-- Header Section -->
+<header class="mb-8">
+<div class="mb-4">
+<span class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-wide">
+                        경제 일반
+                    </span>
+</div>
+<h1 class="text-3xl md:text-4xl lg:text-[40px] font-bold text-[#111418] leading-tight mb-4 tracking-[-0.02em]">
+                    2024년 경제 전망: 글로벌 시장의 변화와 한국의 대응 전략
+                </h1>
+<p class="text-lg text-[#4b5563] leading-relaxed mb-6 font-medium">
+                    금리 인상과 물가 상승 압박 속에서 기업들이 나아가야 할 방향성 제시와 함께, 정부의 새로운 재정 정책이 미칠 영향에 대한 심층 분석.
+                </p>
+<!-- Meta Data -->
+<div class="flex flex-wrap items-center justify-between border-t border-b border-[#f0f2f5] py-4 gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden relative">
+<img alt="김철수 기자 프로필 사진" class="w-full h-full object-cover" data-alt="Smiling asian male reporter portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjeR5dIAlMdst6ymLxMl-kcM6T8yUfvuw6exErN6bBaMUacvE4qoBZ5I1UDgqYjZFJ49SWAdhUT25x8Fl8g62w7DGqh4i0pjhCCSmjY4s4GcHKbybduWJwkQh3C_QwwXu-hDL_RdnYs_S7e9ijLn6Zg5C8iJ8fTVzpm13NDG5RfOvQNM_FERQ-2P2W9S7yvLaQKtwjofkmDZN_XQ2IDnbZuYKzGXHrSQob6dWzvrkiIwGH8OmH83XgNSkVL4wtobCEF5UjCigdaD4"/>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-[#111418]">김철수 기자</span>
+<div class="flex items-center gap-2 text-xs text-[#60708a]">
+<span>2023.10.24 09:30</span>
+<span class="w-0.5 h-0.5 rounded-full bg-[#60708a]"></span>
+<span>읽는 시간 5분</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Bookmark" class="p-2 hover:bg-[#f0f2f5] rounded-full text-[#60708a] transition-colors">
+<span class="material-symbols-outlined">bookmark_border</span>
+</button>
+<button aria-label="Share" class="p-2 hover:bg-[#f0f2f5] rounded-full text-[#60708a] transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button aria-label="Print" class="p-2 hover:bg-[#f0f2f5] rounded-full text-[#60708a] transition-colors">
+<span class="material-symbols-outlined">print</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Featured Image -->
+<figure class="mb-10 w-full">
+<div class="rounded-xl overflow-hidden aspect-video bg-gray-100 mb-3 relative group">
+<img alt="Stock market graph showing upward trend on a digital display in a modern city setting" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Stock market chart with city lights overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQSX2_ayQV8t6KE1GXFPx6dbNCmp3yJLohSJOkUNaV5Yhn9BigKoxYltX_aKADuPNmVBHaDN2H3fDnjLWsBZQlDPaRWutb0pbVHJ2RPDFER5DBKteTzDf4wztyl5ga9XRH10oNBWu3Ci5B0xloagS2bwspMizgLpWLUJbakKHLBf0LOa4Irk1ZSM8fJ_f00cH68rpLNpa6xQ-NSAfRs0IwMPXE2kk4hTeG4Sk7pHJ-JS7WQrK5m39BFr339Dbg6387JlEWzHqIo18"/>
+</div>
+<figcaption class="flex justify-between text-xs text-[#60708a] px-1">
+<span>서울 여의도 증권가 전광판 모습.</span>
+<span>사진=뉴스포털 DB</span>
+</figcaption>
+</figure>
+<!-- Article Body -->
+<div class="font-body text-[18px] leading-[1.8] text-[#2d3748] space-y-6 mb-12">
+<p>
+                    2024년 세계 경제는 여전히 불확실성의 터널을 지나고 있다. 미 연방준비제도(Fed)의 고금리 기조가 예상보다 장기화될 조짐을 보이면서, 신흥국을 포함한 글로벌 시장 전반에 긴장감이 감돌고 있다. 특히 한국 경제는 수출 부진과 내수 침체라는 이중고를 겪으며 새로운 돌파구를 모색해야 하는 중요한 시점에 서 있다.
+                </p>
+<p>
+                    전문가들은 이러한 위기 속에서도 기회는 존재한다고 입을 모은다. 디지털 전환(DX)과 친환경 에너지 전환이 가속화됨에 따라 관련 산업에서의 경쟁력을 확보한다면, 오히려 글로벌 공급망 재편 과정에서 유리한 고지를 점할 수 있다는 분석이다.
+                </p>
+<!-- Pull Quote -->
+<blockquote class="border-l-4 border-primary pl-6 my-8 py-2 bg-[#f8fafc] rounded-r-lg">
+<p class="text-xl font-bold text-[#111418] italic font-display">
+                        "위기는 곧 기회다. 변화하는 글로벌 질서 속에서 한국 기업들은 민첩하게 움직여야 하며, 정부는 이를 뒷받침할 과감한 규제 혁신에 나서야 한다."
+                    </p>
+<cite class="block mt-3 text-sm font-medium text-[#60708a] not-italic">— 이영호 한국경제연구원장</cite>
+</blockquote>
+<p>
+                    정부는 하반기 경제 정책 방향을 통해 수출 금융 지원을 대폭 확대하고, 첨단 산업 분야에 대한 세제 혜택을 강화하겠다고 밝혔다. 이는 반도체, 이차전지 등 국가 전략 기술 분야에서의 초격차를 유지하기 위한 포석으로 풀이된다. 하지만 재정 건전성 문제와 가계 부채 리스크 관리라는 숙제 또한 만만치 않다.
+                </p>
+<h3 class="text-2xl font-bold text-[#111418] font-display mt-10 mb-4">새로운 소비 트렌드의 부상</h3>
+<figure class="float-right ml-6 mb-4 w-1/2">
+<img alt="People making electronic payments at a modern cafe kiosk" class="rounded-lg mb-2 w-full h-auto object-cover aspect-[4/3]" data-alt="Contactless payment in a modern store" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeh_aKL8oDWQoOTOkW1awd12cHmkHRRruDdo4OhdXzxxF_Ewr-vZuYM-O75i48lWZwVbF6MPgcCfflqyMtKinnZ8tbC87ELR8Ukw4D0zH7v5v_068Enk_hrMSox63fs33Ni9Dqy5l2-fVAUQADheBcOlFdgQKaM55WG53TdPvFjw8Y0otvkXwn65YEL8Y4-k8Mcia3C36P0x1PkJ8SddWjlmchVi_9Fi4zXyFxpyZBFCo0j-85o-0HLP8aHJbBblv6visr_JHBTyo"/>
+<figcaption class="text-xs text-[#60708a] text-center">비대면 결제 시스템의 확산</figcaption>
+</figure>
+<p>
+                    한편, 고물가 시대가 지속되면서 소비자들의 지갑은 닫히고 있지만, '가심비(가격 대비 심리적 만족도)'를 추구하는 경향은 더욱 뚜렷해지고 있다. 필수 소비재에 대해서는 극도로 지출을 아끼면서도, 자신이 가치를 두는 경험이나 프리미엄 제품에는 아낌없이 투자하는 '앰비슈머(Ambisumer)' 성향이 짙어지고 있는 것이다.
+                </p>
+<p>
+                    유통업계 관계자는 "불황형 소비와 프리미엄 소비가 동시에 나타나는 양극화 현상이 심화되고 있다"며, "기업들은 이에 맞춰 초저가 상품 라인업과 럭셔리 마케팅을 동시에 강화하는 투트랙 전략을 구사하고 있다"고 설명했다.
+                </p>
+<p>
+                    결국 2024년은 적응과 혁신의 한 해가 될 것이다. 거시경제의 파고 속에서 한국 경제가 연착륙에 성공하고 재도약의 발판을 마련할 수 있을지 귀추가 주목된다.
+                </p>
+</div>
+<!-- Tags -->
+<div class="flex flex-wrap gap-2 mb-10">
+<a class="px-3 py-1.5 bg-[#f0f2f5] hover:bg-[#e4e6eb] text-sm text-[#4b5563] rounded-lg transition-colors" href="#">#경제전망</a>
+<a class="px-3 py-1.5 bg-[#f0f2f5] hover:bg-[#e4e6eb] text-sm text-[#4b5563] rounded-lg transition-colors" href="#">#금리인상</a>
+<a class="px-3 py-1.5 bg-[#f0f2f5] hover:bg-[#e4e6eb] text-sm text-[#4b5563] rounded-lg transition-colors" href="#">#수출지원</a>
+<a class="px-3 py-1.5 bg-[#f0f2f5] hover:bg-[#e4e6eb] text-sm text-[#4b5563] rounded-lg transition-colors" href="#">#2024년</a>
+</div>
+<!-- Reporter Card -->
+<div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-[#f8fafc] p-6 rounded-xl border border-[#e5e7eb] mb-12">
+<div class="w-20 h-20 shrink-0 rounded-full overflow-hidden border-2 border-white shadow-sm">
+<img alt="김철수 기자" class="w-full h-full object-cover" data-alt="Reporter portrait close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA91MsWtm5NHnMwFfCeecSMy2UUDF7YyQ4QItm7e08xH92AZRFuArbT4B2oth1EfJf5wt2bfzbebK04mJynyO7Y3jtq3d8FuPM-X-f8U8Wkrha6LWVRt9EOVM9zoWsTEaOs519bXErBVx-FPrFOTmXHH91JFChHBlO1U-40TpauMq-AQvMzuiry9OlDU69Il-mqaBfus0GKq6jRA8eHJ8EwKNVlYNIsh7vKiKmAtTI4mkEDwiUOxV0K1WddqE3df2nSLHL9Oum4KYc"/>
+</div>
+<div class="flex-1 text-center sm:text-left">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
+<h4 class="text-lg font-bold text-[#111418]">김철수 기자</h4>
+<button class="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold text-primary border border-primary rounded-full hover:bg-primary hover:text-white transition-colors">
+                            + 구독하기
+                        </button>
+</div>
+<p class="text-sm text-[#60708a] mb-3">
+                        현장의 목소리를 생생하게 전달하기 위해 노력합니다. 경제부에서 금융과 거시경제를 담당하고 있습니다. 제보와 문의는 언제나 환영합니다.
+                    </p>
+<div class="flex items-center justify-center sm:justify-start gap-4">
+<a class="text-xs text-[#60708a] hover:text-[#111418] font-medium flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">mail</span> E-mail
+                        </a>
+<a class="text-xs text-[#60708a] hover:text-[#111418] font-medium flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">feed</span> 기사 더보기
+                        </a>
+</div>
+</div>
+</div>
+<!-- Related News Grid -->
+<section class="border-t border-[#f0f2f5] pt-10 mb-12">
+<h3 class="text-xl font-bold text-[#111418] mb-6 flex items-center gap-2">
+<span class="w-1 h-6 bg-primary rounded-full"></span>
+                    관련 기사
+                </h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<a class="group flex flex-col gap-3" href="#">
+<div class="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+<img alt="Stack of coins" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Coins stacked with increasing height" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOkE4wLWNsVW0T2W1CSnFs-uU2DeHKz6zN6oMG2q5xqFHQ8pTq_cetwmxImKdInB5NXUtp20In5bXPiV6iP3YHu1zzexJecd9_zR-PS4Y7HQKgCfzLWZ6-YjcBXrr866xUugqdNn5fOEvDK8Xwsvo6hVhReiPeJPEavXZU7542N9-X_gdoVyqVqa-4lF9hGVjTLGIiyHWQ7pnzgIipD86-mvpOFncxlP0QauoZkJhI8DckyHvOphsVScsVRNf8M0zmnJtjVq7Ivyo"/>
+</div>
+<h4 class="font-bold text-[#111418] text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                            한은, 기준금리 3연속 동결... "물가 안정 우선"
+                        </h4>
+<span class="text-xs text-[#9ca3af]">2시간 전</span>
+</a>
+<!-- Card 2 -->
+<a class="group flex flex-col gap-3" href="#">
+<div class="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+<img alt="Data analytics screen" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Computer screen showing financial analytics graphs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOkFoOR3D5qMMCwwaVkym-OoaZnyDBZukn7s4kNNvpMh1YvNEba0VOVdwgzxzyIQfcKKj_kpD833-2tSz2zUWMZqi9I8H3xl8hrrU4lrvHE2l8r25MhQJkHtw4f3a9Yk1JBLABoRvegld3OVZU1KEnroIttKP7MO2HmxgLLfsXzA2doGsylqDNe4cvPRFnbF2GKQYzaUHcJBli1BwXn3atHWY9zO_oZOaEv7UjGe7CqgePtCeR0FUJ2ctNMVUF0U8_4cuYAPEgufc"/>
+</div>
+<h4 class="font-bold text-[#111418] text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                            수출 감소폭 둔화, 반도체 바닥 찍었나?
+                        </h4>
+<span class="text-xs text-[#9ca3af]">5시간 전</span>
+</a>
+<!-- Card 3 -->
+<a class="group flex flex-col gap-3" href="#">
+<div class="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+<img alt="Currency exchange" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Various paper currencies fanned out" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmCYHMmoCMJaocfdUG7v8nvEQymqmQwV2ekDsInKLiBW1J436ezNamC1gGc-aB3_G7I9xLtR8AVJDkZ6c5Lh5utr1Rrex8N1F269lHVmnsTt3zHd5wt_0wqSGhcouAzpCSpusExKB-obtnyy7uPJXAD0x2Ww75nj40JHW0ocyBrilQvkr9NVoajQu0FdYC3UKGloGS-7qYLYcvtaMbd3FtLKpdYpJHPb-FUr98L-RMWaF51GoTGMPN4ZWpAED7-yiiADzt5MTI90Y"/>
+</div>
+<h4 class="font-bold text-[#111418] text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                            환율 1300원대 안착 시도, 외환시장 동향
+                        </h4>
+<span class="text-xs text-[#9ca3af]">1일 전</span>
+</a>
+<!-- Card 4 -->
+<a class="group flex flex-col gap-3" href="#">
+<div class="aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+<img alt="Real estate planning" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Model house on blueprints" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIhjInDWDlYt1um2NFA2u74LvCup8c1x40vVR3gmONvDBKhJMV9bbyJCRxB3u14K9xpmtKRmewxWsf98Tc30Bl361aDOpY-eoG29HsHhQnXfquevnj1B2v4Pm-A-s4ArsuXMZ0n5eYT7I9XdY7U-cXqyirPY0ZWZ1I6UoNdmndS1dgHdcOX4j-2ySABqs9Xu3J9SKB_E4JByPtonbaD5ph_dCACjeKV0bZXusXFOhkj7nIyzMrwcQPHDapOpM6IImDCEt5V7p2FUM"/>
+</div>
+<h4 class="font-bold text-[#111418] text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                            부동산 시장 연착륙 가능성, 전문가 진단
+                        </h4>
+<span class="text-xs text-[#9ca3af]">1일 전</span>
+</a>
+</div>
+</section>
+<!-- Comments Section -->
+<section id="comments">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xl font-bold text-[#111418]">
+                        댓글 <span class="text-primary">12</span>
+</h3>
+<div class="flex items-center gap-2 text-sm text-[#60708a]">
+<button class="font-bold text-[#111418]">추천순</button>
+<span>|</span>
+<button class="hover:text-[#111418]">최신순</button>
+</div>
+</div>
+<!-- Input -->
+<div class="mb-8 relative">
+<textarea class="w-full bg-[#f8fafc] border border-[#e5e7eb] rounded-xl p-4 min-h-[100px] text-sm focus:ring-1 focus:ring-primary focus:border-primary resize-none" placeholder="건전한 댓글 문화를 만들어주세요."></textarea>
+<div class="absolute bottom-3 right-3">
+<button class="bg-primary hover:bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+                            등록
+                        </button>
+</div>
+</div>
+<!-- Comment List -->
+<div class="flex flex-col gap-6">
+<!-- Comment 1 -->
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0">
+<img alt="User avatar" class="w-full h-full object-cover rounded-full" data-alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi06UqWHebML_8hk6mmbrJzd7AGZBH4frlKm2d0_jav_QMl7X3l-jlR3YkQzcU7WXNSTSE9SsMmtLnnI3UBLPJ_QtwxtuFg-NAWoHIzZkmcT5Q48rKmxvgwC-yNvLAOxr3NCJRueoRv3jySyfkdxLZW3jwt5jyI1rfWSH-5PfPBEhZ7ILB8RdySdsv7fqbufBt2tHWS90i4nXzJI8tCB0AGea3SJ-rUJLIQEIo8Wy5oUg641jP0C1MP9JLsVz2fA_XO3XJS5WqbxU"/>
+</div>
+<div class="flex-1">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-bold text-sm text-[#111418]">경제박사</span>
+<span class="text-xs text-[#9ca3af]">30분 전</span>
+</div>
+<p class="text-sm text-[#4b5563] leading-relaxed mb-2">
+                                정말 시의적절한 기사네요. 금리 인상 문제가 심각한데 정부의 대책이 실효성이 있을지 지켜봐야겠습니다. 특히 가계 부채 문제는 폭탄 돌리기 같아요.
+                            </p>
+<div class="flex items-center gap-4 text-xs text-[#60708a]">
+<button class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]">thumb_up</span> 42</button>
+<button class="flex items-center gap-1 hover:text-red-500"><span class="material-symbols-outlined text-[16px]">thumb_down</span> 2</button>
+<button class="hover:text-[#111418]">답글달기</button>
+</div>
+</div>
+</div>
+<!-- Comment 2 -->
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center text-white bg-gradient-to-br from-blue-400 to-blue-600">
+<span class="font-bold text-xs">J</span>
+</div>
+<div class="flex-1">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-bold text-sm text-[#111418]">JaneDoe</span>
+<span class="text-xs text-[#9ca3af]">1시간 전</span>
+</div>
+<p class="text-sm text-[#4b5563] leading-relaxed mb-2">
+                                소비 트렌드가 양극화된다는 말이 확 와닿네요. 점심값은 아끼면서 커피는 비싼 거 마시는 게 요즘 현실이죠.
+                            </p>
+<div class="flex items-center gap-4 text-xs text-[#60708a]">
+<button class="flex items-center gap-1 hover:text-primary"><span class="material-symbols-outlined text-[16px]">thumb_up</span> 15</button>
+<button class="flex items-center gap-1 hover:text-red-500"><span class="material-symbols-outlined text-[16px]">thumb_down</span> 0</button>
+<button class="hover:text-[#111418]">답글달기</button>
+</div>
+<!-- Reply -->
+<div class="mt-4 flex gap-4 bg-[#f8fafc] p-3 rounded-lg">
+<div class="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0">
+<img alt="User avatar 2" class="w-full h-full object-cover rounded-full" data-alt="User avatar small" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9xgjbUnQCmR3bAWp3XjVr1K7MBsglC6H7Dz3jq7e_P7ZauYRVNZniizOR_zWzuGtOL9NcXI3w5BnLr1MKe3Nmj5lSDfMWdCz9TI922yxYmbv1rY8KP99H9SZ07IrH4qiQhv7fPBbDlHk8KMIOW1m-jH6HTUleSTnBMHSIIKSLvz9kBBdPtfe2-sMN9fqDuOeDdPhaKxh4D-NkmqxgIuc0DUR3oKxpKJt4EBdT0_JIbCVscn64626WJJCbXDayRGIGj_oFI9JP7iQ"/>
+</div>
+<div class="flex-1">
+<div class="flex items-baseline justify-between mb-1">
+<span class="font-bold text-sm text-[#111418]">소비요정</span>
+<span class="text-xs text-[#9ca3af]">10분 전</span>
+</div>
+<p class="text-sm text-[#4b5563]">맞아요. 저도 편의점 도시락 먹고 명품 지갑 샀어요 ㅋㅋㅋ</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 rounded-xl border border-[#e5e7eb] text-sm font-bold text-[#60708a] hover:bg-[#f8fafc] transition-colors">
+                    댓글 더보기
+                </button>
+</section>
+</article>
+<!-- Right Column: Sticky Sidebar (300px) -->
+<aside class="hidden lg:flex flex-col gap-8 w-[300px] shrink-0 sticky top-24 h-fit">
+<!-- Widget: People Also Read -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+<h5 class="text-base font-bold text-[#111418] mb-4 pb-2 border-b border-[#f0f2f5]">
+                    이 기사를 본 사람들이 본 뉴스
+                </h5>
+<ul class="flex flex-col gap-4">
+<li>
+<a class="flex gap-3 group" href="#">
+<div class="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden">
+<img alt="Cryptocurrency graph" class="w-full h-full object-cover group-hover:scale-110 transition-transform" data-alt="Abstract blue financial data lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVq_axU1H2gxSeTe3HdeAo3--IdqyXY-7gjBYw1T1dkpGcC6Dzs198RRuDLYEhghNBRPkkHgt6QAU7Jk3khq2MBihK79x_qbEivBn9qZNu1ADsq6BMzPmjqQRQakTROLBUZgEW2-JQetfM03zSxTnvJGlt5-bk5o3IwUv8Gzy4CKw4P3SNu4ivflqvyNhnh7656E4Mqm5UF_VgohiJY6ts4Q1zh4RkFsEzZg46So-fpVZLwyCDtoSa6hkSGRZQxUgKoysGkRyXx0M"/>
+</div>
+<p class="text-sm font-medium text-[#111418] group-hover:text-primary line-clamp-2 leading-snug">
+                                비트코인 현물 ETF 승인 기대감에 가상자산 시장 들썩
+                            </p>
+</a>
+</li>
+<li>
+<a class="flex gap-3 group" href="#">
+<div class="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden">
+<img alt="Business meeting" class="w-full h-full object-cover group-hover:scale-110 transition-transform" data-alt="People reviewing charts at a table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7eD6tVmdIDsGFzpYHQ6X253YfGP8J3vqAbJ_nBFy6My4bsH2Q2KVvuxE03vuxqkj1dN1O6j5wcFXyYOdpoJkW4Z6vI3sapoINWavWPzx2GqW7_cNE9Jru1m1NMNKPFX05XkGiHrsi5Q7Vs5AnTvBTqY74uMujPNuGhLoW7ekKXI4Z6tXNiJLIbdQV1LbSIrNGjTxU5bl41pItXIxQ-VQJHUhWvwir8ewSQ4rWybLczfVQqfUyrN6hedgNgn67VsrHkh7Jh6NiBzA"/>
+</div>
+<p class="text-sm font-medium text-[#111418] group-hover:text-primary line-clamp-2 leading-snug">
+                                30대 재테크 필수 코스: 연금저축 vs ISA
+                            </p>
+</a>
+</li>
+<li>
+<a class="flex gap-3 group" href="#">
+<div class="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden">
+<img alt="Money plant" class="w-full h-full object-cover group-hover:scale-110 transition-transform" data-alt="Small plant growing from coins" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTA7xyj2BoEtS1mfUVTWL0vtm6Ejjtb3vtWbcmUeeq_7W-MioDh_BLR-QchNMIFXB-2nR5YUd98qb41Ux7idjd5uq_EeV1fFFwklb4akXztgEvHXZ8lVvHOurAGLNd4JusmCP4MVyCy_CSvk7w1y2y7U5A8kM0bZF-mVRs_4_LS40d5tymwq5KDolB7qoOsn6nUgeRE43bLYobNXQUWTyDWkj5FRJdXM_6vM7uoz7Xv31zu4PRwJVjFg7tgsg-LSUJPZ_SbbX8O_k"/>
+</div>
+<p class="text-sm font-medium text-[#111418] group-hover:text-primary line-clamp-2 leading-snug">
+                                "월급만으론 부족해" N잡러 전성시대
+                            </p>
+</a>
+</li>
+</ul>
+</div>
+<!-- Widget: Popular News -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+<h5 class="text-base font-bold text-[#111418] mb-4 pb-2 border-b border-[#f0f2f5] flex justify-between items-center">
+                    실시간 인기 뉴스
+                    <span class="text-xs font-normal text-primary cursor-pointer hover:underline">더보기</span>
+</h5>
+<ol class="flex flex-col gap-3">
+<li class="flex gap-3 items-start group cursor-pointer">
+<span class="text-lg font-bold text-primary italic w-4 leading-none">1</span>
+<p class="text-sm text-[#4b5563] group-hover:text-[#111418] font-medium leading-snug">
+                            전국 흐리고 비... 오후부터 기온 '뚝'
+                        </p>
+</li>
+<li class="flex gap-3 items-start group cursor-pointer">
+<span class="text-lg font-bold text-primary italic w-4 leading-none">2</span>
+<p class="text-sm text-[#4b5563] group-hover:text-[#111418] font-medium leading-snug">
+                            유명 아이돌 A씨, 음주운전 혐의로 입건
+                        </p>
+</li>
+<li class="flex gap-3 items-start group cursor-pointer">
+<span class="text-lg font-bold text-primary italic w-4 leading-none">3</span>
+<p class="text-sm text-[#4b5563] group-hover:text-[#111418] font-medium leading-snug">
+                            삼성전자, 차세대 HBM3E 양산 소식에 주가 강세
+                        </p>
+</li>
+<li class="flex gap-3 items-start group cursor-pointer">
+<span class="text-lg font-bold text-[#9ca3af] italic w-4 leading-none">4</span>
+<p class="text-sm text-[#4b5563] group-hover:text-[#111418] font-medium leading-snug">
+                            정부, 'K-패스' 혜택 확대 발표... 교통비 절감 기대
+                        </p>
+</li>
+<li class="flex gap-3 items-start group cursor-pointer">
+<span class="text-lg font-bold text-[#9ca3af] italic w-4 leading-none">5</span>
+<p class="text-sm text-[#4b5563] group-hover:text-[#111418] font-medium leading-snug">
+                            손흥민 10호골 폭발, 토트넘 승리 견인
+                        </p>
+</li>
+</ol>
+</div>
+<!-- Ad Slot -->
+<div class="bg-gray-100 rounded-xl h-[250px] flex items-center justify-center relative overflow-hidden group cursor-pointer">
+<div class="absolute inset-0 bg-gradient-to-tr from-gray-200 to-gray-300" data-alt="Gradient background for ad"></div>
+<div class="relative text-center p-6">
+<p class="text-xs text-gray-500 mb-2 font-bold tracking-widest">ADVERTISEMENT</p>
+<p class="text-gray-400 text-sm">300 x 250</p>
+<div class="mt-4 px-4 py-2 bg-white/50 rounded-lg text-xs font-medium text-gray-600 group-hover:bg-white group-hover:shadow-md transition-all">
+                         광고 문의하기
+                     </div>
+</div>
+</div>
+<!-- Newsletter Signup -->
+<div class="bg-primary/5 rounded-xl border border-primary/20 p-5 text-center">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-primary">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<h5 class="text-base font-bold text-[#111418] mb-1">
+                    뉴스레터 구독하기
+                </h5>
+<p class="text-xs text-[#60708a] mb-4">
+                    매일 아침, 가장 중요한 경제 뉴스를 메일함으로 배달해 드립니다.
+                </p>
+<form class="flex flex-col gap-2">
+<input class="w-full text-sm rounded-lg border-gray-200 focus:border-primary focus:ring-primary" placeholder="이메일 주소" type="email"/>
+<button class="w-full py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors" type="button">
+                        무료로 구독하기
+                    </button>
+</form>
+</div>
+</aside>
+</main>
+</body></html>

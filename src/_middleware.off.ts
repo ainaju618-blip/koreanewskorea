@@ -62,14 +62,30 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // 사용자가 직접 선택한 지역이 있으면 우선 적용
+    const selectedRegion = request.cookies.get('selected_region')?.value as HeaderRegion | undefined;
+    if (selectedRegion && REGION_PATHS[selectedRegion]) {
+        const redirectUrl = new URL(REGION_PATHS[selectedRegion], request.url);
+        return NextResponse.redirect(redirectUrl);
+    }
+
     // 이미 리다이렉트 처리된 사용자는 스킵 (쿠키 확인)
     const hasVisited = request.cookies.get('region_redirected');
     if (hasVisited) {
         return NextResponse.next();
     }
 
-    // IP 기반 지역 감지
-    const detectedRegion = detectRegionFromHeaders(request);
+    // IP 기반 지역 감지 (개발환경에서는 환경변수 사용)
+    let detectedRegion = detectRegionFromHeaders(request);
+
+    // localhost(개발환경)에서는 환경변수 기본 지역 사용
+    const host = request.headers.get('host') || '';
+    if (host.includes('localhost') && detectedRegion === 'korea') {
+        const devDefaultRegion = process.env.DEV_DEFAULT_REGION as HeaderRegion | undefined;
+        if (devDefaultRegion && REGION_PATHS[devDefaultRegion]) {
+            detectedRegion = devDefaultRegion;
+        }
+    }
 
     // 전국이면 리다이렉트 불필요
     if (detectedRegion === 'korea') {

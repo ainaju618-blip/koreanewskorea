@@ -1,0 +1,111 @@
+/* Stitch Design System - Global Styles */
+
+/* Hide scrollbar for chrome/safari/opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Material Symbols filled variant */
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Safe area padding for iOS */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Primary color utilities */
+.text-primary {
+  color: #3c83f6;
+}
+
+.bg-primary {
+  background-color: #3c83f6;
+}
+
+.border-primary {
+  border-color: #3c83f6;
+}
+
+/* Dark mode background colors */
+.dark .bg-background-dark {
+  background-color: #101722;
+}
+
+.dark .bg-surface-dark {
+  background-color: #1e293b;
+}
+
+/* Animation utilities */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Typography */
+.font-display {
+  font-family: 'Public Sans', 'Noto Sans KR', sans-serif;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Shadow utilities for primary color */
+.shadow-primary\/20 {
+  box-shadow: 0 10px 15px -3px rgb(60 131 246 / 0.2), 0 4px 6px -4px rgb(60 131 246 / 0.2);
+}
+
+.shadow-primary\/30 {
+  box-shadow: 0 10px 15px -3px rgb(60 131 246 / 0.3), 0 4px 6px -4px rgb(60 131 246 / 0.3);
+}
+
+.shadow-primary\/40 {
+  box-shadow: 0 10px 15px -3px rgb(60 131 246 / 0.4), 0 4px 6px -4px rgb(60 131 246 / 0.4);
+}
+
+/* Aspect ratio utilities */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Container query support */
+@container (min-width: 640px) {
+  .sm\:text-\[28px\] {
+    font-size: 28px;
+  }
+}

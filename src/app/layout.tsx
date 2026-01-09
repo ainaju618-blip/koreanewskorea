@@ -133,6 +133,22 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         {/* Serif font - NOT preloaded (433KB is too heavy, use font-display:swap instead) */}
+
+        {/* Material Symbols for Stitch Design System */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap"
+          rel="stylesheet"
+        />
+        {/* Public Sans for Stitch Design */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&display=swap"
+          rel="stylesheet"
+        />
+        {/* Newsreader + Noto Sans KR for Stitch v2 National Edition */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="font-sans min-h-screen bg-[#f8f9fa] text-slate-800 antialiased selection:bg-[#0a192f] selection:text-white" suppressHydrationWarning>
         {/* SEO: WebSite Schema for Google Sitelinks Search Box */}

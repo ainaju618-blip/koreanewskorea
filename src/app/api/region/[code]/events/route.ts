@@ -16,11 +16,11 @@ export async function GET(request: NextRequest, { params }: Props) {
     const category = searchParams.get('category');
     const upcoming = searchParams.get('upcoming') === 'true';
 
-    // 기본 쿼리 - 최소 필수 컬럼만 조회 (start_date 사용)
+    // 기본 쿼리 - 상세정보 포함 조회
     let query = supabaseAdmin
       .from('events')
       .select(
-        'id, title, description, location, start_date, end_date, category, is_featured, sido_code, sigungu_code, region, status',
+        'id, title, description, location, start_date, end_date, category, is_featured, sido_code, sigungu_code, region, status, image_url, phone',
         { count: 'exact' }
       )
       .or(`sigungu_code.eq.${code},region.eq.${code}`)
@@ -64,6 +64,8 @@ export async function GET(request: NextRequest, { params }: Props) {
       endDate: event.end_date,
       category: event.category,
       isFeatured: event.is_featured,
+      imageUrl: event.image_url,
+      phone: event.phone,
     }));
 
     return NextResponse.json({

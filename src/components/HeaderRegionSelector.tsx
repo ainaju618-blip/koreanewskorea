@@ -82,8 +82,10 @@ export default function HeaderRegionSelector({ className = '' }: HeaderRegionSel
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const handleRegionSelect = (path: string) => {
+    const handleRegionSelect = (regionCode: string, path: string) => {
         setIsOpen(false);
+        // 선택한 지역을 쿠키에 저장 (30일)
+        document.cookie = `selected_region=${regionCode}; path=/; max-age=${60 * 60 * 24 * 30}`;
         router.push(path);
     };
 
@@ -111,7 +113,7 @@ export default function HeaderRegionSelector({ className = '' }: HeaderRegionSel
                         return (
                             <button
                                 key={region.code}
-                                onClick={() => handleRegionSelect(region.path)}
+                                onClick={() => handleRegionSelect(region.code, region.path)}
                                 className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors
                                     ${isActive
                                         ? 'bg-primary/10 text-primary font-medium'

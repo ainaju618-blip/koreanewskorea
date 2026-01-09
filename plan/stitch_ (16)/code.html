@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>뉴스 상세 페이지</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Noto+Sans+KR:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "serif"],
+                        "sans": ["Noto Sans KR", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom scrollbar hiding for horizontal scroll areas */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111318] dark:text-gray-100 font-sans">
+<!-- Wrapper for mobile simulation -->
+<div class="relative mx-auto flex h-full min-h-screen w-full max-w-[480px] flex-col bg-white dark:bg-[#1a202c] shadow-xl overflow-hidden">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 flex items-center justify-between bg-white/90 dark:bg-[#1a202c]/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 h-14">
+<button class="flex items-center justify-center text-[#111318] dark:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 28px;">arrow_back</span>
+</button>
+<h1 class="flex-1 text-center text-lg font-bold text-[#111318] dark:text-white font-sans tracking-tight truncate px-2">전국판 뉴스</h1>
+<div class="flex items-center gap-1">
+<button class="flex items-center justify-center text-[#111318] dark:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">bookmark_border</span>
+</button>
+<button class="flex items-center justify-center text-[#111318] dark:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 24px;">share</span>
+</button>
+</div>
+</header>
+<!-- Main Scrollable Content -->
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Article Header Section -->
+<div class="px-5 pt-6 pb-2">
+<!-- Chips -->
+<div class="flex gap-2 mb-4 flex-wrap">
+<span class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-300 text-xs font-bold tracking-wide">
+                        행정/정책
+                    </span>
+<span class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-bold tracking-wide">
+                        귀농귀촌
+                    </span>
+</div>
+<!-- Headline -->
+<h2 class="font-display text-[28px] font-bold leading-[1.3] text-[#111318] dark:text-white mb-6 break-keep">
+                    정부, 2024년 귀농 지원 정책 대폭 확대 발표… "지방 소멸 막는다"
+                </h2>
+<!-- Author & Meta -->
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-full bg-gray-200 overflow-hidden" data-alt="portrait of a reporter">
+<img alt="reporter profile" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmmD_yu647KKuOWdKpr4B-HMM_RFY-k1t-0eu4i5EblNSScM2_vwugUe4DExV8hDrUo-k6Yc-HeWe2UW_vDEgeyeSeNQCZ3BxLkqTqp2D95vhbBDt2Rgagql4mD7-_8ARJSYuJtEH6EXkA3ot4IqjVSwPIIe5eXLssZEx-LthDnMr_pVuLeFUiYvo9sg3uUxW2nMTrIqcWHEcBTf_1Q_TEl_ABzq5dDioZy8w5tRdEJ7H3tR1e9oxZpWky_Is5ej3LkXZg5YBMtC4"/>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-[#111318] dark:text-white font-sans">김철수 기자</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-sans">2023.10.27 14:00</span>
+</div>
+</div>
+</div>
+<!-- Utility Buttons -->
+<div class="flex gap-2 mb-6 border-b border-gray-100 dark:border-gray-800 pb-6">
+<button class="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined text-[18px]">volume_up</span>
+                        기사 듣기
+                    </button>
+<button class="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+<span class="material-symbols-outlined text-[18px]">text_fields</span>
+                        글자 크기
+                    </button>
+</div>
+</div>
+<!-- Article Body -->
+<article class="px-5">
+<!-- Lead Image -->
+<figure class="mb-8 group">
+<div class="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100" data-alt="Farmer working in a greenhouse">
+<img alt="Farmer in greenhouse" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHw9nmLe6e8pH49_5Mjtv4LVivPOoFPWKWeWSz3ggM3_i7yJmSBJvtqpTM1n99dwaXY2lYjXMG7yawg37GBemJFAp-x2dgROWppPVQpg4iZE7ipwxoLPQkuxKRk4V8734kP1K2urbBQiIq_c3oNSApQG95xQy3ovSfR8WRHDfufXWxIdyQuGSpEPuKFkFXOcWPD5eO-iVwXC1lWWjug2Cl3fE5M_SvodJVs4F6YlnVaNoAN0F_JPIgMO6fKcfvZ4Klz5SIFvt2JGM"/>
+</div>
+<figcaption class="mt-2 text-xs text-gray-500 dark:text-gray-400 font-sans">
+                        ▲ 27일 오전 세종시 농림축산식품부에서 열린 브리핑에서 정책 발표가 진행되고 있다.
+                    </figcaption>
+</figure>
+<!-- Paragraphs -->
+<div class="font-display text-[18px] leading-[1.75] text-gray-800 dark:text-gray-200 space-y-6 break-keep">
+<p>
+                        정부가 내년부터 귀농·귀촌 인구를 늘리기 위해 정착 지원금을 대폭 확대하고, 주거 및 창업 지원을 강화하는 내용의 '제2차 귀농귀촌 지원 종합계획'을 27일 발표했다. 이번 정책은 지방 소멸 위기에 적극 대응하고 농촌 지역의 활력을 되찾기 위한 특단의 조치로 해석된다.
+                    </p>
+<p>
+                        농림축산식품부는 우선 귀농 초기 소득 감소로 어려움을 겪는 가구를 위해 '귀농 정착지원금'의 지급 기간을 기존 3년에서 5년으로 연장하고, 월 지급액도 최대 100만 원에서 120만 원으로 상향 조정하기로 했다.
+                    </p>
+<!-- Quote Block -->
+<blockquote class="pl-4 border-l-4 border-primary my-8 py-1 bg-gray-50 dark:bg-gray-800/50 rounded-r-lg">
+<p class="font-display text-xl font-bold text-[#111318] dark:text-white italic">
+                            "이번 정책은 단순히 인구 유입을 넘어, 지속 가능한 농촌 생태계를 조성하는 데 초점을 맞췄습니다."
+                        </p>
+</blockquote>
+<!-- Subheading -->
+<h3 class="font-display text-2xl font-bold text-[#111318] dark:text-white mt-10 mb-4">
+                        주거 문제 해결이 핵심, '농촌 보금자리' 확대
+                    </h3>
+<p>
+                        가장 큰 걸림돌로 지적되어 온 주거 문제 해결을 위해 '농촌 보금자리 주택' 공급도 확대한다. 빈집을 리모델링하여 장기 임대하는 '희망 하우스' 프로젝트에 예산 500억 원을 추가 투입하며, 청년 농부를 위한 공공 임대주택 단지도 전국 20개소에 시범 조성할 계획이다.
+                    </p>
+<!-- Native Ad Slot -->
+<div class="my-10 p-4 bg-background-light dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center">
+<div class="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-lg mb-3 overflow-hidden relative" data-alt="Minimalist abstract advertisement background">
+<div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
+<span class="text-gray-400 dark:text-gray-500 font-bold tracking-widest text-sm">SPONSORED</span>
+</div>
+</div>
+<div class="flex items-center justify-between w-full px-1">
+<span class="text-xs font-bold text-gray-400 border border-gray-300 dark:border-gray-600 rounded px-1">AD</span>
+<span class="text-xs text-gray-500 hover:underline cursor-pointer">광고 신고</span>
+</div>
+<p class="mt-2 text-sm font-bold text-gray-800 dark:text-gray-200 text-left w-full">
+                            [추천] 귀농 자금, 최저 금리로 알아보세요 (한도 조회)
+                        </p>
+</div>
+<p>
+                        이와 함께 스마트팜 창업을 희망하는 청년들에게는 교육부터 실습장 제공, 창업 자금 지원까지 원스톱으로 제공하는 '스마트팜 청년창업 보육센터'를 추가로 건립한다. 이를 통해 기술 기반의 젊은 농업 인력을 체계적으로 육성하겠다는 구상이다.
+                    </p>
+</div>
+</article>
+<!-- Tags -->
+<div class="px-5 mt-10">
+<div class="flex flex-wrap gap-2">
+<a class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-sans" href="#">#귀농귀촌</a>
+<a class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-sans" href="#">#정부정책</a>
+<a class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-sans" href="#">#지원금확대</a>
+<a class="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-sans" href="#">#지방소멸대응</a>
+</div>
+</div>
+<div class="h-px bg-gray-200 dark:bg-gray-800 my-8 mx-5"></div>
+<!-- Reaction Bar -->
+<div class="px-5 flex items-center justify-center gap-6 mb-10">
+<button class="flex flex-col items-center gap-1 group">
+<div class="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:border-red-200 dark:group-hover:border-red-800 transition-all">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-red-500 dark:text-gray-500 transition-colors">favorite</span>
+</div>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">좋아요 1.2k</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:border-blue-200 dark:group-hover:border-blue-800 transition-all">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-blue-500 dark:text-gray-500 transition-colors">sentiment_satisfied</span>
+</div>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">유익해요 342</span>
+</button>
+<button class="flex flex-col items-center gap-1 group">
+<div class="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 group-hover:border-yellow-200 dark:group-hover:border-yellow-800 transition-all">
+<span class="material-symbols-outlined text-gray-400 group-hover:text-yellow-500 dark:text-gray-500 transition-colors">share</span>
+</div>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">공유하기</span>
+</button>
+</div>
+<!-- Related News Section -->
+<section class="bg-gray-50 dark:bg-[#151b26] py-8 pl-5 border-t border-gray-100 dark:border-gray-800">
+<h3 class="text-lg font-bold text-[#111318] dark:text-white mb-4 font-sans pr-5">관련 기사</h3>
+<div class="flex overflow-x-auto gap-4 no-scrollbar pb-4 pr-5">
+<!-- Related Card 1 -->
+<div class="flex-none w-40 flex flex-col gap-2 group cursor-pointer">
+<div class="w-full h-24 rounded-lg bg-gray-200 overflow-hidden relative" data-alt="Empty rural house renovation">
+<img alt="Rural house" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFvT-NNG_539Z9FDqbu_j_nxFT1TPJ0PRcPrK5UXoFbg9i_HA3oI5l8uoCHhnEp0b0nw9wJMTIdoaWoa3GprfWjzOAGg6YhrM306M-brwJ7Nyc8F7dLXnEaNmaJw_nyr5lIU5nsL9NGQjIUk75ZkxFcL3SL6xedeAxY7bAm0gN2y-yZQif5EABUeR2NuaW4wSu5W9YCREukaqtXfJRIfnVouRSPnA1l349HoPQgemxzpXA7A57yuHPMn0amrXZx-MXglXazv6ySY8"/>
+</div>
+<h4 class="text-sm font-bold text-[#111318] dark:text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                            시골 빈집, 1000만원에 고쳐 드립니다... 신청 폭주
+                        </h4>
+<span class="text-xs text-gray-500">3시간 전</span>
+</div>
+<!-- Related Card 2 -->
+<div class="flex-none w-40 flex flex-col gap-2 group cursor-pointer">
+<div class="w-full h-24 rounded-lg bg-gray-200 overflow-hidden relative" data-alt="Young farmer holding vegetables">
+<img alt="Young farmer" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzGwP4uhL3SmsULja6xq__NRhOAYuLcKFDsKfPw56WssoUHbQA0jwJizlJB1ompKoRaO6J-sp0tHRic2GcnbYGzhEKUyk4klFkfTnO0Kh4KC_GkPpFGHWLTHyDIEe5zAH568EUEKUCNqQy7cUshkHX5jsJuzec0YLxcoGvsHA5tl5sWfw0Ovj6oGcFlespE8TLNfXOr1bkh7rJ1v4wk5zRsZn7AFi-7f9qST0fetMbLkFOqHl7mJP5_san88n-YXXQ0PsXmeEq_O8"/>
+</div>
+<h4 class="text-sm font-bold text-[#111318] dark:text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                            연봉 1억 청년 농부의 성공 비결은 '데이터'
+                        </h4>
+<span class="text-xs text-gray-500">5시간 전</span>
+</div>
+<!-- Related Card 3 -->
+<div class="flex-none w-40 flex flex-col gap-2 group cursor-pointer">
+<div class="w-full h-24 rounded-lg bg-gray-200 overflow-hidden relative" data-alt="Local festival crowd">
+<img alt="Local festival" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHZ6qYMY-mwvm2Pr-GgzIqAl6Bfv1m3Cv9MR2grt-_Q3tOK-rrAiT5cbT6xh2uvWkMKUN_pVHfbhZguQDW4jPa3SC75-Sb5q4HKCbNozhA8NlnTVJRqOs2YHEuLVfEE7twuFKDqXmTdQvaz3RcEybMxIwldXzscXYj_9XDJ5fgelme8Ub1HvHPlFDMkFm1xC9gh1gwtDG6x0BmqAJjNZFm1lQYsqHkLBeyFrG1FEtAP7INxjeDvmnB2l6o71ltTnnRQPk2waqJ2w0"/>
+</div>
+<h4 class="text-sm font-bold text-[#111318] dark:text-white line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                            지방 축제 바가지 요금, 정부가 직접 단속한다
+                        </h4>
+<span class="text-xs text-gray-500">1일 전</span>
+</div>
+</div>
+</section>
+<!-- Comments Preview -->
+<section class="px-5 py-8 pb-10">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-[#111318] dark:text-white font-sans">댓글 <span class="text-primary">128</span></h3>
+<button class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-primary transition-colors">
+                        최신순 <span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<div class="space-y-4">
+<!-- Comment 1 -->
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden" data-alt="User avatar 1">
+<img alt="User avatar" class="w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCivz2T8n5Hrx5ufRYCWyitN5BmITUpwmQ6Pe0eUhDPFUbZB1nG_DTxzemcQUhxTmP_Wx-ARN_UV2eEtTY0F6JPjGRKrakWtNdZIH9fPqF-E0Mi8whPoVY5St2C6Xky2cICQRWn3uPuN7oAZB2biah-MJBUQXBVIDBZtR-6I5Gr30sDmIsBFci7MLsjBRH0Eot2Ko6QsRmnYZ2ge65U1tD2Hx31METPNCqcwq95Y_u7v8l1ZYLv4bYO1AdsEdy6AfJpCpxa7VINW0M"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-[#111318] dark:text-white">농촌사랑</span>
+<span class="text-xs text-gray-400">10분 전</span>
+</div>
+<p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-normal">
+                                정책 방향은 좋은데 실질적으로 피부에 와닿는 지원이 될지 지켜봐야겠네요. 서류 절차 좀 간소화했으면 좋겠습니다.
+                            </p>
+<div class="flex items-center gap-3 mt-2">
+<button class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined text-[14px]">thumb_up</span> 15
+                                </button>
+<button class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined text-[14px]">thumb_down</span> 0
+                                </button>
+</div>
+</div>
+</div>
+<!-- Comment 2 -->
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden" data-alt="User avatar 2">
+<img alt="User avatar" class="w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD30rmsvZJ2IbHuzMvzEJ_ht9hYMj3ccgiMKyY9yWrYRh0-XjT_48jnTIGI7Ic6IFfUShZYP84LLUS5nHihaqUKhE-wnw49qo59qCf9KBOYEVMoep_F0Egbzoft2aJ15qfvQXK0FUc5T83-1UTpHciXS8OTw0X0xtQMYQnMj8prS3c6h34kFBzrrNFh5Le7KNtbGXJlHC-ot3fl4I3KbjT1i7YOO0FXQ-YwKOgjz5nfqpLzrcxoZ0VhkYzCLb45jUpJgWUfuGMVSA8"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-[#111318] dark:text-white">귀농준비생</span>
+<span class="text-xs text-gray-400">35분 전</span>
+</div>
+<p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-normal">
+                                드디어 지원금이 오르네요! 내년에 귀농 계획 중인데 큰 도움이 될 것 같습니다. 감사합니다.
+                            </p>
+<div class="flex items-center gap-3 mt-2">
+<button class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined text-[14px]">thumb_up</span> 42
+                                </button>
+<button class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined text-[14px]">thumb_down</span> 1
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-primary font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    댓글 전체보기
+                </button>
+</section>
+</main>
+<!-- Fixed Bottom Bar -->
+<footer class="absolute bottom-0 left-0 w-full bg-white dark:bg-[#1a202c] border-t border-gray-200 dark:border-gray-800 px-4 py-3 pb-6 safe-area-pb">
+<div class="flex items-center gap-3">
+<div class="flex-1 relative">
+<input class="w-full h-10 pl-4 pr-10 rounded-full bg-gray-100 dark:bg-gray-800 border-none text-sm focus:ring-2 focus:ring-primary/50 text-[#111318] dark:text-white placeholder-gray-500" placeholder="댓글을 입력하세요..." type="text"/>
+<button class="absolute right-1 top-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+</div>
+<div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+<button class="flex flex-col items-center justify-center gap-0.5 min-w-[32px]">
+<span class="material-symbols-outlined text-[24px]">favorite</span>
+<span class="text-[10px] font-medium">1.2k</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-0.5 min-w-[32px]">
+<span class="material-symbols-outlined text-[24px]">chat_bubble</span>
+<span class="text-[10px] font-medium">128</span>
+</button>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

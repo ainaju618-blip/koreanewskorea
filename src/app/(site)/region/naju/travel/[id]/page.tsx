@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  MapPin, Star, Clock, ChevronLeft, Loader2,
-  Navigation, ExternalLink, Map, Share2, Landmark, TreePine
-} from 'lucide-react';
-import KakaoMap from '@/components/KakaoMap';
+import { ArrowLeft, MapPin, Phone, Star, ExternalLink, Map, Landmark, TreePine } from 'lucide-react';
 
 interface PlaceDetail {
   id: string;
@@ -15,65 +12,38 @@ interface PlaceDetail {
   description: string;
   thumbnail: string | null;
   address: string;
-  lat: number | null;
-  lng: number | null;
   category: string;
   phone: string | null;
   rating: number | null;
-  openingHours: string | null;
-  website: string | null;
-  isFeatured: boolean;
+  kakaoMapUrl: string | null;
+  naverMapUrl: string | null;
+  lat: number | null;
+  lng: number | null;
+  tags: string[];
+  heritageType: string | null;
 }
 
-export default function TravelDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TravelDetailPage() {
+  const params = useParams();
   const [place, setPlace] = useState<PlaceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPlace() {
       try {
-        const res = await fetch(`/api/places/${id}`);
+        const res = await fetch(`/api/region/naju/places/${params.id}`);
         if (res.ok) {
           const data = await res.json();
           setPlace(data.place);
-        } else {
-          setError('여행지 정보를 찾을 수 없습니다.');
         }
-      } catch (err) {
-        setError('정보를 불러오는데 실패했습니다.');
+      } catch (error) {
+        console.error('Failed to fetch place:', error);
       } finally {
         setIsLoading(false);
       }
     }
     fetchPlace();
-  }, [id]);
-
-  const handleNavigation = () => {
-    if (place?.lat && place?.lng) {
-      window.open(`https://map.kakao.com/link/to/${place.name},${place.lat},${place.lng}`, '_blank');
-    } else if (place?.address) {
-      window.open(`https://map.kakao.com/link/search/${encodeURIComponent(place.address)}`, '_blank');
-    }
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: place?.name,
-          text: place?.description,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Share cancelled');
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('링크가 복사되었습니다.');
-    }
-  };
+  }, [params.id]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -93,30 +63,36 @@ export default function TravelDetailPage({ params }: { params: Promise<{ id: str
     }
   };
 
+  // 카카오맵 URL 생성
+  const getKakaoMapUrl = () => {
+    if (!place) return '#';
+    if (place.kakaoMapUrl) return place.kakaoMapUrl;
+    if (place.lat && place.lng) {
+      return `https://map.kakao.com/link/map/${encodeURIComponent(place.name)},${place.lat},${place.lng}`;
+    }
+    return `https://map.kakao.com/link/search/${encodeURIComponent(place.name + ' ' + (place.address || '나주'))}`;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-        <span className="ml-3 text-gray-500">정보를 불러오는 중...</span>
+        <div className="animate-pulse text-gray-500">로딩 중...</div>
       </div>
     );
   }
 
-  if (error || !place) {
+  if (!place) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto px-4 py-4">
-            <Link href="/region/naju/travel" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-              <ChevronLeft className="w-5 h-5" />
-              <span>나주 여행 & 명소</span>
-            </Link>
-          </div>
-        </header>
-        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <div className="max-w-3xl mx-auto px-4 py-20 text-center">
           <Map className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">{error || '여행지 정보를 찾을 수 없습니다.'}</p>
-          <Link href="/region/naju/travel" className="mt-4 inline-block text-cyan-500 font-medium">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">여행지를 찾을 수 없습니다</h1>
+          <p className="text-gray-500 mb-6">요청하신 여행지 정보가 존재하지 않습니다.</p>
+          <Link
+            href="/region/naju/travel"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
             목록으로 돌아가기
           </Link>
         </div>
@@ -127,120 +103,123 @@ export default function TravelDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/region/naju/travel" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-            <ChevronLeft className="w-5 h-5" />
-            <span>나주 여행 & 명소</span>
+      <div className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white py-6">
+        <div className="max-w-3xl mx-auto px-4">
+          <Link
+            href="/region/naju/travel"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            목록으로
           </Link>
-          <button onClick={handleShare} className="p-2 hover:bg-gray-100 rounded-full">
-            <Share2 className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-      </header>
-
-      {/* Hero Image */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
-        <div className="relative aspect-video max-h-[400px] bg-gray-200 rounded-xl overflow-hidden">
-          {place.thumbnail ? (
-            <Image
-              src={place.thumbnail}
-              alt={place.name}
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-100 to-emerald-100 flex items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 flex items-center gap-1">
               {getCategoryIcon(place.category)}
-            </div>
-          )}
-          <div className="absolute top-4 left-4 bg-cyan-500 text-white text-sm px-3 py-1 rounded-full flex items-center gap-1">
-            {getCategoryIcon(place.category)}
-            {getCategoryLabel(place.category)}
+              {getCategoryLabel(place.category)}
+            </span>
+            {place.rating && (
+              <span className="flex items-center gap-1 text-yellow-300">
+                <Star className="w-4 h-4 fill-yellow-300" />
+                {place.rating.toFixed(1)}
+              </span>
+            )}
           </div>
+          <h1 className="text-2xl md:text-3xl font-bold">{place.name}</h1>
         </div>
       </div>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Title Section */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-4">
-          <div className="flex items-start justify-between mb-3">
-            <h1 className="text-2xl font-bold text-gray-900">{place.name}</h1>
-            {place.rating && (
-              <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 px-3 py-1 rounded-full">
-                <Star className="w-4 h-4 fill-yellow-500" />
-                <span className="font-bold">{place.rating.toFixed(1)}</span>
-              </div>
-            )}
-          </div>
-
-          {place.description && (
-            <p className="text-gray-600 leading-relaxed mb-4">{place.description}</p>
-          )}
-
-          {/* Info */}
-          <div className="space-y-3 text-sm">
-            {place.address && (
-              <div className="flex items-start gap-3 text-gray-600">
-                <MapPin className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-                <span>{place.address}</span>
-              </div>
-            )}
-            {place.openingHours && (
-              <div className="flex items-start gap-3 text-gray-600">
-                <Clock className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-                <span>{place.openingHours}</span>
-              </div>
-            )}
-            {place.website && (
-              <a
-                href={place.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 text-cyan-500 hover:text-cyan-600"
-              >
-                <ExternalLink className="w-5 h-5" />
-                <span>웹사이트 방문</span>
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button
-            onClick={handleNavigation}
-            className="flex items-center justify-center gap-2 bg-cyan-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-cyan-600 transition-colors"
-          >
-            <Navigation className="w-5 h-5" />
-            길찾기
-          </button>
-          <a
-            href={`https://map.naver.com/search/${encodeURIComponent(place.name + ' ' + (place.address || '나주'))}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-green-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-green-600 transition-colors"
-          >
-            <Map className="w-5 h-5" />
-            네이버지도
-          </a>
-        </div>
-
-        {/* 카카오맵 */}
-        {place.lat && place.lng && (
-          <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900">위치</h2>
-            </div>
-            <KakaoMap
-              lat={place.lat}
-              lng={place.lng}
-              name={place.name}
-              className="aspect-video"
+      <main className="max-w-3xl mx-auto px-4 py-6">
+        {/* Image */}
+        {place.thumbnail && (
+          <div className="aspect-video relative rounded-xl overflow-hidden mb-6">
+            <Image
+              src={place.thumbnail}
+              alt={place.name}
+              fill
+              className="object-cover"
             />
           </div>
+        )}
+
+        {/* Info Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          {place.description && (
+            <p className="text-gray-700 mb-6 leading-relaxed">{place.description}</p>
+          )}
+
+          <div className="space-y-4">
+            {place.address && (
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-500">주소</p>
+                  <p className="text-gray-900">{place.address}</p>
+                </div>
+              </div>
+            )}
+
+            {place.phone && (
+              <div className="flex items-start gap-3">
+                <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-500">전화번호</p>
+                  <a href={`tel:${place.phone}`} className="text-cyan-600 hover:underline">
+                    {place.phone}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {place.heritageType && (
+              <div className="flex items-start gap-3">
+                <Landmark className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-gray-500">문화재 유형</p>
+                  <p className="text-gray-900">{place.heritageType}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          {place.tags && place.tags.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="flex flex-wrap gap-2">
+                {place.tags.map((tag, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-cyan-50 text-cyan-700 rounded text-xs">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Map Button */}
+        <a
+          href={getKakaoMapUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-4 bg-yellow-400 text-yellow-900 rounded-xl font-bold hover:bg-yellow-500 transition-colors"
+        >
+          <MapPin className="w-5 h-5" />
+          카카오맵에서 보기
+          <ExternalLink className="w-4 h-4" />
+        </a>
+
+        {/* Naver Map Button */}
+        {place.naverMapUrl && (
+          <a
+            href={place.naverMapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-4 mt-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors"
+          >
+            <MapPin className="w-5 h-5" />
+            네이버지도에서 보기
+            <ExternalLink className="w-4 h-4" />
+          </a>
         )}
       </main>
     </div>

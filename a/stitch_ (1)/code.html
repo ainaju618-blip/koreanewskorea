@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Korea News Korea - Map &amp; Policy</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1a222d",
+                        "text-main": "#111418",
+                        "text-secondary": "#637588",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal scroll areas */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-text-main dark:text-white pb-20">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+<div class="flex items-center p-4 justify-between max-w-lg mx-auto">
+<h2 class="text-text-main dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] flex-1">
+                전국 지도 &amp; 정책 브리핑
+            </h2>
+<div class="flex items-center justify-end gap-3">
+<button class="flex items-center justify-center rounded-full h-10 w-10 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-text-main dark:text-white">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-lg mx-auto flex flex-col gap-6">
+<!-- Interactive Map Section -->
+<section class="relative w-full h-[450px] bg-[#eef4ff] dark:bg-[#1a222d] overflow-hidden group/map">
+<!-- Map Instruction Overlay -->
+<div class="absolute top-4 left-0 right-0 z-10 flex justify-center pointer-events-none">
+<div class="bg-white/90 dark:bg-black/60 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-gray-100 dark:border-gray-700">
+<span class="text-sm font-medium text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">touch_app</span>
+                        원하시는 지역을 선택해주세요
+                    </span>
+</div>
+</div>
+<!-- Map Image/Visual -->
+<div class="w-full h-full flex items-center justify-center p-6">
+<!-- Using a conceptual SVG representation -->
+<div class="relative w-full h-full bg-contain bg-center bg-no-repeat opacity-90 transition-transform duration-300" data-alt="Vector illustration of South Korea map divided by provinces" data-location="South Korea" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC1H6GIYdLTcW3SrZjDFTiCGeSe5b54VaNLVjegh-lGVfcQaEX3Y8yFikC-BoigAUDs29SqUCvLxn_U2_oBKDnKXiDsaPFXB_t24mHAAUd5Kf1JY_n6u5eGcqstataqANVH8psWyc13F5QyrmnHrC8cS9__x90uW5mdxcdMC0j1DpNL4sG8pm1IPOiaIQ-qoYnZqNlAilt4KNH-dLu3tc05yKOkcH4Ms2bFRvThZ_TGD7KZ0LFdp7n_XRZI7kS21eoktlu-rWlnz5s');">
+<!-- Interactive Hotspots (Simulated) -->
+<button class="absolute top-[30%] left-[25%] bg-white dark:bg-gray-800 shadow-lg p-2 rounded-xl flex flex-col items-center gap-1 hover:scale-110 transition-transform cursor-pointer border border-primary/20">
+<span class="text-xs font-bold text-gray-900 dark:text-gray-100">서울</span>
+<div class="h-1.5 w-1.5 rounded-full bg-red-500"></div>
+</button>
+<button class="absolute top-[45%] left-[40%] bg-white dark:bg-gray-800 shadow-lg p-2 rounded-xl flex flex-col items-center gap-1 hover:scale-110 transition-transform cursor-pointer border border-primary/20">
+<span class="text-xs font-bold text-gray-900 dark:text-gray-100">대전</span>
+<div class="h-1.5 w-1.5 rounded-full bg-green-500"></div>
+</button>
+<button class="absolute bottom-[20%] right-[20%] bg-primary shadow-lg shadow-primary/30 p-2 rounded-xl flex flex-col items-center gap-1 hover:scale-110 transition-transform cursor-pointer ring-2 ring-white dark:ring-gray-900">
+<span class="text-xs font-bold text-white">부산</span>
+<div class="h-1.5 w-1.5 rounded-full bg-yellow-300 animate-pulse"></div>
+</button>
+</div>
+</div>
+<!-- Map Controls (FABs) -->
+<div class="absolute bottom-4 right-4 flex flex-col gap-3">
+<button aria-label="Zoom In" class="flex items-center justify-center rounded-lg h-10 w-10 bg-white dark:bg-gray-700 text-text-main dark:text-white shadow-lg border border-gray-100 dark:border-gray-600 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button aria-label="Zoom Out" class="flex items-center justify-center rounded-lg h-10 w-10 bg-white dark:bg-gray-700 text-text-main dark:text-white shadow-lg border border-gray-100 dark:border-gray-600 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button aria-label="Reset View" class="flex items-center justify-center rounded-lg h-10 w-10 bg-white dark:bg-gray-700 text-text-secondary dark:text-gray-400 shadow-lg border border-gray-100 dark:border-gray-600 active:scale-95 transition-transform mt-2">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+</section>
+<!-- Stats Section -->
+<section class="px-4">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-text-main dark:text-white tracking-tight text-xl font-bold leading-tight">오늘의 주요 지표</h3>
+<span class="text-xs text-text-secondary dark:text-gray-400">2023.10.24 기준</span>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4 snap-x">
+<!-- Stat Card 1 -->
+<div class="snap-start shrink-0 w-40 bg-card-light dark:bg-card-dark p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-xl">campaign</span>
+<span class="text-xs font-bold uppercase tracking-wider">신규 정책</span>
+</div>
+<p class="text-2xl font-bold text-text-main dark:text-white">12건</p>
+<p class="text-xs text-text-secondary">전국 지자체 합계</p>
+</div>
+<!-- Stat Card 2 -->
+<div class="snap-start shrink-0 w-40 bg-card-light dark:bg-card-dark p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined text-xl">trending_up</span>
+<span class="text-xs font-bold uppercase tracking-wider">귀농 문의</span>
+</div>
+<p class="text-2xl font-bold text-text-main dark:text-white">+8.4%</p>
+<p class="text-xs text-text-secondary">지난달 대비 증가</p>
+</div>
+<!-- Stat Card 3 -->
+<div class="snap-start shrink-0 w-40 bg-card-light dark:bg-card-dark p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex items-center gap-2 text-blue-500">
+<span class="material-symbols-outlined text-xl">water_drop</span>
+<span class="text-xs font-bold uppercase tracking-wider">평균 강수</span>
+</div>
+<p class="text-2xl font-bold text-text-main dark:text-white">45mm</p>
+<p class="text-xs text-text-secondary">농작물 관리 주의</p>
+</div>
+</div>
+</section>
+<!-- Policy Briefing Feed -->
+<section class="px-4 pb-4">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-text-main dark:text-white tracking-tight text-xl font-bold leading-tight">주요 정책 브리핑</h3>
+<button class="text-primary text-sm font-semibold flex items-center">
+                    전체보기 <span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+<!-- Filters -->
+<div class="flex gap-2 mb-4 overflow-x-auto hide-scrollbar">
+<button class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold whitespace-nowrap shadow-md shadow-primary/20">
+                    전체
+                </button>
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-text-secondary text-sm font-medium whitespace-nowrap">
+                    🏡 주거/지원
+                </button>
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-text-secondary text-sm font-medium whitespace-nowrap">
+                    💰 금융/세금
+                </button>
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-card-dark border border-gray-200 dark:border-gray-700 text-text-secondary text-sm font-medium whitespace-nowrap">
+                    🚜 농업/귀농
+                </button>
+</div>
+<!-- List -->
+<div class="flex flex-col gap-3">
+<!-- Card 1 -->
+<article class="bg-card-light dark:bg-card-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center px-2 py-1 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold w-fit">
+                                전국 공통
+                            </span>
+<h4 class="text-lg font-bold text-text-main dark:text-white leading-snug mt-1">
+                                2024년 귀농·귀촌 정착 지원금 가이드 확대 개편
+                            </h4>
+</div>
+<button class="text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined">bookmark_add</span>
+</button>
+</div>
+<p class="text-text-secondary dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                        초기 정착 지원금이 기존 3억원에서 최대 5억원으로 상향 조정됩니다. 지원 대상 연령 또한 65세까지 확대되어 은퇴 후 귀농을 꿈꾸는 분들에게...
+                    </p>
+<div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+<div class="flex items-center gap-2 text-xs text-text-secondary">
+<span class="font-medium text-text-main dark:text-gray-300">농림축산식품부</span>
+<span>•</span>
+<span>2시간 전</span>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                            1.2k
+                        </div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-card-light dark:bg-card-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center px-2 py-1 rounded bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold w-fit">
+                                부산광역시
+                            </span>
+<h4 class="text-lg font-bold text-text-main dark:text-white leading-snug mt-1">
+                                소상공인 디지털 전환 지원사업 추가 모집
+                            </h4>
+</div>
+<button class="text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined">bookmark_add</span>
+</button>
+</div>
+<p class="text-text-secondary dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                        부산 지역 내 5년 이상 사업을 영위한 소상공인을 대상으로 키오스크 도입 및 온라인 마케팅 비용을 최대 200만원까지 지원합니다.
+                    </p>
+<div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+<div class="flex items-center gap-2 text-xs text-text-secondary">
+<span class="font-medium text-text-main dark:text-gray-300">부산시청</span>
+<span>•</span>
+<span>5시간 전</span>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                            850
+                        </div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-card-light dark:bg-card-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-3 active:scale-[0.99] transition-transform">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-1">
+<span class="inline-flex items-center px-2 py-1 rounded bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold w-fit">
+                                강원특별자치도
+                            </span>
+<h4 class="text-lg font-bold text-text-main dark:text-white leading-snug mt-1">
+                                산불 예방 기간 입산 통제 구역 안내
+                            </h4>
+</div>
+<button class="text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined">bookmark_add</span>
+</button>
+</div>
+<p class="text-text-secondary dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                        건조한 가을철을 맞아 주요 등산로 일부가 폐쇄됩니다. 위반 시 과태료가 부과되오니 산행 전 반드시 확인바랍니다.
+                    </p>
+<div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+<div class="flex items-center gap-2 text-xs text-text-secondary">
+<span class="font-medium text-text-main dark:text-gray-300">산림청</span>
+<span>•</span>
+<span>1일 전</span>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                            2.4k
+                        </div>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-card-light dark:bg-card-dark border-t border-gray-200 dark:border-gray-800 pb-safe pt-2 px-6">
+<div class="flex justify-between items-center max-w-lg mx-auto pb-4">
+<button class="flex flex-col items-center gap-1 text-text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-2xl filled">map</span>
+<span class="text-[10px] font-bold">지도</span>
+</button>
+<div class="relative -top-5">
+<button class="bg-primary text-white rounded-full h-14 w-14 flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<button class="flex flex-col items-center gap-1 text-text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary">
+<span class="material-symbols-outlined text-2xl">article</span>
+<span class="text-[10px] font-medium">뉴스</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-[10px] font-medium">마이</span>
+</button>
+</div>
+</nav>
+<!-- Inline styling for safe area padding on iOS -->
+<style>
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        /* Material Icon filled state */
+        .material-symbols-outlined.filled {
+          font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+    </style>
+</body></html>

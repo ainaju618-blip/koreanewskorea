@@ -83,7 +83,7 @@ export default function MainHeroBanner() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="뉴스 검색..."
-              className="w-full px-6 py-4 pr-14 bg-white/95 backdrop-blur-sm rounded-full text-slate-900 placeholder:text-slate-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              className="w-full px-6 py-4 pr-14 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-full text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
             />
             <button
               type="submit"

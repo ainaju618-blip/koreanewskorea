@@ -6,10 +6,13 @@
  */
 
 // Position labels (Korean)
+// IMPORTANT: Keep in sync with POSITIONS in admin/users/reporters/page.tsx
 export const POSITION_LABELS: Record<string, string> = {
+    national_chief_director: '전국총괄본부장',
     chief_director: '총괄본부장',
     editor_in_chief: '주필',
     branch_manager: '지사장',
+    gwangju_branch_director: '광주지역본부장',
     editor_chief: '편집국장',
     news_chief: '취재부장',
     senior_reporter: '수석기자',

@@ -23,7 +23,7 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
     return (
       <Link
         href={href}
-        className="bg-white lg:bg-gray-50 rounded-xl overflow-hidden shadow-sm border border-gray-100 group cursor-pointer hover:shadow-md transition-shadow"
+        className="bg-white dark:bg-gray-800 lg:bg-gray-50 lg:dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group cursor-pointer hover:shadow-md transition-shadow"
       >
         <div className="aspect-video relative overflow-hidden">
           {place.thumbnail ? (
@@ -31,6 +31,7 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
               src={place.thumbnail}
               alt={place.name}
               fill
+              sizes="(max-width: 768px) 50vw, 200px"
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
@@ -39,9 +40,9 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
             </div>
           )}
         </div>
-        <div className="p-3">
-          <h4 className="font-bold text-gray-900 text-sm truncate">{place.name}</h4>
-          <p className="text-gray-500 text-xs mt-1">{categoryLabel}</p>
+        <div className="pt-3 px-3 pb-[2px]">
+          <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate">{place.name}</h4>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">{categoryLabel}</p>
         </div>
       </Link>
     );
@@ -50,7 +51,7 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
   return (
     <Link
       href={href}
-      className="min-w-[280px] lg:min-w-0 bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow"
+      className="min-w-[280px] lg:min-w-0 bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col hover:shadow-md transition-shadow"
     >
       <div className="aspect-video w-full relative">
         {place.thumbnail ? (
@@ -58,6 +59,7 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
             src={place.thumbnail}
             alt={place.name}
             fill
+            sizes="(max-width: 768px) 100vw, 280px"
             className="object-cover"
           />
         ) : (
@@ -71,7 +73,7 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
       </div>
       <div className="p-4 flex flex-col flex-1">
         <div className="flex justify-between items-start mb-2">
-          <h4 className="text-lg font-bold text-gray-900">{place.name}</h4>
+          <h4 className="text-lg font-bold text-gray-900 dark:text-white">{place.name}</h4>
           {place.rating > 0 && (
             <div className="flex items-center text-yellow-500 text-xs font-bold gap-0.5">
               <Star className="w-4 h-4 fill-yellow-500" />
@@ -80,11 +82,11 @@ export default function PlaceCard({ place, regionCode, type, variant = 'full' }:
           )}
         </div>
         {place.description && (
-          <p className="text-gray-500 text-sm line-clamp-2 mb-4 flex-1">
+          <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4 flex-1">
             {place.description}
           </p>
         )}
-        <button className="w-full bg-cyan-50 hover:bg-cyan-100 text-cyan-600 text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-1 transition-colors">
+        <button className="w-full bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-1 transition-colors">
           <Navigation className="w-4 h-4" />
           길찾기
         </button>

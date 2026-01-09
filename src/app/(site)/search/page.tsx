@@ -86,9 +86,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const totalPages = Math.ceil(totalCount / 20);
 
     return (
-        <div className="min-h-screen bg-white text-slate-900 font-sans">
+        <div className="min-h-screen bg-white dark:bg-gray-900 text-slate-900 dark:text-white font-sans">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-800 dark:to-indigo-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="flex items-center gap-3 mb-4">
                         <Search className="w-8 h-8" />
@@ -107,9 +107,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {/* 검색어 없을 때 */}
                 {!query && (
                     <div className="py-20 text-center">
-                        <Search className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                        <p className="text-slate-500">검색어를 입력하세요.</p>
-                        <p className="text-sm text-slate-400 mt-2">
+                        <Search className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                        <p className="text-slate-500 dark:text-slate-400">검색어를 입력하세요.</p>
+                        <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
                             기사 하단의 태그를 클릭하면 관련 기사를 검색할 수 있습니다.
                         </p>
                     </div>
@@ -117,7 +117,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
                 {/* 검색 결과 있을 때 */}
                 {query && news.length > 0 && (
-                    <div className="flex flex-col divide-y divide-slate-100">
+                    <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
                         {news.map((item: any) => (
                             <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
                                 <OptimizedImage
@@ -125,17 +125,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     alt={item.title}
                                     width={160}
                                     height={96}
-                                    className="w-40 h-24 object-cover shrink-0 bg-slate-200 rounded"
+                                    className="w-40 h-24 object-cover shrink-0 bg-slate-200 dark:bg-slate-700 rounded"
                                 />
                                 <div className="flex-1 flex flex-col justify-start">
-                                    <span className="text-xs text-blue-600 font-medium mb-1">{item.category}</span>
-                                    <h3 className="text-base font-bold text-slate-900 mb-1.5 group-hover:underline line-clamp-2 leading-snug">
+                                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">{item.category}</span>
+                                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5 group-hover:underline line-clamp-2 leading-snug">
                                         {item.title}
                                     </h3>
-                                    <p className="text-sm text-slate-500 line-clamp-2 mb-1.5 leading-relaxed">
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-1.5 leading-relaxed">
                                         {item.ai_summary || item.content?.substring(0, 100)}
                                     </p>
-                                    <span className="text-xs text-slate-400">
+                                    <span className="text-xs text-slate-400 dark:text-slate-500">
                                         {item.published_at ? formatDate(item.published_at) : ''}
                                     </span>
                                     {/* 태그 표시 */}
@@ -145,8 +145,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                                 <span
                                                     key={i}
                                                     className={`text-xs px-2 py-0.5 rounded-full ${tag === query
-                                                        ? 'bg-blue-100 text-blue-700 font-medium'
-                                                        : 'bg-slate-100 text-slate-500'
+                                                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-medium'
+                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                                                         }`}
                                                 >
                                                     #{tag}
@@ -163,11 +163,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {/* 검색 결과 없을 때 */}
                 {query && news.length === 0 && (
                     <div className="py-20 text-center">
-                        <Search className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                        <p className="text-slate-500">
+                        <Search className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                        <p className="text-slate-500 dark:text-slate-400">
                             <span className="font-bold">&quot;{query}&quot;</span>에 대한 검색 결과가 없습니다.
                         </p>
-                        <p className="text-sm text-slate-400 mt-2">
+                        <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
                             다른 검색어로 다시 시도해 보세요.
                         </p>
                     </div>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>마이페이지 - NewsPortal</title>
+<!-- Google Fonts: Public Sans & Noto Sans KR -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Public Sans', 'Noto Sans KR', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white min-h-screen flex flex-col font-display">
+<!-- Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#1a2230] px-6 lg:px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-[#111418] dark:text-white cursor-pointer">
+<div class="size-8 text-primary">
+<svg class="w-full h-full" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-[-0.015em]">NewsPortal</h2>
+</div>
+<!-- Desktop Search -->
+<label class="hidden md:flex flex-col min-w-40 !h-10 w-64 lg:w-96">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full bg-[#f0f2f5] dark:bg-gray-800 transition-colors focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/50">
+<div class="text-[#60708a] flex border-none items-center justify-center pl-4 rounded-l-xl border-r-0">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#111418] dark:text-white focus:outline-0 focus:ring-0 border-none bg-transparent focus:border-none h-full placeholder:text-[#60708a] px-4 rounded-l-none border-l-0 pl-2 text-sm font-normal leading-normal" placeholder="검색어를 입력하세요" value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-4 lg:gap-8 items-center">
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">뉴스</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">정치</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">경제</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">사회</a>
+<a class="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors" href="#">IT/과학</a>
+</nav>
+<button class="relative flex items-center justify-center size-10 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[#111418] dark:text-white">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1a2230]"></span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border border-gray-200 dark:border-gray-700 cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all" data-alt="User profile avatar showing a smiling person" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCE_RaePH_k3VWwfw6jMAA62E7oZShPlx9LdTtlDSBy4vMxBKLCHYLrP8d8vLQCQygFl36zNuRGMKdLgqWu_EDUgiSwTWVkbUyws3pUeI2y97P1K_BbsHLmow8qier1gobfmA5hvjhEm2-ZpMFULNs-r1JgD7aFAH8u_usWOsYzUZs0CmyHvVKooPl9rtp5exgyJLSQ4g86u-UUmob4N6kD-Ku13Ovzrlaw74P-KBM4rF7xuCtGP6x9JV_rUV1nqh6YTKSbBuWyqSs");'></div>
+</div>
+</header>
+<!-- Main Layout -->
+<div class="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-6 lg:px-8 py-6 lg:py-8 gap-8 flex flex-col lg:flex-row">
+<!-- Left Sidebar -->
+<aside class="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-6">
+<!-- Profile Card -->
+<div class="bg-white dark:bg-[#1a2230] rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center">
+<div class="relative mb-4 group cursor-pointer">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-24 border-4 border-background-light dark:border-gray-700 shadow-inner" data-alt="Large user profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBzo5lp_5Fbe3EUjFeJ6kombO40QhUd2CGC6h55QCE97u8R7NwCAtKeEs8aXQ7sKzxmPfWVKaHPRcwwDA0mreBKs5gyP_HyooWQvM3m7NDFCb05gvM2BHBklftB6XGlNIGsKl_sbf9OUiyax-qI8OMHJVDtFgD0JqpmGDDyTSKNJ9f9k88gkEWoKMe81df3WJtt4_wLgUlFFSyhoGKXmJ_rfScOLEKgGVvnIHwizzgxXDN81wNfREONPEcfyrt5bw4g-27ChwS5ZFc");'></div>
+<div class="absolute bottom-0 right-0 bg-white dark:bg-gray-700 rounded-full p-1.5 shadow-md border border-gray-100 dark:border-gray-600 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</div>
+</div>
+<h2 class="text-[#111418] dark:text-white text-xl font-bold leading-tight mb-1">김철수</h2>
+<p class="text-[#60708a] text-sm font-normal mb-1">cheolsu.kim@example.com</p>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-primary text-xs font-semibold rounded-full mb-4">
+<span class="material-symbols-outlined text-[14px] filled">verified</span>
+<span>일반 회원</span>
+</div>
+<p class="text-[#9ca3af] text-xs font-normal mb-5">가입일: 2023.01.15</p>
+<button class="w-full h-10 flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-transparent text-[#111418] dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+<span>프로필 수정</span>
+</button>
+</div>
+<!-- Navigation Menu -->
+<nav class="bg-white dark:bg-[#1a2230] rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 text-primary dark:text-primary transition-all group" href="#">
+<span class="material-symbols-outlined filled">dashboard</span>
+<span class="text-sm font-bold">대시보드</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-white transition-all group" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="text-sm font-medium">스크랩한 기사</span>
+<span class="ml-auto bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-white transition-all group" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="text-sm font-medium">내 댓글</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-[#60708a] dark:text-gray-400 hover:text-[#111418] dark:hover:text-white transition-all group" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">계정 설정</span>
+</a>
+<div class="h-px bg-gray-100 dark:bg-gray-700 my-2 mx-2"></div>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-red-500 transition-all group" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-sm font-medium">로그아웃</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col gap-8 min-w-0">
+<!-- Welcome Section -->
+<div class="flex flex-col gap-2">
+<h1 class="text-[#111418] dark:text-white text-3xl font-bold tracking-tight">반갑습니다, 김철수님! 👋</h1>
+<p class="text-[#60708a] text-base">오늘의 주요 뉴스 업데이트를 확인해보세요.</p>
+</div>
+<!-- Quick Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
+<div class="size-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined filled text-[28px]">article</span>
+</div>
+<div class="flex flex-col">
+<p class="text-[#60708a] text-xs font-medium uppercase tracking-wide">읽은 기사</p>
+<p class="text-2xl font-bold text-[#111418] dark:text-white">142</p>
+</div>
+</div>
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
+<div class="size-12 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined filled text-[28px]">bookmark</span>
+</div>
+<div class="flex flex-col">
+<p class="text-[#60708a] text-xs font-medium uppercase tracking-wide">저장된 기사</p>
+<p class="text-2xl font-bold text-[#111418] dark:text-white">12</p>
+</div>
+</div>
+<div class="bg-white dark:bg-[#1a2230] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
+<div class="size-12 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined filled text-[28px]">chat</span>
+</div>
+<div class="flex flex-col">
+<p class="text-[#60708a] text-xs font-medium uppercase tracking-wide">작성한 댓글</p>
+<p class="text-2xl font-bold text-[#111418] dark:text-white">28</p>
+</div>
+</div>
+</div>
+<!-- Content Split: Recent Scraps & Activity -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Scrapped Articles (Takes up 2 cols on large screens) -->
+<div class="xl:col-span-2 flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">bookmark</span>
+                            최근 스크랩
+                        </h3>
+<a class="text-sm text-primary font-medium hover:underline" href="#">모두 보기</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="group bg-white dark:bg-[#1a2230] rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all flex flex-col h-full">
+<div class="h-40 bg-gray-200 w-full bg-cover bg-center relative" data-alt="Abstract blue technology data pattern background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAT1DHfzPFhCaPTcwDKyT0M5TaLD9zr6vf76Ot91nfeQYIrZ4wFtc1UFW9e5lguVV4KDE8mygTO99ERf_1HCmgRasUSDqf8dp7mFSx2W4eQIQMYHh2wwHCyVILe73P8iCUNj5TVj15x5n5qO-VYKZu2_jB-UN_tP-8b11MflXg8yKvpaSl4heT2z0VIHPJsp1I3jeVd13tZQe-8WXIGH_KwC0Jn5Oh5x0X0wIqrdbRjig0AKn3ztPWkavZdDhjsj99Jqr1A0EL_PcE");'>
+<div class="absolute top-3 left-3 bg-white/90 dark:bg-black/70 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-primary">IT/과학</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="font-bold text-[#111418] dark:text-white text-base leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">2024년 AI 기술 트렌드: 생성형 AI가 가져올 미래 변화</h4>
+<p class="text-[#60708a] text-sm mb-4 line-clamp-2 flex-1">인공지능 기술의 급격한 발전이 산업 전반에 미치는 영향과 우리가 대비해야 할 점들을 심층 분석합니다.</p>
+<div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-50 dark:border-gray-800">
+<span class="text-xs text-[#9ca3af]">2023.10.24 저장됨</span>
+<button class="text-gray-400 hover:text-red-500 transition-colors" title="삭제">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-white dark:bg-[#1a2230] rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all flex flex-col h-full">
+<div class="h-40 bg-gray-200 w-full bg-cover bg-center relative" data-alt="Stock market graph rising with green arrow" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAr5cmBNsx_FmDuKO9GLLyDdjPEwlEmom6KjQV3pOKbaxCoFQ66trhPq5AaiwTx8ROBlxAv4TljLoSKNAJ4feiro1aWGBX8w-n1aoOX2jhjRKXNiSHByf7moVDYESnTkkHsh2agOXcRfjoHiIR8scG5yXazV3ZyWtVZLUk-ZHp8dFudR_4mBuVK41M5y5grezBpxCjnUXLwmviSmmvXtYDsQX-_c6gIy81t7xwJcmKXVFRDymyyaUJBf1td21zpxO1_3skKVwJPukI");'>
+<div class="absolute top-3 left-3 bg-white/90 dark:bg-black/70 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-green-600">경제</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="font-bold text-[#111418] dark:text-white text-base leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">4분기 글로벌 증시 전망: 기회와 위험 요인 분석</h4>
+<p class="text-[#60708a] text-sm mb-4 line-clamp-2 flex-1">미국 연준의 금리 정책 변화와 주요국 경제 지표를 바탕으로 한 하반기 투자 전략 가이드.</p>
+<div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-50 dark:border-gray-800">
+<span class="text-xs text-[#9ca3af]">2023.10.22 저장됨</span>
+<button class="text-gray-400 hover:text-red-500 transition-colors" title="삭제">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Timeline (Takes up 1 col) -->
+<div class="flex flex-col gap-5">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+                        최근 활동
+                    </h3>
+<div class="bg-white dark:bg-[#1a2230] rounded-xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm h-full">
+<div class="relative pl-4 border-l border-gray-200 dark:border-gray-700 space-y-6">
+<div class="relative">
+<div class="absolute -left-[21px] top-1 size-3 rounded-full border-2 border-white dark:border-[#1a2230] bg-primary"></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-primary">오늘, 14:30</span>
+<p class="text-sm font-medium text-[#111418] dark:text-white">기사 읽음: "서울 도심 가을 축제 가이드"</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 size-3 rounded-full border-2 border-white dark:border-[#1a2230] bg-orange-500"></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-orange-500">어제, 09:15</span>
+<p class="text-sm font-medium text-[#111418] dark:text-white">댓글 작성: "좋은 정보 감사합니다."</p>
+<p class="text-xs text-[#60708a] bg-gray-50 dark:bg-gray-800 p-2 rounded line-clamp-1">기사: 친환경 에너지 전환의 현주소</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 size-3 rounded-full border-2 border-white dark:border-[#1a2230] bg-green-500"></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-green-500">10월 22일</span>
+<p class="text-sm font-medium text-[#111418] dark:text-white">기사 스크랩: "4분기 글로벌 증시 전망"</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 size-3 rounded-full border-2 border-white dark:border-[#1a2230] bg-gray-300 dark:bg-gray-600"></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-semibold text-[#60708a]">10월 20일</span>
+<p class="text-sm font-medium text-[#111418] dark:text-white">로그인</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2 text-sm text-[#60708a] hover:text-primary font-medium border-t border-gray-100 dark:border-gray-700 transition-colors">
+                            더 보기
+                        </button>
+</div>
+</div>
+</div>
+<!-- Recommended Section -->
+<div class="flex flex-col gap-5 pb-8">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white">회원님을 위한 추천 뉴스</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<!-- Rec Card 1 -->
+<a class="flex gap-4 items-start bg-transparent p-3 rounded-xl hover:bg-white dark:hover:bg-[#1a2230] transition-all group" href="#">
+<div class="size-20 rounded-lg bg-cover bg-center shrink-0" data-alt="Electric vehicle charging station" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD_--nfWKre_kP467YXDeD1191Hm9PGWwCpNRh2ydO_eFrb9dYtFe5A0qkOkXIkahSxPKTgXPSl7H-VgpX5vhlTlR5JI00ZN9Zm6Y86qiU_3gaqEYY1U2ySTuvPG4iwwY1mpLdDLYMc3uoH-Vbwes2M_qIjDL4HLYCpGZf_V2WOnRbnBqUEMZMW6bnIjaC2kL6lVmTSIIxg3UP43PTnMDQs9b2utvquk4J8JKKEHRJN72IURC6W5hNPgFtO9r11WLvqbsuDzL7oH1U");'></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold text-primary">자동차</span>
+<h5 class="text-sm font-bold text-[#111418] dark:text-white leading-snug group-hover:text-primary line-clamp-2">전기차 충전 인프라 확충 계획 발표</h5>
+<span class="text-xs text-[#9ca3af]">2시간 전</span>
+</div>
+</a>
+<!-- Rec Card 2 -->
+<a class="flex gap-4 items-start bg-transparent p-3 rounded-xl hover:bg-white dark:hover:bg-[#1a2230] transition-all group" href="#">
+<div class="size-20 rounded-lg bg-cover bg-center shrink-0" data-alt="Modern smartphone showing social media app" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA7RS4M25ERkm2JjGpnMLjpxyzapd0NEKwkCduhwR3SFrRme3rB4hqm8vAO7LtZBg_0n0EAxw_Ulbco-Gz4e2ikLLe2QluO2BnX0NsWJklDWLImUUgCyDDtn3sm0dgsZRDgbN7gSXEznaruv_tRFJsz4lXIfzvmPNWiUQZGSgOSsLD9fhBhe0ekaqElyl1BlOKtqGroJ08q0jLwoTcFKXk7ZxhjtN8MOtU1va7-_ObOwRsNwcFKy-9JG25iW1rVI_u-FoeEWUVWNWc");'></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold text-primary">IT/모바일</span>
+<h5 class="text-sm font-bold text-[#111418] dark:text-white leading-snug group-hover:text-primary line-clamp-2">차세대 스마트폰 디자인 유출, 반응은?</h5>
+<span class="text-xs text-[#9ca3af]">5시간 전</span>
+</div>
+</a>
+<!-- Rec Card 3 -->
+<a class="flex gap-4 items-start bg-transparent p-3 rounded-xl hover:bg-white dark:hover:bg-[#1a2230] transition-all group" href="#">
+<div class="size-20 rounded-lg bg-cover bg-center shrink-0" data-alt="People sitting in a modern office meeting" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPwe0D3kDnk9zQrgLWhfyib9OC8VcbdAwvZTxtfvukRikll8yhfiQASXwANdRef-m2awniOPtLQ0Cro2O5lu6A14UXEWtcFEvEMf4gL-4VoxdS_lNTQb_gP3GHrpPz8E1Tn0odtkhJWOQ7IEsGFUpV20uuO4F920gMUcRAr43icBCYYMq8QRq3gyRPHrhS0858YcBF1CGPwpmxEUhupzlim6cvjLOhTQILWQltsYkD0J7vM0vDz1SCY_x-eAxpf6E5NnYBeGNVGzM");'></div>
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold text-primary">취업/직장</span>
+<h5 class="text-sm font-bold text-[#111418] dark:text-white leading-snug group-hover:text-primary line-clamp-2">주4일제 근무 도입 기업 만족도 조사 결과</h5>
+<span class="text-xs text-[#9ca3af]">1일 전</span>
+</div>
+</a>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-white dark:bg-[#1a2230] border-t border-gray-200 dark:border-gray-800 py-8 px-6 lg:px-10">
+<div class="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex flex-col items-center md:items-start gap-2">
+<span class="text-lg font-bold text-[#111418] dark:text-white">NewsPortal</span>
+<p class="text-sm text-[#60708a]">정확하고 빠른 뉴스를 전달합니다.</p>
+</div>
+<div class="flex gap-6 text-sm text-[#60708a]">
+<a class="hover:text-primary transition-colors" href="#">이용약관</a>
+<a class="hover:text-primary transition-colors" href="#">개인정보처리방침</a>
+<a class="hover:text-primary transition-colors" href="#">고객센터</a>
+</div>
+<div class="text-sm text-[#9ca3af]">
+                © 2023 NewsPortal Corp. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

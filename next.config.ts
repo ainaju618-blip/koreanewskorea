@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },  // Cloudinary CDN
       { protocol: 'https', hostname: 'images.unsplash.com' },  // Unsplash images
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },  // Google images (Stitch AI)
+      { protocol: 'https', hostname: 'picsum.photos' },  // Demo placeholder images
     ],
   },
   

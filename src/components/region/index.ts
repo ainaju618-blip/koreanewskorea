@@ -13,3 +13,5 @@ export { default as TravelSection } from './TravelSection';
 export { default as FoodSection } from './FoodSection';
 export { default as SidebarTabs } from './SidebarTabs';
 export { default as SearchBar } from './SearchBar';
+export { default as NewsHeroSlider } from './NewsHeroSlider';
+export { default as SidebarBanners } from './SidebarBanners';

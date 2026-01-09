@@ -48,12 +48,12 @@ export default function TravelSection({ spots = defaultSpots }: TravelSectionPro
     <section className="mt-4">
       {/* 섹션 헤더 */}
       <div className="flex items-center justify-between mb-4 px-1">
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 font-serif">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
           <span>🗺️</span> 추천 여행지
         </h3>
         <Link
           href="/category/travel"
-          className="text-sm text-slate-500 hover:text-primary flex items-center gap-1"
+          className="text-sm text-slate-500 dark:text-slate-400 hover:text-primary flex items-center gap-1"
         >
           전체보기 <ChevronRight className="w-4 h-4" />
         </Link>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>404 에러 페이지</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;family=Public+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"],
+                        "korean": ["Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display overflow-x-hidden">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root">
+<!-- Top App Bar -->
+<div class="flex items-center p-4 pb-2 justify-between sticky top-0 z-50">
+<button class="text-[#111418] dark:text-white flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+</div>
+<!-- Main Content Area (Centered) -->
+<div class="flex w-full grow flex-col items-center justify-center p-6 pb-12">
+<!-- Hero Section: Illustration & 404 Code -->
+<div class="relative flex flex-col items-center justify-center w-full max-w-sm mb-6">
+<!-- Decorative Background Text -->
+<span class="text-[140px] leading-none font-black text-gray-200/60 dark:text-gray-800/60 select-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 font-display tracking-tighter">
+                    404
+                </span>
+<!-- Illustration Image -->
+<div class="relative z-10 w-48 h-48 rounded-2xl overflow-hidden shadow-lg rotate-3 transition-transform hover:rotate-0 duration-500 ease-out bg-white dark:bg-gray-800">
+<div class="w-full h-full bg-center bg-no-repeat bg-cover" data-alt="Abstract 3D illustration of crumpled paper or geometric shapes representing a broken link" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB9hYb-g5uxBhvit1VZa8vbZoxslDaBBEWqbxjnkvjk2RM0jo7Tnx2aWRXpSNODHhFFoT7FVmTM3AhfFeSu-VwZAI-EK5aQ6wn1ygaQU5-XehswaHlDvu2GjhHfdF0Z9-gUYcT4G4wuputXvnQ2Z183r3Klw3zb4Ip8Menxu5griUVRZSrWlr5gFmIvkCZ5Yhx_b6JtfHYF8I6uGk3EouT2c3nUZGW4sBn6YYxyF7nszeBW6JR4BUDqL5d-BRb7g-IJtMcBjI-jRNfq");'>
+</div>
+</div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col items-center text-center space-y-3 mb-10 z-10 w-full max-w-md">
+<h1 class="font-korean text-[#111418] dark:text-white tracking-tight text-[28px] font-bold leading-tight px-4">
+                    페이지를 찾을 수 없습니다
+                </h1>
+<p class="font-korean text-gray-500 dark:text-gray-400 text-base font-normal leading-relaxed px-4 break-keep">
+                    요청하신 페이지가 존재하지 않거나<br class="hidden min-[360px]:block"/> 이동되었습니다.
+                </p>
+</div>
+<!-- Search Suggestion -->
+<div class="w-full max-w-sm mb-6 z-10">
+<div class="relative flex items-center w-full h-14 rounded-xl bg-white dark:bg-[#1a2330] shadow-sm border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all overflow-hidden group">
+<div class="grid place-items-center h-full w-12 text-primary group-focus-within:text-primary">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="peer h-full w-full outline-none bg-transparent text-base text-[#111418] dark:text-white pr-4 font-korean placeholder-gray-400 dark:placeholder-gray-500" placeholder="찾으시는 내용을 검색해보세요" type="text"/>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col w-full max-w-sm gap-3 z-10 font-korean">
+<!-- Primary Button -->
+<button class="relative flex items-center justify-center w-full h-14 bg-primary hover:bg-blue-600 active:bg-blue-700 text-white font-bold text-[16px] rounded-xl transition-all shadow-md shadow-blue-500/20 gap-2">
+<span class="material-symbols-outlined" style="font-size: 20px;">home</span>
+                    홈으로 가기
+                </button>
+<!-- Secondary Button -->
+<button class="relative flex items-center justify-center w-full h-14 bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 font-medium text-[16px] rounded-xl transition-all gap-2">
+<span class="material-symbols-outlined" style="font-size: 20px;">history</span>
+                    이전 페이지
+                </button>
+</div>
+</div>
+</div>
+</body></html>

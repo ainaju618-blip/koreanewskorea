@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>코리아뉴스 나주판</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for horizontal scrolls */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-white overflow-x-hidden">
+<div class="relative flex h-auto min-h-screen w-full flex-col max-w-md mx-auto bg-white dark:bg-[#101722] shadow-xl">
+<!-- TopAppBar -->
+<div class="sticky top-0 z-50 flex items-center bg-white dark:bg-[#101722] p-4 border-b border-gray-100 dark:border-gray-800 justify-between">
+<div class="flex size-10 shrink-0 items-center justify-center cursor-pointer rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined text-[#111418] dark:text-white text-[24px]">menu</span>
+</div>
+<div class="flex flex-col items-center">
+<h2 class="text-[#111418] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] text-center">코리아뉴스 나주판</h2>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[12px] filled">location_on</span>
+<span class="text-xs text-gray-500 font-medium">전라남도 나주시</span>
+</div>
+</div>
+<div class="flex w-10 items-center justify-end">
+<button class="flex cursor-pointer items-center justify-center rounded-full size-10 hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-symbols-outlined text-[#111418] dark:text-white text-[24px]">account_circle</span>
+</button>
+</div>
+</div>
+<!-- HeroSection -->
+<div class="@container">
+<div class="">
+<!-- Applied a gradient overlay on top of an abstract map image to fit the administrative theme -->
+<div class="relative flex min-h-[260px] flex-col gap-6 items-center justify-center p-6 overflow-hidden bg-primary">
+<div class="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay" data-alt="Abstract map pattern of a city street layout" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDp3aqNNYK3hJdBUvOdlukbjNMVNMwbx7RUbmFNxfkAxDemKr8hM_cIKVT0MFPlPuXtV8pXdMZjUQHFAtGFeu3yOj6vRVutbC1AQGENgVifcdczcdlbeZQZv86qwrkkqsTDPqYOeq_O9ERkak9RLgJsUvjvPbSGPzPQ_Q4hJPkuD9udQZI5jW2u6UooN2E4xIrjgqlVo2kgMrzbV2hRjrNaeEIjwdsrgQjMoR2diDyzTboKpu-RwyRSpy3puaESa4gZRlfULM-_TnM");'></div>
+<div class="absolute inset-0 bg-gradient-to-b from-primary/90 to-primary"></div>
+<div class="relative z-10 flex flex-col gap-2 text-center mt-2">
+<span class="inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-medium w-fit mx-auto border border-white/30 backdrop-blur-sm">행정/생활 정보의 중심</span>
+<h1 class="text-white text-3xl font-black leading-tight tracking-tight">
+                            나주, 역사와 미래가<br/>공존하는 도시
+                        </h1>
+</div>
+<label class="relative z-10 flex flex-col w-full max-w-[480px]">
+<div class="flex w-full items-stretch rounded-xl h-12 shadow-lg">
+<div class="text-primary flex bg-white dark:bg-[#1e293b] items-center justify-center pl-4 rounded-l-xl border-r-0">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="flex w-full min-w-0 flex-1 resize-none overflow-hidden text-[#111418] dark:text-white focus:outline-0 bg-white dark:bg-[#1e293b] h-full placeholder:text-gray-400 px-3 text-sm font-normal leading-normal" placeholder="나주 지역 뉴스 및 정보 검색" value=""/>
+<div class="flex items-center justify-center rounded-r-xl bg-white dark:bg-[#1e293b] pr-2">
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-600 transition-colors">
+<span class="truncate">검색</span>
+</button>
+</div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- ToolBar (Quick Menu) -->
+<div class="py-6 px-4 bg-white dark:bg-[#101722]">
+<div class="grid grid-cols-4 gap-2">
+<button class="flex flex-col items-center gap-2 group">
+<div class="flex items-center justify-center size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
+<span class="material-symbols-outlined text-[28px]">campaign</span>
+</div>
+<span class="text-xs font-medium text-[#111418] dark:text-gray-300">공지사항</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="flex items-center justify-center size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
+<span class="material-symbols-outlined text-[28px]">gavel</span>
+</div>
+<span class="text-xs font-medium text-[#111418] dark:text-gray-300">민원/행정</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="flex items-center justify-center size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
+<span class="material-symbols-outlined text-[28px]">apartment</span>
+</div>
+<span class="text-xs font-medium text-[#111418] dark:text-gray-300">부동산/일자리</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="flex items-center justify-center size-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-200">
+<span class="material-symbols-outlined text-[28px]">map</span>
+</div>
+<span class="text-xs font-medium text-[#111418] dark:text-gray-300">관광/지도</span>
+</button>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-2 bg-gray-50 dark:bg-[#1a2230]"></div>
+<!-- Chips (Categories) -->
+<div class="sticky top-[73px] z-40 bg-white dark:bg-[#101722] border-b border-gray-100 dark:border-gray-800">
+<div class="flex gap-2 p-3 overflow-x-auto no-scrollbar">
+<button class="flex h-9 shrink-0 items-center justify-center px-4 rounded-full bg-[#111418] dark:bg-white text-white dark:text-[#111418] transition-colors">
+<span class="text-sm font-bold">전체</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center px-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="text-sm font-medium">시청</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center px-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="text-sm font-medium">의회</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center px-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="text-sm font-medium">교육</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center px-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+<span class="text-sm font-medium">복지</span>
+</button>
+</div>
+</div>
+<!-- News List -->
+<div class="flex flex-col bg-white dark:bg-[#101722] pb-24">
+<!-- Header for section -->
+<div class="px-4 pt-5 pb-1">
+<h3 class="text-[#111418] dark:text-white text-lg font-bold">실시간 주요 뉴스</h3>
+</div>
+<!-- Item 1 -->
+<article class="flex gap-4 p-4 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex flex-1 flex-col justify-start gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-primary text-xs font-bold">시청</span>
+<span class="text-gray-400 dark:text-gray-500 text-xs">2024-05-20</span>
+</div>
+<h4 class="text-[#111418] dark:text-gray-100 text-[17px] font-bold leading-snug line-clamp-2">2024년도 나주시 농업 보조금 지원 사업 공고 상세 안내</h4>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-relaxed line-clamp-2">농업 경쟁력 강화를 위한 신규 보조금 지원 계획이 발표되었습니다. 신청 기간과 방법을 확인하세요.</p>
+</div>
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-lg h-24 w-24 bg-gray-200" data-alt="Green rice fields in Naju representing agriculture support" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCVY0NX6NHiCXarSMzUA9RpA8QQAjGOfCQOZFa21MObV8qloaRQR3KJims-52tR3mrPDdY1PLVQRl3P0wR8Sa_5-ZMYbCnLGENoLKj-21Ju2ShYS7z8jZOxNduyr-8aGRSvUn5ic77um6CW3D40oKE77xGm13M6NjzyO2GPZCd0EGy4MuhbaL5y9YziPMhzSbsMTWZCdbEFTBZ3e9QZKKYvFTkzLEuPUA4hm2bU7dGWPU6z60n1yIisel7KyWFQ_KFWNOeYRRsD8cU");'></div>
+</div>
+</article>
+<!-- Item 2 -->
+<article class="flex gap-4 p-4 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex flex-1 flex-col justify-start gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold">의회</span>
+<span class="text-gray-400 dark:text-gray-500 text-xs">2024-05-19</span>
+</div>
+<h4 class="text-[#111418] dark:text-gray-100 text-[17px] font-bold leading-snug line-clamp-2">나주시의회, 스마트시티 기반 조성 추경 예산안 최종 통과</h4>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-relaxed line-clamp-2">빛가람 혁신도시 스마트 인프라 확장을 위한 300억 규모 예산안이 시의회를 통과했습니다.</p>
+</div>
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-lg h-24 w-24 bg-gray-200" data-alt="Modern council meeting room blurred background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBXbMeCtYeaB_Q7bMxsWrZmCkm8Ri8fNC_EIsF7jLqxiTysq9kbqu3VXY1oD3KPY7h2GwZeejyBTW-ro08hIKeJeEhaeuTcXf0bCH0ffrIGN-i3d3BkM_bCB5eF13EzxIQNcRGdaC-sbvzqfBHz0JsZTXsSsWciNgfuYMaRV_q-0_lxisTzwdCNNK9TxnfVbCrCMAKB_6OXxDDnd2rFfkc6QGnM1-xDIMnUrAELJuVQyCzdDSyPhKu2V_VPRWITfaKPsYMAcsCbVuQ");'></div>
+</div>
+</article>
+<!-- Item 3 -->
+<article class="flex gap-4 p-4 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex flex-1 flex-col justify-start gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold">교육</span>
+<span class="text-gray-400 dark:text-gray-500 text-xs">2024-05-18</span>
+</div>
+<h4 class="text-[#111418] dark:text-gray-100 text-[17px] font-bold leading-snug line-clamp-2">빛가람초등학교 증축 계획 확정, 내년 3월 착공</h4>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-relaxed line-clamp-2">과밀 학급 해소를 위한 교실 증축 및 다목적 강당 건립 계획이 교육청 승인을 받았습니다.</p>
+</div>
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-lg h-24 w-24 bg-gray-200" data-alt="Exterior of a modern elementary school building" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC9991rFEQ8EY_uuf7tuUEJfa5WxvjPH-mJwCYdLEDOQikhoQF0WSDBR7BsjRwPe9RHdtvGH_etZ-rOQPGKeF7oz_T50eYsiTBOPUZu-MTYvCAQ-RuVMjALMDY_pGsFL3zbeS_G3cF5miWEd7qGvWi_3WdUV0bZ2GTOdVf0pl90HG83o5F9gqyHX8e9NwYVXcYAFQXv31Y4LeqSWrXCfXGSx1S0-tA9PrdTq9f6syW0Nl235Wsk3EGp2ogokIFkXp9owVBl7hBI8Vk");'></div>
+</div>
+</article>
+<!-- Item 4 -->
+<article class="flex gap-4 p-4 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+<div class="flex flex-1 flex-col justify-start gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold">생활</span>
+<span class="text-gray-400 dark:text-gray-500 text-xs">2024-05-17</span>
+</div>
+<h4 class="text-[#111418] dark:text-gray-100 text-[17px] font-bold leading-snug line-clamp-2">2024 영산강 유채꽃 축제 기간 중 교통 통제 구간 안내</h4>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-relaxed line-clamp-2">축제 기간 중 영산대교 남단부터 체육공원 입구까지 차량 통제가 실시됩니다.</p>
+</div>
+<div class="shrink-0">
+<div class="bg-center bg-no-repeat bg-cover rounded-lg h-24 w-24 bg-gray-200" data-alt="Yellow canola flowers blooming by the river" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-NMTVzrZSSqSsPBjO_QjzWCq03GXgogffOrzqWI0Aly8GNknRbocg3NUJuS4uyNeXXVKyezf3g0_6YrYb1-cjvjG_mOtAYWd2iq4ESht4xRMF-xilYVtXZeBScMVn_anPYexwQMetPGw_vY0LI2T-ZQBNLSY_Bn2IApWB3pMFpBpr4nTF2FoQ23eWmOH737x0SfqjsCEv7Gl3kd8kgOC3eQ_FDoJA4wJL_fZ5G5r2Pkew4ij-7SbBF_T49mdBbRjY-q6EiXHQ-EQ");'></div>
+</div>
+</article>
+</div>
+<!-- Bottom Navigation -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-white dark:bg-[#101722] border-t border-gray-100 dark:border-gray-800 pb-safe">
+<div class="flex justify-between items-center px-6 h-[60px]">
+<button class="flex flex-col items-center justify-center gap-1 w-12 text-primary">
+<span class="material-symbols-outlined text-[24px] filled">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-12 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">map</span>
+<span class="text-[10px] font-medium">지도</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-12 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">forum</span>
+<span class="text-[10px] font-medium">소통</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 w-12 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="text-[10px] font-medium">MY</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

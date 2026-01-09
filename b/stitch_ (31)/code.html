@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>News Portal - Modal &amp; Popup System</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for info modal */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #374151;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#1a2236] px-10 py-3 sticky top-0 z-50 shadow-sm">
+<div class="flex items-center gap-4 text-[#111418] dark:text-white">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">newspaper</span>
+</div>
+<h2 class="text-[#111418] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">뉴스 포털 디자인 시스템</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<div class="hidden md:flex items-center gap-9">
+<a class="text-[#111418] dark:text-gray-300 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">컴포넌트</a>
+<a class="text-[#111418] dark:text-gray-300 text-sm font-medium leading-normal hover:text-primary transition-colors" href="#">디자인 토큰</a>
+<a class="text-[#primary] text-sm font-bold leading-normal" href="#">모달 시스템</a>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-gray-500 cursor-pointer">settings</span>
+<div class="size-8 rounded-full bg-gray-200 overflow-hidden">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjF2_CvJSzkfT41vOTfMmtE2fRdtTgYqMvS-4CLcG8IiN3CQyYWzMPwkroyTVbHrmXjm-1cdU5x4kDbKhyhRuQ76eLpvdpZHP6XECa3E_JRsDSH8f7EPXDTwp4C09mLUDRDbliCeyKub_RQoLHv6qgdiSGoMEMOJELtfjeClYsPYQ5Jk9kqGn-WPG0R9BYqokEW_3F0yOaOUMSQ4iqwG8E1DEWByHefclbGsHGDGS42z0F5wNTE8OPGDDyRzTbHo1xU9ULRR_sr0U"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="layout-container flex h-full grow flex-col py-10 px-4 md:px-10 lg:px-40 gap-12">
+<!-- Intro Section -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2 text-primary mb-2">
+<span class="material-symbols-outlined text-sm">layers</span>
+<span class="text-sm font-bold uppercase tracking-wider">Components / Modals</span>
+</div>
+<h1 class="text-[#111418] dark:text-white tracking-light text-[32px] font-bold leading-tight">모달 &amp; 팝업 시스템 (Modal &amp; Popup)</h1>
+<p class="text-[#60708a] dark:text-gray-400 text-base font-normal leading-normal max-w-[800px]">
+                    뉴스 포털 서비스에서 사용되는 표준 모달 컴포넌트 모음입니다. 각 모달은 사용자의 집중을 유도하고, 명확한 액션을 제공하며, 다양한 화면 크기에 대응하도록 설계되었습니다.
+                </p>
+</div>
+<!-- 1. Confirm Modal (Small) -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+<span class="material-symbols-outlined text-gray-500">check_circle</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white">1. 확인 모달 (Confirm Modal)</h3>
+</div>
+<div class="bg-gray-100 dark:bg-gray-900 rounded-xl p-10 flex items-center justify-center min-h-[400px] relative overflow-hidden group">
+<!-- Background Pattern simulation -->
+<div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#6b7280 1px, transparent 1px); background-size: 20px 20px;"></div>
+<!-- Modal Component -->
+<div class="relative w-full max-w-[400px] flex flex-col bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl transform transition-transform group-hover:scale-[1.01] duration-300">
+<div class="p-6 pb-2">
+<div class="flex items-start gap-4">
+<div class="flex-shrink-0 size-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">구독 취소 확인</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                                        정말로 뉴스레터 구독을 취소하시겠습니까?<br/>
+                                        취소하시면 주요 뉴스 요약을 더 이상 받아보실 수 없습니다.
+                                    </p>
+</div>
+</div>
+</div>
+<div class="p-4 bg-gray-50 dark:bg-[#1a2434] rounded-b-xl flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
+<button class="px-4 py-2 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                취소
+                            </button>
+<button class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-bold shadow-sm transition-colors">
+                                구독 취소
+                            </button>
+</div>
+<!-- Close Icon -->
+<button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 2. Share Modal & Info Modal Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+<!-- Share Modal -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+<span class="material-symbols-outlined text-gray-500">share</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white">2. 공유 모달 (Share Modal)</h3>
+</div>
+<div class="bg-gray-100 dark:bg-gray-900 rounded-xl p-10 flex items-center justify-center min-h-[400px] relative overflow-hidden">
+<!-- Share Modal Component -->
+<div class="relative w-full max-w-[380px] bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl flex flex-col">
+<div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+<h4 class="text-lg font-bold text-gray-900 dark:text-white">공유하기</h4>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Social Icons Grid -->
+<div class="grid grid-cols-4 gap-4">
+<button class="flex flex-col items-center gap-2 group">
+<div class="size-12 rounded-full bg-[#FEE500] flex items-center justify-center shadow-sm group-hover:-translate-y-1 transition-transform">
+<span class="material-symbols-outlined text-[#3C1E1E]">chat_bubble</span>
+<!-- Simulating Kakao Icon with generic chat -->
+</div>
+<span class="text-xs font-medium text-gray-600 dark:text-gray-400">카카오톡</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="size-12 rounded-full bg-[#03C75A] flex items-center justify-center shadow-sm group-hover:-translate-y-1 transition-transform">
+<span class="font-bold text-white text-lg">N</span>
+<!-- Simulating Naver -->
+</div>
+<span class="text-xs font-medium text-gray-600 dark:text-gray-400">네이버</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="size-12 rounded-full bg-[#1877F2] flex items-center justify-center shadow-sm group-hover:-translate-y-1 transition-transform">
+<span class="material-symbols-outlined text-white">social_leaderboard</span>
+</div>
+<span class="text-xs font-medium text-gray-600 dark:text-gray-400">페이스북</span>
+</button>
+<button class="flex flex-col items-center gap-2 group">
+<div class="size-12 rounded-full bg-black flex items-center justify-center shadow-sm group-hover:-translate-y-1 transition-transform">
+<span class="font-bold text-white text-lg">X</span>
+</div>
+<span class="text-xs font-medium text-gray-600 dark:text-gray-400">트위터</span>
+</button>
+</div>
+<!-- Copy Link -->
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold text-gray-500 uppercase tracking-wider">페이지 링크</label>
+<div class="flex gap-2">
+<div class="flex-1 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 truncate">
+                                            https://news-portal.com/article/breaking-news-123
+                                        </div>
+<button class="bg-primary hover:bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-bold whitespace-nowrap transition-colors">
+                                            복사
+                                        </button>
+</div>
+<p class="flex items-center gap-1 text-xs text-green-600 font-medium opacity-0">
+<span class="material-symbols-outlined text-sm">check</span> 링크가 복사되었습니다.
+                                    </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Info Modal -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+<span class="material-symbols-outlined text-gray-500">info</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white">3. 정보 모달 (Info Modal)</h3>
+</div>
+<div class="bg-gray-100 dark:bg-gray-900 rounded-xl p-10 flex items-center justify-center min-h-[400px] relative overflow-hidden">
+<!-- Info Modal Component -->
+<div class="relative w-full max-w-[420px] bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl flex flex-col max-h-[380px]">
+<div class="flex items-center gap-3 p-5 border-b border-gray-100 dark:border-gray-700">
+<span class="material-symbols-outlined text-primary">article</span>
+<h4 class="text-lg font-bold text-gray-900 dark:text-white">개인정보 처리방침 개정 안내</h4>
+</div>
+<div class="p-6 overflow-y-auto custom-scrollbar text-sm text-gray-600 dark:text-gray-300 leading-relaxed space-y-4">
+<p>안녕하세요, 뉴스 포털입니다.</p>
+<p>
+                                    더 나은 서비스 제공을 위해 개인정보 처리방침이 2024년 5월 1일자로 개정될 예정입니다. 변경된 내용은 아래와 같습니다.
+                                </p>
+<ul class="list-disc pl-5 space-y-1 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+<li>제3자 정보 제공 동의 항목 추가</li>
+<li>마케팅 활용 동의 철회 절차 간소화</li>
+<li>쿠키 수집 정책 변경</li>
+</ul>
+<p>
+                                    개정된 방침에 동의하지 않으시는 경우, 회원 탈퇴를 요청하실 수 있습니다. 계속 서비스를 이용하시는 경우 개정된 내용에 동의하는 것으로 간주됩니다.
+                                </p>
+<p class="text-xs text-gray-400 pt-2">
+                                    문의사항: help@news-portal.com
+                                </p>
+</div>
+<div class="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-center">
+<button class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg py-2.5 text-sm font-bold hover:opacity-90 transition-opacity">
+                                    확인했습니다
+                                </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- 4. Form Modal (Large) -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+<span class="material-symbols-outlined text-gray-500">edit_document</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white">4. 폼 모달 (Form Modal)</h3>
+</div>
+<div class="bg-gray-100 dark:bg-gray-900 rounded-xl p-4 md:p-10 flex items-center justify-center min-h-[600px] relative">
+<!-- Form Modal Component -->
+<div class="relative w-full max-w-2xl bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl flex flex-col">
+<!-- Header -->
+<div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
+<div>
+<h4 class="text-xl font-bold text-gray-900 dark:text-white">기사 제보하기</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">소중한 제보가 뉴스가 됩니다. 정확한 사실을 바탕으로 작성해주세요.</p>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="p-6 md:p-8 flex flex-col gap-6">
+<!-- Category Select -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">제보 유형</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="text-primary focus:ring-primary w-4 h-4 border-gray-300" name="reportType" type="radio"/>
+<span class="text-sm text-gray-700 dark:text-gray-300">오타/오류 신고</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary focus:ring-primary w-4 h-4 border-gray-300" name="reportType" type="radio"/>
+<span class="text-sm text-gray-700 dark:text-gray-300">새로운 소식 제보</span>
+</label>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">이름</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:border-primary focus:ring-primary py-2.5" placeholder="홍길동" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">연락처</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:border-primary focus:ring-primary py-2.5" placeholder="010-0000-0000" type="text"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">제보 제목</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:border-primary focus:ring-primary py-2.5" placeholder="제보할 내용을 한 줄로 요약해주세요" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">상세 내용</label>
+<textarea class="w-full rounded-lg border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:border-primary focus:ring-primary py-2.5 resize-none" placeholder="육하원칙에 따라 구체적으로 작성해주시면 취재에 큰 도움이 됩니다." rows="5"></textarea>
+</div>
+<!-- File Upload Area -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">증빙 자료 (선택)</label>
+<div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-gray-400 text-3xl">cloud_upload</span>
+<p class="text-sm text-gray-500 dark:text-gray-400">사진이나 동영상을 드래그하여 업로드하세요</p>
+<span class="text-xs text-primary font-bold">또는 파일 찾기</span>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-6 bg-gray-50 dark:bg-[#1a2434] rounded-b-xl flex justify-between items-center border-t border-gray-100 dark:border-gray-700">
+<div class="text-xs text-gray-500 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">lock</span>
+                                 제보자의 개인정보는 철저히 보호됩니다.
+                             </div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-700 transition-colors">
+                                    취소
+                                </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-md transition-colors flex items-center gap-2">
+                                    제보하기
+                                    <span class="material-symbols-outlined text-sm">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Image Lightbox (Full Screen) -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+<span class="material-symbols-outlined text-gray-500">gallery_thumbnail</span>
+<h3 class="text-xl font-bold text-[#111418] dark:text-white">5. 이미지 뷰어 (Lightbox)</h3>
+</div>
+<!-- This container simulates the full viewport -->
+<div class="relative w-full h-[600px] rounded-xl overflow-hidden group">
+<!-- Background image acting as the "page" behind the lightbox -->
+<img alt="News website screenshot" class="w-full h-full object-cover blur-sm" data-alt="Blurred news website background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBG8homEXyXklFWkNWEEkA8NPAOpYEkMkIBQcE-FDR-6ZJCVv1rcHM_SODLMSaJ_CyJY0y-Evk6dACIxuKV3YF_P8Rw1e2WJw5nsX9jKe-YA67QVOeM2HjOfu2ISoAeA6Q7CA9lqvfPqxmr7iqaoqvZsog6Qi66B5JuQdXv5nXm31qpy97nupnyp43DiPyJDrIkWMOvTbqlDGAkbIGf_yXYA3KxX2JD-e7fBsoXmPKJgYt68lieO-pRo1cApeCrmcauKfHhH55xuDA"/>
+<!-- The Lightbox Overlay -->
+<div class="absolute inset-0 bg-black/90 flex flex-col">
+<!-- Top Bar -->
+<div class="flex justify-between items-center p-6 text-white z-10">
+<span class="text-sm font-medium opacity-80">1 / 5</span>
+<div class="flex gap-4">
+<button class="hover:text-primary transition-colors" title="Download">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="hover:text-primary transition-colors" title="Share">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="hover:text-primary transition-colors" title="Close">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+</div>
+<!-- Main Image Area -->
+<div class="flex-1 flex items-center justify-center relative px-12">
+<!-- Prev Arrow -->
+<button class="absolute left-4 md:left-8 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm group-hover:opacity-100 md:opacity-0 translate-y-0">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+</button>
+<!-- Image -->
+<div class="max-w-4xl max-h-[80%] relative">
+<img alt="Seoul City Night View" class="max-w-full max-h-[400px] object-contain shadow-2xl rounded-sm" data-alt="Night view of Seoul cityscape with N Seoul Tower" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVOmksePHLrrDxGzM2hlxXJi9Mitwuzfu0d071948k_1i0JZ5m3Jx9RhSNflcsYJ8Pwnhy59Dkb1OH2frlHGLgz1gZTRJv9dDvMoXZZyJOuya0noR9dJEhdtomcsHO0krERTgmA6u7H57sC3yXdxR707P_o_ghVMaiBRlgIbRPdExx2DalDRfFyIr0NozpUcL70-krxCWriVPlhaAvz2lCYO45K8tHuMq1-5OQXtHhlVbNFOCbr-W9nwb6ZNmtsV69AtMBrI39sbs"/>
+</div>
+<!-- Next Arrow -->
+<button class="absolute right-4 md:right-8 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm group-hover:opacity-100 md:opacity-0">
+<span class="material-symbols-outlined text-2xl">arrow_forward_ios</span>
+</button>
+</div>
+<!-- Caption Area -->
+<div class="p-6 md:p-8 bg-gradient-to-t from-black/80 to-transparent">
+<div class="max-w-3xl mx-auto text-center">
+<h2 class="text-white text-lg md:text-xl font-bold mb-2">서울의 밤은 잠들지 않는다</h2>
+<p class="text-gray-300 text-sm leading-relaxed">
+                                    2024년 5월, 남산에서 바라본 서울 도심의 야경. 화려한 불빛들이 어우러져 장관을 이루고 있다. (사진=뉴스포털 제공)
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="mt-10 border-t border-gray-200 dark:border-gray-800 py-10 text-center">
+<p class="text-sm text-gray-500 dark:text-gray-400">© 2024 News Portal Design System. All rights reserved.</p>
+</footer>
+</div>
+</body></html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - KOREA NEWS</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "body": ["Noto Sans KR", "Public Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Noto Sans KR', 'Public Sans', sans-serif;
+        }
+        .font-logo {
+            font-family: 'Public Sans', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark max-w-[480px] mx-auto shadow-sm">
+<!-- Header / Navigation -->
+<div class="flex items-center p-4 justify-between">
+<button class="text-[#111418] dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+</div>
+<!-- Logo Section -->
+<div class="px-6 pt-4 pb-8 text-center">
+<h1 class="font-logo text-primary tracking-tight text-[32px] font-bold leading-tight">KOREA NEWS</h1>
+<p class="text-gray-500 dark:text-gray-400 mt-2 text-sm font-medium">뉴스룸에 오신 것을 환영합니다</p>
+</div>
+<!-- Form Section -->
+<div class="flex flex-col gap-5 px-6 pb-4">
+<!-- Email Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[#111418] dark:text-gray-200 text-sm font-medium">이메일</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-gray-400 z-10 text-[20px]">mail</span>
+<input class="form-input flex w-full rounded-xl border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-800 text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 pl-11 pr-4 text-base font-normal leading-normal placeholder:text-gray-400 transition-all" placeholder="example@email.com" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[#111418] dark:text-gray-200 text-sm font-medium">비밀번호</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-gray-400 z-10 text-[20px]">lock</span>
+<input class="form-input flex w-full rounded-xl border border-[#dbdfe6] dark:border-gray-700 bg-white dark:bg-gray-800 text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 focus:border-primary h-12 pl-11 pr-12 text-base font-normal leading-normal placeholder:text-gray-400 transition-all" placeholder="••••••••" type="password"/>
+<button class="absolute right-3 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Checkbox -->
+<div class="flex items-center gap-3 py-1">
+<div class="flex items-center justify-center">
+<input class="h-5 w-5 rounded border-[#dbdfe6] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:border-[#dbdfe6] focus:outline-none transition-all cursor-pointer" id="keep-login" type="checkbox"/>
+</div>
+<label class="text-[#111418] dark:text-gray-300 text-sm font-normal leading-normal flex-1 cursor-pointer select-none" for="keep-login">로그인 상태 유지</label>
+</div>
+<!-- Login Button -->
+<button class="flex w-full items-center justify-center rounded-xl bg-primary py-3.5 px-4 text-white font-bold text-base hover:bg-blue-600 active:scale-[0.98] transition-all shadow-sm">
+                로그인
+            </button>
+</div>
+<!-- Links -->
+<div class="flex items-center justify-center gap-6 pb-6 text-sm text-gray-500 dark:text-gray-400">
+<a class="hover:text-primary transition-colors" href="#">비밀번호 찾기</a>
+<div class="h-3 w-px bg-gray-300 dark:bg-gray-700"></div>
+<a class="hover:text-primary transition-colors font-medium text-primary" href="#">회원가입</a>
+</div>
+<!-- Divider -->
+<div class="px-6 flex items-center gap-3 pb-6">
+<div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+<p class="text-xs text-gray-400 font-medium">또는</p>
+<div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+</div>
+<!-- Social Login Buttons -->
+<div class="flex flex-col gap-3 px-6 pb-8">
+<!-- Kakao -->
+<button class="relative flex w-full items-center justify-center rounded-xl bg-[#FEE500] py-3.5 px-4 text-[#191919] font-medium text-base hover:bg-[#fadd00] transition-colors shadow-sm">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+<!-- Kakao Icon SVG -->
+<svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 3C7.58 3 4 5.79 4 9.24C4 11.28 5.34 13.1 7.42 14.24C7.26 14.8 6.64 16.92 6.53 17.31C6.46 17.6 6.75 17.78 6.96 17.64C7.78 17.14 10.98 15.02 11.36 14.76C11.57 14.78 11.78 14.8 12 14.8C16.42 14.8 20 12.01 20 8.56C20 5.11 16.42 3 12 3Z"></path>
+</svg>
+</div>
+                카카오로 시작하기
+            </button>
+<!-- Naver -->
+<button class="relative flex w-full items-center justify-center rounded-xl bg-[#03C75A] py-3.5 px-4 text-white font-medium text-base hover:bg-[#02b351] transition-colors shadow-sm">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+<!-- Naver Icon SVG shape approximation -->
+<svg class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.035 20.312V9.312L7.965 20.312H4V3.688H7.965V14.688L16.035 3.688H20V20.312H16.035Z"></path>
+</svg>
+</div>
+                네이버로 시작하기
+            </button>
+<!-- Google -->
+<button class="relative flex w-full items-center justify-center rounded-xl bg-white dark:bg-gray-800 border border-[#dbdfe6] dark:border-gray-700 py-3.5 px-4 text-[#111418] dark:text-white font-medium text-base hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm">
+<div class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+<!-- Google Icon SVG -->
+<svg class="w-5 h-5" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+</div>
+                Google로 시작하기
+            </button>
+</div>
+<!-- Bottom Spacer -->
+<div class="h-5"></div>
+</div>
+</body></html>

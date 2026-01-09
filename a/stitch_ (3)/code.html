@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>뉴스 상세 페이지 - 코리아뉴스 전국판</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700&amp;family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f8f9fa",
+                        "background-dark": "#101722",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "body": ["Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for cleaner mobile look */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-gray-100 antialiased selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-surface-light dark:bg-background-dark shadow-xl overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 flex items-center justify-between bg-surface-light/95 dark:bg-background-dark/95 backdrop-blur-sm p-4 border-b border-gray-100 dark:border-gray-800">
+<button aria-label="Go back" class="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[#111418] dark:text-white">
+<span class="material-symbols-outlined text-[24px]">arrow_back_ios_new</span>
+</button>
+<h2 class="text-[#111418] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center truncate px-2">전국판 뉴스</h2>
+<div class="flex items-center justify-end gap-2">
+<button aria-label="Bookmark" class="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[#111418] dark:text-white">
+<span class="material-symbols-outlined text-[24px]">bookmark_border</span>
+</button>
+<button aria-label="Share" class="flex size-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-[#111418] dark:text-white">
+<span class="material-symbols-outlined text-[24px]">share</span>
+</button>
+</div>
+</header>
+<main class="flex-1 pb-24">
+<!-- Category Chips -->
+<div class="flex gap-3 px-5 pt-6 pb-2 flex-wrap">
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary/10 dark:bg-primary/20 px-3 border border-primary/20">
+<span class="text-primary text-sm font-bold leading-normal">행정/정책</span>
+</div>
+<div class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3">
+<span class="text-gray-600 dark:text-gray-400 text-sm font-medium leading-normal">귀농귀촌</span>
+</div>
+</div>
+<!-- Headline -->
+<h1 class="text-[#111418] dark:text-white tracking-tight text-[26px] sm:text-[28px] font-bold leading-[1.3] px-5 pb-3 pt-2 break-keep">
+                2024년 귀농·귀촌 정착 지원금, 이렇게 달라집니다: 최대 5억원 융자 지원 확대
+            </h1>
+<!-- Meta Info & Tools -->
+<div class="flex flex-col gap-3 px-5 pb-6 border-b border-gray-100 dark:border-gray-800">
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<p class="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">김철수 기자</p>
+<p class="text-gray-400 dark:text-gray-500 text-xs font-normal leading-normal mt-1">2024.05.20 14:30 | 수정 2024.05.20 15:10</p>
+</div>
+</div>
+<div class="flex justify-start pt-2">
+<button class="flex items-center justify-center overflow-hidden rounded-lg h-9 px-3 bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 gap-2 text-sm font-bold leading-normal transition-colors hover:bg-gray-200 dark:hover:bg-gray-700">
+<span class="material-symbols-outlined text-[18px]">volume_up</span>
+<span class="truncate">기사 듣기</span>
+</button>
+<button class="flex items-center justify-center overflow-hidden rounded-lg h-9 px-3 ml-2 bg-gray-100 dark:bg-gray-800 text-[#111418] dark:text-gray-200 gap-2 text-sm font-bold leading-normal transition-colors hover:bg-gray-200 dark:hover:bg-gray-700">
+<span class="material-symbols-outlined text-[18px]">text_increase</span>
+<span class="truncate">글자 크기</span>
+</button>
+</div>
+</div>
+<!-- Article Body -->
+<article class="px-5 py-6">
+<!-- Lead Image -->
+<figure class="mb-8">
+<div class="w-full aspect-video rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-sm relative group">
+<img alt="Data Alt: A peaceful rural landscape with green fields and a blue sky, representing countryside living." class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIZZra8ItwrbHG1yc4cG6KcGMiFAYEuHpKSJVDJFjCM-PJtpxfXCHZVW1dqHcjTjDKInn6T5jjxUO1rZVf7Qo34T88e1HG5c_XpKlAGtrDLi_bSsrLKoFa7QoXbPfr-IblWaMeWoxX3IwdczJq0I-VAonMWSOqprSnk05zpyJTThHXQm3B2sPWxR0Mu52mKoDMAyLUzNJndG-9z7QRJ9KxrpePDntUG6XKjGML2wb4bHA4XLVsKRGgsBGbkMgyMy87Gr8bQg1IPBE"/>
+</div>
+<figcaption class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                        ▲ 2024년 귀농·귀촌 지원 사업 설명회 현장 (사진=농림축산식품부)
+                    </figcaption>
+</figure>
+<!-- Paragraphs -->
+<div class="prose prose-lg dark:prose-invert prose-p:text-[#111418] dark:prose-p:text-gray-200 prose-headings:text-[#111418] dark:prose-headings:text-white max-w-none">
+<p class="text-[17px] leading-[1.8] mb-6 font-normal text-gray-800 dark:text-gray-200">
+                        농림축산식품부는 올해 귀농·귀촌 희망자를 위한 정착 지원 사업을 대폭 확대한다고 20일 밝혔다. 이번 개편안은 초기 정착 과정에서 겪는 주거 및 경제적 부담을 완화하는 데 초점을 맞췄다.
+                    </p>
+<p class="text-[17px] leading-[1.8] mb-8 font-normal text-gray-800 dark:text-gray-200">
+                        가장 눈에 띄는 변화는 주택 구입 및 신축 자금 지원 한도가 기존 3억원에서 5억원으로 상향 조정된 점이다. 이는 최근 건설 원자재 가격 상승과 지방 부동산 가격 변동을 반영한 조치다. 또한, 대출 금리는 고정금리 1.5%로 동결하여 이자 부담을 최소화했다.
+                    </p>
+<!-- Quote Block -->
+<div class="border-l-4 border-primary bg-blue-50 dark:bg-blue-900/20 p-5 rounded-r-lg mb-8">
+<p class="text-lg font-bold text-gray-900 dark:text-white italic mb-2">
+                            "이번 지원 확대가 지방 소멸 위기를 극복하고, 도시민들의 안정적인 지역 정착을 돕는 마중물이 되기를 기대합니다."
+                        </p>
+<p class="text-sm text-gray-600 dark:text-gray-400 font-medium text-right">
+                            - 농림축산식품부 관계자
+                        </p>
+</div>
+<!-- Native Ad Section -->
+<div class="my-8 py-5 border-y border-gray-100 dark:border-gray-800">
+<div class="flex items-center gap-1 mb-2">
+<span class="text-[10px] font-bold text-gray-400 border border-gray-200 dark:border-gray-700 rounded px-1">AD</span>
+<span class="text-xs text-gray-500">스폰서 콘텐츠</span>
+</div>
+<div class="flex gap-4 items-center bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+<div class="size-20 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+<img alt="Data Alt: Modern modular house exterior in a garden setting." class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgq3NRimE0PQwpn3ps_RgFy6DxRIKZg_pvAbFkiqTl5vzikdk4ZwXwpB48n3geiOplj41SfPsSflqo-g8RA-2L2IH38kHRMyZuwl01bYCYwjlbYu5rYqqthnDFLtKs0V3eauqY5H_johV8xPfNLPESjL_058JJdR-tuNQxQoAkqkatv6dYRTDn4PzmHCA0R8ngcU6V8BiNEVhzJyM2pF4LS_0EwhgTzKjZGKSRJHkcRtvU3QBx7rqYnXm15N1i-7FYljlIcu7DTGk"/>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-bold text-base text-gray-900 dark:text-white leading-tight mb-1 truncate">전원주택의 꿈, 이동식 주택으로 실현하세요</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">합리적인 가격과 세련된 디자인, 3주면 완성되는 나만의 세컨드 하우스.</p>
+</div>
+</div>
+</div>
+<h3 class="text-xl font-bold mt-8 mb-4">청년 농업인을 위한 특별 우대</h3>
+<p class="text-[17px] leading-[1.8] mb-6 font-normal text-gray-800 dark:text-gray-200">
+                        만 40세 미만 청년 농업인의 경우, 영농 정착 지원금이 월 최대 110만원으로 인상된다. 이는 최장 3년까지 지급되며, 바우처 형태가 아닌 현금 지급 방식으로 변경되어 활용도가 높아질 전망이다. 정부는 이를 통해 청년층의 유입을 가속화한다는 계획이다.
+                    </p>
+<p class="text-[17px] leading-[1.8] mb-6 font-normal text-gray-800 dark:text-gray-200">
+                        김철수 기자는 "현장의 목소리를 반영한 실질적인 지원책이 마련되었다는 점에서 긍정적이나, 지원금 수령 이후의 사후 관리 시스템 강화도 병행되어야 할 것"이라고 덧붙였다.
+                    </p>
+</div>
+<!-- Tag List -->
+<div class="flex flex-wrap gap-2 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+<span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium">#귀농귀촌</span>
+<span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium">#지원금</span>
+<span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium">#부동산정책</span>
+</div>
+</article>
+<!-- Reaction Bar -->
+<div class="px-5 pb-8">
+<div class="flex items-center justify-between bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold text-gray-700 dark:text-gray-300">이 기사가 도움이 되었나요?</span>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+<span class="material-symbols-outlined text-[20px] filled">favorite</span>
+<span class="text-sm font-bold">128</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<div class="h-2 w-full bg-gray-100 dark:bg-gray-900"></div>
+<!-- Related Articles -->
+<section class="py-8 px-5 bg-white dark:bg-background-dark">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white">관련 뉴스</h3>
+<a class="text-sm text-primary font-medium flex items-center" href="#">더보기 <span class="material-symbols-outlined text-[16px]">chevron_right</span></a>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Card 1 -->
+<a class="flex gap-4 group" href="#">
+<div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+<img alt="Data Alt: Farmer holding fresh produce in a greenhouse." class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGBQlx1gI36R9MLsV_zUOLHQkXCAlNoQOgPujEaPUfEoUbxp9emor8wkKIHrRg4CJryLyMcKXtsy3JqT7YSsq8HlX0xqMvgFnrQJjVmssTbiyvIdkvSU2XiJdlYk_5RP32DRaPLCAuyvJWlyifZIEmviCPHI5DHHopOCMgjJIJY-UdAt-SDDBdw-jlCHOyq5gdL6XAn7pJ_K2HrI3tKq5NOZWfXlc1ubkujsuz7ohm1C_bkkYY0-GSoJyWpUu85fosPo34WFxrMzY"/>
+</div>
+<div class="flex flex-col justify-center py-0.5">
+<span class="text-xs text-primary font-bold mb-1">농업 경제</span>
+<h4 class="text-[15px] font-bold text-[#111418] dark:text-white leading-snug line-clamp-2 mb-1 group-hover:text-primary transition-colors">스마트팜 창업 교육생 모집, 경쟁률 5:1 기록</h4>
+<span class="text-xs text-gray-400">2시간 전</span>
+</div>
+</a>
+<!-- Card 2 -->
+<a class="flex gap-4 group" href="#">
+<div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+<img alt="Data Alt: Aerial view of a map or a planned city district." class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-location="Sejong City" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGn12kLAQyeK1yC_4c_M79t7oPB0fIbC_h-T4IPQ9UUyVa8q-lFXFRGpMXa0f2ZOw1GA-TjgZhmbgYs9M3ZWI4Jf7IEIZDgGbN6tCiajvnvKGgXq9xPvNhvmdjuls5VchZaSU_eQ63ecQ2EzwR7gJA8aQBw2ZNSES_bHRmVzz8Ribo0a-ndNBiiIBzM9Xa1D3_UWbUdvaMIM9rPCBp4b6985SL6BJumS-gXWk_V8jOYza5SGvl_-xF3_WLm4_b1TvnEV38jgXV42A"/>
+</div>
+<div class="flex flex-col justify-center py-0.5">
+<span class="text-xs text-primary font-bold mb-1">지역 개발</span>
+<h4 class="text-[15px] font-bold text-[#111418] dark:text-white leading-snug line-clamp-2 mb-1 group-hover:text-primary transition-colors">지방 소멸 대응 펀드, 어디에 투자되나?</h4>
+<span class="text-xs text-gray-400">4시간 전</span>
+</div>
+</a>
+<!-- Card 3 -->
+<a class="flex gap-4 group" href="#">
+<div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+<img alt="Data Alt: A camper van parked near a scenic lake." class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSqmyFJjb_YbUcU5tw-_yGwlXpUptuW1qf3h3MHwiBTTe5UYYcgr-JGIUoA_o2bD_JtOz4hti_HtUCH8a7irlrbD5XGWPsDzNWrEx8E_X1M2ecuMVkOLp-egIk3Gechimr7BBz9s7yhQpZNkqnUkfqVDI0EPZwI-u3VsQoyOZFLE5a6UfLzsFBIiF9Bgon6PmJJ2oFsPJAOde3fxq0S4UEGPX_BvzPCkdVwFX-8XODqZeJ2jkJaKQksVmqB3zhdc3_Y90xM4R9Gik"/>
+</div>
+<div class="flex flex-col justify-center py-0.5">
+<span class="text-xs text-primary font-bold mb-1">여행/레저</span>
+<h4 class="text-[15px] font-bold text-[#111418] dark:text-white leading-snug line-clamp-2 mb-1 group-hover:text-primary transition-colors">주말에 떠나기 좋은 충청도 숨은 명소 BEST 5</h4>
+<span class="text-xs text-gray-400">6시간 전</span>
+</div>
+</a>
+</div>
+</section>
+<!-- Comment Preview Section -->
+<section class="px-5 pt-2 pb-8 bg-white dark:bg-background-dark">
+<div class="flex items-center gap-2 mb-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+<h3 class="text-lg font-bold text-[#111418] dark:text-white">댓글 <span class="text-primary">24</span></h3>
+</div>
+<!-- Single Best Comment -->
+<div class="bg-gray-50 dark:bg-surface-dark p-4 rounded-xl mb-4">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<div class="size-6 rounded-full bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">ID</div>
+<span class="text-xs font-bold text-gray-900 dark:text-gray-200">농사꾼이꿈</span>
+</div>
+<span class="text-[10px] text-gray-400">10분 전</span>
+</div>
+<p class="text-sm text-gray-800 dark:text-gray-300 leading-relaxed mb-3">
+                        좋은 정보 감사합니다. 5억까지 융자가 된다니 큰 도움이 되겠네요. 혹시 신청 자격에 나이 제한이 있나요?
+                    </p>
+<div class="flex gap-3">
+<button class="flex items-center gap-1 text-xs text-gray-500">
+<span class="material-symbols-outlined text-[14px]">thumb_up</span> 12
+                        </button>
+<button class="flex items-center gap-1 text-xs text-gray-500">
+<span class="material-symbols-outlined text-[14px]">chat_bubble</span> 2
+                        </button>
+</div>
+</div>
+<button class="w-full py-3 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    댓글 전체보기
+                </button>
+</section>
+</main>
+<!-- Fixed Bottom Engagement Bar -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white dark:bg-surface-dark border-t border-gray-200 dark:border-gray-700 p-3 pb-6 sm:pb-3 flex items-center gap-3 z-50">
+<div class="relative flex-1">
+<input class="w-full h-10 pl-4 pr-10 rounded-full bg-gray-100 dark:bg-gray-800 text-sm border-none focus:ring-2 focus:ring-primary placeholder:text-gray-400 text-gray-900 dark:text-white" placeholder="댓글을 입력하세요..." type="text"/>
+<button class="absolute right-1 top-1 size-8 flex items-center justify-center text-primary rounded-full hover:bg-primary/10">
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+<div class="flex gap-1 shrink-0">
+<button class="flex flex-col items-center justify-center w-10 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors gap-0.5">
+<span class="material-symbols-outlined text-[24px]">favorite</span>
+<span class="text-[10px]">128</span>
+</button>
+<button class="flex flex-col items-center justify-center w-10 text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors gap-0.5">
+<span class="material-symbols-outlined text-[24px]">chat_bubble_outline</span>
+<span class="text-[10px]">24</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

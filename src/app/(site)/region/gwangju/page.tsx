@@ -700,7 +700,7 @@ export default function GwangjuRegionPage() {
                       >
                         {place.thumbnail && (
                           <div className="w-14 h-14 shrink-0 mr-4 rounded-lg overflow-hidden relative">
-                            <Image src={place.thumbnail} alt={place.name} fill className="object-cover" />
+                            <Image src={place.thumbnail} alt={place.name} fill sizes="56px" className="object-cover" />
                           </div>
                         )}
                         {!place.thumbnail && (

@@ -193,18 +193,16 @@ export default function Header() {
                         <HeaderRegionSelector />
                     </div>
 
-                    {/* Center Logo branding - 동적 지역명 표시 */}
+                    {/* Center Logo branding - 나주 고정 */}
                     <div className="flex flex-col items-center justify-center flex-1">
-                        <Link href={getHomePathByRegion()} className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                        <Link href="/region/naju" className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                             <span className="text-3xl md:text-4xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
                                 코리아<span className="text-primary">NEWS</span>
                             </span>
-                            {/* 지역명 표시 (전국이 아닐 때만) */}
-                            {displayRegionCode !== 'korea' && (
-                                <span className="text-xl md:text-2xl font-serif font-bold text-slate-600 ml-1 group-hover:opacity-90 transition-opacity">
-                                    {displayRegionName}
-                                </span>
-                            )}
+                            {/* 나주 강조 표시 */}
+                            <span className="text-2xl md:text-3xl font-serif font-black text-red-500 ml-1 group-hover:opacity-90 transition-opacity">
+                                나주
+                            </span>
                         </Link>
                     </div>
 
@@ -237,11 +235,11 @@ export default function Header() {
                     <nav className="hidden md:flex items-center justify-center h-full">
                         {/* Center aligned menu */}
                         <div className="flex items-center gap-8 h-full font-bold text-[16px] tracking-tight">
-                            <Link href={getHomePathByRegion()} className={`h-full flex items-center gap-1 transition-colors font-serif italic text-lg mr-2 relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                            <Link href="/region/naju" className={`h-full flex items-center gap-1 transition-colors font-serif italic text-lg mr-2 relative px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                                 ${pathname === '/' || pathname.startsWith('/region/') ? 'text-primary' : 'text-secondary hover:text-primary'}
                             `}>
                                 <Home className="w-4 h-4" />
-                                Home
+                                홈
                                 {(pathname === '/' || pathname.startsWith('/region/')) && (
                                     <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary"></span>
                                 )}

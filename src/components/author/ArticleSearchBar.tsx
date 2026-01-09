@@ -51,14 +51,14 @@ export default function ArticleSearchBar({
     return (
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
             <div className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-white transition-all
+                flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 transition-all
                 ${isFocused
-                    ? "border-blue-400 ring-2 ring-blue-100 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-blue-400 dark:border-blue-500 ring-2 ring-blue-100 dark:ring-blue-900/50 shadow-sm"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 }
             `}>
                 <Search className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                    isFocused ? "text-blue-500" : "text-gray-400"
+                    isFocused ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"
                 }`} />
                 <input
                     type="text"
@@ -67,13 +67,13 @@ export default function ArticleSearchBar({
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     placeholder="Search articles by title..."
-                    className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                    className="flex-1 bg-transparent outline-none text-sm text-gray-700 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
                 {query && (
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="p-0.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="p-0.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                         <X className="w-4 h-4" />
                     </button>

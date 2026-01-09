@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>정치/행정 뉴스</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,200..800&amp;family=Noto+Sans+KR:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                "primary": "#1152d4",
+                "background-light": "#f6f6f8",
+                "background-dark": "#101622",
+                },
+                fontFamily: {
+                "display": ["Newsreader", "serif"],
+                "sans": ["Noto Sans KR", "sans-serif"],
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Hide scrollbar for clean horizontal scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100 antialiased overflow-x-hidden">
+<div class="relative flex h-full w-full flex-col min-h-screen pb-20">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 w-full bg-white/95 dark:bg-[#101622]/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
+<div class="flex items-center justify-between px-4 h-14">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">정치/행정</h1>
+<div class="flex items-center gap-1">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
+<span class="material-symbols-outlined">tune</span>
+</button>
+</div>
+</div>
+<!-- Filter Chips -->
+<div class="flex items-center gap-2 px-4 py-3 overflow-x-auto no-scrollbar border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#101622]">
+<button class="shrink-0 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors">
+                    전체
+                </button>
+<button class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    국회
+                </button>
+<button class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    대통령실
+                </button>
+<button class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    행정
+                </button>
+<button class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    외교
+                </button>
+<button class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    국방
+                </button>
+</div>
+<!-- Sort Bar -->
+<div class="flex items-center justify-end px-4 py-2 bg-background-light dark:bg-background-dark">
+<button class="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined text-[16px]">sort</span>
+                    최신순
+                </button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col gap-4 px-4 py-4">
+<!-- Featured Card -->
+<article class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+<div class="relative w-full aspect-[16/9] overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Close up of a politician speaking at a podium with microphones" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBeiqaNjYspydNu9-mg6K88Zb40YOQcA6btnevc50N3p1LInfD7thz3pH-OYZxCOI-srMFK8l2isT3kcRX-HtwyfBWxsG_gY6pWvDk1GiorJbGMVg-_VcoLwickvJZ69b3-ziiEjxNKZgn2Ssvsn1L5IaVzwPyQVHssMB_49BlsVYs3DYyUG98fkOk-6S3cExCbk7ZQkigYo_hHsAHlFA_jzi2hKAxJAgnC6kheEej96F6r-f4xEwbGyBkxzKUFK27fZJ6sRDbewRw');">
+</div>
+<span class="absolute top-3 left-3 z-20 rounded bg-primary px-2 py-1 text-xs font-bold text-white shadow-sm">
+                        주요 뉴스
+                    </span>
+</div>
+<div class="flex flex-col gap-2 p-5">
+<h2 class="text-xl font-bold leading-tight text-gray-900 dark:text-white">
+                        여야, 예산안 극적 합의… 내일 본회의서 처리 예정
+                    </h2>
+<p class="line-clamp-2 text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-sans">
+                        법정시한 2주 넘겨 타결… R&amp;D 예산 6천억 증액, 지역사랑상품권 발행 규모 축소 등 쟁점 조율 완료. 여야 원내대표가 국회 소통관에서 공동 브리핑을 갖고 합의문을 발표했다.
+                    </p>
+<div class="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 font-sans">
+<div class="flex items-center gap-2">
+<span class="font-medium text-primary">연합뉴스</span>
+<span>•</span>
+<span>10분 전</span>
+</div>
+<button class="p-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+</div>
+</div>
+</article>
+<!-- News List -->
+<div class="flex flex-col gap-4">
+<!-- Standard Card 1 -->
+<article class="flex items-stretch gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors hover:border-primary/30">
+<div class="flex flex-1 flex-col justify-between gap-2">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-medium text-primary mb-0.5 font-sans">대통령실</span>
+<h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white line-clamp-2">
+                                대통령실 "네덜란드와 반도체 동맹 격상… 공동 성명 채택"
+                            </h3>
+<p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 font-sans mt-1">
+                                양국 정상, ASML 본사 방문 후 공동 기자회견… 초미세 공정 기술 협력 강화하기로 합의.
+                            </p>
+</div>
+<div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-sans mt-auto">
+<span>이데일리</span>
+<span>•</span>
+<span>30분 전</span>
+</div>
+</div>
+<div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+<div class="h-full w-full bg-cover bg-center" data-alt="Abstract image representing technology and business handshake" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCoAPrIi0XZ-b5ZLwlUrtmbi50K6qC_mu7rfDdND9rT8HMFmWm3UVMGdNQCaEje1B9gDRc9hRjCG0T7_AXhbr3tmY93GsUYSywBQL8FeMgkzWSTE7Hb2XG6if5T7hH-WAJBqJGHUlYH8c_IgK6O8aBk77hqwHZPwx-ZL1RmM9dlgPZgzTiNvUbqpJfMb25eOk4ykEbxdyEDKoyzSYpT3jowWJ6aLNWB5tjfinBq6tY4-wVONKlGU8AP7PRPQEuGgysXDRQYZUrPqdo');">
+</div>
+</div>
+</article>
+<!-- Standard Card 2 -->
+<article class="flex items-stretch gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors hover:border-primary/30">
+<div class="flex flex-1 flex-col justify-between gap-2">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-medium text-primary mb-0.5 font-sans">행정</span>
+<h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white line-clamp-2">
+                                내년도 공무원 보수 2.5% 인상 확정… 9급 초임 3천만원 돌파
+                            </h3>
+<p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 font-sans mt-1">
+                                인사혁신처, 공무원 보수 규정 개정안 입법예고… 저연차 공무원 처우 개선에 중점.
+                            </p>
+</div>
+<div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-sans mt-auto">
+<span>KBS 뉴스</span>
+<span>•</span>
+<span>1시간 전</span>
+</div>
+</div>
+<div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+<div class="h-full w-full bg-cover bg-center" data-alt="Close up of office documents and calculator on a desk" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC--R9l5PPg9S0kn7mQiPZhk-3lAE3s4pK9_YEwDo4tgttnr33lP5ibxMLngzrC-mNGalRkob183SE75NXut5otSf2LvJ3FPPFG2SoftzQZrsAB6NV3S0jbB0hDS-3GV4j0LJpQ7DJtPNazgQDmkgoDvZLEdkOhPUEGC9kHZhu9yegT6MhrPTmFjmVFftefr81WnsY5wbe0gUrqgxppYc4sd2kOucwI4Mr8XKkXPKMP62DC3I0mdQi7mOQV3YJF8MHor0np--9W9XE');">
+</div>
+</div>
+</article>
+<!-- Native Ad Slot -->
+<div class="flex flex-col items-start gap-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-300 dark:border-gray-700 p-4">
+<div class="flex w-full items-start justify-between">
+<div class="flex flex-col gap-1 pr-4">
+<div class="flex items-center gap-2">
+<span class="rounded bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 text-[10px] font-bold text-gray-600 dark:text-gray-300 font-sans">AD</span>
+<span class="text-xs font-medium text-gray-500 font-sans">현대자동차</span>
+</div>
+<h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white mt-1">
+                                더 뉴 아이오닉 5 출시, 지금 시승 신청하세요
+                            </h3>
+<p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 font-sans mt-1">
+                                혁신적인 디자인과 압도적인 주행거리, 전기차의 새로운 기준.
+                            </p>
+</div>
+<div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+<div class="h-full w-full bg-cover bg-center" data-alt="Silver modern electric car driving on a coastal road" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDW9RHpLfyHvv7BR_-8N7yGxaeRJA-J3CuOOZ8TocOhbyzz1fX87x-eCftrijBhyB3i0gfzG8cxC-24hp7jGKykm1Glf6KnKjvO0mjB0-RbL23b3RpyhHtZWQmeHf753dd_o8TuwC6Ev5DdreV7QyfdET3FvjI_xSvnkN-tdun3j48cssppj7wThkg8gwnQx3raBtPMYjy_lw925S12VlHVrJOgJ_2gva-wuf-VWLdQ5YHD9xAsH70lVmMiY8t6T0rf7QdQs7uv8ug');">
+</div>
+</div>
+</div>
+</div>
+<!-- Standard Card 3 -->
+<article class="flex items-stretch gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors hover:border-primary/30">
+<div class="flex flex-1 flex-col justify-between gap-2">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-medium text-primary mb-0.5 font-sans">외교</span>
+<h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white line-clamp-2">
+                                한미일 안보실장 회의 서울서 개최… "북핵 위협 공동 대응"
+                            </h3>
+<p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 font-sans mt-1">
+                                3국 안보사령탑, 캠프 데이비드 합의 후속 조치 논의… 경제 안보 협력도 강화.
+                            </p>
+</div>
+<div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-sans mt-auto">
+<span>SBS 뉴스</span>
+<span>•</span>
+<span>2시간 전</span>
+</div>
+</div>
+<div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+<div class="h-full w-full bg-cover bg-center" data-alt="Flags of South Korea, USA, and Japan waving side by side" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBxC2jVdERygnwrOiCugVBjkmjpMR13kxhdOnimCnCotJz9J5RzaQ8NmOjswCO6MsKSGsRCL_FeFm0vmEKZGjMk6Skk-8wVDQziAsrLWqsq3_7Y9N9_RAXjj92Nb85w43MRF3BGRZO6BJIkk6MsX8_0f3o9EPT2p8evhmOB2qKzvGj-lwJNqOmw8ttxhAl2tGsHNPBdDcMpiSaqYwhcJcKql383jvJFyM6AB7JaMf7ARar4f_BlZvsP-886h89BuuQ-lPV8tYhLmN4');">
+</div>
+</div>
+</article>
+<!-- Standard Card 4 -->
+<article class="flex items-stretch gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-colors hover:border-primary/30">
+<div class="flex flex-1 flex-col justify-between gap-2">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-medium text-primary mb-0.5 font-sans">국회</span>
+<h3 class="text-base font-bold leading-snug text-gray-900 dark:text-white line-clamp-2">
+                                선거제 개편안 막판 진통… 정개특위, 오늘 전체회의
+                            </h3>
+<p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 font-sans mt-1">
+                                비례대표 선출 방식 놓고 여야 이견 여전… 총선 예비후보 등록일 임박해 압박감 고조.
+                            </p>
+</div>
+<div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-sans mt-auto">
+<span>한겨레</span>
+<span>•</span>
+<span>3시간 전</span>
+</div>
+</div>
+<div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+<div class="h-full w-full bg-cover bg-center" data-alt="Interior view of the National Assembly main hall" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA3HJmt5lg5upg9kFq-qwOPTswvC6UcCugAffJD46zzwluJouqtr9lrk11tEIC8uCieO0JUGAAUkkedrqWyvyn9uRAw-CfaXXU9RANEkLbuLWeq7rBO51-gBlGhDkLOXZ99R0EFt2mRvG5fvmr1lC4CGZtplvqzr3vJo549mK2BJf5W84qhMv91zKpzy11SPPHdjVlw_kx3K4dfFX6clJRnET_rl-txdnG-NLwva_-Y2sKxLJycJ8CVg_q2iYSKjkFMvcH9QR3wUS0');">
+</div>
+</div>
+</article>
+</div>
+<!-- Load More -->
+<div class="mt-4 flex justify-center pb-8">
+<button class="flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-2.5 text-sm font-semibold text-primary shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    더보기
+                    <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 z-50 w-full border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#101622] pb-safe-area">
+<div class="flex h-16 items-center justify-around px-2">
+<button class="flex flex-1 flex-col items-center gap-1 p-2 text-gray-400 dark:text-gray-500 hover:text-primary dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="text-[10px] font-medium font-sans">홈</span>
+</button>
+<button class="flex flex-1 flex-col items-center gap-1 p-2 text-primary">
+<span class="material-symbols-outlined text-[24px] fill-current">category</span>
+<span class="text-[10px] font-bold font-sans">카테고리</span>
+</button>
+<button class="flex flex-1 flex-col items-center gap-1 p-2 text-gray-400 dark:text-gray-500 hover:text-primary dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">newspaper</span>
+<span class="text-[10px] font-medium font-sans">신문</span>
+</button>
+<button class="flex flex-1 flex-col items-center gap-1 p-2 text-gray-400 dark:text-gray-500 hover:text-primary dark:hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="text-[10px] font-medium font-sans">마이</span>
+</button>
+</div>
+<!-- Safe Area Spacer for iPhone home bar -->
+<div class="h-[env(safe-area-inset-bottom)] w-full bg-white dark:bg-[#101622]"></div>
+</nav>
+</div>
+</body></html>

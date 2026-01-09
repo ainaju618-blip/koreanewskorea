@@ -39,9 +39,21 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
       case 'council':
         // 시군의회 보도자료
         return category === '의회' || source.includes('의회') || source.includes('의원');
+      case 'fire':
+        // 나주소방서 보도자료
+        return category === '소방' || source.includes('소방') || source.includes('119');
       case 'education':
-        // 지역교육지원청 보도자료
-        return category === '교육' || source.includes('교육') || source.includes('학교');
+        // 지역교육지원청 보도자료 (나주 관련만)
+        const isEducation = category === '교육' || source.includes('교육') || source.includes('학교');
+        const title = article.title?.toLowerCase() || '';
+        const hasNaju = title.includes('나주') || source.includes('나주');
+        return isEducation && hasNaju;
+      case 'business':
+        // 기업 보도자료
+        return category === '기업' || category === '경제' || source.includes('기업') || source.includes('경제');
+      case 'local':
+        // 오피니언
+        return category === '동네' || category === '지역' || source.includes('동네') || source.includes('마을');
       default:
         return true;
     }
@@ -63,14 +75,14 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
   return (
     <section className="px-4 mb-2">
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Megaphone className="w-5 h-5 text-cyan-500" />
           {regionName} 주요 소식
         </h2>
         {articles.length > 0 && (
           <Link
             href={`/region/${regionCode}/news`}
-            className="text-gray-500 text-xs font-medium hover:text-cyan-500"
+            className="text-gray-500 dark:text-gray-400 text-xs font-medium hover:text-cyan-500"
           >
             더보기 &gt;
           </Link>
@@ -85,8 +97,8 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
             onClick={() => handleTabChange(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               activeTab === tab.id
-                ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-cyan-500 text-white shadow-md shadow-cyan-200 dark:shadow-cyan-900'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
             title={tab.description}
           >
@@ -100,7 +112,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
       {isLoading && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-cyan-500 animate-spin" />
-          <span className="ml-2 text-gray-500 text-sm">뉴스를 불러오는 중...</span>
+          <span className="ml-2 text-gray-500 dark:text-gray-400 text-sm">뉴스를 불러오는 중...</span>
         </div>
       )}
 
@@ -112,7 +124,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
               <NewsCard key={article.id} article={article} />
             ))
           ) : (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-gray-400 dark:text-gray-500">
               <Megaphone className="w-10 h-10 mx-auto mb-2 opacity-30" />
               <p>해당 카테고리의 소식이 없습니다.</p>
             </div>
@@ -126,7 +138,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="이전 페이지"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -140,7 +152,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
                 className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
                   currentPage === page
                     ? 'bg-cyan-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
                 {page}
@@ -151,7 +163,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="다음 페이지"
           >
             <ChevronRight className="w-5 h-5" />

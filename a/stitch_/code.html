@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>코리아뉴스 전국판</title>
+<!-- Google Fonts: Public Sans & Noto Sans KR -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&amp;family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101722",
+                        "text-main": "#111418",
+                        "text-sub": "#60708a",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "sans": ["Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Hide scrollbar for chrome/safari/opera */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen pb-24">
+<!-- Utility Bar (Date & Breaking News) -->
+<div class="bg-slate-100 dark:bg-slate-800 text-xs font-medium border-b border-slate-200 dark:border-slate-700">
+<div class="flex items-center px-4 py-2 gap-3 max-w-md mx-auto w-full">
+<span class="text-primary font-bold whitespace-nowrap">2023.10.27</span>
+<div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+<div class="flex items-center gap-1.5 overflow-hidden text-text-main dark:text-slate-200">
+<span class="material-symbols-outlined text-red-500 text-[16px] animate-pulse">emergency_home</span>
+<p class="truncate">전국 농작물 수확량 보고서 발표, 귀농 지원 확대 논의...</p>
+</div>
+</div>
+</div>
+<!-- Main Header -->
+<header class="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
+<div class="max-w-md mx-auto w-full">
+<div class="flex justify-between items-center px-4 py-3">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<button class="text-text-main dark:text-white p-1 -ml-1">
+<span class="material-symbols-outlined text-[28px]">menu</span>
+</button>
+<a class="flex flex-col leading-none" href="#">
+<span class="text-primary font-black text-xl tracking-tighter">KOREA NEWS</span>
+<span class="text-[10px] text-text-sub font-bold tracking-widest uppercase">National Edition</span>
+</a>
+</div>
+<!-- Action Icons -->
+<div class="flex gap-1">
+<button class="p-2 text-text-main dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 text-text-main dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900"></span>
+</button>
+<button class="p-2 text-text-main dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<div class="px-4 overflow-x-auto no-scrollbar">
+<div class="flex gap-6 min-w-max pb-3">
+<a class="relative flex flex-col items-center justify-center text-text-main dark:text-white font-bold text-sm group" href="#">
+<span>종합</span>
+<span class="absolute -bottom-3 w-full h-[3px] bg-text-main dark:bg-white rounded-t-sm"></span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-sub dark:text-slate-400 font-medium text-sm hover:text-primary transition-colors" href="#">
+<span>정치/행정</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-sub dark:text-slate-400 font-medium text-sm hover:text-primary transition-colors" href="#">
+<span>경제/농업</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-sub dark:text-slate-400 font-medium text-sm hover:text-primary transition-colors" href="#">
+<span>교육/복지</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-sub dark:text-slate-400 font-medium text-sm hover:text-primary transition-colors" href="#">
+<span>여행/축제</span>
+</a>
+<a class="flex flex-col items-center justify-center text-text-sub dark:text-slate-400 font-medium text-sm hover:text-primary transition-colors" href="#">
+<span>오피니언</span>
+</a>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-md mx-auto w-full flex flex-col gap-2">
+<!-- Hero Section: Featured News -->
+<section class="bg-white dark:bg-slate-900 pb-6 pt-4">
+<div class="px-4">
+<div class="flex items-center gap-2 mb-3">
+<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">TOP NEWS</span>
+<span class="text-text-sub dark:text-slate-400 text-xs font-medium">10분 전 업데이트</span>
+</div>
+<!-- Hero Article -->
+<div class="group cursor-pointer">
+<div class="w-full aspect-video rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 relative mb-4 shadow-sm">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Wide green agricultural field under a blue sky representing rural farming policy" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCa-e2_ePVL70AMCl9Tuy28MgboEDMY6RCOs9YzxUlqScdJiGr8-huzSOpIwl6_FGOjFQ1nEbzsULJhUxlyixSyeC8SShg8vqVRom0M8WiCihGKtGrdjgjGk3M5DoPUBFDrNZ82hjrQ2OtVP7soEAiphvtdtgEMzVi9J8K19-UGSlXjeuMrud697BSIC6aOp3u4o11BF8JeW-Iw62KkyN9u-Gx5EmDVoOpyCi-3yPDXxS-tFMtndGl3RpxLC49hr31F8sqgapvePco');">
+</div>
+</div>
+<h2 class="text-text-main dark:text-white text-[22px] font-bold leading-snug tracking-tight mb-2">
+                        정부, 귀농·귀촌 희망자 위한 신규 보조금 정책 대폭 확대 발표
+                    </h2>
+<p class="text-text-sub dark:text-slate-400 text-base leading-relaxed line-clamp-2 mb-3">
+                        내년부터 농촌 정착 지원금이 20% 인상되며, 초기 정착을 돕는 '귀촌 도우미' 서비스가 전국 80개 지자체로 확대됩니다.
+                    </p>
+<div class="flex items-center text-xs text-text-sub dark:text-slate-500 font-medium gap-2">
+<span>정책브리핑</span>
+<span class="w-0.5 h-0.5 bg-slate-300 rounded-full"></span>
+<span>전국</span>
+<span class="w-0.5 h-0.5 bg-slate-300 rounded-full"></span>
+<span>댓글 42</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary News List -->
+<section class="bg-white dark:bg-slate-900 py-2">
+<!-- Article 1 -->
+<div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 flex gap-4 items-start active:bg-slate-50 dark:active:bg-slate-800 transition-colors cursor-pointer">
+<div class="flex-1 flex flex-col justify-between min-h-[72px]">
+<h3 class="text-text-main dark:text-slate-100 text-[16px] font-semibold leading-tight line-clamp-2 mb-1">
+                        3분기 지방의회 정례회 결과: 주요 조례안 15건 통과
+                    </h3>
+<div class="flex items-center gap-2 text-xs text-text-sub dark:text-slate-500 mt-1">
+<span class="text-primary font-bold">의회</span>
+<span>·</span>
+<span>1시간 전</span>
+</div>
+</div>
+<div class="w-[72px] h-[72px] rounded-lg bg-slate-200 dark:bg-slate-700 bg-cover bg-center shrink-0" data-alt="Gavel and blocks on a wooden table representing council meeting" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCUJcPX4eExnhcHYUUcvwfcZwxzCSMws03yGL8jLYlMPAqUmhGQUEhqyyB4uwmwhHl6qwUAW_DF4xPG2RJkpPgu4GqWcXPwU81JY0aDxVXGgVhGE3nw_fqW0HH5WQaD1wmxCRZGpvzbTPVYN5t0HmbU4hfkyjsa9hM_L9gajGKaUM_uHLd0euXZzDHfaPa7W341K0xhk6gvU88-k8bB6YvT86PaJ1cXB78ENvuP0-9sQ6u42bziTuro3h4M4DHIAkn8pZw_6Q-Kz-k');">
+</div>
+</div>
+<!-- Article 2 -->
+<div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 flex gap-4 items-start active:bg-slate-50 dark:active:bg-slate-800 transition-colors cursor-pointer">
+<div class="flex-1 flex flex-col justify-between min-h-[72px]">
+<h3 class="text-text-main dark:text-slate-100 text-[16px] font-semibold leading-tight line-clamp-2 mb-1">
+                        이번 주말 가볼만한 전국 가을 축제 BEST 5
+                    </h3>
+<div class="flex items-center gap-2 text-xs text-text-sub dark:text-slate-500 mt-1">
+<span class="text-green-600 font-bold">여행</span>
+<span>·</span>
+<span>2시간 전</span>
+</div>
+</div>
+<div class="w-[72px] h-[72px] rounded-lg bg-slate-200 dark:bg-slate-700 bg-cover bg-center shrink-0" data-alt="Colorful autumn leaves in a forest representing travel destinations" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDNtoLgooj2CMa3I4v8_g0qynrsM8wIM5E-Rz1j7ORdBwBdaQG0csVyWiNtLsPWg0CRDo52oqWUV8yV5kisU4NM-OxgNze9PrOUTQIEwiP2fgA3ns57YiedZwBgnW3rYPtpi1bC6bxtcP04IDBoF8M7uSx_Cy6KWrzufT8EH2-Wg8bvUMghW8OQlSaH_0CdjinAUdPWtHASk-LbUvOCwy0isbKmcjqtk2vAcAlF1NWvup1JVYOzUFXlsc0qYmHQnmNXq0O4pkYXu8s');">
+</div>
+</div>
+<!-- Article 3 -->
+<div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 flex gap-4 items-start active:bg-slate-50 dark:active:bg-slate-800 transition-colors cursor-pointer">
+<div class="flex-1 flex flex-col justify-between min-h-[72px]">
+<h3 class="text-text-main dark:text-slate-100 text-[16px] font-semibold leading-tight line-clamp-2 mb-1">
+                        지방 소멸 대응 기금, 올해 집행률 90% 달성 목표
+                    </h3>
+<div class="flex items-center gap-2 text-xs text-text-sub dark:text-slate-500 mt-1">
+<span class="text-blue-600 font-bold">행정</span>
+<span>·</span>
+<span>3시간 전</span>
+</div>
+</div>
+<!-- Text only variation for variety -->
+</div>
+</section>
+<!-- Region Selection / Map Section -->
+<section class="bg-slate-50 dark:bg-slate-800/50 py-8 px-4 mt-2">
+<div class="flex justify-between items-end mb-5">
+<div>
+<h2 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">public</span>
+                        지역 선택
+                    </h2>
+<p class="text-sm text-text-sub dark:text-slate-400 mt-1">거주하시는 지역의 소식을 확인하세요</p>
+</div>
+<button class="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors">
+                    전체보기
+                </button>
+</div>
+<!-- Abstract Map Visualization -->
+<div class="relative w-full aspect-[4/3] bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 overflow-hidden">
+<!-- Decorative background map pattern -->
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(#3c83f6_1px,transparent_1px)] [background-size:16px_16px]"></div>
+<!-- Current Location Indicator -->
+<div class="absolute top-4 left-4 z-10 flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold text-text-sub dark:text-slate-500 tracking-wider">Current Location</span>
+<div class="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded-full shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined text-[16px]">my_location</span>
+<span class="text-sm font-bold">서울 종로구</span>
+</div>
+</div>
+<!-- Stylized Region Buttons Grid representing a Map -->
+<div class="absolute inset-0 flex items-center justify-center pt-8">
+<div class="grid grid-cols-3 gap-2 w-full max-w-[280px]">
+<button class="col-start-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            경기/인천
+                        </button>
+<button class="col-start-2 bg-primary text-white border border-primary rounded-lg py-2 text-sm font-bold shadow-lg shadow-primary/20 transition-all transform scale-105 z-10">
+                            서울
+                        </button>
+<button class="col-start-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            강원
+                        </button>
+<button class="col-start-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            충남
+                        </button>
+<button class="col-start-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            세종/대전
+                        </button>
+<button class="col-start-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            충북
+                        </button>
+<button class="col-start-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            전북
+                        </button>
+<button class="col-start-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            광주/전남
+                        </button>
+<button class="col-start-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            경북/대구
+                        </button>
+<button class="col-start-2 col-span-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            경남/부산/울산
+                        </button>
+<button class="col-start-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-primary hover:text-primary rounded-lg py-2 text-sm font-bold shadow-sm transition-all text-text-sub">
+                            제주
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Lifestyle / Public Data Widgets -->
+<section class="bg-white dark:bg-slate-900 py-6 px-4">
+<h3 class="text-[18px] font-bold text-text-main dark:text-white mb-4">생활 정보 &amp; 공공 데이터</h3>
+<div class="grid grid-cols-4 gap-4 text-center">
+<!-- Widget 1 -->
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 transition-colors">
+<span class="material-symbols-outlined text-[28px]">agriculture</span>
+</div>
+<span class="text-xs font-medium text-text-sub dark:text-slate-400 group-hover:text-primary">귀농지원</span>
+</a>
+<!-- Widget 2 -->
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:bg-green-100 dark:group-hover:bg-green-900/40 transition-colors">
+<span class="material-symbols-outlined text-[28px]">map</span>
+</div>
+<span class="text-xs font-medium text-text-sub dark:text-slate-400 group-hover:text-primary">관광지도</span>
+</a>
+<!-- Widget 3 -->
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="w-14 h-14 rounded-2xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/40 transition-colors">
+<span class="material-symbols-outlined text-[28px]">campaign</span>
+</div>
+<span class="text-xs font-medium text-text-sub dark:text-slate-400 group-hover:text-primary">고시공고</span>
+</a>
+<!-- Widget 4 -->
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="w-14 h-14 rounded-2xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40 transition-colors">
+<span class="material-symbols-outlined text-[28px]">home_work</span>
+</div>
+<span class="text-xs font-medium text-text-sub dark:text-slate-400 group-hover:text-primary">부동산</span>
+</a>
+</div>
+</section>
+<!-- Newsletter / Footer Teaser -->
+<section class="px-4 py-8">
+<div class="bg-slate-900 dark:bg-slate-800 rounded-2xl p-6 text-center text-white">
+<p class="text-sm text-slate-300 mb-2">놓치면 안되는 지역 소식</p>
+<h3 class="text-xl font-bold mb-4">매일 아침, 뉴스레터로 받아보세요</h3>
+<div class="flex gap-2">
+<input class="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-primary" placeholder="이메일 주소" type="email"/>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">구독</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-safe z-50">
+<div class="max-w-md mx-auto flex justify-around items-center h-[60px] px-2">
+<a class="flex flex-col items-center justify-center w-full h-full gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="text-[10px] font-medium">홈</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full gap-1 text-text-sub dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">location_on</span>
+<span class="text-[10px] font-medium">내 지역</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full gap-1 text-text-sub dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">
+<div class="bg-primary rounded-full p-2 -mt-6 shadow-lg shadow-primary/40 border-4 border-white dark:border-slate-900">
+<span class="material-symbols-outlined text-white text-[24px]">add</span>
+</div>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full gap-1 text-text-sub dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">bookmark</span>
+<span class="text-[10px] font-medium">스크랩</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full gap-1 text-text-sub dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+<span class="text-[10px] font-medium">전체</span>
+</a>
+</div>
+<!-- Safe Area Spacing for iOS Home Indicator -->
+<div class="h-1 bg-white dark:bg-slate-900 w-full"></div>
+</nav>
+</body></html>

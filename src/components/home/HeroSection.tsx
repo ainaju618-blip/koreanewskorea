@@ -69,7 +69,7 @@ export default function HeroSection({
   return (
     <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* 메인 뉴스 카드 (좌측 60%) */}
-      <article className="lg:col-span-7 xl:col-span-8 flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 group cursor-pointer hover:shadow-md transition-shadow">
+      <article className="lg:col-span-7 xl:col-span-8 flex flex-col bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 group cursor-pointer hover:shadow-md transition-shadow">
         <Link href={`/news/${mainArticle.id}`} className="block">
           <div className="relative aspect-video w-full overflow-hidden">
             {/* 카테고리 뱃지 */}
@@ -94,17 +94,17 @@ export default function HeroSection({
           </div>
 
           <div className="p-5 flex flex-col gap-3">
-            <h2 className="text-2xl font-bold leading-tight text-slate-900 group-hover:text-primary transition-colors font-serif">
+            <h2 className="text-2xl font-bold leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors font-serif">
               {mainArticle.title}
             </h2>
 
             {mainArticle.excerpt && (
-              <p className="text-slate-500 line-clamp-2 leading-relaxed text-base">
+              <p className="text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed text-base">
                 {mainArticle.excerpt}
               </p>
             )}
 
-            <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-2">
               {mainArticle.author && (
                 <span className="font-medium text-primary">{mainArticle.author}</span>
               )}
@@ -125,31 +125,31 @@ export default function HeroSection({
       </article>
 
       {/* 정책 브리핑 리스트 (우측 40%) */}
-      <aside className="lg:col-span-5 xl:col-span-4 flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 h-full">
+      <aside className="lg:col-span-5 xl:col-span-4 flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-full">
         {/* 헤더 */}
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/50 rounded-t-xl">
-          <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2 font-serif">
+        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2 font-serif">
             <Clock className="w-5 h-5 text-primary" />
             최신 정책 브리핑
           </h3>
           <Link
             href="/category/policy"
-            className="text-xs text-slate-500 hover:text-primary font-medium flex items-center gap-1"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:text-primary font-medium flex items-center gap-1"
           >
             더보기 <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
 
         {/* 기사 리스트 */}
-        <div className="flex flex-col divide-y divide-gray-100">
+        <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
           {policyArticles.map((article) => (
             <Link
               key={article.id}
               href={`/news/${article.id}`}
-              className="flex gap-4 p-4 hover:bg-slate-50 transition-colors group"
+              className="flex gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group"
             >
               {/* 썸네일 */}
-              <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-200">
+              <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700">
                 {article.thumbnail ? (
                   <Image
                     src={article.thumbnail}
@@ -168,10 +168,10 @@ export default function HeroSection({
                 <span className="text-xs font-bold text-primary mb-1">
                   {article.category}
                 </span>
-                <h4 className="text-sm font-bold text-slate-900 leading-snug group-hover:underline decoration-primary underline-offset-2 line-clamp-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug group-hover:underline decoration-primary underline-offset-2 line-clamp-2">
                   {article.title}
                 </h4>
-                <span className="text-xs text-slate-500 mt-1">
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {article.publishedAt}
                 </span>
               </div>

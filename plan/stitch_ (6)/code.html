@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>코리아뉴스 광주판</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Noto+Sans+KR:wght@100..900&amp;family=Public+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3c83f6", /* Updated to user preference */
+                        "primary-dark": "#1d4ed8",
+                        "background-light": "#f5f7f8", /* Updated to user preference */
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "Noto Sans KR", "serif"],
+                        "sans": ["Public Sans", "Noto Sans KR", "sans-serif"],
+                        "body": ["Noto Sans KR", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    boxShadow: {
+                        "card": "0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-item .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Hide scrollbar for clean horizontal scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111318] dark:text-white font-body antialiased selection:bg-primary/20">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden pb-24">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 flex items-center justify-between bg-white/95 dark:bg-[#111318]/95 backdrop-blur-sm p-4 border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
+<div class="flex size-10 shrink-0 items-center justify-start cursor-pointer text-[#111318] dark:text-white">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</div>
+<div class="flex flex-col items-center flex-1">
+<h1 class="font-display text-xl font-bold leading-none tracking-tight text-[#111318] dark:text-white">
+                    코리아뉴스 <span class="text-primary">광주판</span>
+</h1>
+<span class="text-[10px] text-gray-500 font-bold tracking-widest mt-0.5 uppercase">Gwangju Metropolitan City</span>
+</div>
+<div class="flex size-10 items-center justify-end">
+<button class="flex size-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 text-[#111318] dark:text-white">
+<span class="material-symbols-outlined text-[24px]">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Hero Section -->
+<section class="relative w-full overflow-hidden bg-gradient-to-br from-primary to-blue-600 dark:from-blue-900 dark:to-slate-900 px-4 py-8 pb-12 shadow-sm">
+<!-- Decorative Pattern -->
+<div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" data-alt="Subtle dot pattern overlay" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;">
+</div>
+<div class="relative z-10 flex flex-col gap-6 items-center text-center">
+<!-- Badge -->
+<div class="inline-flex items-center rounded-full bg-white/20 backdrop-blur-md px-3 py-1 border border-white/30">
+<span class="material-symbols-outlined text-white text-sm mr-1.5">verified</span>
+<p class="text-white text-xs font-medium tracking-wide">행정/생활 정보의 중심</p>
+</div>
+<!-- Headline -->
+<div class="flex flex-col gap-2">
+<h2 class="font-display text-white text-3xl font-bold leading-tight tracking-tight drop-shadow-sm">
+                        광주광역시,<br/>AI 중심 도시로 도약
+                    </h2>
+<p class="text-blue-100 text-sm font-normal opacity-90">시민과 함께 만드는 내일, 빛나는 광주</p>
+</div>
+<!-- Search Bar -->
+<div class="w-full max-w-md mt-2">
+<label class="relative flex w-full items-center">
+<span class="absolute left-4 flex items-center justify-center text-gray-400">
+<span class="material-symbols-outlined">search</span>
+</span>
+<input class="flex h-12 w-full rounded-xl border-none bg-white py-3 pl-12 pr-4 text-sm text-[#111318] shadow-lg shadow-blue-900/10 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50" placeholder="관심있는 뉴스를 검색하세요" type="text"/>
+</label>
+</div>
+</div>
+</section>
+<!-- Quick Menu -->
+<section class="bg-white dark:bg-[#111318] rounded-b-3xl -mt-4 relative z-20 px-4 pt-6 pb-2 shadow-[0_4px_20px_-12px_rgba(0,0,0,0.1)]">
+<div class="grid grid-cols-4 gap-2">
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="flex size-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-400 transition-transform group-active:scale-95">
+<span class="material-symbols-outlined">apartment</span>
+</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">시청</span>
+</a>
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="flex size-12 items-center justify-center rounded-2xl bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 transition-transform group-active:scale-95">
+<span class="material-symbols-outlined">work</span>
+</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">일자리</span>
+</a>
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="flex size-12 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 transition-transform group-active:scale-95">
+<span class="material-symbols-outlined">real_estate_agent</span>
+</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">부동산</span>
+</a>
+<a class="flex flex-col items-center gap-2 group" href="#">
+<div class="flex size-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 transition-transform group-active:scale-95">
+<span class="material-symbols-outlined">directions_bus</span>
+</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">교통</span>
+</a>
+</div>
+<!-- Thin Divider -->
+<div class="mt-6 mb-2 h-px w-full bg-gray-100 dark:bg-gray-800"></div>
+</section>
+<!-- Category Filter -->
+<div class="sticky top-[73px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm py-3 border-b border-gray-200/50 dark:border-gray-800/50">
+<div class="flex w-full gap-2 overflow-x-auto px-4 no-scrollbar">
+<button class="shrink-0 rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-colors">
+                    전체
+                </button>
+<button class="shrink-0 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    정치
+                </button>
+<button class="shrink-0 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    경제
+                </button>
+<button class="shrink-0 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    사회
+                </button>
+<button class="shrink-0 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    문화
+                </button>
+<button class="shrink-0 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    오피니언
+                </button>
+</div>
+</div>
+<!-- Real-time Major News -->
+<main class="flex flex-col gap-4 px-4 py-6">
+<div class="flex items-center justify-between mb-1">
+<h3 class="font-display text-xl font-bold text-[#111318] dark:text-white flex items-center gap-2">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+                    실시간 주요 뉴스
+                </h3>
+<span class="text-xs font-medium text-gray-400">updated 10m ago</span>
+</div>
+<!-- News Card 1 -->
+<article class="group relative flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a2230] p-4 shadow-card hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start gap-4">
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-primary dark:text-blue-300">
+                                사회
+                            </span>
+<span class="text-xs text-gray-400">2023.10.27</span>
+</div>
+<h4 class="font-display text-lg font-bold leading-snug text-[#111318] dark:text-white line-clamp-2">
+                            광주 도시철도 2호선 2단계 공사 본격화, 교통난 해소 기대
+                        </h4>
+<p class="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2">
+                            광주광역시가 도시철도 2호선 2단계 구간 공사를 본격적으로 시작하며 시민들의 기대감이 높아지고 있습니다. 2029년 완공을 목표로...
+                        </p>
+</div>
+<div class="shrink-0">
+<div class="size-20 overflow-hidden rounded-lg bg-gray-200">
+<img alt="Subway construction site with engineers" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx_-wKjUqO8KpFiZXCoouFML_tmXC_oBCMGpQYEn2Xk-BMAHLbtaFdi3cvLZxjq1DxOD9Syp5yxd2Ndr-JQZDHj3bMPTdXgwgCo4nMeiJvChKxLksSr3y1F8cfYWu_a7LxS3g2QEzY-to0ryzxL4FkD88YkxQt2AnxFXmxOdxBMkhN9jh-Uds_waBoYpFsMT-6qD8rKoJNmukYV_u2u75LqKBRXPhQI1uOuSSqRLyz9AfMq6Dz0Pz2phrSIhC7zYwpMUJieqauzbQ"/>
+</div>
+</div>
+</div>
+</article>
+<!-- News Card 2 -->
+<article class="group relative flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a2230] p-4 shadow-card hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start gap-4">
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-md bg-green-50 dark:bg-green-900/40 px-2 py-0.5 text-xs font-bold text-green-600 dark:text-green-300">
+                                경제
+                            </span>
+<span class="text-xs text-gray-400">2023.10.27</span>
+</div>
+<h4 class="font-display text-lg font-bold leading-snug text-[#111318] dark:text-white line-clamp-2">
+                            지역 전통시장 활성화 대책 발표, 청년 상인 지원 확대
+                        </h4>
+<p class="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2">
+                            침체된 지역 경제를 살리기 위해 광주시가 전통시장 현대화 사업과 함께 청년 상인 육성 프로젝트를 대대적으로...
+                        </p>
+</div>
+<div class="shrink-0">
+<div class="size-20 overflow-hidden rounded-lg bg-gray-200">
+<img alt="Traditional market alley with colorful stalls" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAIRZKaItBMPcgYQ1skuCRJA4DYTj7F_HgsKXQwJW0NQ82fT3GwIqSPUT0R0cCOGgLK3XR443Mk1jgO0y4dvcoVDJkB2zR1FzGKsLf_exeXjYkcyDDdamXWWOiBlGKscs-YXBGVs2eQQkDoOZteYC6W3CTvE9QNtCV_wXy5ORy1WEupA4oU_laQZzdTf1Q0PhxOEcnydcAiM1-UnhaY2dWQ7WOuBut4b9VUUiZBVGysVVz7LlBlbukRQ7hzDFToj6SaHhuZcF2geE"/>
+</div>
+</div>
+</div>
+</article>
+<!-- News Card 3 -->
+<article class="group relative flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a2230] p-4 shadow-card hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start gap-4">
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/40 px-2 py-0.5 text-xs font-bold text-purple-600 dark:text-purple-300">
+                                문화
+                            </span>
+<span class="text-xs text-gray-400">2023.10.26</span>
+</div>
+<h4 class="font-display text-lg font-bold leading-snug text-[#111318] dark:text-white line-clamp-2">
+                            광주 비엔날레 가을 특별전 개막, 전 세계 예술가 집결
+                        </h4>
+<p class="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2">
+                            아시아 최대의 현대미술 축제인 광주 비엔날레 특별전이 오늘부터 시작됩니다. 이번 전시는 '물처럼 부드럽고 여리게'를 주제로...
+                        </p>
+</div>
+<div class="shrink-0">
+<div class="size-20 overflow-hidden rounded-lg bg-gray-200">
+<img alt="Modern art gallery exhibition space" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQCSArY2FWrYzrVqf_unf9GKnnwh3DcqfcT3Be88Wpb5CGl5OkxlJibGK5ZNVAmlFLT6w-2cSN9S9EGt-_YNJVWG95VQ5_m72C-E-W0TyY6Sf8Qt71rfMK1PE-TlVK9_dxl6M4rK1ajvtVvdKf1i9LEMnFz62Z3JizdH_YCx3YTfpLGxR5ykJLtJ2q9J1Z_qxwdjMedYs_qhaZpjlVAxQlqE1GCZ2bF64a36hX7oSfH3Wj1AG21Il86i_IckJ-o08KL3jqKRlmZeI"/>
+</div>
+</div>
+</div>
+</article>
+<!-- News Card 4 -->
+<article class="group relative flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a2230] p-4 shadow-card hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start gap-4">
+<div class="flex flex-1 flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center rounded-md bg-orange-50 dark:bg-orange-900/40 px-2 py-0.5 text-xs font-bold text-orange-600 dark:text-orange-300">
+                                환경
+                            </span>
+<span class="text-xs text-gray-400">2023.10.26</span>
+</div>
+<h4 class="font-display text-lg font-bold leading-snug text-[#111318] dark:text-white line-clamp-2">
+                            무등산 국립공원, 가을 단풍 절정... 주말 등산객 북적
+                        </h4>
+<p class="text-sm font-normal leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-2">
+                            무등산의 가을 단풍이 절정을 맞이했습니다. 이번 주말 맑은 날씨가 예보되면서 많은 시민들과 관광객들이...
+                        </p>
+</div>
+<div class="shrink-0">
+<div class="size-20 overflow-hidden rounded-lg bg-gray-200">
+<img alt="Autumn forest landscape with colorful trees" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5P74rwWF60mUS7ahGVuKLMZerLOaANHLAyTauy8PAekQhC1hH1U2PPyD1Vf__Dg7rKR6xs9yvIqAyIrK9z_XT2X2EW85BOU9dDAeLC9bRvlaAxZPFHiABwiQaUYTkid1LSMwxBy5DhTrjNlsccIK_efy6rdyDgTfuZVgyscZhxMrz3DDe4Gyvi7AsrLMa7-LAHAKcoHcs4W6ABIkB6GF9JkchgMP7Z1k9pH_YV7slp5P38o3-FfihMwqR_lyMs7IGjCFHbW5F2qo"/>
+</div>
+</div>
+</div>
+</article>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 z-50 w-full border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111318] px-2 pb-6 pt-2 shadow-lg">
+<div class="flex items-center justify-around">
+<a class="active-nav-item flex min-w-[64px] flex-col items-center gap-1 rounded-lg p-1 text-primary" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="text-[10px] font-bold">홈</span>
+</a>
+<a class="flex min-w-[64px] flex-col items-center gap-1 rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" href="#">
+<span class="material-symbols-outlined text-[24px]">map</span>
+<span class="text-[10px] font-medium">지도</span>
+</a>
+<a class="flex min-w-[64px] flex-col items-center gap-1 rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" href="#">
+<span class="material-symbols-outlined text-[24px]">forum</span>
+<span class="text-[10px] font-medium">소통</span>
+</a>
+<a class="flex min-w-[64px] flex-col items-center gap-1 rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" href="#">
+<span class="material-symbols-outlined text-[24px]">person</span>
+<span class="text-[10px] font-medium">MY</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>
