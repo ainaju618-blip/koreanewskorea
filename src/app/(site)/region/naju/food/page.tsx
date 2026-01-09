@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Star, Phone, UtensilsCrossed, ChevronLeft, Loader2, Navigation } from 'lucide-react';
+import { MapPin, Star, UtensilsCrossed, Loader2 } from 'lucide-react';
 
 interface Place {
   id: string;
@@ -51,26 +51,19 @@ export default function NajuFoodPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/region/naju" className="p-2 -ml-2 hover:bg-gray-100 rounded-lg">
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <UtensilsCrossed className="w-5 h-5 text-orange-500" />
-                나주의 맛
-              </h1>
-              <p className="text-sm text-gray-500">나주 곰탕부터 배까지, 맛있는 나주를 만나보세요</p>
-            </div>
-          </div>
+      {/* Page Title */}
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <UtensilsCrossed className="w-7 h-7" />
+            나주의 맛
+          </h1>
+          <p className="text-orange-100 mt-2">나주 곰탕부터 배까지, 맛있는 나주를 만나보세요</p>
         </div>
-      </header>
+      </div>
 
       {/* Category Tabs */}
-      <div className="bg-white border-b border-gray-100 sticky top-[73px] z-40">
+      <div className="bg-white border-b border-gray-100 sticky top-[92px] md:top-[103px] z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar">
             {categories.map((cat) => (

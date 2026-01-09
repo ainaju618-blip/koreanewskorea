@@ -10,6 +10,7 @@ import {
   SearchBar,
 } from '@/components/region';
 import WeatherWidgetWrapper from './WeatherWidgetWrapper';
+import DesktopLayout from '@/components/stitch-v2/layout/DesktopLayout';
 
 // SSR with revalidation
 export const revalidate = 60;
@@ -48,50 +49,21 @@ export default async function NajuRegionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Banner - Server Component */}
+      {/* Hero Banner - Server Component (풀 와이드) */}
       <HeroBanner region={region} />
 
       {/* Search Bar */}
-      <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-20 mb-4">
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-8 -mt-6 relative z-20 mb-6">
         <SearchBar regionCode={regionCode} regionName={region.name} />
       </div>
 
-      <div className="max-w-7xl mx-auto pb-4">
-        {/* Desktop: Two Column Layout */}
-        <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:px-4 lg:py-6">
-          {/* Left Column (Main Content) */}
-          <div className="lg:col-span-2">
-            {/* Weather Section - Client Component */}
-            <Suspense fallback={<WeatherSkeleton />}>
-              <WeatherWidgetWrapper
-                regionName={`전라남도 ${region.name} 빛가람동`}
-                weather={weather}
-              />
-            </Suspense>
-
-            {/* News Section - Client Component (for tab interaction) */}
-            <NewsTabs
-              regionCode={regionCode}
-              regionName={region.name}
-              articles={news}
-            />
-
-            {/* Divider */}
-            <div className="h-2 bg-gray-100 my-6 lg:hidden" />
-
-            {/* Travel Section - Server Component */}
-            <TravelSection
-              regionCode={regionCode}
-              regionName={region.name}
-              places={places}
-            />
-          </div>
-
-          {/* Right Column (Sidebar) */}
-          <div className="lg:col-span-1">
-            {/* Divider (Mobile) */}
-            <div className="h-2 bg-gray-100 my-6 lg:hidden" />
-
+      {/* Main Content - DesktopLayout (8:4 Grid) */}
+      <DesktopLayout
+        mainCols={8}
+        sidebarCols={4}
+        gap="md"
+        sidebar={
+          <div className="space-y-6">
             {/* Food Section - Server Component */}
             <FoodSection
               regionCode={regionCode}
@@ -99,15 +71,38 @@ export default async function NajuRegionPage() {
               places={places}
             />
 
-            {/* Divider (Mobile) */}
-            <div className="h-2 bg-gray-100 my-6 lg:hidden" />
-
             {/* Sidebar Tabs (Events/News/Heritage) - Client Component */}
             <SidebarTabs events={events} places={places} />
           </div>
-        </div>
-      </div>
+        }
+      >
+        {/* Weather Section - Client Component */}
+        <Suspense fallback={<WeatherSkeleton />}>
+          <WeatherWidgetWrapper
+            regionName={`전라남도 ${region.name} 빛가람동`}
+            weather={weather}
+          />
+        </Suspense>
 
+        {/* News Section - Client Component (for tab interaction) */}
+        <div className="mt-6">
+          <NewsTabs
+            regionCode={regionCode}
+            regionName={region.name}
+            articles={news}
+          />
+        </div>
+
+        {/* Divider (Mobile only) */}
+        <div className="h-2 bg-gray-100 my-6 lg:hidden" />
+
+        {/* Travel Section - Server Component */}
+        <TravelSection
+          regionCode={regionCode}
+          regionName={region.name}
+          places={places}
+        />
+      </DesktopLayout>
     </div>
   );
 }

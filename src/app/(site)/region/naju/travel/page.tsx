@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Star, ChevronLeft, Loader2, Navigation, Map, Landmark, TreePine } from 'lucide-react';
+import { MapPin, Star, Loader2, Map, Landmark, TreePine } from 'lucide-react';
 
 interface Place {
   id: string;
@@ -69,26 +69,19 @@ export default function NajuTravelPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/region/naju" className="p-2 -ml-2 hover:bg-gray-100 rounded-lg">
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Map className="w-5 h-5 text-cyan-500" />
-                나주 여행 & 명소
-              </h1>
-              <p className="text-sm text-gray-500">천년의 역사를 간직한 나주의 볼거리</p>
-            </div>
-          </div>
+      {/* Page Title */}
+      <div className="bg-gradient-to-r from-cyan-500 to-emerald-500 text-white py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <Map className="w-7 h-7" />
+            나주 여행 & 명소
+          </h1>
+          <p className="text-cyan-100 mt-2">천년의 역사를 간직한 나주의 볼거리</p>
         </div>
-      </header>
+      </div>
 
       {/* Category Tabs */}
-      <div className="bg-white border-b border-gray-100 sticky top-[73px] z-40">
+      <div className="bg-white border-b border-gray-100 sticky top-[92px] md:top-[103px] z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar">
             {categories.map((cat) => (
