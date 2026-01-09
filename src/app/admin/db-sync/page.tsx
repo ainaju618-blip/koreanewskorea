@@ -45,13 +45,17 @@ const SYNC_OPTIONS = [
 
 // 날짜 범위 옵션
 const DATE_RANGE_OPTIONS = [
-  { value: "week", label: "최근 7일" },
-  { value: "month", label: "최근 30일" },
+  { value: "1day", label: "1일" },
+  { value: "2days", label: "2일" },
+  { value: "3days", label: "3일" },
+  { value: "5days", label: "5일" },
+  { value: "week", label: "7일" },
+  { value: "month", label: "30일" },
   { value: "all", label: "전체" },
 ] as const;
 
 type SyncStep = 1 | 2 | 3;
-type DateRange = "week" | "month" | "all";
+type DateRange = "1day" | "2days" | "3days" | "5days" | "week" | "month" | "all";
 
 interface SyncResult {
   table: string;
@@ -93,7 +97,7 @@ export default function DbSyncPage() {
 
   // STEP 1: 동기화 설정
   const [selectedTables, setSelectedTables] = useState<string[]>(["posts", "categories"]);
-  const [dateRange, setDateRange] = useState<DateRange>("week");
+  const [dateRange, setDateRange] = useState<DateRange>("3days");
   const [syncMode, setSyncMode] = useState<"merge" | "overwrite">("merge");
 
   // 동기화 진행 상태

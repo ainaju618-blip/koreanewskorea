@@ -12,7 +12,7 @@ import { createProductionClient, SYNC_TABLES, type SyncTableKey } from '@/lib/su
 // 동기화 요청 타입
 interface SyncRequest {
   tables: SyncTableKey[];
-  dateRange: 'week' | 'month' | 'all';
+  dateRange: '1day' | '2days' | '3days' | '5days' | 'week' | 'month' | 'all';
   mode: 'merge' | 'overwrite';
 }
 
@@ -180,14 +180,22 @@ export async function GET() {
 }
 
 // 날짜 필터 계산
-function getDateFilter(range: 'week' | 'month' | 'all'): string | null {
+function getDateFilter(range: '1day' | '2days' | '3days' | '5days' | 'week' | 'month' | 'all'): string | null {
   if (range === 'all') return null;
 
   const now = new Date();
-  if (range === 'week') {
-    now.setDate(now.getDate() - 7);
-  } else if (range === 'month') {
-    now.setMonth(now.getMonth() - 1);
+  const daysMap: Record<string, number> = {
+    '1day': 1,
+    '2days': 2,
+    '3days': 3,
+    '5days': 5,
+    'week': 7,
+    'month': 30,
+  };
+
+  const days = daysMap[range];
+  if (days) {
+    now.setDate(now.getDate() - days);
   }
   return now.toISOString();
 }
