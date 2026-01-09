@@ -14,12 +14,13 @@ import {
   Map,
   ChevronRight,
   Globe,
+  LucideIcon,
 } from 'lucide-react';
 
 interface MenuItem {
   name: string;
   href: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   description: string;
   color: string;
   bgColor: string;
