@@ -404,7 +404,7 @@ function SocialLink({ icon, href, label }: { icon: React.ReactNode; href: string
         <a
             href={href}
             aria-label={label}
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 group"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/5 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
         >
             <div className="opacity-70 group-hover:opacity-100 transition-opacity">
                 {icon}

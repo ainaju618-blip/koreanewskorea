@@ -133,9 +133,9 @@ export default function StitchFooter() {
                 세상을 바꾸는 뉴스, 정직한 보도와 깊이 있는 분석으로 독자 여러분과 함께합니다.
               </p>
               <div className="flex items-center gap-3">
-                <SocialLink href="#" icon={<Facebook className="w-4 h-4" />} />
-                <SocialLink href="#" icon={<Instagram className="w-4 h-4" />} />
-                <SocialLink href="#" icon={<Youtube className="w-4 h-4" />} />
+                <SocialLink href="#" icon={<Facebook className="w-5 h-5" />} label="Facebook" />
+                <SocialLink href="#" icon={<Instagram className="w-5 h-5" />} label="Instagram" />
+                <SocialLink href="#" icon={<Youtube className="w-5 h-5" />} label="Youtube" />
               </div>
             </div>
 
@@ -345,11 +345,12 @@ export default function StitchFooter() {
   );
 }
 
-function SocialLink({ href, icon }: { href: string; icon: React.ReactNode }) {
+function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label?: string }) {
   return (
     <a
       href={href}
-      className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-cyan-500 hover:text-white transition-colors"
+      aria-label={label}
+      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-cyan-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
     >
       {icon}
     </a>
