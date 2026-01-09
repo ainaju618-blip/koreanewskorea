@@ -25,10 +25,19 @@ export default function NajuEducationPage() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch('/api/region/naju/news?category=education&limit=200');
+        const res = await fetch('/api/region/naju/news?limit=500');
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.articles || []);
+          // 교육 관련 기사만 필터링 (나주 관련)
+          const filtered = (data.articles || []).filter((article: NewsArticle) => {
+            const cat = article.category?.toLowerCase() || '';
+            const source = article.source?.toLowerCase() || '';
+            const title = article.title?.toLowerCase() || '';
+            const isEducation = cat === '교육' || source.includes('교육') || source.includes('학교');
+            const hasNaju = title.includes('나주') || source.includes('나주');
+            return isEducation && hasNaju;
+          });
+          setArticles(filtered);
         }
       } catch (error) {
         console.error('Failed to fetch news:', error);

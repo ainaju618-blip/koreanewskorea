@@ -1,8 +1,8 @@
 import type { NewsArticle, WeatherData, EventData, PlaceData, RegionInfo } from '@/types/region';
 import { supabaseAdmin } from './supabase-admin';
 
-// 뉴스 데이터는 운영서버(koreanewskorea.com)에서 가져옴
-const PRODUCTION_API = 'https://www.koreanewskorea.com';
+// 개발: localhost, 운영: koreanewskorea.com
+const API_BASE = process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : 'https://www.koreanewskorea.com';
 
 /**
  * 지역 데이터 통합 페칭
@@ -25,10 +25,10 @@ export async function fetchRegionData(regionCode: string): Promise<RegionPageDat
   try {
     // 1. 뉴스/날씨는 운영서버에서 가져옴
     const [newsRes, weatherRes] = await Promise.all([
-      fetch(`${PRODUCTION_API}/api/region/${regionCode}/news?limit=100`, {
+      fetch(`${API_BASE}/api/region/${regionCode}/news?limit=100`, {
         next: { revalidate: 60 },
       }).catch(() => null),
-      fetch(`${PRODUCTION_API}/api/region/${regionCode}/weather`, {
+      fetch(`${API_BASE}/api/region/${regionCode}/weather`, {
         next: { revalidate: 300 },
       }).catch(() => null),
     ]);

@@ -79,7 +79,7 @@ export interface RegionInfo {
 }
 
 // 뉴스 탭 카테고리 (5단계 정규화)
-export type NewsCategory = 'all' | 'government' | 'council' | 'fire' | 'education' | 'business' | 'local';
+export type NewsCategory = 'all' | 'government' | 'council' | 'emd' | 'education' | 'business' | 'local';
 
 export interface NewsTab {
   id: NewsCategory;
@@ -94,7 +94,7 @@ export const SIGUNGU_NEWS_TABS: NewsTab[] = [
   { id: 'government', label: '나주시소식', emoji: '🏛️', description: '시군청 보도자료' },
   { id: 'education', label: '교육소식', emoji: '🏫', description: '지역교육지원청 보도자료' },
   { id: 'council', label: '의회소식', emoji: '🗳️', description: '시군의회 보도자료' },
-  { id: 'fire', label: '나주소방서', emoji: '🚒', description: '나주소방서 보도자료' },
+  { id: 'emd', label: '읍면동소식', emoji: '🏘️', description: '읍면동 보도자료' },
   { id: 'business', label: '기업소식', emoji: '🏢', description: '기업 보도자료' },
   { id: 'local', label: '오피니언', emoji: '🏘️', description: '오피니언' },
 ];
@@ -103,7 +103,7 @@ export const SIGUNGU_NEWS_TABS: NewsTab[] = [
 export const CATEGORY_STYLES: Record<string, { color: string; emoji: string }> = {
   government: { color: 'bg-cyan-100 text-cyan-600', emoji: '🏛️' },
   council: { color: 'bg-purple-100 text-purple-600', emoji: '🗳️' },
-  fire: { color: 'bg-orange-100 text-orange-600', emoji: '🚒' },
+  emd: { color: 'bg-teal-100 text-teal-600', emoji: '🏘️' },
   education: { color: 'bg-green-100 text-green-600', emoji: '🏫' },
   business: { color: 'bg-indigo-100 text-indigo-600', emoji: '🏢' },
   local: { color: 'bg-amber-100 text-amber-600', emoji: '🏘️' },

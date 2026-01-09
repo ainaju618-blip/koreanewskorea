@@ -25,10 +25,19 @@ export default function NajuBusinessPage() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch('/api/region/naju/news?category=business&limit=200');
+        const res = await fetch('/api/region/naju/news?limit=500');
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.articles || []);
+          // 기업/경제 관련 기사만 필터링
+          const filtered = (data.articles || []).filter((article: NewsArticle) => {
+            const cat = article.category?.toLowerCase() || '';
+            const source = article.source?.toLowerCase() || '';
+            const title = article.title?.toLowerCase() || '';
+            return cat === '기업' || cat === '경제' || cat === '산업'
+              || source.includes('기업') || source.includes('경제') || source.includes('산업')
+              || title.includes('기업') || title.includes('산업') || title.includes('에너지');
+          });
+          setArticles(filtered);
         }
       } catch (error) {
         console.error('Failed to fetch news:', error);

@@ -39,9 +39,11 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
       case 'council':
         // 시군의회 보도자료
         return category === '의회' || source.includes('의회') || source.includes('의원');
-      case 'fire':
-        // 나주소방서 보도자료
-        return category === '소방' || source.includes('소방') || source.includes('119');
+      case 'emd':
+        // 읍면동 보도자료
+        const emdTitle = article.title?.toLowerCase() || '';
+        return category === '읍면동' || source.includes('읍') || source.includes('면') || source.includes('동') 
+          || emdTitle.includes('읍') || emdTitle.includes('면') || emdTitle.includes('동');
       case 'education':
         // 지역교육지원청 보도자료 (나주 관련만)
         const isEducation = category === '교육' || source.includes('교육') || source.includes('학교');

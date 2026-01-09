@@ -25,10 +25,18 @@ export default function NajuGovernmentPage() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch('/api/region/naju/news?category=government&limit=200');
+        const res = await fetch('/api/region/naju/news?limit=500');
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.articles || []);
+          // 나주시청 관련 기사만 필터링
+          const filtered = (data.articles || []).filter((article: NewsArticle) => {
+            const cat = article.category || '';
+            const source = article.source?.toLowerCase() || '';
+            // 시청 보도자료 카테고리 또는 소스에서 시청 관련
+            return ['행정', '안전', '건설', '환경', '복지', '보도자료', '시정', '경제', '문화', '나주시소식'].includes(cat)
+              || source.includes('시청') || source.includes('나주시') || source.includes('시장');
+          });
+          setArticles(filtered);
         }
       } catch (error) {
         console.error('Failed to fetch news:', error);

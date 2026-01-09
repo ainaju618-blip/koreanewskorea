@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Home, Newspaper, MapPin, Building2, Users, GraduationCap, Flame, Briefcase, MessageCircle, Search, UtensilsCrossed, Map, Landmark, Lightbulb, LogIn, LogOut, User, Loader2 } from 'lucide-react';
+import { Menu, X, Home, Newspaper, MapPin, Building2, Users, GraduationCap, Briefcase, MessageCircle, Search, UtensilsCrossed, Map, Landmark, Lightbulb, LogIn, LogOut, User, Loader2 } from 'lucide-react';
 import ReporterDashboardEmbed from '@/components/reporter/ReporterDashboardEmbed';
 
 // 나주 전용 네비게이션 메뉴 (모두 서브페이지로 연결)
@@ -12,7 +12,7 @@ const NAJU_MENUS = [
   { name: '나주시소식', href: '/region/naju/government', icon: Building2 },
   { name: '의회소식', href: '/region/naju/council', icon: Users },
   { name: '교육소식', href: '/region/naju/education', icon: GraduationCap },
-  { name: '소방서소식', href: '/region/naju/fire', icon: Flame },
+  { name: '읍면동소식', href: '/region/naju/emd', icon: MapPin },
   { name: '기업소식', href: '/region/naju/business', icon: Briefcase },
   { name: '오피니언', href: '/region/naju/opinion', icon: Lightbulb },
 ];

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Flame, Clock, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { MapPin, Clock, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -17,7 +17,7 @@ interface NewsArticle {
   category: string;
 }
 
-export default function NajuFirePage() {
+export default function NajuEmdPage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,10 +25,17 @@ export default function NajuFirePage() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch('/api/region/naju/news?category=fire&limit=200');
+        const res = await fetch('/api/region/naju/news?limit=500');
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.articles || []);
+          // 읍면동 관련 기사만 필터링
+          const filtered = (data.articles || []).filter((article: NewsArticle) => {
+            const title = article.title?.toLowerCase() || '';
+            const source = article.source?.toLowerCase() || '';
+            return title.includes('읍') || title.includes('면') || title.includes('동') 
+              || source.includes('읍') || source.includes('면') || source.includes('동');
+          });
+          setArticles(filtered);
         }
       } catch (error) {
         console.error('Failed to fetch news:', error);
@@ -89,13 +96,13 @@ export default function NajuFirePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page Title */}
-      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-8">
+      <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white py-8">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <Flame className="w-7 h-7" />
-            소방서 소식
+            <MapPin className="w-7 h-7" />
+            읍면동 소식
           </h1>
-          <p className="text-red-100 mt-2">나주소방서 안전 소식 및 활동</p>
+          <p className="text-teal-100 mt-2">나주시 읍면동 소식</p>
         </div>
       </div>
 
@@ -103,12 +110,12 @@ export default function NajuFirePage() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
             <span className="ml-3 text-gray-500">뉴스를 불러오는 중...</span>
           </div>
         ) : articles.length === 0 ? (
           <div className="text-center py-20">
-            <Flame className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <MapPin className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500">등록된 소식이 없습니다.</p>
           </div>
         ) : (
@@ -136,7 +143,7 @@ export default function NajuFirePage() {
                     )}
                     <div className="flex-1 p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                        <span className="text-xs font-medium text-teal-600 bg-teal-50 px-2 py-0.5 rounded">
                           {article.source}
                         </span>
                         <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -144,7 +151,7 @@ export default function NajuFirePage() {
                           {formatDate(article.publishedAt)}
                         </span>
                       </div>
-                      <h2 className="font-bold text-gray-900 line-clamp-2 mb-2 group-hover:text-red-600">
+                      <h2 className="font-bold text-gray-900 line-clamp-2 mb-2 group-hover:text-teal-600">
                         {article.title}
                       </h2>
                       {article.summary && (
@@ -179,7 +186,7 @@ export default function NajuFirePage() {
                       onClick={() => goToPage(page as number)}
                       className={`px-4 py-2 rounded-lg border ${
                         currentPage === page
-                          ? 'bg-red-500 text-white border-red-500'
+                          ? 'bg-teal-500 text-white border-teal-500'
                           : 'bg-white border-gray-200 hover:bg-gray-50'
                       }`}
                     >

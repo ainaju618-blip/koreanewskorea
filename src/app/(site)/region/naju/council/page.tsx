@@ -25,10 +25,19 @@ export default function NajuCouncilPage() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch('/api/region/naju/news?category=council&limit=200');
+        const res = await fetch('/api/region/naju/news?limit=500');
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.articles || []);
+          // 의회 관련 기사만 필터링
+          const filtered = (data.articles || []).filter((article: NewsArticle) => {
+            const cat = article.category?.toLowerCase() || '';
+            const source = article.source?.toLowerCase() || '';
+            const title = article.title?.toLowerCase() || '';
+            return cat === '의회' || cat.includes('의회') 
+              || source.includes('의회') || source.includes('의원')
+              || title.includes('의회') || title.includes('의원');
+          });
+          setArticles(filtered);
         }
       } catch (error) {
         console.error('Failed to fetch news:', error);
