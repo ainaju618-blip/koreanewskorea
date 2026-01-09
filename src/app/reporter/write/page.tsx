@@ -16,13 +16,22 @@ import {
     Zap,
 } from "lucide-react";
 import Link from "next/link";
-// ⚠️ 지역별 카테고리는 공통 모듈에서 import - 하드코딩 금지!
+// ⚠️ DB에서 카테고리를 가져오되, fallback으로 하드코딩 사용
 import { getCategoriesForRegion } from "@/components/author/ReporterAuthSection";
 
 interface Reporter {
     id: string;
     name: string;
     region: string;
+}
+
+interface DBCategory {
+    id: string;
+    name: string;
+    slug: string;
+    depth: number;
+    parent_id: string | null;
+    children?: DBCategory[];
 }
 
 export default function WriteArticlePage() {
@@ -44,30 +53,69 @@ export default function WriteArticlePage() {
     const [showPreview, setShowPreview] = useState(false);
     const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-    // 기자 지역에 맞는 카테고리 목록
-    const categories = reporter ? getCategoriesForRegion(reporter.region) : [];
+    // DB에서 가져온 카테고리 목록 (메인 네비게이션과 동기화)
+    const [dbCategories, setDbCategories] = useState<string[]>([]);
+
+    // DB 카테고리 우선, fallback으로 하드코딩 사용
+    const categories = dbCategories.length > 0
+        ? dbCategories
+        : (reporter ? getCategoriesForRegion(reporter.region) : []);
 
     useEffect(() => {
-        const fetchReporter = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch("/api/auth/me");
-                if (res.ok) {
-                    const data = await res.json();
-                    setReporter(data.reporter);
-                    // 기자 지역에 맞는 첫 번째 카테고리를 기본값으로 설정
-                    const regionCategories = getCategoriesForRegion(data.reporter.region);
-                    if (regionCategories.length > 0) {
-                        setCategory(regionCategories[0]);
+                // 기자 정보와 카테고리를 병렬로 가져오기
+                const [meRes, catRes] = await Promise.all([
+                    fetch("/api/auth/me"),
+                    fetch("/api/categories?gnb=true")
+                ]);
+
+                // 기자 정보 처리
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    setReporter(meData.reporter);
+                }
+
+                // DB 카테고리 처리 - 메인 네비게이션과 동일한 소스
+                if (catRes.ok) {
+                    const catData = await catRes.json();
+                    const categoryNames = extractCategoryNames(catData.categories || []);
+                    setDbCategories(categoryNames);
+
+                    // 첫 번째 카테고리를 기본값으로 설정
+                    if (categoryNames.length > 0) {
+                        setCategory(categoryNames[0]);
                     }
                 }
             } catch (err) {
-                console.error("Failed to fetch reporter:", err);
+                console.error("Failed to fetch data:", err);
+                // fallback: 하드코딩된 카테고리 사용
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchReporter();
+        fetchData();
     }, []);
+
+    // DB 카테고리 트리에서 이름만 추출 (1depth + 2depth 서브카테고리)
+    const extractCategoryNames = (categories: DBCategory[]): string[] => {
+        const names: string[] = [];
+
+        categories.forEach(cat => {
+            // 1depth 카테고리 이름 추가
+            names.push(cat.name);
+
+            // 2depth 서브카테고리가 있으면 추가
+            if (cat.children && cat.children.length > 0) {
+                cat.children.forEach(child => {
+                    names.push(child.name);
+                });
+            }
+        });
+
+        // 중복 제거
+        return [...new Set(names)];
+    };
 
     // 이미지 업로드 핸들러
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,9 +206,9 @@ export default function WriteArticlePage() {
             };
             setSuccessMessage(messages[status]);
 
-            // 발행 성공 시 기사 목록으로 이동
+            // 발행 성공 시 기사 관리 페이지로 이동
             setTimeout(() => {
-                router.push("/reporter/articles?filter=my-articles");
+                router.push("/reporter/articles");
             }, 1500);
         } catch (err) {
             console.error("Write error:", err);
