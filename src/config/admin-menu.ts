@@ -21,6 +21,7 @@ import {
   UserPlus,
   LucideIcon,
   Sparkles,
+  DatabaseZap,
 } from 'lucide-react';
 
 // 지역 설정 (다른 지역 복제 시 여기만 수정)
@@ -159,6 +160,12 @@ export const ADMIN_MENU_CONFIG: MenuGroup[] = [
         label: '설정',
         icon: Settings,
         href: '/admin/settings',
+      },
+      {
+        id: 'db-sync',
+        label: '운영 DB 동기화',
+        icon: DatabaseZap,
+        href: '/admin/db-sync',
       },
     ],
   },
