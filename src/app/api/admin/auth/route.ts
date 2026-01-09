@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { authenticateAdmin, verifyAdminToken, setAuthCookie, clearAuthCookie } from '@/lib/admin-auth';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'a123456789!';
-const SESSION_COOKIE_NAME = 'admin_session';
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24시간
+const TOKEN_NAME = 'admin_token';
 
 /**
  * POST /api/admin/auth
- * 관리자 비밀번호 검증 및 세션 생성
+ * 관리자 비밀번호 검증 및 JWT 토큰 발급
  */
 export async function POST(request: NextRequest) {
   try {
@@ -15,42 +13,31 @@ export async function POST(request: NextRequest) {
 
     if (!password) {
       return NextResponse.json(
-        { error: '비밀번호를 입력해주세요.' },
+        { error: '비밀번호를 입력해주세요.', code: 'PASSWORD_REQUIRED' },
         { status: 400 }
       );
     }
 
-    if (password !== ADMIN_PASSWORD) {
+    const result = await authenticateAdmin(password);
+
+    if (!result.success || !result.token) {
       return NextResponse.json(
-        { error: '비밀번호가 일치하지 않습니다.' },
+        { error: result.message || '인증 실패', code: 'AUTH_FAILED' },
         { status: 401 }
       );
     }
 
-    // 세션 토큰 생성
-    const sessionToken = Buffer.from(
-      JSON.stringify({
-        authenticated: true,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + SESSION_DURATION,
-      })
-    ).toString('base64');
-
-    // 쿠키 설정
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_DURATION / 1000,
-      path: '/',
+    // JWT 토큰을 httpOnly 쿠키로 설정
+    const response = NextResponse.json({
+      success: true,
+      message: '인증 성공',
     });
 
-    return NextResponse.json({ success: true, message: '인증 성공' });
+    return setAuthCookie(response, result.token);
   } catch (error) {
     console.error('Auth error:', error);
     return NextResponse.json(
-      { error: '인증 처리 중 오류가 발생했습니다.' },
+      { error: '인증 처리 중 오류가 발생했습니다.', code: 'SERVER_ERROR' },
       { status: 500 }
     );
   }
@@ -60,51 +47,62 @@ export async function POST(request: NextRequest) {
  * GET /api/admin/auth
  * 세션 유효성 확인
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
+    // Authorization 헤더 또는 쿠키에서 토큰 확인
+    const authHeader = request.headers.get('Authorization');
+    let token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    if (!sessionCookie?.value) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+    if (!token) {
+      token = request.cookies.get(TOKEN_NAME)?.value || null;
     }
 
-    try {
-      const session = JSON.parse(
-        Buffer.from(sessionCookie.value, 'base64').toString()
+    if (!token) {
+      return NextResponse.json(
+        { authenticated: false, code: 'NO_TOKEN' },
+        { status: 401 }
       );
-
-      if (session.expiresAt < Date.now()) {
-        cookieStore.delete(SESSION_COOKIE_NAME);
-        return NextResponse.json(
-          { authenticated: false, error: '세션이 만료되었습니다.' },
-          { status: 401 }
-        );
-      }
-
-      return NextResponse.json({ authenticated: true });
-    } catch {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
     }
+
+    const session = await verifyAdminToken(token);
+
+    if (!session) {
+      const response = NextResponse.json(
+        { authenticated: false, error: '세션이 만료되었습니다.', code: 'SESSION_EXPIRED' },
+        { status: 401 }
+      );
+      return clearAuthCookie(response);
+    }
+
+    return NextResponse.json({
+      authenticated: true,
+      role: session.role,
+      expiresAt: session.exp * 1000, // Unix timestamp to ms
+    });
   } catch (error) {
     console.error('Auth check error:', error);
-    return NextResponse.json({ authenticated: false }, { status: 500 });
+    return NextResponse.json(
+      { authenticated: false, code: 'SERVER_ERROR' },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * DELETE /api/admin/auth
- * 로그아웃 (세션 삭제)
+ * 로그아웃 (쿠키 삭제)
  */
 export async function DELETE() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete(SESSION_COOKIE_NAME);
-    return NextResponse.json({ success: true, message: '로그아웃 완료' });
+    const response = NextResponse.json({
+      success: true,
+      message: '로그아웃 완료',
+    });
+    return clearAuthCookie(response);
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(
-      { error: '로그아웃 처리 중 오류가 발생했습니다.' },
+      { error: '로그아웃 처리 중 오류가 발생했습니다.', code: 'SERVER_ERROR' },
       { status: 500 }
     );
   }

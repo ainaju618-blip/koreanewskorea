@@ -1,391 +1,489 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+/**
+ * AdminSidebar - 관리자 사이드바 레이아웃
+ * ========================================
+ * - 중앙화된 메뉴 config 사용
+ * - 모바일 반응형 (접기/펼치기)
+ * - 접근성 개선 (ARIA 속성)
+ * - 성능 최적화 (useCallback, React.memo)
+ */
+
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-    LayoutDashboard,
-    Newspaper,
-    Bot,
-    Users,
-    Settings,
-    ChevronDown,
-    ChevronRight,
-    LogOut,
-    FileText,
-    CheckCircle,
-    Trash2,
-    PenTool,
-    Calendar,
-    PlayCircle,
-    Activity,
-    Database,
-    UserPlus,
-    Building2,
-    StickyNote,
-    UserCircle,
-    LucideIcon,
-    Lightbulb,
-    ExternalLink,
-    Sparkles,
-    Globe,
-    Mail,
-    GitBranch,
-    Cpu,
-    Radio,
-    Wrench
+  ChevronRight,
+  LogOut,
+  Menu,
+  X,
+  ExternalLink,
+  Lightbulb,
 } from 'lucide-react';
+import {
+  ADMIN_MENU_CONFIG,
+  BADGE_COUNT_ENDPOINTS,
+  BADGE_REFRESH_INTERVAL,
+  type MenuItem,
+  type SubMenuItem,
+  type MenuGroup,
+} from '@/config/admin-menu';
+import { useAdminAuth } from './AdminAuthGuard';
 
-// --- 메뉴 아이템 타입 정의 ---
-interface SubMenuItem {
-    label: string;
-    href: string;
-    icon?: LucideIcon;
+// 배지 카운트 타입
+interface BadgeCounts {
+  pending: number;
+  aiPending: number;
+  drafts: number;
 }
 
-interface MenuItem {
-    label: string;
-    icon: LucideIcon;
-    href: string;
-    highlight?: boolean;
-    external?: boolean;
-    subItems?: SubMenuItem[];
+// 메뉴 아이템 컴포넌트 Props
+interface MenuItemComponentProps {
+  item: MenuItem;
+  isActive: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
+  pathname: string;
+  badgeCounts: BadgeCounts;
+  onNavigate?: () => void;
 }
 
-interface MenuGroup {
-    category: string;
-    items: MenuItem[];
-}
+// 서브메뉴 아이템 컴포넌트
+const SubMenuItemComponent = memo(function SubMenuItemComponent({
+  sub,
+  isActive,
+  badgeCount,
+  onNavigate,
+}: {
+  sub: SubMenuItem;
+  isActive: boolean;
+  badgeCount: number;
+  onNavigate?: () => void;
+}) {
+  const SubIcon = sub.icon;
 
-// --- Sidebar Navigation Structure (Reorganized: 15 -> 8 menus) ---
-const MENU_ITEMS: MenuGroup[] = [
-    {
-        category: "메인",
-        items: [
-            { label: "대시보드", icon: LayoutDashboard, href: "/admin" }
-        ]
-    },
-    {
-        category: "콘텐츠",
-        items: [
-            {
-                label: "수동 기사",
-                icon: PenTool,
-                href: "/admin/articles",
-                highlight: true,
-                subItems: [
-                    { label: "기사 목록", href: "/admin/articles", icon: FileText },
-                    { label: "새 기사 작성", href: "/admin/articles/new", icon: PenTool },
-                ]
-            },
-            {
-                label: "기사 관리",
-                icon: Newspaper,
-                href: "/admin/news",
-                subItems: [
-                    { label: "전체 기사", href: "/admin/news", icon: Newspaper },
-                    { label: "기사 초안", href: "/admin/drafts", icon: StickyNote },
-                    { label: "승인 대기", href: "/admin/news?status=draft", icon: FileText },
-                    { label: "발행됨", href: "/admin/news?status=published", icon: CheckCircle },
-                    { label: "휴지통", href: "/admin/news?status=trash", icon: Trash2 },
-                    { label: "기사 작성", href: "/admin/news/write", icon: PenTool },
-                ]
-            },
-            {
-                label: "AI 뉴스",
-                icon: Sparkles,
-                href: "/admin/ai-news",
-                subItems: [
-                    { label: "AI 뉴스 편집", href: "/admin/ai-news", icon: Globe },
-                    { label: "승인 대기", href: "/admin/ai-news?status=draft", icon: FileText },
-                    { label: "발행됨", href: "/admin/ai-news?status=published", icon: CheckCircle },
-                ]
-            }
-        ]
-    },
-    {
-        category: "수집 시스템",
-        items: [
-            {
-                label: "스크래퍼",
-                icon: Bot,
-                href: "/admin/bot",
-                highlight: true,
-                subItems: [
-                    { label: "수집처 관리", href: "/admin/sources", icon: Building2 },
-                    { label: "스케줄 설정", href: "/admin/bot/schedule", icon: Calendar },
-                    { label: "수동 실행", href: "/admin/bot/run", icon: PlayCircle },
-                    { label: "AI 기사 처리", href: "/admin/bot/ai-processing", icon: Cpu },
-                    { label: "수집 로그", href: "/admin/bot/logs", icon: Activity },
-                    { label: "소스 관리", href: "/admin/bot/sources", icon: Database },
-                    { label: "24시간상시모니터링", href: "/admin/bot/realtime-monitor", icon: Radio },
-                ]
-            },
-            { label: "이메일 수집", icon: Mail, href: "/admin/email-extract" },
-            { label: "12월30일버젼", icon: Wrench, href: "/admin/dec30", highlight: true }
-        ]
-    },
-    {
-        category: "AI 도구",
-        items: [
-            { label: "Claude Hub", icon: Database, href: "/admin/claude-hub", highlight: true },
-            { label: "AI Idea", icon: Lightbulb, href: "/idea" }
-        ]
-    },
-    {
-        category: "시스템",
-        items: [
-            {
-                label: "사용자 관리",
-                icon: Users,
-                href: "/admin/users",
-                subItems: [
-                    { label: "기자 관리", href: "/admin/users/reporters", icon: UserPlus },
-                    { label: "회원 관리", href: "/admin/users/members", icon: Users },
-                    { label: "권한 설정", href: "/admin/users/roles", icon: Settings },
-                ]
-            },
-            { label: "깃관리", icon: GitBranch, href: "/admin/git-status" },
-            {
-                label: "설정",
-                icon: Settings,
-                href: "/admin/settings",
-                subItems: [
-                    { label: "AI 재가공 설정", href: "/admin/settings/ai", icon: Sparkles },
-                    { label: "사이트 정보", href: "/admin/settings/general" },
-                    { label: "카테고리", href: "/admin/settings/categories" },
-                    { label: "레이아웃", href: "/admin/settings/layouts" },
-                    { label: "히어로 슬라이더", href: "/admin/settings/hero-slider" },
-                    { label: "API 키", href: "/admin/settings/api" },
-                    { label: "PageSpeed", href: "/admin/settings/performance", icon: Activity },
-                ]
-            }
-        ]
-    },
-    {
-        category: "바로가기",
-        items: [
-            { label: "기자 페이지", icon: UserCircle, href: "/reporter" },
-            { label: "클로드 사용량", icon: ExternalLink, href: "https://claude.ai/settings/usage", external: true }
-        ]
-    }
-];
+  return (
+    <li>
+      <Link
+        href={sub.href}
+        onClick={onNavigate}
+        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] transition-all duration-150 w-full min-h-[40px]
+          ${isActive
+            ? 'text-[#58a6ff] font-semibold bg-[#1f6feb]/10'
+            : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#21262d]'
+          }`}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {SubIcon && (
+          <SubIcon
+            className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-[#58a6ff]' : 'text-[#6e7681]'}`}
+            aria-hidden="true"
+          />
+        )}
+        <span className="flex-1 truncate">{sub.label}</span>
+        {badgeCount > 0 && (
+          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+            {badgeCount}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+});
 
+// 메뉴 아이템 컴포넌트
+const MenuItemComponent = memo(function MenuItemComponent({
+  item,
+  isActive,
+  isExpanded,
+  onToggle,
+  pathname,
+  badgeCounts,
+  onNavigate,
+}: MenuItemComponentProps) {
+  const Icon = item.icon;
+  const parentBadgeCount = getBadgeCountForItem(item, badgeCounts);
 
-// 승인대기 기사 수 타입
-interface PendingCounts {
-    news: number;      // 기사 승인대기
-    aiNews: number;    // AI 뉴스 승인대기
-    drafts: number;    // 기사 초안
-}
-
-export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
-    const [expandedMenus, setExpandedMenus] = useState<string[]>(['수동 기사', '기사 관리', '스크래퍼']);
-    const pathname = usePathname();
-    const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ news: 0, aiNews: 0, drafts: 0 });
-
-    // 승인대기 기사 수 조회
-    useEffect(() => {
-        const fetchPendingCounts = async () => {
-            try {
-                // Only call existing API - /api/posts with status=draft
-                const newsRes = await fetch('/api/posts?status=draft&limit=1');
-
-                if (newsRes.ok) {
-                    const newsData = await newsRes.json();
-                    setPendingCounts({
-                        news: newsData.count || 0,
-                        aiNews: 0, // API not implemented yet
-                        drafts: 0  // API not implemented yet
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to fetch pending counts:', error);
-            }
-        };
-
-        fetchPendingCounts();
-        // 30초마다 새로고침
-        const interval = setInterval(fetchPendingCounts, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const toggleMenu = (label: string) => {
-        if (expandedMenus.includes(label)) {
-            setExpandedMenus(expandedMenus.filter(item => item !== label));
-        } else {
-            setExpandedMenus([...expandedMenus, label]);
-        }
-    };
-
-    // 메뉴별 배지 카운트 가져오기
-    const getBadgeCount = (href: string, label: string): number => {
-        if (href === '/admin/news?status=draft' || label === '승인 대기' && href.includes('/admin/news')) {
-            return pendingCounts.news;
-        }
-        if (href === '/admin/ai-news?status=draft' || (label === '승인 대기' && href.includes('/admin/ai-news'))) {
-            return pendingCounts.aiNews;
-        }
-        if (href === '/admin/drafts') {
-            return pendingCounts.drafts;
-        }
-        return 0;
-    };
-
-    // 부모 메뉴 배지 카운트 (서브메뉴 합계)
-    const getParentBadgeCount = (label: string): number => {
-        if (label === '기사 관리') return pendingCounts.news;
-        if (label === 'AI 뉴스') return pendingCounts.aiNews;
-        return 0;
-    };
-
+  // 서브메뉴가 있는 경우
+  if (item.subItems && item.subItems.length > 0) {
     return (
-        <div className="admin-layout flex min-h-screen bg-[#0d1117] text-gray-100 font-sans">
+      <li>
+        <button
+          onClick={onToggle}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 min-h-[44px]
+            ${isActive ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
+          `}
+          aria-expanded={isExpanded}
+          aria-controls={`submenu-${item.id}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Icon
+              className={`w-4 h-4 ${isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`}
+              aria-hidden="true"
+            />
+            <span>{item.label}</span>
+            {parentBadgeCount > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+                {parentBadgeCount}
+              </span>
+            )}
+          </div>
+          <ChevronRight
+            className={`w-4 h-4 text-[#6e7681] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
 
-            {/* --- Sidebar (Modern Dark Mode) --- */}
-            <aside className="w-64 bg-[#010409] border-r border-[#21262d] flex flex-col fixed h-full z-10">
-                {/* Logo Area */}
-                <div className="h-16 flex items-stretch border-b border-[#21262d] bg-[#010409]">
-                    {/* Korea CMS */}
-                    <Link href="/admin" className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 border-r border-[#21262d] group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center text-white font-black mr-2.5 text-sm shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">K</div>
-                        <span className="text-sm font-bold text-[#e6edf3] tracking-tight">Korea CMS</span>
-                    </Link>
-                    {/* AI 아이디어 */}
-                    <Link href="/idea" className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center text-white mr-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
-                            <Lightbulb className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">AI Idea</span>
-                    </Link>
-                </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto p-3 space-y-5" style={{ maxHeight: 'calc(100vh - 64px - 80px)' }}>
-                    {MENU_ITEMS.map((group, idx) => (
-                        <div key={idx}>
-                            {group.category && (
-                                <div className="px-3 mb-2 text-[10px] font-semibold text-[#8b949e] uppercase tracking-widest">
-                                    {group.category}
-                                </div>
-                            )}
-                            <ul className="space-y-0.5">
-                                {group.items.map((item) => {
-                                    const isActive = pathname === item.href || item.subItems?.some(sub => pathname === sub.href);
-                                    const isExpanded = expandedMenus.includes(item.label);
-                                    const Icon = item.icon;
-
-                                    return (
-                                        <li key={item.label}>
-                                            {item.subItems ? (
-                                                /* Parent Menu with Subitems */
-                                                <div>
-                                                    <button
-                                                        onClick={() => toggleMenu(item.label)}
-                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200
-                                ${isActive ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
-                            `}
-                                                    >
-                                                        <div className="flex items-center gap-2.5">
-                                                            <Icon className={`w-4 h-4 ${isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
-                                                            <span>{item.label}</span>
-                                                            {/* 부모 메뉴 배지 */}
-                                                            {getParentBadgeCount(item.label) > 0 && (
-                                                                <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
-                                                                    {getParentBadgeCount(item.label)}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <ChevronRight className={`w-3.5 h-3.5 text-[#6e7681] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
-                                                    </button>
-
-                                                    {/* Submenu with smooth animation */}
-                                                    <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                                        <ul className="mt-1 ml-3 space-y-0.5 border-l border-[#30363d] pl-3">
-                                                            {item.subItems.map((sub) => {
-                                                                const isSubActive = sub.href.includes('?')
-                                                                    ? pathname + '?' + (typeof window !== 'undefined' ? window.location.search.slice(1) : '') === sub.href || sub.href.startsWith(pathname + '?')
-                                                                    : pathname === sub.href || pathname.startsWith(sub.href + '/');
-                                                                return (
-                                                                    <li key={sub.label}>
-                                                                        <Link
-                                                                            href={sub.href}
-                                                                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12px] transition-all duration-150 w-full
-                                                                                ${isSubActive ? 'text-[#58a6ff] font-semibold bg-[#1f6feb]/10' : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#21262d]'}
-                                                                            `}
-                                                                        >
-                                                                            {sub.icon && <sub.icon className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-[#58a6ff]' : 'text-[#6e7681]'}`} />}
-                                                                            <span className="flex-1">{sub.label}</span>
-                                                                            {/* 서브메뉴 배지 */}
-                                                                            {getBadgeCount(sub.href, sub.label) > 0 && (
-                                                                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
-                                                                                    {getBadgeCount(sub.href, sub.label)}
-                                                                                </span>
-                                                                            )}
-                                                                        </Link>
-                                                                    </li>
-                                                                );
-                                                            })}
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            ) : item.external ? (
-                                                /* External Link */
-                                                <a
-                                                    href={item.href}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]"
-                                                >
-                                                    <Icon className="w-4 h-4 text-[#8b949e]" />
-                                                    <span className="flex-1">{item.label}</span>
-                                                    <ExternalLink className="w-3 h-3 text-[#6e7681]" />
-                                                </a>
-                                            ) : (
-                                                /* Single Menu Item */
-                                                <Link href={item.href} className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200
-                            ${pathname === item.href ? 'bg-[#1f6feb]/15 text-[#58a6ff]' : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'}
-                        `}>
-                                                    <Icon className={`w-4 h-4 ${pathname === item.href ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`} />
-                                                    <span className="flex-1">{item.label}</span>
-                                                    {/* 단일 메뉴 배지 */}
-                                                    {getBadgeCount(item.href, item.label) > 0 && (
-                                                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
-                                                            {getBadgeCount(item.href, item.label)}
-                                                        </span>
-                                                    )}
-                                                </Link>
-                                            )}
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                    ))}
-                </nav>
-
-                {/* Footer User Profile */}
-                <div className="p-3 border-t border-[#21262d] bg-[#010409]">
-                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#161b22] transition-colors cursor-pointer group">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#58a6ff] to-[#1f6feb] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1f6feb]/20">KO</div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-[#e6edf3] truncate">Administrator</p>
-                            <p className="text-[11px] text-[#8b949e]">Super Admin</p>
-                        </div>
-                        <Link href="/" className="p-1.5 rounded-md text-[#6e7681] hover:text-[#f85149] hover:bg-[#21262d] transition-all">
-                            <LogOut className="w-4 h-4" />
-                        </Link>
-                    </div>
-                </div>
-            </aside>
-
-            {/* --- Main Content Layout (Modern Dark Mode) --- */}
-            <main className="flex-1 ml-64 min-h-screen bg-[#0d1117]">
-                <div className="p-6 pb-12 max-w-[1600px] mx-auto">
-                    {children}
-                </div>
-            </main>
-
-        </div>
+        {/* 서브메뉴 */}
+        <ul
+          id={`submenu-${item.id}`}
+          className={`overflow-hidden transition-all duration-200 ${
+            isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+          role="menu"
+          aria-label={`${item.label} 서브메뉴`}
+        >
+          <div className="mt-1 ml-3 space-y-0.5 border-l border-[#30363d] pl-3">
+            {item.subItems.map((sub) => {
+              const isSubActive = checkSubItemActive(sub.href, pathname);
+              const subBadgeCount = getBadgeCountForSubItem(sub, badgeCounts);
+              return (
+                <SubMenuItemComponent
+                  key={sub.id}
+                  sub={sub}
+                  isActive={isSubActive}
+                  badgeCount={subBadgeCount}
+                  onNavigate={onNavigate}
+                />
+              );
+            })}
+          </div>
+        </ul>
+      </li>
     );
+  }
+
+  // 외부 링크
+  if (item.external) {
+    return (
+      <li>
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 min-h-[44px] text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]"
+        >
+          <Icon className="w-4 h-4 text-[#8b949e]" aria-hidden="true" />
+          <span className="flex-1">{item.label}</span>
+          <ExternalLink className="w-3.5 h-3.5 text-[#6e7681]" aria-hidden="true" />
+        </a>
+      </li>
+    );
+  }
+
+  // 단일 메뉴 아이템
+  return (
+    <li>
+      <Link
+        href={item.href}
+        onClick={onNavigate}
+        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 min-h-[44px]
+          ${pathname === item.href
+            ? 'bg-[#1f6feb]/15 text-[#58a6ff]'
+            : 'text-[#c9d1d9] hover:bg-[#21262d] hover:text-[#e6edf3]'
+          }`}
+        aria-current={pathname === item.href ? 'page' : undefined}
+      >
+        <Icon
+          className={`w-4 h-4 ${pathname === item.href ? 'text-[#58a6ff]' : 'text-[#8b949e]'}`}
+          aria-hidden="true"
+        />
+        <span className="flex-1">{item.label}</span>
+        {parentBadgeCount > 0 && (
+          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full min-w-[18px] text-center">
+            {parentBadgeCount}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+});
+
+// 유틸리티 함수들
+function checkSubItemActive(href: string, pathname: string): boolean {
+  if (href.includes('?')) {
+    return pathname.startsWith(href.split('?')[0]);
+  }
+  return pathname === href || pathname.startsWith(href + '/');
 }
+
+function getBadgeCountForItem(item: MenuItem, counts: BadgeCounts): number {
+  if (item.badge) {
+    return counts[item.badge] || 0;
+  }
+  // 서브메뉴의 배지 합계
+  if (item.subItems) {
+    return item.subItems.reduce((sum, sub) => {
+      if (sub.badge) {
+        return sum + (counts[sub.badge] || 0);
+      }
+      return sum;
+    }, 0);
+  }
+  return 0;
+}
+
+function getBadgeCountForSubItem(sub: SubMenuItem, counts: BadgeCounts): number {
+  if (sub.badge) {
+    return counts[sub.badge] || 0;
+  }
+  return 0;
+}
+
+// 메인 사이드바 컴포넌트
+export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { logout, role } = useAdminAuth();
+
+  // 모바일 사이드바 상태
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // 확장된 메뉴 상태
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(() => {
+    // 기본 확장 메뉴
+    return ['manual-articles', 'news-management', 'scraper'];
+  });
+
+  // 배지 카운트
+  const [badgeCounts, setBadgeCounts] = useState<BadgeCounts>({
+    pending: 0,
+    aiPending: 0,
+    drafts: 0,
+  });
+
+  // 배지 카운트 조회
+  useEffect(() => {
+    const fetchBadgeCounts = async () => {
+      try {
+        const res = await fetch(BADGE_COUNT_ENDPOINTS.pending);
+        if (res.ok) {
+          const data = await res.json();
+          setBadgeCounts((prev) => ({
+            ...prev,
+            pending: data.count || 0,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch badge counts:', error);
+      }
+    };
+
+    fetchBadgeCounts();
+    const interval = setInterval(fetchBadgeCounts, BADGE_REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 메뉴 토글
+  const toggleMenu = useCallback((menuId: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(menuId)
+        ? prev.filter((id) => id !== menuId)
+        : [...prev, menuId]
+    );
+  }, []);
+
+  // 모바일 사이드바 닫기
+  const closeMobileSidebar = useCallback(() => {
+    setIsMobileOpen(false);
+  }, []);
+
+  // 모바일에서 링크 클릭 시 사이드바 닫기
+  const handleNavigate = useCallback(() => {
+    if (window.innerWidth < 1024) {
+      closeMobileSidebar();
+    }
+  }, [closeMobileSidebar]);
+
+  // ESC 키로 모바일 사이드바 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileOpen) {
+        closeMobileSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, closeMobileSidebar]);
+
+  // 화면 크기 변경 시 모바일 사이드바 닫기
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isMobileOpen]);
+
+  return (
+    <div className="admin-layout flex min-h-screen bg-[#0d1117] text-gray-100 font-sans">
+      {/* 모바일 오버레이 */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={closeMobileSidebar}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* 모바일 햄버거 버튼 */}
+      <button
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-[#21262d] border border-[#30363d] text-white hover:bg-[#30363d] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+        aria-label={isMobileOpen ? '메뉴 닫기' : '메뉴 열기'}
+        aria-expanded={isMobileOpen}
+        aria-controls="admin-sidebar"
+      >
+        {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
+
+      {/* 사이드바 */}
+      <aside
+        id="admin-sidebar"
+        className={`
+          fixed lg:sticky top-0 left-0 h-screen z-50 lg:z-auto
+          w-64 bg-[#010409] border-r border-[#21262d] flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+        aria-label="관리자 네비게이션"
+      >
+        {/* 로고 영역 */}
+        <div className="h-16 flex items-stretch border-b border-[#21262d] bg-[#010409]">
+          <Link
+            href="/admin"
+            onClick={handleNavigate}
+            className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 border-r border-[#21262d] group"
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center text-white font-black mr-2.5 text-sm shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-shadow">
+              K
+            </div>
+            <span className="text-sm font-bold text-[#e6edf3] tracking-tight">Korea CMS</span>
+          </Link>
+          <Link
+            href="/idea"
+            onClick={handleNavigate}
+            className="flex-1 flex items-center px-4 hover:bg-[#161b22] transition-all duration-200 group"
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center text-white mr-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
+              <Lightbulb className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+              AI Idea
+            </span>
+          </Link>
+        </div>
+
+        {/* 네비게이션 */}
+        <nav
+          className="flex-1 overflow-y-auto p-3 space-y-5"
+          style={{ maxHeight: 'calc(100vh - 64px - 80px)' }}
+          aria-label="메인 메뉴"
+        >
+          {ADMIN_MENU_CONFIG.map((group) => (
+            <MenuGroupComponent
+              key={group.id}
+              group={group}
+              pathname={pathname}
+              expandedMenus={expandedMenus}
+              onToggle={toggleMenu}
+              badgeCounts={badgeCounts}
+              onNavigate={handleNavigate}
+            />
+          ))}
+        </nav>
+
+        {/* 푸터 유저 프로필 */}
+        <div className="p-3 border-t border-[#21262d] bg-[#010409]">
+          <div className="flex items-center gap-3 p-2 rounded-lg">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#58a6ff] to-[#1f6feb] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1f6feb]/20">
+              KO
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-[#e6edf3] truncate">Administrator</p>
+              <p className="text-[11px] text-[#8b949e] capitalize">{role || 'Admin'}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg text-[#6e7681] hover:text-[#f85149] hover:bg-[#21262d] transition-all min-w-[40px] min-h-[40px] flex items-center justify-center"
+              aria-label="로그아웃"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* 메인 콘텐츠 */}
+      <main className="flex-1 min-h-screen bg-[#0d1117] lg:ml-0">
+        {/* 모바일 헤더 스페이서 */}
+        <div className="h-16 lg:hidden" />
+        <div className="p-4 lg:p-6 pb-12 max-w-[1600px] mx-auto">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// 메뉴 그룹 컴포넌트
+const MenuGroupComponent = memo(function MenuGroupComponent({
+  group,
+  pathname,
+  expandedMenus,
+  onToggle,
+  badgeCounts,
+  onNavigate,
+}: {
+  group: MenuGroup;
+  pathname: string;
+  expandedMenus: string[];
+  onToggle: (id: string) => void;
+  badgeCounts: BadgeCounts;
+  onNavigate?: () => void;
+}) {
+  return (
+    <div role="group" aria-labelledby={`group-${group.id}`}>
+      {group.category && (
+        <div
+          id={`group-${group.id}`}
+          className="px-3 mb-2 text-[10px] font-semibold text-[#8b949e] uppercase tracking-widest"
+        >
+          {group.category}
+        </div>
+      )}
+      <ul className="space-y-0.5" role="menu">
+        {group.items.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            item.subItems?.some((sub) => checkSubItemActive(sub.href, pathname));
+          const isExpanded = expandedMenus.includes(item.id);
+
+          return (
+            <MenuItemComponent
+              key={item.id}
+              item={item}
+              isActive={isActive || false}
+              isExpanded={isExpanded}
+              onToggle={() => onToggle(item.id)}
+              pathname={pathname}
+              badgeCounts={badgeCounts}
+              onNavigate={onNavigate}
+            />
+          );
+        })}
+      </ul>
+    </div>
+  );
+});
