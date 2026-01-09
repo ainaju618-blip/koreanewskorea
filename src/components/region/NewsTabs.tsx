@@ -87,14 +87,7 @@ export default function NewsTabs({ regionCode, regionName, articles, isLoading }
           <Megaphone className="w-5 h-5 text-cyan-500" />
           {regionName} 주요 소식
         </h2>
-        {articles.length > 0 && (
-          <Link
-            href={`/region/${regionCode}/news`}
-            className="text-gray-500 dark:text-gray-400 text-xs font-medium hover:text-cyan-500"
-          >
-            더보기 &gt;
-          </Link>
-        )}
+{/* 더보기 링크 제거 - 현재 페이지에서 뉴스 표시 중 */}
       </div>
 
       {/* Category Tabs - 모바일 최적화 */}
