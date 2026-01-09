@@ -8,13 +8,14 @@ import type { RegionInfo } from '@/types/region';
 
 interface HeroBannerProps {
   region: RegionInfo;
+  className?: string;
 }
 
 // 배경 이미지 배열 (3개 이미지 순환)
 const HERO_IMAGES = [
-  '/images/hero/main-hero.png',
   '/images/hero/main-hero-2.png',
   '/images/hero/main-hero-3.png',
+  '/images/hero/main-hero-naju.png',
 ];
 
 // 슬라이드 전환 간격 (밀리초) - 7초
@@ -49,7 +50,7 @@ const slideVariants = {
  * Framer Motion을 사용한 자동 슬라이더
  * 3개 이미지를 5초마다 부드럽게 전환
  */
-export default function HeroBanner({ region }: HeroBannerProps) {
+export default function HeroBanner({ region, className = '' }: HeroBannerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // 자동 슬라이드 타이머
@@ -93,7 +94,7 @@ export default function HeroBanner({ region }: HeroBannerProps) {
   const theme = themeColors[region.themeColor] || themeColors.cyan;
 
   return (
-    <section className="relative text-white py-16 overflow-hidden">
+    <section className={`relative text-white py-16 overflow-hidden ${className}`}>
       {/* Background Images with Animation */}
       <AnimatePresence mode="popLayout">
         <motion.div

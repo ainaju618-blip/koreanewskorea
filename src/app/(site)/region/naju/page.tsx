@@ -9,6 +9,7 @@ import {
   SidebarTabs,
   NewsHeroSlider,
   SidebarBanners,
+  RegionBottomNav,
 } from '@/components/region';
 import WeatherWidgetWrapper from './WeatherWidgetWrapper';
 import DesktopLayout from '@/components/stitch-v2/layout/DesktopLayout';
@@ -50,11 +51,14 @@ export default async function NajuRegionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Banner - Server Component (풀 와이드) */}
-      <HeroBanner region={region} />
+      {/* Hero Banner - Server Component (데스크톱만 표시) */}
+      <HeroBanner region={region} className="hidden lg:block" />
 
-      {/* Spacer between Hero Banner and Main Content */}
-      <div className="h-8" />
+      {/* Spacer between Hero Banner and Main Content (데스크톱만) */}
+      <div className="h-8 hidden lg:block" />
+
+      {/* 모바일 전용 상단 여백 */}
+      <div className="h-4 lg:hidden" />
 
       {/* Hero Section - NewsHeroSlider + SidebarBanners (8:4 Grid) */}
       {/* DesktopLayout과 동일한 컨테이너 설정: max-w-[1280px], px-4 lg:px-8, gap-6 */}
@@ -118,6 +122,18 @@ export default async function NajuRegionPage() {
         {/* Divider (Mobile only) */}
         <div className="h-2 bg-gray-100 dark:bg-gray-800 my-6 lg:hidden" />
 
+        {/* Food Section - 모바일 전용 (데스크톱에서는 사이드바에 표시) */}
+        <div className="lg:hidden">
+          <FoodSection
+            regionCode={regionCode}
+            regionName={region.name}
+            places={places}
+          />
+        </div>
+
+        {/* Divider (Mobile only) */}
+        <div className="h-2 bg-gray-100 dark:bg-gray-800 my-6 lg:hidden" />
+
         {/* Travel Section - Server Component */}
         <TravelSection
           regionCode={regionCode}
@@ -125,6 +141,12 @@ export default async function NajuRegionPage() {
           places={places}
         />
       </DesktopLayout>
+
+      {/* Mobile Bottom Navigation - 모바일 전용 */}
+      <RegionBottomNav regionCode={regionCode} />
+
+      {/* Bottom safe area spacer for mobile */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }

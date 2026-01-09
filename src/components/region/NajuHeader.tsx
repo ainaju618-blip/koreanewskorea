@@ -210,9 +210,9 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
         </a>
 
         {/* =========================================================================
-            LAYER 1: LOGO ZONE (55px)
+            LAYER 1: LOGO ZONE (모바일: 48px, 데스크톱: 55px)
         ========================================================================= */}
-        <div className="h-[55px] bg-white border-b border-slate-100">
+        <div className="h-[48px] md:h-[55px] bg-white border-b border-slate-100">
           <div className="w-full max-w-[1400px] mx-auto px-4 h-full flex flex-row items-center justify-between">
 
             {/* Left: Date */}
@@ -222,12 +222,12 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
 
             {/* Center Logo - 코리아NEWS 나주 (정중앙) */}
             <div className="flex items-center justify-center">
-              <Link href="/region/naju" className="group flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                <span className="text-3xl md:text-4xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
+              <Link href="/region/naju" className="group flex items-center gap-1 md:gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                <span className="text-xl md:text-4xl font-serif font-black text-secondary tracking-tighter group-hover:opacity-90 transition-opacity">
                   코리아<span className="text-primary">NEWS</span>
                 </span>
                 {/* 나주 강조 표시 - 빨간색 */}
-                <span className="text-2xl md:text-3xl font-serif font-black text-red-500 ml-1 group-hover:opacity-90 transition-opacity">
+                <span className="text-lg md:text-3xl font-serif font-black text-red-500 ml-0.5 md:ml-1 group-hover:opacity-90 transition-opacity">
                   나주
                 </span>
               </Link>
@@ -273,7 +273,7 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <div className="md:hidden absolute right-4 top-3">
+            <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 text-secondary min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
@@ -289,9 +289,10 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
         </div>
 
         {/* =========================================================================
-            LAYER 2: MAIN NAVIGATION (GNB) (48px) - Sticky
+            LAYER 2: MAIN NAVIGATION (GNB) (48px) - Sticky (Desktop Only)
+            모바일에서는 BottomNav 사용으로 숨김
         ========================================================================= */}
-        <div className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-emerald-700 shadow-md h-[44px] md:h-[48px]">
+        <div className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-emerald-700 shadow-md h-[48px] hidden md:block">
           <div className="w-full max-w-[1400px] mx-auto px-4 h-full relative">
 
             <nav className="hidden md:flex items-center justify-center h-full">
@@ -360,10 +361,6 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
               </div>
             </nav>
 
-            {/* Mobile: Simple header */}
-            <div className="md:hidden flex items-center justify-center h-full">
-              <span className="text-white font-bold text-lg">나주 뉴스</span>
-            </div>
           </div>
         </div>
 
