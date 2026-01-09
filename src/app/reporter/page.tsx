@@ -23,8 +23,9 @@ import {
     User,
     ChevronLeft,
     ChevronRight,
-    ExternalLink,
     LogOut,
+    Filter,
+    AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/ConfirmModal";
@@ -50,6 +51,7 @@ interface Article {
     thumbnail_url: string | null;
     canEdit: boolean;
     rejection_reason?: string | null;
+    view_count?: number;
 }
 
 interface PressRelease {
@@ -87,6 +89,11 @@ export default function ReporterDashboard() {
     const [articleTotalPages, setArticleTotalPages] = useState(1);
     const [articleSearch, setArticleSearch] = useState("");
     const [articleFilter, setArticleFilter] = useState("my-region");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+
+    // Error state
+    const [articlesError, setArticlesError] = useState<string | null>(null);
+    const [pressError, setPressError] = useState<string | null>(null);
 
     // Press releases state
     const [pressReleases, setPressReleases] = useState<PressRelease[]>([]);
@@ -109,10 +116,10 @@ export default function ReporterDashboard() {
     // Logout handler
     const handleLogout = async () => {
         const confirmed = await confirm({
-            title: "Logout",
-            message: "Are you sure you want to logout?",
-            confirmText: "Logout",
-            cancelText: "Cancel",
+            title: "로그아웃",
+            message: "정말 로그아웃 하시겠습니까?",
+            confirmText: "로그아웃",
+            cancelText: "취소",
         });
 
         if (!confirmed) return;
@@ -121,13 +128,13 @@ export default function ReporterDashboard() {
         try {
             const res = await fetch("/api/auth/logout", { method: "POST" });
             if (res.ok) {
-                showSuccess("Successfully logged out");
+                showSuccess("로그아웃되었습니다.");
                 router.push("/reporter/login");
             } else {
-                showError("Logout failed");
+                showError("로그아웃에 실패했습니다.");
             }
         } catch {
-            showError("An error occurred during logout");
+            showError("로그아웃 중 오류가 발생했습니다.");
         } finally {
             setLoggingOut(false);
         }
@@ -163,33 +170,44 @@ export default function ReporterDashboard() {
     // Fetch articles
     const fetchArticles = useCallback(async () => {
         setArticlesLoading(true);
+        setArticlesError(null);
         try {
+            const statusParam = statusFilter !== "all" ? `&status=${statusFilter}` : "";
             const res = await fetch(
-                `/api/reporter/articles?filter=${articleFilter}&page=${articlePage}&limit=15`
+                `/api/reporter/articles?filter=${articleFilter}&page=${articlePage}&limit=15${statusParam}`
             );
             if (res.ok) {
                 const data = await res.json();
                 setArticles(data.articles);
                 setArticleTotalPages(data.pagination?.totalPages || 1);
+            } else {
+                const data = await res.json();
+                setArticlesError(data.message || "기사를 불러오는데 실패했습니다.");
             }
         } catch (err) {
             console.error("Failed to fetch articles:", err);
+            setArticlesError("서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             setArticlesLoading(false);
         }
-    }, [articleFilter, articlePage]);
+    }, [articleFilter, articlePage, statusFilter]);
 
     // Fetch press releases
     const fetchPressReleases = useCallback(async () => {
         setPressLoading(true);
+        setPressError(null);
         try {
             const res = await fetch("/api/reporter/press-releases?limit=20");
             if (res.ok) {
                 const data = await res.json();
                 setPressReleases(data.releases || []);
+            } else {
+                const data = await res.json();
+                setPressError(data.message || "보도자료를 불러오는데 실패했습니다.");
             }
         } catch (err) {
             console.error("Failed to fetch press releases:", err);
+            setPressError("서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             setPressLoading(false);
         }
@@ -651,20 +669,42 @@ export default function ReporterDashboard() {
                     {/* Tab Actions */}
                     <div className="flex items-center gap-2">
                         {activeTab === "articles" && (
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="검색..."
-                                    value={articleSearch}
-                                    onChange={(e) => setArticleSearch(e.target.value)}
-                                    className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
+                            <>
+                                {/* Status Filter Dropdown */}
+                                <div className="relative">
+                                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => {
+                                            setStatusFilter(e.target.value);
+                                            setArticlePage(1);
+                                        }}
+                                        className="pl-9 pr-8 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                                    >
+                                        <option value="all">전체 상태</option>
+                                        <option value="published">게시됨</option>
+                                        <option value="pending">대기중</option>
+                                        <option value="draft">초안</option>
+                                        <option value="rejected">반려됨</option>
+                                    </select>
+                                </div>
+                                {/* Search Input */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="제목 검색..."
+                                        value={articleSearch}
+                                        onChange={(e) => setArticleSearch(e.target.value)}
+                                        className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-48 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                </div>
+                            </>
                         )}
                         <button
                             onClick={() => activeTab === "articles" ? fetchArticles() : fetchPressReleases()}
                             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                            title="새로고침"
                         >
                             <RefreshCw className={`w-4 h-4 ${(articlesLoading || pressLoading) ? "animate-spin" : ""}`} />
                         </button>
@@ -673,15 +713,20 @@ export default function ReporterDashboard() {
 
                 {/* Bulk Action Toolbar */}
                 {activeTab === "articles" && selectedIds.size > 0 && (
-                    <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border-b border-blue-100">
-                        <span className="text-sm font-medium text-blue-700">
-                            {selectedIds.size}개 선택됨
-                        </span>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                {selectedIds.size}
+                            </div>
+                            <span className="text-sm font-semibold text-blue-800">
+                                개 기사 선택됨
+                            </span>
+                        </div>
                         <div className="flex items-center gap-2 ml-auto">
                             <button
                                 onClick={handleBulkApprove}
                                 disabled={isBulkProcessing}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition"
+                                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition shadow-sm"
                             >
                                 {isBulkProcessing ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -693,7 +738,7 @@ export default function ReporterDashboard() {
                             <button
                                 onClick={handleBulkReject}
                                 disabled={isBulkProcessing}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition"
+                                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition shadow-sm"
                             >
                                 {isBulkProcessing ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -705,7 +750,7 @@ export default function ReporterDashboard() {
                             <button
                                 onClick={handleBulkDelete}
                                 disabled={isBulkProcessing}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
+                                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition shadow-sm ring-2 ring-red-300"
                             >
                                 {isBulkProcessing ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -714,11 +759,12 @@ export default function ReporterDashboard() {
                                 )}
                                 일괄 삭제
                             </button>
+                            <div className="w-px h-6 bg-slate-300 mx-1"></div>
                             <button
                                 onClick={() => setSelectedIds(new Set())}
-                                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                                className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition border border-transparent hover:border-slate-200"
                             >
-                                취소
+                                선택 해제
                             </button>
                         </div>
                     </div>
@@ -737,33 +783,57 @@ export default function ReporterDashboard() {
                         selectedIds={selectedIds}
                         onSelectArticle={handleSelectArticle}
                         onSelectAll={handleSelectAll}
+                        error={articlesError}
+                        onRetry={fetchArticles}
                     />
                 ) : (
                     <PressReleasesList
                         releases={pressReleases}
                         isLoading={pressLoading}
+                        error={pressError}
+                        onRetry={fetchPressReleases}
                     />
                 )}
 
                 {/* Pagination for Articles */}
                 {activeTab === "articles" && articleTotalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 py-3 border-t border-slate-100">
+                    <div className="flex items-center justify-center gap-3 py-4 border-t border-slate-200 bg-slate-50">
+                        <button
+                            onClick={() => setArticlePage(1)}
+                            disabled={articlePage === 1}
+                            className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                            처음
+                        </button>
                         <button
                             onClick={() => setArticlePage((p) => Math.max(1, p - 1))}
                             disabled={articlePage === 1}
-                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                            className="p-2 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <span className="text-sm text-slate-600">
-                            {articlePage} / {articleTotalPages}
-                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className="px-3 py-1 bg-blue-600 text-white font-bold rounded-lg text-sm">
+                                {articlePage}
+                            </span>
+                            <span className="text-slate-500 mx-1">/</span>
+                            <span className="text-slate-600 font-medium text-sm">
+                                {articleTotalPages}
+                            </span>
+                        </div>
                         <button
                             onClick={() => setArticlePage((p) => Math.min(articleTotalPages, p + 1))}
                             disabled={articlePage === articleTotalPages}
-                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+                            className="p-2 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
                         >
                             <ChevronRight className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setArticlePage(articleTotalPages)}
+                            disabled={articlePage === articleTotalPages}
+                            className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                            마지막
                         </button>
                     </div>
                 )}
@@ -784,6 +854,8 @@ function ArticlesList({
     selectedIds,
     onSelectArticle,
     onSelectAll,
+    error,
+    onRetry,
 }: {
     articles: Article[];
     isLoading: boolean;
@@ -795,11 +867,35 @@ function ArticlesList({
     selectedIds: Set<string>;
     onSelectArticle: (id: string, checked: boolean) => void;
     onSelectAll: (checked: boolean) => void;
+    error: string | null;
+    onRetry: () => void;
 }) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    <p className="text-sm text-slate-500">기사를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="py-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <p className="text-red-600 font-medium mb-2">오류 발생</p>
+                <p className="text-slate-500 text-sm mb-4">{error}</p>
+                <button
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    다시 시도
+                </button>
             </div>
         );
     }
@@ -807,8 +903,11 @@ function ArticlesList({
     if (articles.length === 0) {
         return (
             <div className="py-12 text-center">
-                <FileText className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                <p className="text-slate-500">기사가 없습니다</p>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+                    <FileText className="w-8 h-8 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">기사가 없습니다</p>
+                <p className="text-slate-400 text-sm">새 기사를 작성하거나 필터를 변경해보세요.</p>
             </div>
         );
     }
@@ -944,12 +1043,17 @@ function ArticleRow({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         isMyRegion ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
                     }`}>
                         {article.source}
                     </span>
+                    {article.category && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
+                            {article.category}
+                        </span>
+                    )}
                     {statusBadge()}
                 </div>
                 <Link
@@ -959,17 +1063,29 @@ function ArticleRow({
                 >
                     {article.title}
                 </Link>
-                <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(article.published_at).toLocaleDateString("ko-KR", {
-                        month: "short",
-                        day: "numeric",
-                    })}
+                <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+                    <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(article.published_at).toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "Asia/Seoul"
+                        })}
+                    </span>
+                    {article.view_count !== undefined && (
+                        <span className="flex items-center gap-1 text-emerald-600">
+                            <Eye className="w-3 h-3" />
+                            {article.view_count.toLocaleString()}회
+                        </span>
+                    )}
                     {article.rejection_reason && (
-                        <span className="text-red-500 ml-2">
+                        <span className="text-red-500 flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
                             반려: {article.rejection_reason.substring(0, 30)}...
                         </span>
                     )}
-                </p>
+                </div>
             </div>
 
             {/* Actions */}
@@ -1015,7 +1131,7 @@ function ArticleRow({
                                 </Link>
                                 <button
                                     onClick={() => onDelete(article)}
-                                    className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition"
+                                    className="p-1.5 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition border border-transparent hover:border-red-600"
                                     title="삭제"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -1033,14 +1149,40 @@ function ArticleRow({
 function PressReleasesList({
     releases,
     isLoading,
+    error,
+    onRetry,
 }: {
     releases: PressRelease[];
     isLoading: boolean;
+    error: string | null;
+    onRetry: () => void;
 }) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    <p className="text-sm text-slate-500">보도자료를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="py-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <p className="text-red-600 font-medium mb-2">오류 발생</p>
+                <p className="text-slate-500 text-sm mb-4">{error}</p>
+                <button
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    다시 시도
+                </button>
             </div>
         );
     }
@@ -1048,8 +1190,11 @@ function PressReleasesList({
     if (releases.length === 0) {
         return (
             <div className="py-12 text-center">
-                <Inbox className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                <p className="text-slate-500">보도자료가 없습니다</p>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
+                    <Inbox className="w-8 h-8 text-slate-400" />
+                </div>
+                <p className="text-slate-600 font-medium mb-1">보도자료가 없습니다</p>
+                <p className="text-slate-400 text-sm">새로운 보도자료가 도착하면 여기에 표시됩니다.</p>
             </div>
         );
     }

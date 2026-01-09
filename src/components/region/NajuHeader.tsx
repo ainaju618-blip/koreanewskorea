@@ -252,7 +252,11 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
                 </button>
               ) : (
                 <button
-                  onClick={() => setIsReporterMode(true)}
+                  onClick={() => {
+                    const width = window.screen.availWidth;
+                    const height = window.screen.availHeight;
+                    window.open('/auth/reporter', 'reporter-login', `width=${width},height=${height},left=0,top=0,resizable=yes,scrollbars=yes`);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                 >
                   <LogIn className="w-4 h-4" />

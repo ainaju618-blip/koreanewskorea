@@ -385,7 +385,11 @@ export default function Header() {
                             {/* 기자로그인 & Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
                                 <button
-                                    onClick={() => setShowLoginModal(true)}
+                                    onClick={() => {
+                                        const width = window.screen.availWidth;
+                                        const height = window.screen.availHeight;
+                                        window.open('/auth/reporter', 'reporter-login', `width=${width},height=${height},left=0,top=0,resizable=yes,scrollbars=yes`);
+                                    }}
                                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:text-primary border border-slate-200 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all"
                                 >
                                     <LogIn className="w-4 h-4" />
@@ -578,16 +582,7 @@ export default function Header() {
                             <PWAInstallMenuItem onMenuClose={() => setIsMobileMenuOpen(false)} />
 
                             {/* Quick Actions */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => {
-                                        setIsMobileMenuOpen(false);
-                                        setShowLoginModal(true);
-                                    }}
-                                    className="flex items-center justify-center gap-2 py-3.5 bg-slate-50 rounded-xl font-semibold text-slate-700 border border-slate-200 hover:border-slate-300 transition-colors"
-                                >
-                                    <LogIn className="w-4 h-4" /> 기자로그인
-                                </button>
+                            <div className="grid grid-cols-1 gap-3">
                                 <Link
                                     href="/subscribe"
                                     onClick={() => setIsMobileMenuOpen(false)}
