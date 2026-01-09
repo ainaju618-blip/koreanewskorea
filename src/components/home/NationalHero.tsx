@@ -66,7 +66,7 @@ export default async function NationalHero() {
           </span>
         </div>
         <Link
-          href="https://koreanewsone.com"
+          href="https://koreanewskorea.com"
           target="_blank"
           className="text-sm text-[#A6121D] hover:underline flex items-center gap-1"
         >
@@ -167,13 +167,13 @@ export default async function NationalHero() {
             {/* Branch Link */}
             <div className="mt-6 pt-4 border-t border-slate-200">
               <Link
-                href="https://koreanewsone.com"
+                href="https://koreanewskorea.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-3 bg-white rounded-lg border border-slate-200 hover:border-[#A6121D] hover:text-[#A6121D] transition-all text-sm"
               >
                 <span>📍 광주/전남 지역뉴스</span>
-                <span className="text-xs text-slate-400">koreanewsone.com</span>
+                <span className="text-xs text-slate-400">koreanewskorea.com</span>
               </Link>
             </div>
           </div>

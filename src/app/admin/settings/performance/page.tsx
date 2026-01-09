@@ -291,7 +291,7 @@ export default function PerformancePage() {
                                 {analyzing ? '분석 중...' : '자동 분석'}
                             </button>
                             <a
-                                href="https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.koreanewsone.com%2F"
+                                href="https://pagespeed.web.dev/analysis?url=https%3A%2F%2Fwww.koreanewskorea.com%2F"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 px-3 py-2 text-sm bg-[#21262d] border border-[#30363d] rounded-lg text-slate-300 hover:text-white hover:bg-[#30363d] transition-colors"

@@ -6,9 +6,11 @@ import { useToast } from '@/components/ui/Toast';
 
 // 직위 데이터
 const POSITIONS = [
+    { value: 'national_chief_director', label: '전국총괄본부장' },
     { value: 'chief_director', label: '총괄본부장' },
     { value: 'editor_in_chief', label: '주필' },
     { value: 'branch_manager', label: '지사장' },
+    { value: 'gwangju_branch_director', label: '광주지역본부장' },
     { value: 'editor_chief', label: '편집국장' },
     { value: 'news_chief', label: '취재부장' },
     { value: 'senior_reporter', label: '수석기자' },
@@ -813,12 +815,12 @@ function ReporterForm({
                         <input
                             type="text"
                             value={formEmail.replace(/@koreanews(one)?\.com$/, '')}
-                            onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace(/@koreanews(one)?\.com$/, '')}@koreanewsone.com` : '')}
+                            onChange={(e) => setFormEmail(e.target.value ? `${e.target.value.replace(/@koreanews(one)?\.com$/, '')}@koreanewskorea.com` : '')}
                             className="flex-1 border border-[#30363d] rounded-l-lg px-3 py-2 text-sm bg-[#0d1117] text-[#e6edf3] placeholder:text-[#484f58] focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="userid"
                         />
                         <span className="inline-flex items-center px-3 py-2 bg-[#21262d] border border-l-0 border-[#30363d] rounded-r-lg text-[#8b949e] text-sm">
-                            @koreanewsone.com
+                            @koreanewskorea.com
                         </span>
                     </div>
                 </div>

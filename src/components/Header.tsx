@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot, Home } from 'lucide-react';
+import { Menu, X, Search, MapPin, User, FileText, Facebook, Instagram, Twitter, ChevronRight, ChevronDown, Newspaper, Rocket, Telescope, Sparkles, Atom, Cpu, TrendingUp, Bot, Home, LogIn, Loader2 } from 'lucide-react';
 import { PWAInstallButton, PWAInstallMenuItem } from './PWAInstallPrompt';
 import HeaderRegionSelector, { getRegionFromPath, getHeaderRegionName, mapToHeaderRegion, HEADER_REGIONS } from './HeaderRegionSelector';
 import { useUserRegion } from '@/hooks/useUserRegion';
@@ -46,6 +46,14 @@ export default function Header() {
     const [currentDate, setCurrentDate] = useState('');
     const megaMenuRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
+    const router = useRouter();
+
+    // 기자 로그인 모달 상태
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [loginName, setLoginName] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
 
     // IP 기반 지역 감지
     const { region: detectedRegion, isLoading: isRegionLoading } = useUserRegion();
@@ -168,6 +176,38 @@ export default function Header() {
         if (category.slug === 'region') return '/category/jeonnam-region';
         if (parent) return `/category/${parent.slug}/${category.slug}`;
         return `/category/${category.slug}`;
+    };
+
+    // 기자 로그인 핸들러
+    const handleReporterLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoginError('');
+        setLoginLoading(true);
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: loginName, password: loginPassword }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setLoginError(data.message || '로그인에 실패했습니다.');
+                return;
+            }
+
+            // 로그인 성공 - 기자 대시보드로 이동
+            setShowLoginModal(false);
+            setLoginName('');
+            setLoginPassword('');
+            router.push('/reporter');
+        } catch (err) {
+            setLoginError('서버 연결에 실패했습니다.');
+        } finally {
+            setLoginLoading(false);
+        }
     };
 
     const hasChildren = (category: Category) => category.children && category.children.length > 0;
@@ -342,8 +382,15 @@ export default function Header() {
                                 )}
                             </Link>
 
-                            {/* Search & PWA Install - Modern Design */}
+                            {/* 기자로그인 & Search & PWA Install - Modern Design */}
                             <div className="flex items-center gap-3 ml-8 pl-6 border-l border-slate-200">
+                                <button
+                                    onClick={() => setShowLoginModal(true)}
+                                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:text-primary border border-slate-200 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all"
+                                >
+                                    <LogIn className="w-4 h-4" />
+                                    기자로그인
+                                </button>
                                 <div className="relative group/search">
                                     <input
                                         type="text"
@@ -373,6 +420,97 @@ export default function Header() {
             ========================================================================= */}
             <NewsTicker />
 
+
+            {/* =========================================================================
+                기자 로그인 모달
+            ========================================================================= */}
+            {showLoginModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-secondary to-secondary-light">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                                    <User className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white text-lg">기자 로그인</h3>
+                                    <p className="text-xs text-white/60">코리아NEWS 기자 전용</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowLoginModal(false);
+                                    setLoginError('');
+                                }}
+                                className="p-2 text-white/80 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Form */}
+                        <form onSubmit={handleReporterLogin} className="p-6 space-y-4">
+                            {loginError && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">
+                                    {loginError}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                    이름
+                                </label>
+                                <input
+                                    type="text"
+                                    value={loginName}
+                                    onChange={(e) => setLoginName(e.target.value)}
+                                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
+                                    placeholder="기자 이름 입력"
+                                    required
+                                    disabled={loginLoading}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                    비밀번호
+                                </label>
+                                <input
+                                    type="password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
+                                    placeholder="비밀번호 입력"
+                                    required
+                                    disabled={loginLoading}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loginLoading}
+                                className="w-full bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                            >
+                                {loginLoading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <LogIn className="w-5 h-5" />
+                                        로그인
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="px-6 pb-6 text-center">
+                            <p className="text-xs text-slate-400">
+                                비밀번호를 잊으셨나요? 관리자에게 문의하세요.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* =========================================================================
                 MOBILE MENU OVERLAY - Modern Slide-in Design
@@ -441,13 +579,15 @@ export default function Header() {
 
                             {/* Quick Actions */}
                             <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href="/reporter/login"
-                                    onClick={() => setIsMobileMenuOpen(false)}
+                                <button
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        setShowLoginModal(true);
+                                    }}
                                     className="flex items-center justify-center gap-2 py-3.5 bg-slate-50 rounded-xl font-semibold text-slate-700 border border-slate-200 hover:border-slate-300 transition-colors"
                                 >
-                                    <User className="w-4 h-4" /> Login
-                                </Link>
+                                    <LogIn className="w-4 h-4" /> 기자로그인
+                                </button>
                                 <Link
                                     href="/subscribe"
                                     onClick={() => setIsMobileMenuOpen(false)}

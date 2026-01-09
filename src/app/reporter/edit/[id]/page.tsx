@@ -24,6 +24,7 @@ import ArticleHistory from '@/components/reporter/ArticleHistory';
 interface Article {
     id: string;
     title: string;
+    subtitle: string | null;
     content: string;
     category: string;
     source: string;
@@ -54,6 +55,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
     const [isSaving, setIsSaving] = useState(false);
 
     const [title, setTitle] = useState("");
+    const [subtitle, setSubtitle] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("");
     const [thumbnailUrl, setThumbnailUrl] = useState("");
@@ -77,6 +79,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
 
                     // 폼 초기화
                     setTitle(data.article.title);
+                    setSubtitle(data.article.subtitle || "");
                     setContent(data.article.content);
                     setCategory(data.article.category);
                     setThumbnailUrl(data.article.thumbnail_url || "");
@@ -166,6 +169,7 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     title,
+                    subtitle: subtitle || null,
                     content,
                     category,
                     thumbnail_url: thumbnailUrl || null,
@@ -329,6 +333,21 @@ export default function EditArticlePage({ params }: { params: Promise<{ id: stri
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="기사 제목을 입력하세요"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        disabled={isSaving}
+                    />
+                </div>
+
+                {/* Subtitle */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        부제목
+                    </label>
+                    <input
+                        type="text"
+                        value={subtitle}
+                        onChange={(e) => setSubtitle(e.target.value)}
+                        placeholder="부제목을 입력하세요 (선택)"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                         disabled={isSaving}
                     />

@@ -24,8 +24,8 @@ export default function AboutPage() {
         '@type': 'Organization',
         name: '코리아NEWS',
         alternateName: 'KoreaNEWS',
-        url: 'https://koreanewsone.com',
-        logo: 'https://koreanewsone.com/logo.png',
+        url: 'https://koreanewskorea.com',
+        logo: 'https://koreanewskorea.com/logo.png',
         description: '광주·전남 지역의 소식을 빠르고 정확하게 전달하는 지역 밀착형 디지털 미디어',
         foundingDate: '2024',
         address: {
@@ -39,7 +39,7 @@ export default function AboutPage() {
         contactPoint: {
             '@type': 'ContactPoint',
             telephone: '+82-10-2631-3865',
-            email: 'news@koreanewsone.com',
+            email: 'news@koreanewskorea.com',
             contactType: 'customer service',
         },
         sameAs: [],
@@ -275,7 +275,7 @@ export default function AboutPage() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
                         <a
-                            href="mailto:news@koreanewsone.com?subject=[제보]"
+                            href="mailto:news@koreanewskorea.com?subject=[제보]"
                             className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-lg font-medium hover:bg-slate-100 transition-colors"
                         >
                             <Mail className="w-4 h-4" />
@@ -306,7 +306,7 @@ export default function AboutPage() {
                         <li>• 교육용 웹사이트 및 플랫폼 개발</li>
                     </ul>
                     <a
-                        href="mailto:news@koreanewsone.com?subject=[프로그램 제작 의뢰]"
+                        href="mailto:news@koreanewskorea.com?subject=[프로그램 제작 의뢰]"
                         className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 px-6 py-3 rounded-lg font-medium hover:bg-purple-50 transition-colors"
                     >
                         <Mail className="w-4 h-4" />
@@ -353,8 +353,8 @@ export default function AboutPage() {
                         </p>
                         <p className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-gray-400" />
-                            <a href="mailto:news@koreanewsone.com" className="text-blue-600 hover:underline">
-                                news@koreanewsone.com
+                            <a href="mailto:news@koreanewskorea.com" className="text-blue-600 hover:underline">
+                                news@koreanewskorea.com
                             </a>
                         </p>
                     </div>

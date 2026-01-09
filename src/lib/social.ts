@@ -99,7 +99,7 @@ export async function shareToSocialMedia(
     region?: string
 ): Promise<SocialShareResult> {
     // Build article URL
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
     const articleUrl = `${baseUrl}/news/${articleId}`;
 
     const result: SocialShareResult = {};

@@ -100,7 +100,7 @@ export default function EmailExtractPage() {
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="news@koreanewsone.com"
+                                    placeholder="news@koreanewskorea.com"
                                     disabled
                                     className="flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 text-gray-300 text-sm disabled:opacity-50"
                                 />

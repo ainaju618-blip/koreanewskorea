@@ -16,7 +16,7 @@ const organization = {
     ceo: {
         title: '대표이사 / 발행인·편집인',
         name: '고광욱',
-        email: 'ceo@koreanewsone.com',
+        email: 'ceo@koreanewskorea.com',
     },
     departments: [
         {
@@ -102,9 +102,9 @@ export default function OrganizationPage() {
                 <div className="mt-12 text-center p-8 bg-blue-50 rounded-xl">
                     <h3 className="font-bold text-lg text-gray-900 mb-2">함께 할 인재를 찾습니다</h3>
                     <p className="text-gray-600 mb-4">코리아NEWS와 함께 지역 저널리즘의 미래를 만들어갈 분을 기다립니다.</p>
-                    <a href="mailto:recruit@koreanewsone.com" className="inline-flex items-center gap-2 text-[#A6121D] font-medium hover:underline">
+                    <a href="mailto:recruit@koreanewskorea.com" className="inline-flex items-center gap-2 text-[#A6121D] font-medium hover:underline">
                         <Mail className="w-4 h-4" />
-                        recruit@koreanewsone.com
+                        recruit@koreanewskorea.com
                     </a>
                 </div>
 

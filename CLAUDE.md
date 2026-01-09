@@ -59,21 +59,34 @@
 ❌ 금지: 이전 단계 미완성 상태에서 다음 단계 작업
 ```
 
-### DB 통합 운영
+### 🚨 서버 완전 분리 (P0 절대규칙!) - 2026-01-09 확정
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  🗄️ 운영DB와 개발DB가 동일한 Supabase를 공유한다            │
+│  ⛔ 운영서버와 개발서버는 완벽하게 분리되었다!               │
 │                                                              │
-│  📍 Supabase: xdcxfaoucvzfrryhczmy.supabase.co              │
+│  🔴 운영서버 (koreanewsone-clone:3000)                      │
+│     └── Supabase: xdcxfaoucvzfrryhczmy.supabase.co          │
+│         (kyh6412057153@gmail.com)                           │
 │                                                              │
-│  📋 주요 테이블:                                             │
-│     - posts: 뉴스 기사                                       │
-│     - places: 맛집/여행/명소                                 │
-│     - events: 행사/축제                                      │
-│     - profiles: 기자 정보                                    │
+│  🟢 개발서버 (koreanewskorea:3001)                          │
+│     └── Supabase: ebagdrupjfwkawbwqjjg.supabase.co          │
+│         (ainaju618@gmail.com)                               │
 │                                                              │
-│  ⚠️ 주의: 운영 데이터와 공유하므로 삭제/수정 시 주의!        │
+│  ═══════════════════════════════════════════════════════════│
+│                                                              │
+│  ⛔ 절대 금지 사항:                                          │
+│     1. 서로 다른 서버의 Supabase에 접근 금지                │
+│     2. 데이터 공유 금지 (각자 독립 운영)                    │
+│     3. 환경변수(.env.local) 서로 복사 금지                  │
+│     4. 운영서버 코드/데이터를 개발서버로 가져오기 금지      │
+│     5. 개발서버 코드/데이터를 운영서버로 가져오기 금지      │
+│                                                              │
+│  ✅ 원칙:                                                    │
+│     - 껍데기(코드)도 독립, 데이터도 독립                    │
+│     - 각 서버는 자체 스크래퍼로 데이터 수집                 │
+│     - 영역 침범 절대 금지                                   │
+│                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -174,9 +187,13 @@ pm2 start ecosystem.config.js --only koreanewskorea
 
 ### 환경 변수 (.env.local)
 ```
+# 🟢 개발서버 전용 Supabase (ainaju618@gmail.com)
 NEXT_PUBLIC_SUPABASE_URL=https://ebagdrupjfwkawbwqjjg.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
+
+# ⚠️ 아래는 마이그레이션용 (평소 사용 금지!)
+# PRODUCTION_SUPABASE_URL=https://xdcxfaoucvzfrryhczmy.supabase.co
 ```
 
 ---
@@ -228,3 +245,142 @@ git remote: https://github.com/ainaju618-blip/koreanewskorea.git
 
 - 에러 1회 → 자체 해결
 - 같은 에러 2회 → **STOP** → 에러 보고서 출력
+
+---
+
+## 👤 기자 페이지 기능 (2026-01-09 추가)
+
+> 📌 상세 문서: [docs/AUTHOR_PAGE_FEATURE.md](docs/AUTHOR_PAGE_FEATURE.md)
+
+### 핵심 구조
+
+```
+src/app/author/
+├── layout.tsx          # ⚠️ StitchHeader 사용 필수!
+├── search/page.tsx     # 이름 검색 → 리다이렉트
+└── [slug]/page.tsx     # 기자 상세 페이지
+```
+
+### 기자 직위 표시 형식
+
+```
+posts.author_name = "이름 직위"
+예: "허철호 전국총괄본부장"
+예: "우미옥 나주지사장"
+```
+
+### 직위 코드 변환 (src/lib/reporter-utils.ts)
+
+| 코드 | 한글 |
+|------|------|
+| national_chief_director | 전국총괄본부장 |
+| chief_director | 총괄본부장 |
+| branch_manager | 지사장 |
+| reporter | 기자 |
+
+### URL 형식
+
+```
+✅ 권장: /author/허철호 (이름 기반)
+⚠️ 자동 리다이렉트: /author/{UUID} → /author/이름
+```
+
+### 레이아웃 주의사항
+
+```typescript
+// ✅ 올바른 설정 (나주 메뉴 표시)
+import StitchHeader from '@/components/StitchHeader';
+import StitchFooter from '@/components/StitchFooter';
+import MobileTabBar from '@/components/MobileTabBar';
+
+// ❌ 잘못된 설정 (운영서버 메뉴 표시)
+import Header from '@/components/Header';
+```
+
+### 기자 검색 로직
+
+```typescript
+// author_name에서 이름 추출
+const reporterName = news.author_name.split(' ')[0];
+// "허철호 전국총괄본부장" → "허철호"
+
+// reporters 테이블에서 검색
+.eq('name', reporterName)
+```
+
+### 기사 조회 (기자 페이지)
+
+```typescript
+// author_name이 "이름 직위" 형식이므로 ilike 사용
+articlesQuery.ilike("author_name", `${reporter.name}%`);
+// "허철호"로 시작하는 author_name 검색
+```
+
+---
+
+## 🔧 공통 템플릿 사용 규칙 (2026-01-09 추가)
+
+> ⚠️ **절대로 하드코딩 금지!** 지역/직위/카테고리 매핑은 반드시 공통 모듈 수정
+
+### 지역 코드 매핑 (REGION_CODE_MAP)
+
+**파일**: `src/lib/reporter-utils.ts`
+
+```typescript
+// ✅ 올바른 방법: 공통 모듈 import
+import { getRegionCode, isSameRegion, REGION_CODE_MAP } from '@/lib/reporter-utils';
+
+// ❌ 절대 금지: 하드코딩
+const regionMap = { '나주시': 'naju', ... };  // 금지!
+```
+
+| 함수 | 용도 |
+|------|------|
+| `REGION_CODE_MAP` | 한글 → 영문 코드 매핑 상수 |
+| `getRegionCode(region)` | 한글 지역명 → 영문 코드 변환 |
+| `isSameRegion(reporter, source, region)` | 같은 지역인지 비교 |
+
+### 지역별 카테고리 매핑 (REGION_CATEGORIES)
+
+**파일**: `src/components/author/ReporterAuthSection.tsx`
+
+```typescript
+// 새 지역 추가 시 → ReporterAuthSection.tsx의 REGION_CATEGORIES 수정
+const REGION_CATEGORIES: Record<string, string[]> = {
+    "나주시": ["나주시소식", "의회소식", ...],
+    "목포시": ["목포시소식", ...],
+    // 새 지역 추가 시 여기에!
+};
+```
+
+### 직위 레이블 (POSITION_LABELS)
+
+**파일**: `src/lib/reporter-utils.ts`
+
+```typescript
+// 새 직위 추가 시 → reporter-utils.ts의 POSITION_LABELS 수정
+export const POSITION_LABELS: Record<string, string> = {
+    branch_manager: '지사장',
+    reporter: '기자',
+    // 새 직위 추가 시 여기에!
+};
+```
+
+### 수정 시 체크리스트
+
+```
+□ 지역 추가/변경 → reporter-utils.ts REGION_CODE_MAP 수정
+□ 지역 카테고리 → ReporterAuthSection.tsx REGION_CATEGORIES 수정
+□ 직위 추가/변경 → reporter-utils.ts POSITION_LABELS 수정
+□ 수정 후 → npx tsc --noEmit 실행
+□ API에서 사용 → 공통 모듈 import 확인
+```
+
+### 관련 파일 목록
+
+| 파일 | 역할 |
+|------|------|
+| `src/lib/reporter-utils.ts` | 지역코드, 직위, 바이라인 공통 함수 |
+| `src/components/author/ReporterAuthSection.tsx` | 지역별 카테고리 매핑 |
+| `src/app/api/reporter/write/route.ts` | 기사 작성 API (공통 모듈 사용) |
+| `src/app/api/reporter/articles/[id]/route.ts` | 기사 편집/삭제 API (공통 모듈 사용) |

@@ -28,6 +28,7 @@ export const metadata: Metadata = {
   },
 };
 
+// StitchHeader가 이미 NajuHeader를 포함하므로 여기서는 children만 반환
 export default function NajuLayout({
   children,
 }: {

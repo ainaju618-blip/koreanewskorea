@@ -41,7 +41,7 @@ export async function GET() {
         const { data: defaultAccount } = await supabaseAdmin
             .from('reporters')
             .select('id, name, email, region, position, access_level, user_id, status')
-            .eq('email', 'news@koreanewsone.com')
+            .eq('email', 'news@koreanewskorea.com')
             .maybeSingle();
 
         // 6. Check reporter_regions table
@@ -106,7 +106,7 @@ export async function GET() {
         }
 
         if (!defaultAccount) {
-            issues.push('⚠️ 기본 fallback 계정(news@koreanewsone.com)이 없습니다');
+            issues.push('⚠️ 기본 fallback 계정(news@koreanewskorea.com)이 없습니다');
         } else if (!defaultAccount.user_id) {
             issues.push('⚠️ 기본 fallback 계정에 user_id가 없습니다');
         }

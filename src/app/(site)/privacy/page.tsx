@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                         <h2 className="text-xl font-semibold mb-3">5. 개인정보 보호책임자</h2>
                         <p>
                             성명: [담당자명]<br />
-                            이메일: privacy@koreanewsone.com
+                            이메일: privacy@koreanewskorea.com
                         </p>
                     </section>
                 </div>

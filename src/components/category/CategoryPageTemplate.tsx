@@ -1,13 +1,28 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase-server';
 import { getCategoryByCode } from '@/constants/categories';
 import CategoryHeader from '@/components/category/CategoryHeader';
 import Pagination from '@/components/ui/Pagination';
+import { formatDate } from '@/lib/dateUtils';
+import type { NewsItem } from '@/types/news';
 
 export const dynamic = 'force-dynamic';
 
+// 카테고리별 기사 응답 타입
+interface CategoryNewsResponse {
+    data: NewsItem[];
+    totalCount: number;
+}
+
+// 인기 기사 타입 (간소화)
+interface PopularNewsItem {
+    id: string;
+    title: string;
+}
+
 // 카테고리별 기사 가져오기
-async function getCategoryNews(categoryCode: string, page: number = 1) {
+async function getCategoryNews(categoryCode: string, page: number = 1): Promise<CategoryNewsResponse> {
     try {
         const supabase = await createClient();
         const limit = 20;
@@ -17,7 +32,7 @@ async function getCategoryNews(categoryCode: string, page: number = 1) {
         const category = getCategoryByCode(categoryCode);
         const categoryName = category?.name || categoryCode;
 
-        const { data, count } = await supabase
+        const { data, count, error } = await supabase
             .from('posts')
             .select('*', { count: 'exact' })
             .eq('status', 'published')
@@ -25,36 +40,39 @@ async function getCategoryNews(categoryCode: string, page: number = 1) {
             .order('published_at', { ascending: false })
             .range(start, end);
 
-        return { data: data || [], totalCount: count || 0 };
-    } catch {
+        if (error) {
+            console.error('[getCategoryNews] Supabase error:', error.message);
+            return { data: [], totalCount: 0 };
+        }
+
+        return { data: (data as NewsItem[]) || [], totalCount: count || 0 };
+    } catch (error) {
+        console.error('[getCategoryNews] Error:', error);
         return { data: [], totalCount: 0 };
     }
 }
 
 // 인기 기사 가져오기
-async function getPopularNews() {
+async function getPopularNews(): Promise<PopularNewsItem[]> {
     try {
         const supabase = await createClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('posts')
             .select('id, title')
             .eq('status', 'published')
             .order('published_at', { ascending: false })
             .limit(5);
-        return data || [];
-    } catch {
+
+        if (error) {
+            console.error('[getPopularNews] Supabase error:', error.message);
+            return [];
+        }
+
+        return (data as PopularNewsItem[]) || [];
+    } catch (error) {
+        console.error('[getPopularNews] Error:', error);
         return [];
     }
-}
-
-// 날짜 포맷
-function formatDate(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    }).replace(/\. /g, '-').replace('.', '');
 }
 
 interface CategoryPageTemplateProps {
@@ -108,11 +126,16 @@ export default async function CategoryPageTemplate({
                                 {currentPage === 1 && news[0] && (
                                     <Link key={news[0].id} href={`/news/${news[0].id}`} className="flex gap-6 py-5 cursor-pointer group">
                                         {news[0].thumbnail_url ? (
-                                            <img
-                                                src={news[0].thumbnail_url}
-                                                alt={news[0].title}
-                                                className="w-96 h-40 object-cover shrink-0 bg-slate-200"
-                                            />
+                                            <div className="relative w-96 h-40 shrink-0 bg-slate-200">
+                                                <Image
+                                                    src={news[0].thumbnail_url}
+                                                    alt={news[0].title}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 384px"
+                                                    className="object-cover"
+                                                    priority
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-96 h-40 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400">
                                                 No Image
@@ -132,18 +155,22 @@ export default async function CategoryPageTemplate({
                                     </Link>
                                 )}
                                 {/* 나머지 기사 목록 */}
-                                {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
+                                {(currentPage === 1 ? news.slice(1) : news).map((item: NewsItem) => (
                                     <Link
                                         key={item.id}
                                         href={`/news/${item.id}`}
                                         className="flex gap-4 py-4 cursor-pointer group"
                                     >
                                         {item.thumbnail_url ? (
-                                            <img
-                                                src={item.thumbnail_url}
-                                                alt={item.title}
-                                                className="w-40 h-24 object-cover shrink-0 bg-slate-200"
-                                            />
+                                            <div className="relative w-40 h-24 shrink-0 bg-slate-200">
+                                                <Image
+                                                    src={item.thumbnail_url}
+                                                    alt={item.title}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100vw, 160px"
+                                                    className="object-cover"
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-40 h-24 bg-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xs">
                                                 No Image
@@ -189,7 +216,7 @@ export default async function CategoryPageTemplate({
                             </h3>
                             <div className="space-y-2.5">
                                 {popularNews.length > 0 ? (
-                                    popularNews.map((item: any, idx: number) => (
+                                    popularNews.map((item: PopularNewsItem, idx: number) => (
                                         <Link
                                             key={item.id}
                                             href={`/news/${item.id}`}
@@ -225,18 +252,20 @@ export default async function CategoryPageTemplate({
                                 최신 뉴스
                             </h4>
                             <div className="space-y-3">
-                                {news.slice(0, 3).map((item: any) => (
+                                {news.slice(0, 3).map((item: NewsItem) => (
                                     <Link
                                         key={item.id}
                                         href={`/news/${item.id}`}
                                         className="flex gap-3 cursor-pointer group"
                                     >
-                                        <div className="w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden">
+                                        <div className="relative w-20 h-14 bg-slate-200 shrink-0 rounded overflow-hidden">
                                             {item.thumbnail_url && (
-                                                <img
+                                                <Image
                                                     src={item.thumbnail_url}
-                                                    alt=""
-                                                    className="w-full h-full object-cover"
+                                                    alt={item.title}
+                                                    fill
+                                                    sizes="80px"
+                                                    className="object-cover"
                                                 />
                                             )}
                                         </div>

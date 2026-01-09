@@ -1,13 +1,13 @@
 """
 기관 정보 마이그레이션 스크립트 (API 버전)
-- localhost:3000 API를 통해 데이터 마이그레이션
+- localhost:3001 API를 통해 데이터 마이그레이션
 - 개발 서버가 실행 중이어야 함
 """
 
 import requests
 import time
 
-API_BASE = "http://localhost:3000/api/agencies"
+API_BASE = "http://localhost:3001/api/agencies"
 
 # 기관 데이터 정의
 AGENCIES_DATA = [

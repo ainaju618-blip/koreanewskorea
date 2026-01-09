@@ -143,8 +143,8 @@ export default function AdInquiryPage() {
                 <div className="text-center mt-8 text-gray-500">
                     <p>
                         직접 문의:{' '}
-                        <a href="mailto:ad@koreanewsone.com" className="text-blue-600 hover:underline">
-                            ad@koreanewsone.com
+                        <a href="mailto:ad@koreanewskorea.com" className="text-blue-600 hover:underline">
+                            ad@koreanewskorea.com
                         </a>
                     </p>
                 </div>

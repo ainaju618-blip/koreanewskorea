@@ -11,8 +11,8 @@ interface Article {
   content?: string;
   summary?: string;
   ai_summary?: string;
-  thumbnail?: string;
-  thumbnail_url?: string;
+  thumbnail?: string | null;
+  thumbnail_url?: string | null;
   category?: string;
   source?: string;
   published_at?: string;

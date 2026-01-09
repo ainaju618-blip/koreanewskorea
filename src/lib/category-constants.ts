@@ -1,3 +1,6 @@
+// ⚠️ 지역 코드 매핑은 reporter-utils.ts의 REGION_CODE_MAP이 기준!
+import { REGION_CODE_MAP } from './reporter-utils';
+
 export const CATEGORY_MAP: Record<string, { name: string; subMenus: string[]; dbCategory?: string }> = {
     'politics': {
         name: '정치',
@@ -97,29 +100,30 @@ export const CATEGORY_MAP: Record<string, { name: string; subMenus: string[]; db
     },
 };
 
+// 전남 지역만 추출 (Legacy 호환용 - reporter-utils.ts의 REGION_CODE_MAP 사용)
 export const JEONNAM_REGION_MAP: Record<string, string> = {
-    '순천': 'suncheon',
-    '목포': 'mokpo',
-    '여수': 'yeosu',
-    '광양': 'gwangyang',
-    '나주': 'naju',
-    '담양': 'damyang',
-    '곡성': 'gokseong',
-    '구례': 'gurye',
-    '고흥': 'goheung',
-    '보성': 'boseong',
-    '화순': 'hwasun',
-    '장흥': 'jangheung',
-    '강진': 'gangjin',
-    '해남': 'haenam',
-    '영암': 'yeongam',
-    '무안': 'muan',
-    '함평': 'hampyeong',
-    '영광': 'yeonggwang',
-    '장성': 'jangseong',  // 누락되었던 매핑 추가
-    '완도': 'wando',
-    '진도': 'jindo',
-    '신안': 'sinan',
+    '순천': REGION_CODE_MAP['순천'] || 'suncheon',
+    '목포': REGION_CODE_MAP['목포'] || 'mokpo',
+    '여수': REGION_CODE_MAP['여수'] || 'yeosu',
+    '광양': REGION_CODE_MAP['광양'] || 'gwangyang',
+    '나주': REGION_CODE_MAP['나주'] || 'naju',
+    '담양': REGION_CODE_MAP['담양'] || 'damyang',
+    '곡성': REGION_CODE_MAP['곡성'] || 'gokseong',
+    '구례': REGION_CODE_MAP['구례'] || 'gurye',
+    '고흥': REGION_CODE_MAP['고흥'] || 'goheung',
+    '보성': REGION_CODE_MAP['보성'] || 'boseong',
+    '화순': REGION_CODE_MAP['화순'] || 'hwasun',
+    '장흥': REGION_CODE_MAP['장흥'] || 'jangheung',
+    '강진': REGION_CODE_MAP['강진'] || 'gangjin',
+    '해남': REGION_CODE_MAP['해남'] || 'haenam',
+    '영암': REGION_CODE_MAP['영암'] || 'yeongam',
+    '무안': REGION_CODE_MAP['무안'] || 'muan',
+    '함평': REGION_CODE_MAP['함평'] || 'hampyeong',
+    '영광': REGION_CODE_MAP['영광'] || 'yeonggwang',
+    '장성': REGION_CODE_MAP['장성'] || 'jangseong',
+    '완도': REGION_CODE_MAP['완도'] || 'wando',
+    '진도': REGION_CODE_MAP['진도'] || 'jindo',
+    '신안': REGION_CODE_MAP['신안'] || 'sinan',
 };
 
 export const JEONNAM_REGION_CODES = [

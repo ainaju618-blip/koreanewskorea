@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
  * Maximum 1000 URLs per sitemap
  */
 export async function GET() {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
     // Get articles published within last 2 days (Google News requirement)
     const twoDaysAgo = new Date();

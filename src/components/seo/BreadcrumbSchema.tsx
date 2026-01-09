@@ -17,7 +17,7 @@ interface BreadcrumbSchemaProps {
 
 export default function BreadcrumbSchema({
     items,
-    siteUrl = 'https://www.koreanewsone.com'
+    siteUrl = 'https://www.koreanewskorea.com'
 }: BreadcrumbSchemaProps) {
     // Always start with home
     const breadcrumbItems = [

@@ -95,6 +95,10 @@ export default function ReporterDashboard() {
     // Processing state
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    // Selection state for bulk actions
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
     const { showSuccess, showError } = useToast();
     const { confirmDelete, confirm } = useConfirm();
     const router = useRouter();
@@ -285,6 +289,158 @@ export default function ReporterDashboard() {
             showError("삭제 중 오류가 발생했습니다.");
         } finally {
             setProcessingId(null);
+        }
+    };
+
+    // Selection handlers
+    const handleSelectArticle = (id: string, checked: boolean) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (checked) {
+                next.add(id);
+            } else {
+                next.delete(id);
+            }
+            return next;
+        });
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const editableIds = filteredArticles.filter(a => a.canEdit).map(a => a.id);
+            setSelectedIds(new Set(editableIds));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    // Bulk action handlers
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+
+        const confirmed = await confirmDelete(
+            `선택한 ${selectedIds.size}개의 기사를 삭제하시겠습니까?`
+        );
+        if (!confirmed) return;
+
+        setIsBulkProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selectedIds) {
+            try {
+                const res = await fetch(`/api/reporter/articles/${id}`, {
+                    method: "DELETE",
+                });
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch {
+                failCount++;
+            }
+        }
+
+        setIsBulkProcessing(false);
+        setSelectedIds(new Set());
+        fetchArticles();
+
+        if (successCount > 0) {
+            showSuccess(`${successCount}개의 기사가 삭제되었습니다.`);
+        }
+        if (failCount > 0) {
+            showError(`${failCount}개의 기사 삭제에 실패했습니다.`);
+        }
+    };
+
+    const handleBulkApprove = async () => {
+        if (selectedIds.size === 0) return;
+
+        const confirmed = await confirm({
+            title: "일괄 승인",
+            message: `선택한 ${selectedIds.size}개의 기사를 승인하시겠습니까?`,
+            type: "info",
+            confirmText: "승인",
+            cancelText: "취소",
+        });
+        if (!confirmed) return;
+
+        setIsBulkProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selectedIds) {
+            try {
+                const res = await fetch(`/api/reporter/articles/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "published" }),
+                });
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch {
+                failCount++;
+            }
+        }
+
+        setIsBulkProcessing(false);
+        setSelectedIds(new Set());
+        fetchArticles();
+
+        if (successCount > 0) {
+            showSuccess(`${successCount}개의 기사가 승인되었습니다.`);
+        }
+        if (failCount > 0) {
+            showError(`${failCount}개의 기사 승인에 실패했습니다.`);
+        }
+    };
+
+    const handleBulkReject = async () => {
+        if (selectedIds.size === 0) return;
+
+        const confirmed = await confirm({
+            title: "일괄 반려",
+            message: `선택한 ${selectedIds.size}개의 기사를 반려하시겠습니까?`,
+            type: "danger",
+            confirmText: "반려",
+            cancelText: "취소",
+        });
+        if (!confirmed) return;
+
+        setIsBulkProcessing(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const id of selectedIds) {
+            try {
+                const res = await fetch(`/api/reporter/articles/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "rejected" }),
+                });
+                if (res.ok) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch {
+                failCount++;
+            }
+        }
+
+        setIsBulkProcessing(false);
+        setSelectedIds(new Set());
+        fetchArticles();
+
+        if (successCount > 0) {
+            showSuccess(`${successCount}개의 기사가 반려되었습니다.`);
+        }
+        if (failCount > 0) {
+            showError(`${failCount}개의 기사 반려에 실패했습니다.`);
         }
     };
 
@@ -515,6 +671,59 @@ export default function ReporterDashboard() {
                     </div>
                 </div>
 
+                {/* Bulk Action Toolbar */}
+                {activeTab === "articles" && selectedIds.size > 0 && (
+                    <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 border-b border-blue-100">
+                        <span className="text-sm font-medium text-blue-700">
+                            {selectedIds.size}개 선택됨
+                        </span>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <button
+                                onClick={handleBulkApprove}
+                                disabled={isBulkProcessing}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition"
+                            >
+                                {isBulkProcessing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Check className="w-4 h-4" />
+                                )}
+                                일괄 승인
+                            </button>
+                            <button
+                                onClick={handleBulkReject}
+                                disabled={isBulkProcessing}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition"
+                            >
+                                {isBulkProcessing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Ban className="w-4 h-4" />
+                                )}
+                                일괄 반려
+                            </button>
+                            <button
+                                onClick={handleBulkDelete}
+                                disabled={isBulkProcessing}
+                                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
+                            >
+                                {isBulkProcessing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                )}
+                                일괄 삭제
+                            </button>
+                            <button
+                                onClick={() => setSelectedIds(new Set())}
+                                className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Content */}
                 {activeTab === "articles" ? (
                     <ArticlesList
@@ -525,6 +734,9 @@ export default function ReporterDashboard() {
                         onReject={handleReject}
                         onDelete={handleDelete}
                         myRegion={reporter?.region || ""}
+                        selectedIds={selectedIds}
+                        onSelectArticle={handleSelectArticle}
+                        onSelectAll={handleSelectAll}
                     />
                 ) : (
                     <PressReleasesList
@@ -569,6 +781,9 @@ function ArticlesList({
     onReject,
     onDelete,
     myRegion,
+    selectedIds,
+    onSelectArticle,
+    onSelectAll,
 }: {
     articles: Article[];
     isLoading: boolean;
@@ -577,6 +792,9 @@ function ArticlesList({
     onReject: (article: Article) => void;
     onDelete: (article: Article) => void;
     myRegion: string;
+    selectedIds: Set<string>;
+    onSelectArticle: (id: string, checked: boolean) => void;
+    onSelectAll: (checked: boolean) => void;
 }) {
     if (isLoading) {
         return (
@@ -595,19 +813,47 @@ function ArticlesList({
         );
     }
 
+    const editableArticles = articles.filter(a => a.canEdit);
+    const allEditableSelected = editableArticles.length > 0 && editableArticles.every(a => selectedIds.has(a.id));
+    const someSelected = editableArticles.some(a => selectedIds.has(a.id));
+
     return (
-        <div className="divide-y divide-slate-100">
-            {articles.map((article) => (
-                <ArticleRow
-                    key={article.id}
-                    article={article}
-                    myRegion={myRegion}
-                    isProcessing={processingId === article.id}
-                    onApprove={onApprove}
-                    onReject={onReject}
-                    onDelete={onDelete}
+        <div>
+            {/* Select All Header */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-100">
+                <input
+                    type="checkbox"
+                    checked={allEditableSelected}
+                    disabled={editableArticles.length === 0}
+                    ref={(el) => {
+                        if (el) {
+                            el.indeterminate = someSelected && !allEditableSelected;
+                        }
+                    }}
+                    onChange={(e) => onSelectAll(e.target.checked)}
+                    className={`w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 ${
+                        editableArticles.length > 0 ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
+                    }`}
                 />
-            ))}
+                <span className="text-sm text-slate-600">
+                    전체 선택 {editableArticles.length > 0 ? `(${editableArticles.length}개 편집 가능)` : '(편집 가능한 기사 없음)'}
+                </span>
+            </div>
+            <div className="divide-y divide-slate-100">
+                {articles.map((article) => (
+                    <ArticleRow
+                        key={article.id}
+                        article={article}
+                        myRegion={myRegion}
+                        isProcessing={processingId === article.id}
+                        onApprove={onApprove}
+                        onReject={onReject}
+                        onDelete={onDelete}
+                        isSelected={selectedIds.has(article.id)}
+                        onSelect={onSelectArticle}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
@@ -620,6 +866,8 @@ function ArticleRow({
     onApprove,
     onReject,
     onDelete,
+    isSelected,
+    onSelect,
 }: {
     article: Article;
     myRegion: string;
@@ -627,6 +875,8 @@ function ArticleRow({
     onApprove: (article: Article) => void;
     onReject: (article: Article) => void;
     onDelete: (article: Article) => void;
+    isSelected: boolean;
+    onSelect: (id: string, checked: boolean) => void;
 }) {
     const isMyRegion = article.source === myRegion;
     const isPending = article.status === "pending" || article.status === "draft";
@@ -667,7 +917,20 @@ function ArticleRow({
     };
 
     return (
-        <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group">
+        <div className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group ${isSelected ? 'bg-blue-50' : ''}`}>
+            {/* Checkbox */}
+            <input
+                type="checkbox"
+                checked={isSelected}
+                disabled={!article.canEdit}
+                onChange={(e) => onSelect(article.id, e.target.checked)}
+                className={`w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 flex-shrink-0 ${
+                    article.canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+                title={article.canEdit ? '선택' : '편집 권한 없음'}
+            />
+
             {/* Thumbnail */}
             <div className="w-14 h-14 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                 {article.thumbnail_url ? (
@@ -877,14 +1140,23 @@ function PressReleaseRow({ release }: { release: PressRelease }) {
 
 function getPositionLabel(position: string): string {
     const positions: Record<string, string> = {
+        national_chief_director: "전국총괄본부장",
+        chief_director: "총괄본부장",
         editor_in_chief: "주필",
         branch_manager: "지사장",
+        gwangju_branch_director: "광주지역본부장",
         editor_chief: "편집국장",
         news_chief: "취재부장",
         senior_reporter: "수석기자",
         reporter: "기자",
         intern_reporter: "수습기자",
         citizen_reporter: "시민기자",
+        opinion_writer: "오피니언",
+        advisor: "고문",
+        consultant: "자문위원",
+        ambassador: "홍보대사",
+        seoul_correspondent: "서울특파원",
+        foreign_correspondent: "해외특파원",
     };
     return positions[position] || position;
 }

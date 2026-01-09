@@ -20,7 +20,7 @@ export const AI_TITLE_MAX_LENGTH = 60;
 export const AI_META_DESCRIPTION_MAX_LENGTH = 150;
 
 // Production URL
-export const PRODUCTION_DOMAIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreanewsone.com';
+export const PRODUCTION_DOMAIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreanewskorea.com';
 
 // Provider Models (for reference)
 export const AI_MODELS = {

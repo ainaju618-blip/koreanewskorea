@@ -15,7 +15,7 @@ import { ROLE_LEVELS } from './permissions';
 import { getRegionByCode, REGION_ALIASES } from '@/constants/regions';
 
 // Default system email for fallback assignment
-const DEFAULT_EMAIL = 'news@koreanewsone.com';
+const DEFAULT_EMAIL = 'news@koreanewskorea.com';
 
 export interface Reporter {
     id: string;
@@ -206,7 +206,7 @@ async function findReportersByPrimaryRegion(koreanRegionName: string): Promise<R
  * 1. Region-specific reporter via reporter_regions (multi-region support)
  * 2. Region-specific reporter via reporters.region (fallback)
  * 3. Global reporter (editor+, access_level >= 60)
- * 4. Default system account (news@koreanewsone.com)
+ * 4. Default system account (news@koreanewskorea.com)
  *
  * Selection: Fair distribution (reporter with least articles in last 30 days)
  */

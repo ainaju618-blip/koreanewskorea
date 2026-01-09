@@ -28,7 +28,7 @@ if (!BOT_API_KEY) {
 // Local API endpoint for single article processing
 const PROCESS_SINGLE_URL = process.env.NEXT_PUBLIC_SITE_URL
     ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/bot/process-single-article`
-    : 'http://localhost:3000/api/bot/process-single-article';
+    : 'http://localhost:3001/api/bot/process-single-article';
 
 interface TriggerRequest {
     region?: string;

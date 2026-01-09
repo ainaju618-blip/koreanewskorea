@@ -5,6 +5,104 @@
  * and byline formatting for SEO/E-E-A-T optimization.
  */
 
+// ============================================================================
+// 지역 코드 매핑 (한글 지역명 → 영문 코드)
+// 모든 API에서 공통으로 사용
+// ============================================================================
+export const REGION_CODE_MAP: Record<string, string> = {
+    // 시 단위
+    '나주시': 'naju',
+    '목포시': 'mokpo',
+    '순천시': 'suncheon',
+    '여수시': 'yeosu',
+    '광양시': 'gwangyang',
+    // 광역시
+    '광주광역시': 'gwangju',
+    // 군 단위
+    '담양군': 'damyang',
+    '곡성군': 'gokseong',
+    '구례군': 'gurye',
+    '고흥군': 'goheung',
+    '보성군': 'boseong',
+    '화순군': 'hwasun',
+    '장흥군': 'jangheung',
+    '강진군': 'gangjin',
+    '해남군': 'haenam',
+    '영암군': 'yeongam',
+    '무안군': 'muan',
+    '함평군': 'hampyeong',
+    '영광군': 'yeonggwang',
+    '장성군': 'jangseong',
+    '완도군': 'wando',
+    '진도군': 'jindo',
+    '신안군': 'sinan',
+    // 광역 단위
+    '전체': 'national',
+    '전라남도': 'jeonnam',
+    '전라남도교육청': 'jeonnam_edu',
+    '광주시교육청': 'gwangju_edu',
+    // Legacy (시/군 없이 저장된 경우 대비)
+    '나주': 'naju',
+    '광주': 'gwangju',
+    '목포': 'mokpo',
+    '여수': 'yeosu',
+    '순천': 'suncheon',
+    '광양': 'gwangyang',
+    '담양': 'damyang',
+    '곡성': 'gokseong',
+    '구례': 'gurye',
+    '고흥': 'goheung',
+    '보성': 'boseong',
+    '화순': 'hwasun',
+    '장흥': 'jangheung',
+    '강진': 'gangjin',
+    '해남': 'haenam',
+    '영암': 'yeongam',
+    '무안': 'muan',
+    '함평': 'hampyeong',
+    '영광': 'yeonggwang',
+    '장성': 'jangseong',
+    '완도': 'wando',
+    '진도': 'jindo',
+    '신안': 'sinan',
+    '전남': 'jeonnam',
+};
+
+/**
+ * 한글 지역명 → 영문 지역 코드 변환
+ * @param region 한글 지역명 (예: "나주시", "광주광역시")
+ * @returns 영문 지역 코드 (예: "naju", "gwangju") 또는 null
+ */
+export function getRegionCode(region: string | null | undefined): string | null {
+    if (!region) return null;
+    return REGION_CODE_MAP[region] || region.toLowerCase();
+}
+
+/**
+ * 두 지역이 같은지 확인 (source, region 코드 모두 비교)
+ * @param reporterRegion 기자 지역 (한글, 예: "나주시")
+ * @param articleSource 기사 source 필드 (한글, 예: "나주시")
+ * @param articleRegion 기사 region 필드 (영문 코드, 예: "naju")
+ * @returns 같은 지역이면 true
+ */
+export function isSameRegion(
+    reporterRegion: string | null | undefined,
+    articleSource: string | null | undefined,
+    articleRegion: string | null | undefined
+): boolean {
+    if (!reporterRegion) return false;
+
+    // 1. source가 reporter.region과 일치 (한글 비교)
+    if (articleSource && articleSource === reporterRegion) return true;
+
+    // 2. region 코드가 reporter.region의 코드와 일치 (영문 코드 비교)
+    const reporterRegionCode = getRegionCode(reporterRegion);
+    if (reporterRegionCode && articleRegion === reporterRegionCode) return true;
+
+    return false;
+}
+
+// ============================================================================
 // Position labels (Korean)
 // IMPORTANT: Keep in sync with POSITIONS in admin/users/reporters/page.tsx
 export const POSITION_LABELS: Record<string, string> = {

@@ -9,7 +9,7 @@ interface OrganizationSchemaProps {
     siteUrl?: string;
 }
 
-export default function OrganizationSchema({ siteUrl = 'https://www.koreanewsone.com' }: OrganizationSchemaProps) {
+export default function OrganizationSchema({ siteUrl = 'https://www.koreanewskorea.com' }: OrganizationSchemaProps) {
     const schema = {
         '@context': 'https://schema.org',
         '@type': 'NewsMediaOrganization',
@@ -45,7 +45,7 @@ export default function OrganizationSchema({ siteUrl = 'https://www.koreanewsone
             {
                 '@type': 'ContactPoint',
                 contactType: 'customer service',
-                email: 'contact@koreanewsone.com',
+                email: 'contact@koreanewskorea.com',
                 availableLanguage: ['Korean', 'English'],
             },
         ],

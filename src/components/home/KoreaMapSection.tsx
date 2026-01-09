@@ -175,7 +175,7 @@ export default function KoreaMapSection() {
             {/* 지사 링크 */}
             <div className="mt-6 pt-4 border-t border-slate-200">
               <Link
-                href="https://koreanewsone.com"
+                href="https://koreanewskorea.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-3 bg-[#A6121D] text-white rounded-lg font-medium hover:bg-[#8a0f18] transition-colors"

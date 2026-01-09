@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import SubscribeButton from "@/components/author/SubscribeButton";
 import ArticleSearchBar from "@/components/author/ArticleSearchBar";
+import ReporterAuthSection from "@/components/author/ReporterAuthSection";
 
 interface Reporter {
     id: string;
@@ -69,18 +70,24 @@ interface PageProps {
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function getReporter(slugOrId: string) {
-    let query = supabaseAdmin
-        .from("reporters")
-        .select("*")
-        .eq("status", "Active");
-
+    // UUID인 경우 id로 검색
     if (UUID_REGEX.test(slugOrId)) {
-        query = query.eq("id", slugOrId);
-    } else {
-        query = query.eq("slug", slugOrId);
+        const { data, error } = await supabaseAdmin
+            .from("reporters")
+            .select("*")
+            .eq("id", slugOrId)
+            .eq("status", "Active")
+            .single();
+        return { data: data as Reporter, error };
     }
 
-    const { data, error } = await query.single();
+    // UUID가 아닌 경우: name으로 검색 (slug 컬럼이 없으므로)
+    const { data, error } = await supabaseAdmin
+        .from("reporters")
+        .select("*")
+        .eq("name", decodeURIComponent(slugOrId))
+        .eq("status", "Active")
+        .single();
     return { data: data as Reporter, error };
 }
 
@@ -128,9 +135,9 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
         notFound();
     }
 
-    // UUID로 접속했지만 slug가 있는 경우, slug URL로 리다이렉트 (SEO)
-    if (UUID_REGEX.test(slug) && reporter.slug) {
-        redirect(`/author/${reporter.slug}`);
+    // UUID로 접속한 경우, 기자 이름 URL로 리다이렉트 (SEO, slug 컬럼 없음)
+    if (UUID_REGEX.test(slug) && reporter.name) {
+        redirect(`/author/${encodeURIComponent(reporter.name)}`);
     }
 
     const page = parseInt(pageParam || "1");
@@ -165,11 +172,12 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
         .select("id, title, source, category, thumbnail_url, published_at, view_count, ai_summary, content", { count: "exact" })
         .eq("status", "published");
 
-    // Query by user_id (primary) or author_name (fallback)
+    // Query by user_id (primary) or author_name containing reporter name (fallback)
+    // author_name format: "이름 직위" (예: "허철호 전국총괄본부장")
     if (reporter.user_id) {
-        articlesQuery = articlesQuery.or(`author_id.eq.${reporter.user_id},author_name.eq.${reporter.name}`);
+        articlesQuery = articlesQuery.or(`author_id.eq.${reporter.user_id},author_name.ilike.${reporter.name}%`);
     } else {
-        articlesQuery = articlesQuery.eq("author_name", reporter.name);
+        articlesQuery = articlesQuery.ilike("author_name", `${reporter.name}%`);
     }
 
     // Apply search filter if provided
@@ -198,7 +206,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
     const specialtyTitle = getSpecialtyTitle(reporter);
 
     // Schema.org structured data (E-E-A-T optimized)
-    const canonicalUrl = `https://koreanewsone.com/author/${reporter.slug || reporter.id}`;
+    const canonicalUrl = `https://koreanewskorea.com/author/${encodeURIComponent(reporter.name)}`;
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Person",
@@ -208,7 +216,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
         worksFor: {
             "@type": "NewsMediaOrganization",
             name: "코리아NEWS",
-            url: "https://koreanewsone.com",
+            url: "https://koreanewskorea.com",
         },
         description: reporter.bio,
         image: reporter.profile_image,
@@ -253,13 +261,22 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
 
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* 상단 네비게이션 */}
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 mb-6"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                    홈으로
-                </Link>
+                <div className="flex items-center justify-between mb-6">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        홈으로
+                    </Link>
+
+                    {/* 기자 로그인/기사쓰기 */}
+                    <ReporterAuthSection
+                        reporterId={reporter.id}
+                        reporterName={reporter.name}
+                        reporterRegion={reporter.region}
+                    />
+                </div>
 
                 <div className="flex flex-col lg:flex-row-reverse gap-8">
                     {/* 메인 컬럼 */}
@@ -515,7 +532,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
                                 제보 내용은 철저히 보호됩니다.
                             </p>
                             <a
-                                href={`mailto:news@koreanewsone.com?subject=[${reporter.region || '제보'}] ${reporter.name} 기자 제보&body=제보 내용을 작성해주세요.%0A%0A성함:%0A연락처:%0A제보 내용:%0A`}
+                                href={`mailto:news@koreanewskorea.com?subject=[${reporter.region || '제보'}] ${reporter.name} 기자 제보&body=제보 내용을 작성해주세요.%0A%0A성함:%0A연락처:%0A제보 내용:%0A`}
                                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors w-full justify-center"
                             >
                                 <Mail className="w-4 h-4" />

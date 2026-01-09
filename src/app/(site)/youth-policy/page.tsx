@@ -47,7 +47,7 @@ export default function YouthPolicyPage() {
                                 </div>
                                 <div>
                                     <dt className="text-gray-500">이메일</dt>
-                                    <dd className="font-medium text-gray-900">youth@koreanewsone.com</dd>
+                                    <dd className="font-medium text-gray-900">youth@koreanewskorea.com</dd>
                                 </div>
                             </dl>
                         </div>
@@ -80,7 +80,7 @@ export default function YouthPolicyPage() {
                             </li>
                             <li className="flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-gray-400" />
-                                <span>이메일: youth@koreanewsone.com</span>
+                                <span>이메일: youth@koreanewskorea.com</span>
                             </li>
                         </ul>
                     </section>

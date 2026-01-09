@@ -13,7 +13,7 @@ export async function GET(request: Request) {
         const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
         const host = process.env.VERCEL_URL
             ? `${protocol}://${process.env.VERCEL_URL}`
-            : 'http://localhost:3000';
+            : 'http://localhost:3001';
 
         const apiUrl = `${host}/api/bot/run`;
         const today = new Date().toISOString().split('T')[0];

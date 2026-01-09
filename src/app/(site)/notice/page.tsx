@@ -76,8 +76,8 @@ export default function NoticePage() {
                 <div className="mt-12 text-center py-12 bg-slate-50 rounded-xl">
                     <p className="text-gray-500">
                         추가 문의사항은{' '}
-                        <a href="mailto:news@koreanewsone.com" className="text-[#A6121D] hover:underline">
-                            news@koreanewsone.com
+                        <a href="mailto:news@koreanewskorea.com" className="text-[#A6121D] hover:underline">
+                            news@koreanewskorea.com
                         </a>
                         으로 연락해 주세요.
                     </p>

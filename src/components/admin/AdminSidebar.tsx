@@ -69,6 +69,16 @@ const MENU_ITEMS: MenuGroup[] = [
         category: "콘텐츠",
         items: [
             {
+                label: "수동 기사",
+                icon: PenTool,
+                href: "/admin/articles",
+                highlight: true,
+                subItems: [
+                    { label: "기사 목록", href: "/admin/articles", icon: FileText },
+                    { label: "새 기사 작성", href: "/admin/articles/new", icon: PenTool },
+                ]
+            },
+            {
                 label: "기사 관리",
                 icon: Newspaper,
                 href: "/admin/news",
@@ -170,7 +180,7 @@ interface PendingCounts {
 }
 
 export default function AdminSidebarLayout({ children }: { children: React.ReactNode }) {
-    const [expandedMenus, setExpandedMenus] = useState<string[]>(['기사 관리', '스크래퍼']);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>(['수동 기사', '기사 관리', '스크래퍼']);
     const pathname = usePathname();
     const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ news: 0, aiNews: 0, drafts: 0 });
 

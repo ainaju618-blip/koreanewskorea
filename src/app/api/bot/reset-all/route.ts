@@ -100,7 +100,7 @@ export async function POST() {
         // 4. Notify scheduler to reload (will pick up disabled state)
         try {
             // Call the local-scheduler API to stop
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
             await fetch(`${baseUrl}/api/bot/local-scheduler`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

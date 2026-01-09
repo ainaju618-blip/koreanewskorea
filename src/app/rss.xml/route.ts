@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  * Used for: Naver News, RSS readers, content aggregators
  */
 export async function GET() {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
     // Get latest 50 published articles
     const { data: posts, error } = await supabaseAdmin
@@ -69,8 +69,8 @@ export async function GET() {
         <pubDate>${now}</pubDate>
         <ttl>60</ttl>
         <copyright>Copyright (c) 코리아NEWS. All rights reserved.</copyright>
-        <managingEditor>contact@koreanewsone.com (코리아NEWS)</managingEditor>
-        <webMaster>contact@koreanewsone.com (코리아NEWS)</webMaster>
+        <managingEditor>contact@koreanewskorea.com (코리아NEWS)</managingEditor>
+        <webMaster>contact@koreanewskorea.com (코리아NEWS)</webMaster>
         <image>
             <url>${siteUrl}/logo.png</url>
             <title>코리아NEWS</title>

@@ -85,11 +85,14 @@ export async function GET(req: NextRequest) {
 
         let query = supabaseAdmin
             .from('posts')
-            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url, rejection_reason, last_edited_by, last_edited_at', { count: 'exact' });
+            .select('id, title, source, category, published_at, created_at, status, author_id, thumbnail_url', { count: 'exact' });
 
         // Apply status filter if provided
         if (statusFilter && statusFilter !== 'all') {
             query = query.eq('status', statusFilter);
+        } else {
+            // Exclude trash articles by default (soft deleted)
+            query = query.neq('status', 'trash');
         }
 
         // 필터 적용

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Get URL to test (default to production site)
     const body = await request.json().catch(() => ({}));
-    const targetUrl = body.url || 'https://www.koreanewsone.com/';
+    const targetUrl = body.url || 'https://www.koreanewskorea.com/';
     const source = body.source || 'manual'; // 'manual' | 'cron'
 
     // Run mobile test (primary)
@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Run the test
-  const targetUrl = 'https://www.koreanewsone.com/';
+  const targetUrl = 'https://www.koreanewskorea.com/';
   const mobileResult = await runPageSpeedTest(targetUrl, 'mobile');
 
   if (!mobileResult) {

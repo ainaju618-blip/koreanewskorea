@@ -4,7 +4,7 @@
  * Enables Google Sitelinks Search Box
  */
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
 export default function WebSiteSchema() {
     const jsonLd = {

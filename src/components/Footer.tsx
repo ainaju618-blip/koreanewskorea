@@ -202,7 +202,7 @@ export default function Footer() {
                             <div className="flex flex-wrap gap-x-6 gap-y-1">
                                 <span><strong className="text-slate-400 font-medium">사업자등록번호:</strong> 801-07-03054</span>
                                 <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> 010-2631-3865</span>
-                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> editor@koreanewsone.com</span>
+                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> editor@koreanewskorea.com</span>
                             </div>
                             <div className="flex items-center gap-1 pt-1">
                                 <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -218,21 +218,21 @@ export default function Footer() {
                                 © 2024 Korea News. All rights reserved.
                             </p>
                             <div className="flex items-center gap-3 mt-2 justify-start md:justify-end">
+                                <Link
+                                    href="/write"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-slate-600 hover:text-primary transition-colors border-b border-transparent hover:border-primary"
+                                >
+                                    기자 기사등록
+                                </Link>
+                                <span className="text-slate-700">|</span>
                                 <button
                                     onClick={handleAdminEditClick}
                                     className="text-[11px] text-slate-600 hover:text-primary transition-colors border-b border-transparent hover:border-primary"
                                 >
                                     {isNewsPage ? 'Admin Edit' : 'Admin'}
                                 </button>
-                                <span className="text-slate-700">|</span>
-                                <Link
-                                    href="/admin"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[11px] text-slate-600 hover:text-primary transition-colors border-b border-transparent hover:border-primary"
-                                >
-                                    Admin Mode
-                                </Link>
                             </div>
                         </div>
 

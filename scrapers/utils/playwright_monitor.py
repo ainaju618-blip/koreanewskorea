@@ -1040,7 +1040,7 @@ def trigger_ai_process(
     if api_url is None:
         api_url = os.environ.get(
             'AI_TRIGGER_API_URL',
-            'http://localhost:3000/api/bot/trigger-ai-process'
+            'http://localhost:3001/api/bot/trigger-ai-process'
         )
 
     # Retry logic for API call

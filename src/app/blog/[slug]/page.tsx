@@ -180,7 +180,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             name: 'CosmicPulse',
             logo: {
                 '@type': 'ImageObject',
-                url: 'https://www.koreanewsone.com/logo.png'
+                url: 'https://www.koreanewskorea.com/logo.png'
             }
         }
     };

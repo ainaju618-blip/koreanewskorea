@@ -183,7 +183,7 @@ export default function StitchFooter() {
                 <Phone className="w-3 h-3" /> 010-2631-3865
               </span>
               <span className="flex items-center gap-1">
-                <Mail className="w-3 h-3" /> editor@koreanewsone.com
+                <Mail className="w-3 h-3" /> editor@koreanewskorea.com
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> 광주광역시 동구 독립로 338, 501호

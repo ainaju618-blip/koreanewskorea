@@ -24,14 +24,23 @@ interface ReporterItem {
 type AIProvider = "gemini" | "claude" | "grok";
 
 const POSITION_LABELS: Record<string, string> = {
+    national_chief_director: "전국총괄본부장",
+    chief_director: "총괄본부장",
     editor_in_chief: "주필",
     branch_manager: "지사장",
+    gwangju_branch_director: "광주지역본부장",
     editor_chief: "편집국장",
     news_chief: "취재부장",
     senior_reporter: "수석기자",
     reporter: "기자",
     intern_reporter: "수습기자",
     citizen_reporter: "시민기자",
+    opinion_writer: "오피니언",
+    advisor: "고문",
+    consultant: "자문위원",
+    ambassador: "홍보대사",
+    seoul_correspondent: "서울특파원",
+    foreign_correspondent: "해외특파원",
 };
 
 export function ReporterKeyManager() {

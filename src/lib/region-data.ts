@@ -1,8 +1,8 @@
 import type { NewsArticle, WeatherData, EventData, PlaceData, RegionInfo } from '@/types/region';
 import { supabaseAdmin } from './supabase-admin';
 
-// 뉴스 데이터는 운영서버(koreanewsone.com)에서 가져옴
-const PRODUCTION_API = 'https://www.koreanewsone.com';
+// 뉴스 데이터는 운영서버(koreanewskorea.com)에서 가져옴
+const PRODUCTION_API = 'https://www.koreanewskorea.com';
 
 /**
  * 지역 데이터 통합 페칭
@@ -18,7 +18,7 @@ export interface RegionPageData {
 
 /**
  * 지역 페이지 데이터 통합 페칭
- * - 뉴스: 운영서버(koreanewsone.com)
+ * - 뉴스: 운영서버(koreanewskorea.com)
  * - places/events: 로컬 Supabase
  */
 export async function fetchRegionData(regionCode: string): Promise<RegionPageData> {

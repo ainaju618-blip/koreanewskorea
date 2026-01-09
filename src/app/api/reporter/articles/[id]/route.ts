@@ -2,21 +2,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { recordArticleHistory, createNotification, generateChangeSummary } from '@/lib/article-history';
+import { isSameRegion } from '@/lib/reporter-utils';
 
 /**
  * 기사 편집 권한 확인
+ * @param reporter - 기자 정보 (user_id: profiles FK, id: reporters PK)
+ * @param article - 기사 정보 (author_id: profiles FK = reporter.user_id)
+ *
+ * 권한 우선순위:
+ * 1. 전체 총괄 (access_level 3) → 모든 기사
+ * 2. 지역 총괄 (access_level 2) → 같은 지역 기사
+ * 3. 같은 지역 소속 기자 → 같은 지역 기사
+ * 4. 본인이 작성한 기사
  */
 function canEditArticle(
-    reporter: { id: string; region: string; access_level: number },
-    article: { source: string; author_id: string | null }
+    reporter: { id: string; user_id: string | null; region: string; access_level: number },
+    article: { source: string | null; region?: string | null; author_id: string | null }
 ): boolean {
     // 전체 총괄 (access_level 3)
     if (reporter.access_level >= 3) return true;
+
+    // 같은 지역인지 확인 (source 또는 region 코드로 비교)
+    const sameRegion = isSameRegion(reporter.region, article.source, article.region);
+
     // 지역 총괄 (access_level 2) - 내 지역만
-    if (reporter.access_level >= 2 && article.source === reporter.region) return true;
-    // 일반 기자 - 내 지역 또는 내가 쓴 기사
-    if (article.source === reporter.region) return true;
-    if (article.author_id === reporter.id) return true;
+    if (reporter.access_level >= 2 && sameRegion) return true;
+
+    // 일반 기자 - 내 지역 기사는 편집/삭제 가능
+    if (sameRegion) return true;
+
+    // author_id는 profiles FK (reporter.user_id)로 저장되므로 user_id와 비교
+    if (reporter.user_id && article.author_id === reporter.user_id) return true;
+
     return false;
 }
 
@@ -153,7 +170,7 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const { title, content, category, thumbnail_url, status, author_id, rejection_reason } = body;
+        const { title, subtitle, content, category, thumbnail_url, status, author_id, rejection_reason } = body;
 
         // Determine action type
         let action: 'edited' | 'approved' | 'rejected' | 'status_changed' = 'edited';
@@ -171,6 +188,7 @@ export async function PUT(
             last_edited_at: new Date().toISOString(),
         };
         if (title !== undefined) updateData.title = title;
+        if (subtitle !== undefined) updateData.subtitle = subtitle;
         if (content !== undefined) updateData.content = content;
         if (category !== undefined) updateData.category = category;
         if (thumbnail_url !== undefined) updateData.thumbnail_url = thumbnail_url;

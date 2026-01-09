@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const contactInfo = {
     address: '(우 61421) 광주광역시 동구 독립로 338, 501호 (계림동)',
     phone: '010-2631-3865',
-    email: 'news@koreanewsone.com',
+    email: 'news@koreanewskorea.com',
     hours: '평일 09:00 - 18:00 (주말/공휴일 휴무)',
 };
 

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 
 // 운영서버 이미지 URL
-const PRODUCTION_URL = 'https://www.koreanewsone.com';
+const PRODUCTION_URL = 'https://www.koreanewskorea.com';
 
 // 메뉴 없는 새 창으로 열기
 const openPopup = (url: string, title: string) => {
@@ -31,7 +31,7 @@ const BANNERS = [
     id: 2,
     title: '오늘의 운세',
     image: `${PRODUCTION_URL}/images/divination/divination-bg.png?v=2`,
-    link: 'https://www.koreanewsone.com/divination',
+    link: 'https://www.koreanewskorea.com/divination',
     alt: '오늘의 운세',
   },
 ];

@@ -122,8 +122,8 @@ export default function ReportPage() {
                 <div className="text-center mt-8 text-gray-500">
                     <p>
                         직접 제보:{' '}
-                        <a href="mailto:news@koreanewsone.com" className="text-[#A6121D] hover:underline">
-                            news@koreanewsone.com
+                        <a href="mailto:news@koreanewskorea.com" className="text-[#A6121D] hover:underline">
+                            news@koreanewskorea.com
                         </a>
                         {' '}또는{' '}
                         <a href="tel:010-2631-3865" className="text-[#A6121D] hover:underline">

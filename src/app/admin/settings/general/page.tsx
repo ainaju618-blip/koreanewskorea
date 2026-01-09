@@ -10,10 +10,10 @@ export default function GeneralSettingsPage() {
     const [settings, setSettings] = useState({
         siteName: 'Korea NEWS',
         siteDescription: '로컬과 세계를 잇는 AI 저널리즘',
-        siteUrl: 'https://koreanewsone.com',
+        siteUrl: 'https://koreanewskorea.com',
         logoUrl: '/logo.png',
         faviconUrl: '/favicon.ico',
-        contactEmail: 'contact@koreanewsone.com',
+        contactEmail: 'contact@koreanewskorea.com',
         contactPhone: '062-123-4567',
         address: '광주광역시 서구 상무중앙로 00길 00',
         facebook: 'https://facebook.com/koreanews',

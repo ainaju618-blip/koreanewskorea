@@ -161,8 +161,8 @@ export default function ContactPage() {
                 <div className="text-center mt-8 text-gray-500">
                     <p>
                         직접 문의:{' '}
-                        <a href="mailto:partner@koreanewsone.com" className="text-purple-600 hover:underline">
-                            partner@koreanewsone.com
+                        <a href="mailto:partner@koreanewskorea.com" className="text-purple-600 hover:underline">
+                            partner@koreanewskorea.com
                         </a>
                     </p>
                 </div>

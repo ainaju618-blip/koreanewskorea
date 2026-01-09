@@ -67,7 +67,7 @@ async function getHeroData() {
             .from('posts')
             .select('id, title, content, ai_summary, thumbnail_url, category, region, published_at')
             .eq('status', 'published')
-            .or(`category.eq.${categoryName},region.eq.${region}`)
+            .or(`category.ilike.${categoryName}%,region.eq.${region}`)
             .not('thumbnail_url', 'is', null)
             .neq('thumbnail_url', '')
             .like('thumbnail_url', 'http%')

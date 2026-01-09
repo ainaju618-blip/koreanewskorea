@@ -124,7 +124,7 @@ export default async function Sidebar() {
                         <span className="text-[13px] font-semibold text-slate-700 group-hover:text-white transition-colors">전체뉴스</span>
                     </Link>
                     <Link
-                        href="https://koreanewsone.com"
+                        href="https://koreanewskorea.com"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center p-3.5 bg-slate-50/80 rounded-xl hover:bg-primary hover:text-white transition-all duration-200 group border border-slate-100/50 hover:border-primary hover:shadow-lg hover:shadow-red-900/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

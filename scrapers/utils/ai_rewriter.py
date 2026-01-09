@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Base URL for the AI rewrite API
 # Default to localhost if not specified in environment
-API_BASE_URL = os.getenv("NEXT_PUBLIC_API_URL", "http://localhost:3000")
+API_BASE_URL = os.getenv("NEXT_PUBLIC_API_URL", "http://localhost:3001")
 
 
 async def rewrite_article(

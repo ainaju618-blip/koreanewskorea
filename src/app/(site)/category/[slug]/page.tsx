@@ -6,9 +6,10 @@ import { CATEGORY_MAP, JEONNAM_REGION_CODES } from '@/lib/category-constants';
 import CategoryHeader from '@/components/category/CategoryHeader';
 import Pagination from '@/components/ui/Pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { formatDate } from '@/lib/dateUtils';
 
 // Site URL for metadata
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewsone.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.koreanewskorea.com';
 
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -178,10 +179,20 @@ async function getPopularNews() {
     }
 }
 
-// 날짜 포맷
-function formatDate(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '-').replace('.', '');
+// 기사 아이템 타입
+interface NewsItem {
+    id: string;
+    title: string;
+    content: string | null;
+    ai_summary: string | null;
+    thumbnail_url: string | null;
+    published_at: string | null;
+}
+
+// 인기 기사 아이템 타입
+interface PopularNewsItem {
+    id: string;
+    title: string;
 }
 
 interface CategoryPageProps {
@@ -242,7 +253,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                                     </Link>
                                 )}
                                 {/* 나머지 기사 목록 */}
-                                {(currentPage === 1 ? news.slice(1) : news).map((item: any) => (
+                                {(currentPage === 1 ? news.slice(1) : news).map((item: NewsItem) => (
                                     <Link key={item.id} href={`/news/${item.id}`} className="flex gap-4 py-4 cursor-pointer group">
                                         <OptimizedImage
                                             src={getThumbnailUrl(item)}
@@ -286,7 +297,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
                             <h3 className="font-bold text-base mb-3 pb-2 border-b border-slate-300">가장 많이 본 뉴스</h3>
                             <div className="space-y-2.5">
                                 {popularNews.length > 0 ? (
-                                    popularNews.map((item: any, idx: number) => (
+                                    popularNews.map((item: PopularNewsItem, idx: number) => (
                                         <Link key={item.id} href={`/news/${item.id}`} className="flex gap-2.5 cursor-pointer group">
                                             <span className="font-black text-red-600 text-base w-4">{idx + 1}</span>
                                             <p className="text-sm text-slate-700 line-clamp-2 group-hover:underline leading-snug">

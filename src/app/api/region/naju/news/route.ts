@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// 운영서버(koreanewsone.com)에서 뉴스 데이터 가져오기
-const PRODUCTION_API = 'https://www.koreanewsone.com';
+// 운영서버(koreanewskorea.com)에서 뉴스 데이터 가져오기
+const PRODUCTION_API = 'https://www.koreanewskorea.com';
 
 /**
  * GET /api/region/naju/news

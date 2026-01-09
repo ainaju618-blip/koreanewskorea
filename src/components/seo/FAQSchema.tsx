@@ -52,7 +52,7 @@ export const defaultFAQItems: FAQItem[] = [
     },
     {
         question: '코리아NEWS에 제보하려면 어떻게 해야 하나요?',
-        answer: '코리아NEWS 홈페이지의 제보 페이지나 이메일(contact@koreanewsone.com)을 통해 뉴스 제보가 가능합니다. 지역 관련 소식, 사건사고, 이벤트 등 다양한 정보를 받고 있습니다.',
+        answer: '코리아NEWS 홈페이지의 제보 페이지나 이메일(contact@koreanewskorea.com)을 통해 뉴스 제보가 가능합니다. 지역 관련 소식, 사건사고, 이벤트 등 다양한 정보를 받고 있습니다.',
     },
     {
         question: '코리아NEWS는 무료인가요?',

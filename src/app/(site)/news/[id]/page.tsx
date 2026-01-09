@@ -10,11 +10,11 @@ import { BreadcrumbSchema } from '@/components/seo';
 
 export const dynamic = 'force-dynamic';
 
-// 운영서버 Supabase 클라이언트 (koreanewsone.com 데이터베이스)
-const PRODUCTION_SUPABASE_URL = 'https://xdcxfaoucvzfrryhczmy.supabase.co';
-const PRODUCTION_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkY3hmYW91Y3Z6ZnJyeWhjem15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NjA5MjAsImV4cCI6MjA4MDQzNjkyMH0.mc_IQ_CrmR4djs7f7lkI8qHh9p3ozwwJ8tzkreMLask';
-
-const productionSupabase = createClient(PRODUCTION_SUPABASE_URL, PRODUCTION_SUPABASE_ANON_KEY);
+// Supabase 클라이언트 (환경변수 기반 - 개발/운영 서버 독립)
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // SEO: 동적 메타데이터 생성
 export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
             images: news.thumbnail_url ? [news.thumbnail_url] : [],
         },
         alternates: {
-            canonical: `https://koreanewsone.com/news/${id}`,
+            canonical: `https://koreanewskorea.com/news/${id}`,
         },
         robots: {
             index: news.status === 'published',
@@ -83,7 +83,7 @@ interface NewsDetailProps {
 // 운영서버 Supabase에서 뉴스 가져오기
 async function getNewsById(id: string) {
     try {
-        const { data, error } = await productionSupabase
+        const { data, error } = await supabase
             .from('posts')
             .select('*')
             .eq('id', id)
@@ -98,7 +98,7 @@ async function getNewsById(id: string) {
 
 async function getRelatedNews(category: string, currentId: string) {
     try {
-        const { data } = await productionSupabase
+        const { data } = await supabase
             .from('posts')
             .select('id, title, category, published_at')
             .eq('status', 'published')
@@ -246,7 +246,7 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
     // Try 1: Match by author_id (references profiles.id -> reporters.user_id)
     if (news.author_id) {
-        const { data } = await productionSupabase
+        const { data } = await supabase
             .from('reporters')
             .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
             .eq('user_id', news.author_id)
@@ -255,11 +255,14 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
     }
 
     // Try 2: Match by author_name (fallback when author_id not in profiles)
+    // author_name format: "이름 직위" (예: "허철호 전국총괄본부장")
+    // Extract just the name part for matching with reporters.name
     if (!reporter && news.author_name) {
-        const { data } = await productionSupabase
+        const reporterName = news.author_name.split(' ')[0]; // "허철호 전국총괄본부장" → "허철호"
+        const { data } = await supabase
             .from('reporters')
             .select('id, name, email, region, position, specialty, bio, profile_image, avatar_icon, user_id')
-            .eq('name', news.author_name)
+            .eq('name', reporterName)
             .eq('status', 'Active')
             .single();
         reporter = data;
@@ -276,8 +279,9 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
 
     // Get specialty title for SEO
     const reporterTitle = reporter ? getSpecialtyTitle(reporter) : null;
+    // 상대 경로 사용 (개발서버/운영서버 모두 동작)
     const authorProfileUrl = reporter
-        ? `https://koreanewsone.com/author/${reporter.id}`
+        ? `/author/${reporter.id}`
         : undefined;
 
     // SEO: NewsArticle structured data (JSON-LD) - E-E-A-T optimized
@@ -297,24 +301,24 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
             worksFor: {
                 '@type': 'NewsMediaOrganization',
                 name: '코리아NEWS',
-                url: 'https://koreanewsone.com',
+                url: 'https://koreanewskorea.com',
             },
             sameAs: undefined,
         },
         publisher: {
             '@type': 'NewsMediaOrganization',
             name: '코리아NEWS',
-            url: 'https://koreanewsone.com',
+            url: 'https://koreanewskorea.com',
             logo: {
                 '@type': 'ImageObject',
-                url: 'https://koreanewsone.com/logo.png',
+                url: 'https://koreanewskorea.com/logo.png',
                 width: 600,
                 height: 60,
             },
         },
         mainEntityOfPage: {
             '@type': 'WebPage',
-            '@id': `https://koreanewsone.com/news/${id}`,
+            '@id': `https://koreanewskorea.com/news/${id}`,
         },
         articleSection: news.category,
         keywords: [news.category, '광주', '전남', '지역뉴스'].join(', '),
@@ -408,6 +412,15 @@ export default async function NewsDetailPage({ params }: NewsDetailProps) {
                                 ) : (
                                     <>코리아뉴스 {reporter.name} {reporterTitle}</>
                                 )}
+                            </Link>
+                        ) : news.author_name ? (
+                            // reporter 테이블에서 못 찾았지만 author_name이 있으면 그대로 표시
+                            // (예: "허철호 전국총괄본부장") - 이름 부분으로 기자 페이지 검색 링크
+                            <Link
+                                href={`/author/search?name=${encodeURIComponent(news.author_name.split(' ')[0])}`}
+                                className="font-bold text-gray-800 text-[15px] hover:text-blue-600 hover:underline"
+                            >
+                                {news.author_name}
                             </Link>
                         ) : (
                             <div className="font-bold text-gray-800 text-[15px]">

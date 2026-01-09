@@ -7,17 +7,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: '주역점 - 하늘의 뜻을 구하다',
     description: '3천년 역사의 주역으로 오늘의 운세를 알아보세요. 64괘와 384효로 당신의 길을 안내합니다.',
-    url: 'https://www.koreanewsone.com/divination',
+    url: 'https://www.koreanewskorea.com/divination',
     siteName: '코리아NEWS',
     images: [
       {
-        url: 'https://www.koreanewsone.com/images/divination/hexagram-mandala.png',
+        url: 'https://www.koreanewskorea.com/images/divination/hexagram-mandala.png',
         width: 800,
         height: 800,
         alt: '주역 64괘 만다라',
       },
       {
-        url: 'https://www.koreanewsone.com/images/divination/sage-yinyang.png',
+        url: 'https://www.koreanewskorea.com/images/divination/sage-yinyang.png',
         width: 600,
         height: 600,
         alt: '주역 음양 현자',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '주역점 - 하늘의 뜻을 구하다',
     description: '3천년 역사의 주역으로 오늘의 운세를 알아보세요.',
-    images: ['https://www.koreanewsone.com/images/divination/hexagram-mandala.png'],
+    images: ['https://www.koreanewskorea.com/images/divination/hexagram-mandala.png'],
   },
 };
 

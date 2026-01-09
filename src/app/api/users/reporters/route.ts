@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         if (!email) {
             const timestamp = Date.now();
             const randomStr = Math.random().toString(36).substring(2, 6);
-            email = `temp_${timestamp}_${randomStr}@koreanewsone.com`;
+            email = `temp_${timestamp}_${randomStr}@koreanewskorea.com`;
             isTemporaryEmail = true;
         }
 

@@ -1,3 +1,48 @@
-# 개발 서버 - 검색엔진 크롤링 차단
+# koreanewskorea.com - SEO 최적화 설정
+# 마지막 업데이트: 2025-01
+
 User-agent: *
-Disallow: /
+Allow: /
+
+# 관리자 및 비공개 영역 차단
+Disallow: /admin
+Disallow: /api
+Disallow: /reporter
+Disallow: /auth
+Disallow: /idea
+Disallow: /write
+Disallow: /demo
+Disallow: /sample
+Disallow: /test
+Disallow: /popup
+
+# Next.js 내부 파일 차단
+Disallow: /_next/static/chunks/
+Disallow: /_next/static/development/
+Disallow: /_next/data/
+
+# 개인 데이터 보호
+Disallow: /history
+Disallow: /subscribe
+
+# 크롤링 속도 제한 (서버 부하 방지)
+Crawl-delay: 1
+
+# 주요 검색엔진별 설정
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Yeti
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# 사이트맵 위치
+Sitemap: https://www.koreanewskorea.com/sitemap.xml
+
+# 호스트 지정
+Host: https://www.koreanewskorea.com
