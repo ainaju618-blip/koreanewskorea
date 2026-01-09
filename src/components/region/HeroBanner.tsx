@@ -1,20 +1,70 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { MapPin, Quote } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { RegionInfo } from '@/types/region';
 
 interface HeroBannerProps {
   region: RegionInfo;
 }
 
+// 배경 이미지 배열 (3개 이미지 순환)
+const HERO_IMAGES = [
+  '/images/hero/main-hero.png',
+  '/images/hero/main-hero-2.png',
+  '/images/hero/main-hero-3.png',
+];
+
+// 슬라이드 전환 간격 (밀리초) - 7초
+const SLIDE_INTERVAL = 7000;
+
+// 애니메이션 변형 (더 부드럽고 느린 전환)
+const slideVariants = {
+  enter: {
+    opacity: 0,
+    scale: 1.03,
+  },
+  center: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      opacity: { duration: 2.0, ease: [0.4, 0, 0.2, 1] as const },
+      scale: { duration: 2.5, ease: [0.4, 0, 0.2, 1] as const },
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.01,
+    transition: {
+      opacity: { duration: 2.0, ease: [0.4, 0, 1, 1] as const },
+      scale: { duration: 2.0, ease: [0.4, 0, 1, 1] as const },
+    },
+  },
+};
+
 /**
  * 지역 페이지 히어로 배너
- * SSR 가능 - 서버 컴포넌트에서 사용 가능
+ * Framer Motion을 사용한 자동 슬라이더
+ * 3개 이미지를 5초마다 부드럽게 전환
  */
 export default function HeroBanner({ region }: HeroBannerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // 자동 슬라이드 타이머
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, SLIDE_INTERVAL);
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Theme color mapping
   const themeColors: Record<string, { gradient: string; badge: string; accent: string }> = {
     emerald: {
-      gradient: 'from-emerald-600/85 to-teal-500/70',
+      gradient: 'from-emerald-600/50 to-teal-500/50',
       badge: 'bg-emerald-500/30',
       accent: 'text-emerald-100',
     },
@@ -44,16 +94,28 @@ export default function HeroBanner({ region }: HeroBannerProps) {
 
   return (
     <section className="relative text-white py-16 overflow-hidden">
-      {/* Background Image */}
-      <Image
-        src={region.heroImage}
-        alt={`${region.name} 대표 풍경`}
-        fill
-        className="object-cover"
-        priority
-      />
+      {/* Background Images with Animation */}
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={currentIndex}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          className="absolute inset-0"
+        >
+          <Image
+            src={HERO_IMAGES[currentIndex]}
+            alt={`${region.name} 대표 풍경 ${currentIndex + 1}`}
+            fill
+            className="object-cover object-[center_40%]"
+            priority={currentIndex === 0}
+          />
+        </motion.div>
+      </AnimatePresence>
+
       {/* Gradient Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-r ${theme.gradient}`} />
+      <div className={`absolute inset-0 bg-gradient-to-r ${theme.gradient} z-[1]`} />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4">
@@ -74,6 +136,22 @@ export default function HeroBanner({ region }: HeroBannerProps) {
           <div className={`inline-flex items-center gap-1.5 ${theme.badge} backdrop-blur-sm px-3 py-1.5 rounded-full text-xs ${theme.accent}`}>
             <span>{region.sido} | {region.sidoSlogan}</span>
           </div>
+        </div>
+
+        {/* 슬라이드 인디케이터 */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {HERO_IMAGES.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'bg-white w-6'
+                  : 'bg-white/50 hover:bg-white/70'
+              }`}
+              aria-label={`슬라이드 ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
     </section>

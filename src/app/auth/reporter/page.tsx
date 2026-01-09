@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Loader2, LogIn, Newspaper, User, Mail, MapPin, Briefcase } from "lucide-react";
 
 interface DuplicateReporter {
@@ -100,15 +101,26 @@ export default function ReporterLoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
+        <div className="relative min-h-screen flex items-center justify-center p-4">
+            {/* Background Image */}
+            <Image
+                src="/images/hero/reporter-hero.png"
+                alt="기자 로그인 배경"
+                fill
+                className="object-cover"
+                priority
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 to-blue-900/50" />
+
+            <div className="relative z-10 w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
                         <Newspaper className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Korea NEWS</h1>
-                    <p className="text-gray-500 mt-1">기자 전용 로그인</p>
+                    <h1 className="text-2xl font-bold text-white">Korea NEWS</h1>
+                    <p className="text-blue-200 mt-1">기자 전용 로그인</p>
                 </div>
 
                 {/* Login Form */}

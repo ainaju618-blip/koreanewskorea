@@ -493,8 +493,18 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
       {isReporterMode ? (
         <div className="min-h-screen bg-slate-50">
           {/* 로그인 헤더 카드 */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
-            <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
+          <div className="relative text-white overflow-hidden">
+            {/* Background Image */}
+            <img
+              src="/images/hero/reporter-hero.png"
+              alt="기자 포털 배경"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-emerald-800/50" />
+
+            {/* Content */}
+            <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">

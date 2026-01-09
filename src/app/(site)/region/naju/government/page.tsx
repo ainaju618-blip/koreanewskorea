@@ -96,9 +96,21 @@ export default function NajuGovernmentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Page Title */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4">
+      {/* Hero Banner */}
+      <div className="relative text-white py-12 md:py-16 overflow-hidden">
+        {/* Background Image */}
+        <Image
+          src="/images/hero/government-hero.png"
+          alt="나주시 소식 배경"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/70 to-emerald-700/50" />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
             <Building2 className="w-7 h-7" />
             나주시 소식
