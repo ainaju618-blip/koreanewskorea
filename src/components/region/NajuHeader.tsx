@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Home, Newspaper, MapPin, Building2, Users, GraduationCap, Briefcase, MessageCircle, Search, UtensilsCrossed, Map, Landmark, Lightbulb, LogIn, LogOut, User, Loader2 } from 'lucide-react';
-import ReporterDashboardEmbed from '@/components/reporter/ReporterDashboardEmbed';
+import { Menu, X, Home, Newspaper, MapPin, Building2, Users, GraduationCap, Briefcase, Search, UtensilsCrossed, Map, Lightbulb, LogIn, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 // 나주 전용 네비게이션 메뉴 (모두 서브페이지로 연결)
 const NAJU_MENUS = [
@@ -23,16 +23,6 @@ const NAJU_SUB_MENUS = [
   { name: '여행', href: '/region/naju/travel', icon: Map },
 ];
 
-interface Reporter {
-  id: string;
-  name: string;
-  position: string;
-  region: string;
-  regionGroup?: string;
-  access_level: number;
-  profile_image?: string;
-}
-
 interface NajuHeaderProps {
   children?: React.ReactNode;
 }
@@ -40,121 +30,17 @@ interface NajuHeaderProps {
 export default function NajuHeader({ children }: NajuHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState('');
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme, setTheme } = useTheme();
 
-  // 기자 로그인 모드 상태
-  const [isReporterMode, setIsReporterMode] = useState(false);
-  const [reporter, setReporter] = useState<Reporter | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
-
-  // 로그인 폼 상태
-  const [loginName, setLoginName] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-
-  // 기자 인증 상태 확인
+  // Hydration 문제 방지
   useEffect(() => {
-    const checkReporterAuth = async () => {
-      setIsCheckingAuth(true);
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reporter) {
-            setReporter(data.reporter);
-          }
-        }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-    checkReporterAuth();
+    setMounted(true);
   }, []);
 
-  // 페이지 이동 시 기자 포털 모드 자동 닫기 + 로그아웃
-  const prevPathnameRef = useRef<string | null>(null);
-  useEffect(() => {
-    // 첫 렌더링에서는 prevPathname이 null이므로 스킵
-    if (prevPathnameRef.current === null) {
-      prevPathnameRef.current = pathname;
-      return;
-    }
-    // pathname이 실제로 변경되었을 때만 처리
-    if (prevPathnameRef.current !== pathname) {
-      const wasLoggedIn = reporter !== null;
-      prevPathnameRef.current = pathname;
-
-      // 로그인 상태였으면 로그아웃 처리
-      if (wasLoggedIn) {
-        fetch('/api/auth/logout', { method: 'POST' })
-          .then(() => {
-            setReporter(null);
-          })
-          .catch(err => console.error('Auto logout failed:', err));
-      }
-      setIsReporterMode(false);
-    }
-  }, [pathname, reporter]);
-
-  // 기자 로그인 처리
-  const handleReporterLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-    setLoginLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: loginName, password: loginPassword }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoginError(data.message || '로그인에 실패했습니다.');
-        return;
-      }
-
-      // 로그인 성공 - 기자 정보 다시 불러오기
-      const meRes = await fetch('/api/auth/me');
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        if (meData.reporter) {
-          setReporter(meData.reporter);
-          setLoginName('');
-          setLoginPassword('');
-        }
-      }
-    } catch (err) {
-      setLoginError('서버 연결에 실패했습니다.');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  // 기자 로그아웃
-  const handleReporterLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setReporter(null);
-      setIsReporterMode(false);
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
-  };
-
-  // 기자 로그인 모드 닫기
-  const handleCloseReporterMode = () => {
-    setIsReporterMode(false);
-    setLoginError('');
-    setLoginName('');
-    setLoginPassword('');
-  };
+  const isDark = resolvedTheme === 'dark';
 
   // Set date (Korean time)
   useEffect(() => {
@@ -175,11 +61,8 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
       if (isMobileMenuOpen) {
         setIsMobileMenuOpen(false);
       }
-      if (isReporterMode && !reporter) {
-        handleCloseReporterMode();
-      }
     }
-  }, [isMobileMenuOpen, isReporterMode, reporter]);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -197,6 +80,13 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
       document.body.style.overflow = '';
     };
   }, [isMobileMenuOpen]);
+
+  // 기자 로그인 버튼 클릭 - 새 창에서 /auth/reporter 열기
+  const handleReporterLoginClick = () => {
+    const width = window.screen.availWidth;
+    const height = window.screen.availHeight;
+    window.open('/auth/reporter', 'reporter-login', `width=${width},height=${height},left=0,top=0,resizable=yes,scrollbars=yes`);
+  };
 
   return (
     <>
@@ -233,36 +123,32 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
               </Link>
             </div>
 
-            {/* Right: Reporter Login + Search */}
-            <div className="hidden lg:flex items-center gap-3 w-[280px] justify-end">
-              {/* 기자로그인 버튼 */}
-              {isCheckingAuth ? (
-                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-              ) : reporter ? (
+            {/* Right: Theme Toggle + Reporter Login + Search */}
+            <div className="hidden lg:flex items-center gap-3 w-[320px] justify-end">
+              {/* 다크/라이트 모드 토글 */}
+              {mounted && (
                 <button
-                  onClick={() => setIsReporterMode(!isReporterMode)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    isReporterMode
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                  }`}
+                  onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+                  aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+                  title={isDark ? '라이트 모드' : '다크 모드'}
                 >
-                  <User className="w-4 h-4" />
-                  <span>{reporter.name} 기자</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    const width = window.screen.availWidth;
-                    const height = window.screen.availHeight;
-                    window.open('/auth/reporter', 'reporter-login', `width=${width},height=${height},left=0,top=0,resizable=yes,scrollbars=yes`);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>기자로그인</span>
+                  {isDark ? (
+                    <Sun className="w-5 h-5 text-yellow-500" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-slate-600" />
+                  )}
                 </button>
               )}
+
+              {/* 기자로그인 버튼 - 항상 표시, 클릭 시 새 창으로 열림 */}
+              <button
+                onClick={handleReporterLoginClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>기자로그인</span>
+              </button>
 
               {/* 검색 */}
               <div className="relative group/search">
@@ -461,6 +347,42 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
                 {/* Divider */}
                 <div className="border-t border-slate-200 my-4"></div>
 
+                {/* 다크/라이트 모드 토글 (모바일) */}
+                {mounted && (
+                  <button
+                    onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                    className="flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors border border-slate-200 dark:border-slate-600 w-full"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-yellow-500' : 'bg-slate-600'}`}>
+                      {isDark ? (
+                        <Sun className="w-5 h-5 text-white" />
+                      ) : (
+                        <Moon className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <span className="font-bold text-slate-700 dark:text-slate-200">
+                      {isDark ? '라이트 모드' : '다크 모드'}
+                    </span>
+                  </button>
+                )}
+
+                {/* 기자 로그인 (모바일) */}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleReporterLoginClick();
+                  }}
+                  className="flex items-center gap-3 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors border border-emerald-100 w-full"
+                >
+                  <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                    <LogIn className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-bold text-emerald-700">기자 로그인</span>
+                </button>
+
+                {/* Divider */}
+                <div className="border-t border-slate-200 my-4"></div>
+
                 {/* 전국판 링크 */}
                 <a
                   href="https://www.koreanewsone.com"
@@ -488,122 +410,8 @@ export default function NajuHeader({ children }: NajuHeaderProps) {
         </div>
       </header>
 
-      {/* =========================================================================
-          REPORTER MODE: 로그인 UI 또는 대시보드
-      ========================================================================= */}
-      {isReporterMode ? (
-        <div className="min-h-screen bg-slate-50">
-          {/* 로그인 헤더 카드 */}
-          <div className="relative text-white overflow-hidden">
-            {/* Background Image */}
-            <img
-              src="/images/hero/reporter-hero.png"
-              alt="기자 포털 배경"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-emerald-800/50" />
-
-            {/* Content */}
-            <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Newspaper className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold">기자 포털</h1>
-                    <p className="text-emerald-100">코리아NEWS 나주 기자 전용</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleCloseReporterMode}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                  <span>닫기</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 로그인 전: 로그인 박스 / 로그인 후: 대시보드 */}
-          {reporter ? (
-            /* ===== 기존 대시보드 사용 ===== */
-            <ReporterDashboardEmbed reporter={reporter} onLogout={handleReporterLogout} onClose={handleCloseReporterMode} />
-          ) : (
-            /* ===== 로그인 박스 ===== */
-            <div className="w-full max-w-[1400px] mx-auto px-4 py-12">
-              <div className="max-w-md mx-auto">
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
-                  <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <User className="w-8 h-8 text-emerald-600" />
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-800">기자 로그인</h2>
-                    <p className="text-sm text-slate-500 mt-1">기자님 전용 로그인입니다</p>
-                  </div>
-
-                  <form onSubmit={handleReporterLogin} className="space-y-4">
-                    <div>
-                      <label htmlFor="reporter-name" className="block text-sm font-medium text-slate-700 mb-1">
-                        이름 또는 이메일
-                      </label>
-                      <input
-                        id="reporter-name"
-                        type="text"
-                        value={loginName}
-                        onChange={(e) => setLoginName(e.target.value)}
-                        placeholder="홍길동 또는 email@example.com"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="reporter-password" className="block text-sm font-medium text-slate-700 mb-1">
-                        비밀번호
-                      </label>
-                      <input
-                        id="reporter-password"
-                        type="password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="********"
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                        required
-                      />
-                    </div>
-                    {loginError && (
-                      <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl">{loginError}</p>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={loginLoading}
-                      className="w-full py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                    >
-                      {loginLoading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          로그인 중...
-                        </>
-                      ) : (
-                        <>
-                          <LogIn className="w-5 h-5" />
-                          로그인
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* ===== 일반 페이지 콘텐츠 ===== */
-        children
-      )}
+      {/* ===== 일반 페이지 콘텐츠 ===== */}
+      {children}
     </>
   );
 }
-
