@@ -56,3 +56,14 @@ export const SYNC_TABLES = {
 } as const;
 
 export type SyncTableKey = keyof typeof SYNC_TABLES;
+
+// 동기화 대상 소스 목록 (나주 지역)
+export const SYNC_SOURCES = [
+  { value: '나주시', label: '나주시' },
+  { value: '나주시의회', label: '나주시의회' },
+  { value: '전남교육청 학교', label: '전남교육청 학교' },
+  { value: '전남교육청 기관', label: '전남교육청 기관' },
+  { value: '전남교육청', label: '전남교육청' },
+] as const;
+
+export type SyncSource = typeof SYNC_SOURCES[number]['value'];

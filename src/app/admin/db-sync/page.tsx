@@ -54,6 +54,15 @@ const DATE_RANGE_OPTIONS = [
   { value: "all", label: "전체" },
 ] as const;
 
+// 동기화 대상 소스 (나주 지역)
+const SOURCE_OPTIONS = [
+  { value: "나주시", label: "나주시" },
+  { value: "나주시의회", label: "나주시의회" },
+  { value: "전남교육청 학교", label: "전남교육청 학교" },
+  { value: "전남교육청 기관", label: "전남교육청 기관" },
+  { value: "전남교육청", label: "전남교육청" },
+] as const;
+
 type SyncStep = 1 | 2 | 3;
 type DateRange = "1day" | "2days" | "3days" | "5days" | "week" | "month" | "all";
 
@@ -97,8 +106,11 @@ export default function DbSyncPage() {
 
   // STEP 1: 동기화 설정
   const [selectedTables, setSelectedTables] = useState<string[]>(["posts", "categories"]);
-  const [dateRange, setDateRange] = useState<DateRange>("3days");
-  const [syncMode, setSyncMode] = useState<"merge" | "overwrite">("merge");
+  const [dateRange, setDateRange] = useState<DateRange>("1day");  // 기본: 1일
+  const [syncMode, setSyncMode] = useState<"merge" | "overwrite">("overwrite");  // 기본: 덮어쓰기
+  const [selectedSources, setSelectedSources] = useState<string[]>(
+    SOURCE_OPTIONS.map(s => s.value)  // 기본: 모든 소스 선택
+  );
 
   // 동기화 진행 상태
   const [isSyncing, setIsSyncing] = useState(false);
@@ -201,6 +213,21 @@ export default function DbSyncPage() {
     );
   };
 
+  // 소스 선택 토글
+  const toggleSource = (value: string) => {
+    setSelectedSources((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+    );
+  };
+
+  const toggleAllSources = () => {
+    if (selectedSources.length === SOURCE_OPTIONS.length) {
+      setSelectedSources([]);
+    } else {
+      setSelectedSources(SOURCE_OPTIONS.map(s => s.value));
+    }
+  };
+
   // 동기화 실행
   const handleSync = async () => {
     setIsSyncing(true);
@@ -215,6 +242,7 @@ export default function DbSyncPage() {
           tables: selectedTables,
           dateRange,
           mode: syncMode,
+          sources: selectedSources.length > 0 ? selectedSources : undefined,
         }),
       });
 
@@ -301,9 +329,10 @@ export default function DbSyncPage() {
           <div className="flex items-start gap-3 p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
             <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-200">
-              <p className="font-medium mb-1">순수 데이터만 동기화됩니다</p>
+              <p className="font-medium mb-1">나주 지역 데이터 동기화</p>
               <p className="text-blue-300/80">
-                기자 정보(author_id)는 제외됩니다. 동기화 후 STEP 2에서 기자를 배정하세요.
+                운영서버(koreanewsone.com)에서 선택한 소스의 기사만 가져옵니다.
+                기자 정보(author_id)는 제외되며, STEP 2에서 기자를 배정하세요.
               </p>
             </div>
           </div>
@@ -361,6 +390,39 @@ export default function DbSyncPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* 소스 선택 */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-[#e6edf3]">동기화 대상 소스</h3>
+              <button
+                onClick={toggleAllSources}
+                className="text-xs text-cyan-400 hover:text-cyan-300"
+              >
+                {selectedSources.length === SOURCE_OPTIONS.length ? "전체 해제" : "전체 선택"}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SOURCE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => toggleSource(option.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                    selectedSources.includes(option.value)
+                      ? "bg-cyan-600 text-white"
+                      : "bg-[#21262d] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#30363d]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {selectedSources.length === 0 && (
+              <p className="text-xs text-amber-400 mt-2">
+                ⚠️ 소스를 선택하지 않으면 전체 기사가 동기화됩니다
+              </p>
+            )}
           </div>
 
           {/* 동기화 모드 */}
