@@ -11,10 +11,10 @@ export const metadata: Metadata = {
     siteName: '코리아NEWS',
     images: [
       {
-        url: '/images/hero/main-hero-naju.png',
+        url: '/api/og?title=나주뉴스&type=naju',
         width: 1200,
         height: 630,
-        alt: '나주 배밭과 영산강 풍경 - 나주뉴스',
+        alt: '나주 배밭과 영산강 풍경 - 코리아NEWS',
       },
     ],
     locale: 'ko_KR',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '나주뉴스 - 천년의 역사, 영산강의 고장 | 코리아NEWS',
     description: '나주시 소식, 관광명소, 맛집, 축제 정보를 한눈에.',
-    images: ['/images/hero/main-hero-naju.png'],
+    images: ['/api/og?title=나주뉴스&type=naju'],
   },
 };
 
