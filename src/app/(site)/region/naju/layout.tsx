@@ -1,20 +1,20 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '나주시 | 중앙뉴스',
+  title: '나주뉴스 | 코리아NEWS',
   description: '나주시 소식, 관광명소, 맛집, 축제 정보를 한눈에. 나주곰탕, 영산강 황포돛배, 금성관 등 나주의 모든 것.',
   keywords: ['나주시', '나주뉴스', '나주곰탕', '영산강', '황포돛배', '금성관', '나주관광', '전남나주'],
   openGraph: {
-    title: '나주시 - 천년의 역사, 영산강의 고장 | 중앙뉴스',
+    title: '나주뉴스 - 천년의 역사, 영산강의 고장 | 코리아NEWS',
     description: '나주시 소식, 관광명소, 맛집, 축제 정보를 한눈에. 나주곰탕, 영산강 황포돛배, 금성관 등 나주의 모든 것.',
     url: 'https://koreanewskorea.com/region/naju',
-    siteName: '중앙뉴스',
+    siteName: '코리아NEWS',
     images: [
       {
-        url: '/images/hero/naju-hero.png',
+        url: '/images/hero/main-hero-naju.png',
         width: 1200,
         height: 630,
-        alt: '나주시 전경 - 영산강과 나주평야',
+        alt: '나주 배밭과 영산강 풍경 - 나주뉴스',
       },
     ],
     locale: 'ko_KR',
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '나주시 - 천년의 역사, 영산강의 고장 | 중앙뉴스',
+    title: '나주뉴스 - 천년의 역사, 영산강의 고장 | 코리아NEWS',
     description: '나주시 소식, 관광명소, 맛집, 축제 정보를 한눈에.',
-    images: ['/images/hero/naju-hero.png'],
+    images: ['/images/hero/main-hero-naju.png'],
   },
 };
 
