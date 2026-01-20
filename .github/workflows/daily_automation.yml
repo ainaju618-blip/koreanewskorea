@@ -1,0 +1,87 @@
+name: Korea News Daily Automation
+
+on:
+  schedule:
+    # Run hourly from 00:00 UTC to 10:00 UTC (09:00 KST to 19:00 KST)
+    - cron: '0 0-10 * * *'
+  workflow_dispatch:
+
+jobs:
+  daily-batch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+
+    - name: Install Node dependencies
+      run: npm ci
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests httpx beautifulsoup4 lxml python-dotenv supabase cloudinary schedule psycopg2-binary playwright
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Install Playwright browsers
+      run: |
+        python -m playwright install chromium
+        python -m playwright install-deps chromium
+
+    - name: Run Scraper (Direct Mode)
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+        CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+        CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        CI: true
+        GITHUB_ACTIONS: true
+      run: |
+        echo "[STEP 1] Running Scraper (Direct Mode)..."
+        node scrapers/batch_daily.js --mode=scrape-direct
+
+    - name: Run AI Processing (Direct Mode)
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        # Updated to use Z.ai (GLM) via Anthropic Protocol
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+        XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        CI: true
+        GITHUB_ACTIONS: true
+      run: |
+        echo "[STEP 2] Running AI Processing (Direct Mode)..."
+        node scrapers/batch_daily.js --mode=process-direct
+
+    - name: Send Daily Report
+      env:
+        SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        echo "[STEP 3] Sending Daily Report..."
+        python scrapers/send_daily_report.py || echo "Report sending failed (non-critical)"
+
+    - name: Summary
+      run: |
+        echo "========================================"
+        echo "Korea News Daily Automation Completed!"
+        echo "========================================"
